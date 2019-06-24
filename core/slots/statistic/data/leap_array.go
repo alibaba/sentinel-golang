@@ -10,16 +10,16 @@ import (
 
 type WindowWrap struct {
 	windowLengthInMs uint32
-	WindowStart      uint64
-	Value            interface{}
+	windowStart      uint64
+	value            interface{}
 }
 
 func (ww *WindowWrap) resetTo(startTime uint64) {
-	ww.WindowStart = startTime
+	ww.windowStart = startTime
 }
 
 func (ww *WindowWrap) isTimeInWindow(timeMillis uint64) bool {
-	return ww.WindowStart <= timeMillis && timeMillis < ww.WindowStart+uint64(ww.windowLengthInMs)
+	return ww.windowStart <= timeMillis && timeMillis < ww.windowStart+uint64(ww.windowLengthInMs)
 }
 
 type LeapArray struct {
@@ -48,24 +48,24 @@ func (la *LeapArray) CurrentWindowWithTime(timeMillis uint64, sw BucketGenerator
 		if old == nil {
 			newWrap := &WindowWrap{
 				windowLengthInMs: la.windowLengthInMs,
-				WindowStart:      windowStart,
-				Value:            sw.newEmptyBucket(windowStart),
+				windowStart:      windowStart,
+				value:            sw.newEmptyBucket(windowStart),
 			}
 			la.mux.Lock()
 			la.array[idx] = newWrap
 			la.mux.Unlock()
 			return la.array[idx], nil
-		} else if windowStart == old.WindowStart {
+		} else if windowStart == old.windowStart {
 			return old, nil
-		} else if windowStart > old.WindowStart {
+		} else if windowStart > old.windowStart {
 			// reset WindowWrap
 			la.mux.Lock()
 			old, _ = sw.resetWindowTo(old, windowStart)
 			la.mux.Unlock()
 			return old, nil
-		} else if windowStart < old.WindowStart {
+		} else if windowStart < old.windowStart {
 			// Should not go through here,
-			return nil, errors.New(fmt.Sprintf("provided time timeMillis=%d is already behind old.WindowStart=%d", windowStart, old.WindowStart))
+			return nil, errors.New(fmt.Sprintf("provided time timeMillis=%d is already behind old.windowStart=%d", windowStart, old.windowStart))
 		}
 	}
 }
@@ -94,16 +94,16 @@ func (la *LeapArray) valuesWithTime(timeMillis uint64) []*WindowWrap {
 			//fmt.Printf("current bucket is nil, index is %d \n", idx)
 			wwp_ = &WindowWrap{
 				windowLengthInMs: 200,
-				WindowStart:      uint64(time.Now().Nanosecond() / 1e6),
-				Value:            newEmptyMetricBucket(),
+				windowStart:      uint64(time.Now().UnixNano() / 1e6),
+				value:            newEmptyMetricBucket(),
 			}
 			wwp = append(wwp, wwp_)
 			continue
 		}
 		ww := &WindowWrap{
 			windowLengthInMs: wwp_.windowLengthInMs,
-			WindowStart:      wwp_.WindowStart,
-			Value:            wwp_.Value,
+			windowStart:      wwp_.windowStart,
+			value:            wwp_.value,
 		}
 		wwp = append(wwp, ww)
 	}
@@ -126,13 +126,17 @@ type SlidingWindow struct {
 	BucketType string
 }
 
-func NewSlidingWindow() *SlidingWindow {
+func NewSlidingWindow(sampleCount uint32, intervalInMs uint32) *SlidingWindow {
+	if intervalInMs%sampleCount != 0 {
+		panic(fmt.Sprintf("invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
+	}
+	winLengthInMs := intervalInMs / sampleCount
 	array_ := make([]*WindowWrap, 5)
 	return &SlidingWindow{
 		data: &LeapArray{
-			windowLengthInMs: 200,
-			sampleCount:      5,
-			intervalInMs:     1000,
+			windowLengthInMs: winLengthInMs,
+			sampleCount:      sampleCount,
+			intervalInMs:     intervalInMs,
 			array:            array_,
 		},
 		BucketType: "metrics",
@@ -144,8 +148,8 @@ func (sw *SlidingWindow) newEmptyBucket(startTime uint64) interface{} {
 }
 
 func (sw *SlidingWindow) resetWindowTo(ww *WindowWrap, startTime uint64) (*WindowWrap, error) {
-	ww.WindowStart = startTime
-	ww.Value = newEmptyMetricBucket()
+	ww.windowStart = startTime
+	ww.value = newEmptyMetricBucket()
 	return ww, nil
 }
 
@@ -156,7 +160,7 @@ func (sw *SlidingWindow) Count(eventType MetricEventType) uint64 {
 	}
 	count := uint64(0)
 	for _, ww := range sw.data.Values() {
-		mb, ok := ww.Value.(MetricBucket)
+		mb, ok := ww.value.(MetricBucket)
 		if !ok {
 			fmt.Println("assert fail")
 			continue
@@ -165,15 +169,15 @@ func (sw *SlidingWindow) Count(eventType MetricEventType) uint64 {
 		var ce error
 		switch eventType {
 		case MetricEventSuccess:
-			cn, ce = mb.Get(MetricEventSuccess)
+			cn = mb.Get(MetricEventSuccess)
 		case MetricEventPass:
-			cn, ce = mb.Get(MetricEventPass)
+			cn = mb.Get(MetricEventPass)
 		case MetricEventError:
-			cn, ce = mb.Get(MetricEventError)
+			cn = mb.Get(MetricEventError)
 		case MetricEventBlock:
-			cn, ce = mb.Get(MetricEventBlock)
+			cn = mb.Get(MetricEventBlock)
 		case MetricEventRt:
-			cn, ce = mb.Get(MetricEventRt)
+			cn = mb.Get(MetricEventRt)
 		default:
 			ce = errors.New("unknown metric type! ")
 		}
@@ -187,12 +191,12 @@ func (sw *SlidingWindow) Count(eventType MetricEventType) uint64 {
 
 func (sw *SlidingWindow) AddCount(eventType MetricEventType, count uint64) {
 	curWindow, err := sw.data.CurrentWindow(sw)
-	if err != nil || curWindow == nil || curWindow.Value == nil {
+	if err != nil || curWindow == nil || curWindow.value == nil {
 		fmt.Println("sliding window fail to record success")
 		return
 	}
 
-	mb, ok := curWindow.Value.(MetricBucket)
+	mb, ok := curWindow.value.(MetricBucket)
 	if !ok {
 		fmt.Println("assert fail")
 		return
@@ -201,17 +205,17 @@ func (sw *SlidingWindow) AddCount(eventType MetricEventType, count uint64) {
 	var ae error
 	switch eventType {
 	case MetricEventSuccess:
-		ae = mb.Add(MetricEventSuccess, count)
+		mb.Add(MetricEventSuccess, count)
 	case MetricEventPass:
-		ae = mb.Add(MetricEventPass, count)
+		mb.Add(MetricEventPass, count)
 	case MetricEventError:
-		ae = mb.Add(MetricEventError, count)
+		mb.Add(MetricEventError, count)
 	case MetricEventBlock:
-		ae = mb.Add(MetricEventBlock, count)
+		mb.Add(MetricEventBlock, count)
 	case MetricEventRt:
-		ae = mb.Add(MetricEventRt, count)
+		mb.Add(MetricEventRt, count)
 	default:
-		ae = errors.New("unknown metric type ")
+		errors.New("unknown metric type ")
 	}
 	if ae != nil {
 		fmt.Println("add success counter fail, reason: ", ae)
@@ -227,12 +231,12 @@ func (sw *SlidingWindow) MaxSuccess() uint64 {
 
 	succ := uint64(0)
 	for _, ww := range sw.data.Values() {
-		mb, ok := ww.Value.(MetricBucket)
+		mb, ok := ww.value.(MetricBucket)
 		if !ok {
 			fmt.Println("assert fail")
 			continue
 		}
-		s, err := mb.Get(MetricEventSuccess)
+		s := mb.Get(MetricEventSuccess)
 		if err != nil {
 			fmt.Println("get success counter fail, reason: ", err)
 		}
@@ -250,12 +254,12 @@ func (sw *SlidingWindow) MinSuccess() uint64 {
 
 	succ := uint64(0)
 	for _, ww := range sw.data.Values() {
-		mb, ok := ww.Value.(MetricBucket)
+		mb, ok := ww.value.(MetricBucket)
 		if !ok {
 			fmt.Println("assert fail")
 			continue
 		}
-		s, err := mb.Get(MetricEventSuccess)
+		s := mb.Get(MetricEventSuccess)
 		if err != nil {
 			fmt.Println("get success counter fail, reason: ", err)
 		}

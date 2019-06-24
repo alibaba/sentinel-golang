@@ -9,7 +9,7 @@ func (uls *UnaryLeapArray) newEmptyBucket(startTime uint64) interface{} {
 }
 
 func (uls *UnaryLeapArray) resetWindowTo(ww *WindowWrap, startTime uint64) (*WindowWrap, error) {
-	ww.WindowStart = startTime
-	ww.Value = uint64(0)
+	ww.windowStart = startTime
+	ww.value = uint64(0)
 	return ww, nil
 }

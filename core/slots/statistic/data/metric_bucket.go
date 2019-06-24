@@ -1,8 +1,8 @@
 package data
 
 import (
-	"errors"
 	"math"
+	"sync/atomic"
 )
 
 type MetricEventType int8
@@ -25,7 +25,7 @@ type MetricBucket struct {
 	minRt   uint64
 }
 
-func (mb *MetricBucket) MetricEvents() []MetricEventType {
+func (mb *MetricBucket) metricEvents() []MetricEventType {
 	met := make([]MetricEventType, 0, metricEventNum)
 	met = append(met, MetricEventPass)
 	met = append(met, MetricEventBlock)
@@ -36,58 +36,57 @@ func (mb *MetricBucket) MetricEvents() []MetricEventType {
 }
 
 func newEmptyMetricBucket() MetricBucket {
-	return MetricBucket{
+	mb := MetricBucket{
 		counter: make([]uint64, metricEventNum, metricEventNum),
 		minRt:   math.MaxUint64,
 	}
+	return mb
 }
 
-func (mb *MetricBucket) Add(event MetricEventType, count uint64) error {
+func (mb *MetricBucket) Add(event MetricEventType, count uint64) {
 	switch event {
 	case MetricEventPass:
-		mb.counter[0] += count
+		atomic.AddUint64(&mb.counter[0], count)
 	case MetricEventBlock:
-		mb.counter[1] += count
+		atomic.AddUint64(&mb.counter[1], count)
 	case MetricEventError:
-		mb.counter[2] += count
+		atomic.AddUint64(&mb.counter[2], count)
 	case MetricEventSuccess:
-		mb.counter[3] += count
+		atomic.AddUint64(&mb.counter[3], count)
 	case MetricEventRt:
-		mb.counter[4] += count
+		atomic.AddUint64(&mb.counter[4], count)
 	default:
-		return errors.New("unknown metric event type, " + string(event))
-	}
-	return nil
-}
-
-func (mb *MetricBucket) Get(event MetricEventType) (uint64, error) {
-	switch event {
-	case MetricEventPass:
-		return mb.counter[0], nil
-	case MetricEventBlock:
-		return mb.counter[1], nil
-	case MetricEventError:
-		return mb.counter[2], nil
-	case MetricEventSuccess:
-		return mb.counter[3], nil
-	case MetricEventRt:
-		return mb.counter[4], nil
-	default:
-		return 0, errors.New("unknown metric event type, " + string(event))
+		panic("unknown metric event type, " + string(event))
 	}
 }
 
-func (mb *MetricBucket) AddRt(rt uint64) error {
-	err := mb.Add(MetricEventRt, rt)
+func (mb *MetricBucket) Get(event MetricEventType) uint64 {
+	switch event {
+	case MetricEventPass:
+		return atomic.LoadUint64(&mb.counter[0])
+	case MetricEventBlock:
+		return atomic.LoadUint64(&mb.counter[1])
+	case MetricEventError:
+		return atomic.LoadUint64(&mb.counter[2])
+	case MetricEventSuccess:
+		return atomic.LoadUint64(&mb.counter[3])
+	case MetricEventRt:
+		return atomic.LoadUint64(&mb.counter[4])
+	default:
+		panic("unknown metric event type, " + string(event))
+	}
+}
+
+func (mb *MetricBucket) AddRt(rt uint64) {
+	mb.Add(MetricEventRt, rt)
 	if rt < mb.minRt {
 		mb.minRt = rt
 	}
-	return err
 }
 
 func (mb *MetricBucket) Reset() {
 	for i := 0; i < metricEventNum; i++ {
-		mb.counter[i] = 0
+		atomic.StoreUint64(&mb.counter[i], 0)
 	}
 	mb.minRt = math.MaxUint64
 }

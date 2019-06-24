@@ -23,10 +23,10 @@ type DefaultNode struct {
 
 func NewDefaultNode(wrapper *ResourceWrapper) *DefaultNode {
 	return &DefaultNode{
-		rollingCounterInSecond: data.NewSlidingWindow(),
-		rollingCounterInMinute: data.NewSlidingWindow(),
+		rollingCounterInSecond: data.NewSlidingWindow(sampleCount_, intervalInMs_),
+		rollingCounterInMinute: data.NewSlidingWindow(sampleCount_, intervalInMs_),
 		currentGoroutineNum:    0,
-		lastFetchTime:          uint64(time.Now().Nanosecond() / (1e6)),
+		lastFetchTime:          uint64(time.Now().UnixNano() / (1e6)),
 		resourceWrapper:        wrapper,
 	}
 }
