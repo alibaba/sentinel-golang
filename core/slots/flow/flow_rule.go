@@ -186,15 +186,15 @@ func generateFlowControl(r *rule) TrafficShapingController {
 	if r.grade_ == FlowGradeQps {
 		switch r.controlBehavior_ {
 		case ControlBehaviorWarmUp:
-			return WarmUpController{}
+			return new(WarmUpController)
 		case ControlBehaviorRateLimiter:
-			return RateLimiterController{}
+			return new(RateLimiterController)
 		case ControlBehaviorWarmUpRateLimiter:
-			return WarmUpRateLimiterController{}
+			return new(WarmUpRateLimiterController)
 		default:
 		}
 	}
-	return DefaultController{}
+	return new(DefaultController)
 }
 
 //
