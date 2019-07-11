@@ -172,7 +172,7 @@ func buildFlowRuleMap(rules []*rule) map[string][]*rule {
 		}
 		r.controller_ = generateFlowControl(r)
 		srcName := r.resource_
-		var slc []*rule = ret[srcName]
+		var slc = ret[srcName]
 		if slc == nil {
 			slc = make([]*rule, 0)
 		}
