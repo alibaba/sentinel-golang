@@ -1,90 +1,63 @@
 package chain
 
 import (
-	"container/list"
-	"context"
-	"fmt"
 	"github.com/sentinel-group/sentinel-golang/core/slots/base"
-	"github.com/sentinel-group/sentinel-golang/core/slots/flow"
-	"github.com/sentinel-group/sentinel-golang/core/slots/statistic"
 )
 
 type SlotChain interface {
-	Slot
+	/**
+	 * Add a processor to the head of this slots slotchain.
+	 *
+	 * @param protocolProcessor processor to be added.
+	 */
 	AddFirst(slot Slot)
+
+	/**
+	 * Add a processor to the tail of this slots slotchain.
+	 *
+	 * @param protocolProcessor processor to be added.
+	 */
 	AddLast(slot Slot)
+
+	// fire to next slot
+	Entry(context *base.Context, resourceWrapper *base.ResourceWrapper, defaultNode *base.DefaultNode, count int, prioritized bool) (*base.TokenResult, error)
+	// fire to next slot
+	Exit(context *base.Context, resourceWrapper *base.ResourceWrapper, count int) error
 }
 
-type DefaultSlotChain struct {
-	slots *list.List
+// implent SlotChain
+type LinkedSlotChain struct {
+	first Slot
+	end   Slot
+}
+
+func NewLinkedSlotChain() *LinkedSlotChain {
+	fs := new(LinkedSlot)
+	return &LinkedSlotChain{first: fs, end: fs}
+}
+
+func (lsc *LinkedSlotChain) AddFirst(slot Slot) {
+	slot.SetNext(lsc.first.GetNext())
+	lsc.first.SetNext(slot)
+	if lsc.end == lsc.first {
+		lsc.end = slot
+	}
+}
+
+func (lsc *LinkedSlotChain) AddLast(slot Slot) {
+	lsc.end.SetNext(slot)
+	lsc.end = slot
+}
+
+func (lsc *LinkedSlotChain) Entry(context *base.Context, resourceWrapper *base.ResourceWrapper, defaultNode *base.DefaultNode, count int, prioritized bool) (*base.TokenResult, error) {
+	return lsc.first.Entry(context, resourceWrapper, defaultNode, count, prioritized)
+}
+
+// 传递进入
+func (lsc *LinkedSlotChain) Exit(context *base.Context, resourceWrapper *base.ResourceWrapper, count int) error {
+	return lsc.first.Exit(context, resourceWrapper, count)
 }
 
 type SlotChainBuilder interface {
 	Build() SlotChain
-}
-
-func NewDefaultSlotChain() *DefaultSlotChain {
-	defaultSlotChain := &DefaultSlotChain{
-		slots: list.New(),
-	}
-	defaultSlotChain.AddLast(&flow.FlowSlot{
-		RuleManager: flow.NewRuleManager(),
-	})
-	defaultSlotChain.AddLast(&statistic.StatisticSlot{})
-	return defaultSlotChain
-}
-
-func (dsc *DefaultSlotChain) AddFirst(slot Slot) {
-	dsc.slots.PushFront(slot)
-}
-
-func (dsc *DefaultSlotChain) AddLast(slot Slot) {
-	dsc.slots.PushBack(slot)
-}
-
-func (dsc *DefaultSlotChain) IsContinue(lastResult base.SlotResult, ctx context.Context) bool {
-	return true
-}
-
-func (dsc *DefaultSlotChain) Entry(ctx context.Context, resourceWrap *base.ResourceWrapper, node *base.DefaultNode, count uint32) base.SlotResult {
-	slotResult := base.SlotResult{
-		Status: base.ResultStatusOk,
-	}
-	for e := dsc.slots.Front(); e != nil; e = e.Next() {
-		slot := e.Value
-		switch slot_ := slot.(type) {
-		case *flow.FlowSlot:
-			if slot_.IsContinue(slotResult, ctx) {
-				slotResult = slot_.Entry(ctx, resourceWrap, node, count)
-			}
-			break
-		case *statistic.StatisticSlot:
-			if slot_.IsContinue(slotResult, ctx) {
-				slotResult = slot_.Entry(ctx, resourceWrap, node, count)
-			}
-			break
-		default:
-			slotResult = base.SlotResult{
-				Status:        base.ResultStatusBlocked,
-				BlockedReason: "Unknown Slot",
-			}
-		}
-	}
-	return slotResult
-}
-
-func (dsc *DefaultSlotChain) Exit(ctx context.Context, resourceWrap *base.ResourceWrapper, count uint32) {
-	for e := dsc.slots.Front(); e != nil; e = e.Next() {
-		slot := e.Value
-		switch slot_ := slot.(type) {
-		case *flow.FlowSlot:
-			slot_.Exit(ctx, resourceWrap, count)
-			break
-		case *statistic.StatisticSlot:
-			slot_.Exit(ctx, resourceWrap, count)
-			break
-		default:
-			fmt.Println("DefaultSlotChain Exit error!")
-		}
-	}
 }

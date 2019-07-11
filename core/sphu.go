@@ -1,43 +1,48 @@
 package core
 
 import (
-	"fmt"
 	"github.com/sentinel-group/sentinel-golang/core/slots/base"
 	"github.com/sentinel-group/sentinel-golang/core/slots/chain"
-	"sync"
+	"github.com/sentinel-group/sentinel-golang/core/slots/flow"
+	"github.com/sentinel-group/sentinel-golang/core/slots/statistic"
 )
 
-var defaultChain *chain.DefaultSlotChain
-var defaultNode *base.DefaultNode
-var resourceWrap *base.ResourceWrapper
-var lock sync.Mutex
-
-func Entry(resource string) error {
-	lock.Lock()
-	if resourceWrap == nil {
-		fmt.Println("default resource chain is nil, init default chain")
-		resourceWrap = &base.ResourceWrapper{
-			ResourceName: resource,
-			ResourceType: base.INBOUND,
-		}
-	}
-	if defaultChain == nil {
-		fmt.Println("default chain is nil, init default chain")
-		defaultChain = chain.NewDefaultSlotChain()
-	}
-	if defaultNode == nil {
-		fmt.Println("default node is nil, init default node")
-		defaultNode = base.NewDefaultNode(resourceWrap)
-	}
-	lock.Unlock()
-	defaultChain.Entry(nil, resourceWrap, defaultNode, 1)
-	return nil
+type DefaultSlotChainBuilder struct {
 }
 
-func Exit(resource string) {
+func (dsc *DefaultSlotChainBuilder) Build() chain.SlotChain {
+	linkedChain := chain.NewLinkedSlotChain()
+	linkedChain.AddFirst(new(flow.FlowSlot))
+	linkedChain.AddFirst(new(statistic.StatisticSlot))
+	// add all slot
+	return linkedChain
+}
+
+func NewDefaultSlotChainBuilder() *DefaultSlotChainBuilder {
+	return &DefaultSlotChainBuilder{}
+}
+
+var defaultChain chain.SlotChain
+var defaultNode *base.DefaultNode
+
+func init() {
+	defaultChain = NewDefaultSlotChainBuilder().Build()
+	defaultNode = base.NewDefaultNode(nil)
+}
+
+func Entry(resource string) (*base.TokenResult, error) {
 	resourceWrap := &base.ResourceWrapper{
 		ResourceName: resource,
 		ResourceType: base.INBOUND,
 	}
-	defaultChain.Exit(nil, resourceWrap, 1)
+
+	return defaultChain.Entry(nil, resourceWrap, defaultNode, 0, false)
+}
+
+func Exit(resource string) error {
+	resourceWrap := &base.ResourceWrapper{
+		ResourceName: resource,
+		ResourceType: base.INBOUND,
+	}
+	return defaultChain.Exit(nil, resourceWrap, 1)
 }

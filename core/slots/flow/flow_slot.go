@@ -1,64 +1,48 @@
 package flow
 
 import (
-	"context"
-	"fmt"
 	"github.com/sentinel-group/sentinel-golang/core/slots/base"
+	"github.com/sentinel-group/sentinel-golang/core/slots/chain"
 )
 
 type FlowSlot struct {
+	chain.LinkedSlot
 	RuleManager *RuleManager
 }
 
-func (fs *FlowSlot) IsContinue(lastResult base.SlotResult, ctx context.Context) bool {
-
-	if lastResult.Status == base.ResultStatusOk {
-		return true
-	}
-	return false
-}
-
-func (fs *FlowSlot) Entry(ctx context.Context, resourceWrap *base.ResourceWrapper, node *base.DefaultNode, count uint32) base.SlotResult {
-	fmt.Println("flowSlot request number is ", node.TotalRequest())
+func (fs *FlowSlot) Entry(ctx *base.Context, resWrapper *base.ResourceWrapper, node *base.DefaultNode, count int, prioritized bool) (*base.TokenResult, error) {
+	// no rule return pass
 	if fs.RuleManager == nil {
-		return base.SlotResult{
-			Status: base.ResultStatusOk,
-		}
+		return fs.FireEntry(ctx, resWrapper, node, count, false)
 	}
-	rules := fs.RuleManager.getRuleBySource(resourceWrap.ResourceName)
+	rules := fs.RuleManager.getRuleBySource(resWrapper.ResourceName)
 	if len(rules) == 0 {
-		return base.SlotResult{
-			Status: base.ResultStatusOk,
-		}
+		return fs.FireEntry(ctx, resWrapper, node, count, false)
 	}
-	success := checkFlow(ctx, resourceWrap, rules, node, count)
+	success := checkFlow(ctx, resWrapper, rules, node, count)
 	if success {
-		return base.SlotResult{
-			Status: base.ResultStatusOk,
-		}
+		return fs.FireEntry(ctx, resWrapper, node, count, false)
 	} else {
-		return base.SlotResult{
-			Status: base.ResultStatusBlocked,
-		}
+		return base.NewSlotResultBlock("FlowSlot"), nil
 	}
 }
 
-func (fs *FlowSlot) Exit(ctx context.Context, resourceWrap *base.ResourceWrapper, count uint32) {
-
+func (fs *FlowSlot) Exit(ctx *base.Context, resourceWrapper *base.ResourceWrapper, count int) error {
+	return fs.FireExit(ctx, resourceWrapper, count)
 }
 
-func checkFlow(ctx context.Context, resourceWrap *base.ResourceWrapper, rules []*rule, node *base.DefaultNode, count uint32) bool {
+func checkFlow(ctx *base.Context, resourceWrap *base.ResourceWrapper, rules []*rule, node *base.DefaultNode, count int) bool {
 	if rules == nil {
 		return true
 	}
 	for _, rule := range rules {
-		if !canPass(ctx, resourceWrap, rule, node, count) {
+		if !canPass(ctx, resourceWrap, rule, node, uint32(count)) {
 			return false
 		}
 	}
 	return true
 }
 
-func canPass(ctx context.Context, resourceWrap *base.ResourceWrapper, rule *rule, node *base.DefaultNode, count uint32) bool {
+func canPass(ctx *base.Context, resourceWrap *base.ResourceWrapper, rule *rule, node *base.DefaultNode, count uint32) bool {
 	return rule.controller_.CanPass(ctx, node, count)
 }
