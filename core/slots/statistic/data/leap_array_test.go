@@ -13,6 +13,7 @@ const (
 	intervalInMs_     uint32 = 1000
 )
 
+//Test sliding windows create windows
 func TestNewWindow(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
 	time := uint64(time2.Now().UnixNano() / 1e6)
@@ -38,6 +39,7 @@ func TestNewWindow(t *testing.T) {
 	}
 }
 
+// Test the logic get window start time.
 func TestLeapArrayWindowStart(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
 	firstTime := uint64(time2.Now().UnixNano() / 1e6)
@@ -55,6 +57,7 @@ func TestLeapArrayWindowStart(t *testing.T) {
 	}
 }
 
+// test sliding window has multi windows
 func TestWindowAfterOneInterval(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
 	firstTime := uint64(time2.Now().UnixNano() / 1e6)
@@ -146,17 +149,16 @@ func TestWindowAfterOneInterval(t *testing.T) {
 }
 
 func TestNTimeMultiGoroutineUpdateEmptyWindow(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		nTestMultiGoroutineUpdateEmptyWindow(t)
+	for i := 0; i < 1000; i++ {
+		_nTestMultiGoroutineUpdateEmptyWindow(t)
 	}
 }
 
-func task(wg *sync.WaitGroup, slidingWindow *SlidingWindow, ti uint64, t *testing.T, ct *uint64, lock *sync.Mutex) {
+func _task(wg *sync.WaitGroup, slidingWindow *SlidingWindow, ti uint64, t *testing.T, ct *uint64) {
 	wr, err := slidingWindow.data.CurrentWindowWithTime(ti, slidingWindow)
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	lock.Lock()
 	mb, ok := wr.value.(MetricBucket)
 	if !ok {
 		t.Errorf("Unexcepted error")
@@ -166,25 +168,23 @@ func task(wg *sync.WaitGroup, slidingWindow *SlidingWindow, ti uint64, t *testin
 	mb.Add(MetricEventSuccess, 1)
 	mb.Add(MetricEventError, 1)
 	atomic.AddUint64(ct, 1)
-	lock.Unlock()
 	wg.Done()
 }
 
-func nTestMultiGoroutineUpdateEmptyWindow(t *testing.T) {
+func _nTestMultiGoroutineUpdateEmptyWindow(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
 	firstTime := uint64(time2.Now().UnixNano() / 1e6)
 
 	const GoroutineNum = 10000
 	wg := &sync.WaitGroup{}
-	lock := &sync.Mutex{}
 	wg.Add(GoroutineNum)
 	st := time2.Now().UnixNano()
-	var ct = uint64(0)
+	var cnt = uint64(0)
 	for i := 0; i < GoroutineNum; i++ {
-		go task(wg, slidingWindow, firstTime, t, &ct, lock)
+		go _task(wg, slidingWindow, firstTime, t, &cnt)
 	}
 	wg.Wait()
-	t.Logf("finish goroutines:  %d", atomic.LoadUint64(&ct))
+	t.Logf("finish goroutines:  %d", atomic.LoadUint64(&cnt))
 	et := time2.Now().UnixNano()
 	dif := et - st
 	t.Logf("finish all goroutines, cost time is %d", dif)

@@ -3,8 +3,9 @@ package data
 import (
 	"errors"
 	"fmt"
+	"github.com/sentinel-group/sentinel-golang/core/util"
 	"math"
-	"sync"
+	"runtime"
 	"time"
 )
 
@@ -22,13 +23,14 @@ func (ww *WindowWrap) isTimeInWindow(timeMillis uint64) bool {
 	return ww.windowStart <= timeMillis && timeMillis < ww.windowStart+uint64(ww.windowLengthInMs)
 }
 
+// The basic data structure of sliding windows
+//
 type LeapArray struct {
 	windowLengthInMs uint32
 	sampleCount      uint32
 	intervalInMs     uint32
-	array            []*WindowWrap //实际保存的数据
-
-	mux sync.Mutex // lock
+	array            []*WindowWrap     //实际保存的数据
+	mux              util.TriableMutex // lock
 }
 
 func (la *LeapArray) CurrentWindow(sw BucketGenerator) (*WindowWrap, error) {
@@ -51,18 +53,26 @@ func (la *LeapArray) CurrentWindowWithTime(timeMillis uint64, sw BucketGenerator
 				windowStart:      windowStart,
 				value:            sw.newEmptyBucket(windowStart),
 			}
+			// must be thread safe,
+			// some extreme condition,may newer override old empty WindowWrap
+			// 使用cas, 确保la.array[idx]更新前是nil
 			la.mux.Lock()
-			la.array[idx] = newWrap
+			if la.array[idx] == nil {
+				la.array[idx] = newWrap
+			}
 			la.mux.Unlock()
 			return la.array[idx], nil
 		} else if windowStart == old.windowStart {
 			return old, nil
 		} else if windowStart > old.windowStart {
 			// reset WindowWrap
-			la.mux.Lock()
-			old, _ = sw.resetWindowTo(old, windowStart)
-			la.mux.Unlock()
-			return old, nil
+			if la.mux.TryLock() {
+				old, _ = sw.resetWindowTo(old, windowStart)
+				la.mux.Unlock()
+				return old, nil
+			} else {
+				runtime.Gosched()
+			}
 		} else if windowStart < old.windowStart {
 			// Should not go through here,
 			return nil, errors.New(fmt.Sprintf("provided time timeMillis=%d is already behind old.windowStart=%d", windowStart, old.windowStart))
@@ -118,9 +128,7 @@ type BucketGenerator interface {
 	resetWindowTo(ww *WindowWrap, startTime uint64) (*WindowWrap, error)
 }
 
-/**
- * The implement of sliding window based on struct MetricBucket
- */
+// The implement of sliding window based on struct LeapArray
 type SlidingWindow struct {
 	data       *LeapArray
 	BucketType string
