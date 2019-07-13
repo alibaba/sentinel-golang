@@ -3,8 +3,8 @@ package base
 import (
 	"github.com/sentinel-group/sentinel-golang/core/node"
 	"github.com/sentinel-group/sentinel-golang/core/slots/statistic/data"
+	"github.com/sentinel-group/sentinel-golang/core/util"
 	"sync/atomic"
-	"time"
 )
 
 const (
@@ -26,7 +26,7 @@ func NewDefaultNode(wrapper *ResourceWrapper) *DefaultNode {
 		rollingCounterInSecond: data.NewSlidingWindow(sampleCount_, intervalInMs_),
 		rollingCounterInMinute: data.NewSlidingWindow(sampleCount_, intervalInMs_),
 		currentGoroutineNum:    0,
-		lastFetchTime:          uint64(time.Now().UnixNano() / (1e6)),
+		lastFetchTime:          util.GetTimeMilli(),
 		resourceWrapper:        wrapper,
 	}
 }

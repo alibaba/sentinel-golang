@@ -16,7 +16,7 @@ const (
 //Test sliding windows create windows
 func TestNewWindow(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	time := uint64(util.GetTimeMilli())
+	time := util.GetTimeMilli()
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(time, slidingWindow)
 	if wr == nil {
@@ -42,7 +42,7 @@ func TestNewWindow(t *testing.T) {
 // Test the logic get window start time.
 func TestLeapArrayWindowStart(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	firstTime := uint64(util.GetTimeMilli())
+	firstTime := util.GetTimeMilli()
 	previousWindowStart := firstTime - firstTime%uint64(windowLengthImMs_)
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)

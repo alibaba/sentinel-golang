@@ -6,7 +6,6 @@ import (
 	"github.com/sentinel-group/sentinel-golang/core/util"
 	"math"
 	"runtime"
-	"time"
 )
 
 type WindowWrap struct {
@@ -34,7 +33,7 @@ type LeapArray struct {
 }
 
 func (la *LeapArray) CurrentWindow(sw BucketGenerator) (*WindowWrap, error) {
-	return la.CurrentWindowWithTime(uint64(time.Now().UnixNano())/1e6, sw)
+	return la.CurrentWindowWithTime(util.GetTimeMilli(), sw)
 }
 
 func (la *LeapArray) CurrentWindowWithTime(timeMillis uint64, sw BucketGenerator) (*WindowWrap, error) {
@@ -91,7 +90,7 @@ func (la *LeapArray) calculateStartTime(timeMillis uint64) uint64 {
 
 //  Get all the bucket in sliding window for current time;
 func (la *LeapArray) Values() []*WindowWrap {
-	return la.valuesWithTime(uint64(time.Now().UnixNano()) / 1e6)
+	return la.valuesWithTime(util.GetTimeMilli())
 }
 
 func (la *LeapArray) valuesWithTime(timeMillis uint64) []*WindowWrap {
@@ -104,7 +103,7 @@ func (la *LeapArray) valuesWithTime(timeMillis uint64) []*WindowWrap {
 			//fmt.Printf("current bucket is nil, index is %d \n", idx)
 			wwp_ = &WindowWrap{
 				windowLengthInMs: 200,
-				windowStart:      uint64(time.Now().UnixNano() / 1e6),
+				windowStart:      util.GetTimeMilli(),
 				value:            newEmptyMetricBucket(),
 			}
 			wwp = append(wwp, wwp_)
@@ -161,7 +160,7 @@ func (sw *SlidingWindow) resetWindowTo(ww *WindowWrap, startTime uint64) (*Windo
 	return ww, nil
 }
 
-func (sw *SlidingWindow) Count(eventType MetricEventType) uint64 {
+func (sw *SlidingWindow) Count(event MetricEventType) uint64 {
 	_, err := sw.data.CurrentWindow(sw)
 	if err != nil {
 		fmt.Println("sliding window fail to record success")
@@ -173,31 +172,12 @@ func (sw *SlidingWindow) Count(eventType MetricEventType) uint64 {
 			fmt.Println("assert fail")
 			continue
 		}
-		cn := uint64(0)
-		var ce error
-		switch eventType {
-		case MetricEventSuccess:
-			cn = mb.Get(MetricEventSuccess)
-		case MetricEventPass:
-			cn = mb.Get(MetricEventPass)
-		case MetricEventError:
-			cn = mb.Get(MetricEventError)
-		case MetricEventBlock:
-			cn = mb.Get(MetricEventBlock)
-		case MetricEventRt:
-			cn = mb.Get(MetricEventRt)
-		default:
-			ce = errors.New("unknown metric type! ")
-		}
-		if ce != nil {
-			fmt.Println("fail to count, reason: ", ce)
-		}
-		count += cn
+		count += mb.Get(event)
 	}
 	return count
 }
 
-func (sw *SlidingWindow) AddCount(eventType MetricEventType, count uint64) {
+func (sw *SlidingWindow) AddCount(event MetricEventType, count uint64) {
 	curWindow, err := sw.data.CurrentWindow(sw)
 	if err != nil || curWindow == nil || curWindow.value == nil {
 		fmt.Println("sliding window fail to record success")
@@ -209,25 +189,7 @@ func (sw *SlidingWindow) AddCount(eventType MetricEventType, count uint64) {
 		fmt.Println("assert fail")
 		return
 	}
-
-	var ae error
-	switch eventType {
-	case MetricEventSuccess:
-		mb.Add(MetricEventSuccess, count)
-	case MetricEventPass:
-		mb.Add(MetricEventPass, count)
-	case MetricEventError:
-		mb.Add(MetricEventError, count)
-	case MetricEventBlock:
-		mb.Add(MetricEventBlock, count)
-	case MetricEventRt:
-		mb.Add(MetricEventRt, count)
-	default:
-		errors.New("unknown metric type ")
-	}
-	if ae != nil {
-		fmt.Println("add success counter fail, reason: ", ae)
-	}
+	mb.Add(event, count)
 }
 
 func (sw *SlidingWindow) MaxSuccess() uint64 {

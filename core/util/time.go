@@ -1,9 +1,3 @@
-/**
- * @description:
- *
- * @author: helloworld
- * @date:2019-07-13
- */
 package util
 
 import "time"
