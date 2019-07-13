@@ -23,14 +23,13 @@ MetricBucket store the metric statistic of each event
 */
 type MetricBucket struct {
 	// value of statistic
-	counters []uint64
+	counters [metricEventNum]uint64
 	minRt    uint64
 }
 
-func newEmptyMetricBucket() MetricBucket {
-	mb := MetricBucket{
-		minRt:    math.MaxUint64,
-		counters: make([]uint64, metricEventNum, metricEventNum),
+func newEmptyMetricBucket() *MetricBucket {
+	mb := &MetricBucket{
+		minRt: math.MaxUint64,
 	}
 	return mb
 }

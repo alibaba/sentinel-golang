@@ -1,10 +1,10 @@
 package data
 
 import (
+	"github.com/sentinel-group/sentinel-golang/core/util"
 	"sync"
 	"sync/atomic"
 	"testing"
-	time2 "time"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 //Test sliding windows create windows
 func TestNewWindow(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	time := uint64(time2.Now().UnixNano() / 1e6)
+	time := uint64(util.GetTimeMilli())
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(time, slidingWindow)
 	if wr == nil {
@@ -42,7 +42,7 @@ func TestNewWindow(t *testing.T) {
 // Test the logic get window start time.
 func TestLeapArrayWindowStart(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	firstTime := uint64(time2.Now().UnixNano() / 1e6)
+	firstTime := uint64(util.GetTimeMilli())
 	previousWindowStart := firstTime - firstTime%uint64(windowLengthImMs_)
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
@@ -60,7 +60,7 @@ func TestLeapArrayWindowStart(t *testing.T) {
 // test sliding window has multi windows
 func TestWindowAfterOneInterval(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	firstTime := uint64(time2.Now().UnixNano() / 1e6)
+	firstTime := util.GetTimeMilli()
 	previousWindowStart := firstTime - firstTime%uint64(windowLengthImMs_)
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
@@ -76,7 +76,7 @@ func TestWindowAfterOneInterval(t *testing.T) {
 	if wr.value == nil {
 		t.Errorf("Unexcepted error")
 	}
-	mb, ok := wr.value.(MetricBucket)
+	mb, ok := wr.value.(*MetricBucket)
 	if !ok {
 		t.Errorf("Unexcepted error")
 	}
@@ -106,7 +106,7 @@ func TestWindowAfterOneInterval(t *testing.T) {
 	if wr2.windowStart != previousWindowStart {
 		t.Errorf("Unexpected error, winStart is not same")
 	}
-	mb2, ok := wr2.value.(MetricBucket)
+	mb2, ok := wr2.value.(*MetricBucket)
 	if !ok {
 		t.Errorf("Unexcepted error")
 	}
@@ -132,7 +132,7 @@ func TestWindowAfterOneInterval(t *testing.T) {
 	if (wr3.windowStart - uint64(windowLengthImMs_)) != previousWindowStart {
 		t.Errorf("Unexpected error")
 	}
-	mb3, ok := wr3.value.(MetricBucket)
+	mb3, ok := wr3.value.(*MetricBucket)
 	if !ok {
 		t.Errorf("Unexcepted error")
 	}
@@ -159,7 +159,7 @@ func _task(wg *sync.WaitGroup, slidingWindow *SlidingWindow, ti uint64, t *testi
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	mb, ok := wr.value.(MetricBucket)
+	mb, ok := wr.value.(*MetricBucket)
 	if !ok {
 		t.Errorf("Unexcepted error")
 	}
@@ -173,26 +173,26 @@ func _task(wg *sync.WaitGroup, slidingWindow *SlidingWindow, ti uint64, t *testi
 
 func _nTestMultiGoroutineUpdateEmptyWindow(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	firstTime := uint64(time2.Now().UnixNano() / 1e6)
+	firstTime := util.GetTimeMilli()
 
-	const GoroutineNum = 10000
+	const GoroutineNum = 1000
 	wg := &sync.WaitGroup{}
 	wg.Add(GoroutineNum)
-	st := time2.Now().UnixNano()
+	st := util.GetTimeNano()
 	var cnt = uint64(0)
 	for i := 0; i < GoroutineNum; i++ {
 		go _task(wg, slidingWindow, firstTime, t, &cnt)
 	}
 	wg.Wait()
 	t.Logf("finish goroutines:  %d", atomic.LoadUint64(&cnt))
-	et := time2.Now().UnixNano()
+	et := util.GetTimeNano()
 	dif := et - st
-	t.Logf("finish all goroutines, cost time is %d", dif)
+	t.Logf("finish all goroutines, cost time is %d ns", dif)
 	wr2, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	mb2, ok := wr2.value.(MetricBucket)
+	mb2, ok := wr2.value.(*MetricBucket)
 	if !ok {
 		t.Errorf("Unexcepted error")
 	}

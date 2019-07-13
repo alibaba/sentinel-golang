@@ -168,7 +168,7 @@ func (sw *SlidingWindow) Count(eventType MetricEventType) uint64 {
 	}
 	count := uint64(0)
 	for _, ww := range sw.data.Values() {
-		mb, ok := ww.value.(MetricBucket)
+		mb, ok := ww.value.(*MetricBucket)
 		if !ok {
 			fmt.Println("assert fail")
 			continue
@@ -204,7 +204,7 @@ func (sw *SlidingWindow) AddCount(eventType MetricEventType, count uint64) {
 		return
 	}
 
-	mb, ok := curWindow.value.(MetricBucket)
+	mb, ok := curWindow.value.(*MetricBucket)
 	if !ok {
 		fmt.Println("assert fail")
 		return
@@ -239,7 +239,7 @@ func (sw *SlidingWindow) MaxSuccess() uint64 {
 
 	succ := uint64(0)
 	for _, ww := range sw.data.Values() {
-		mb, ok := ww.value.(MetricBucket)
+		mb, ok := ww.value.(*MetricBucket)
 		if !ok {
 			fmt.Println("assert fail")
 			continue
@@ -262,7 +262,7 @@ func (sw *SlidingWindow) MinSuccess() uint64 {
 
 	succ := uint64(0)
 	for _, ww := range sw.data.Values() {
-		mb, ok := ww.value.(MetricBucket)
+		mb, ok := ww.value.(*MetricBucket)
 		if !ok {
 			fmt.Println("assert fail")
 			continue
