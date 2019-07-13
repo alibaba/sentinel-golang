@@ -1,6 +1,7 @@
 package data
 
 import (
+	"github.com/sentinel-group/sentinel-golang/core/util"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -16,7 +17,7 @@ const (
 //Test sliding windows create windows
 func TestNewWindow(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	time := uint64(time2.Now().UnixNano() / 1e6)
+	time := util.GetTimeMilli()
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(time, slidingWindow)
 	if wr == nil {
@@ -42,7 +43,7 @@ func TestNewWindow(t *testing.T) {
 // Test the logic get window start time.
 func TestLeapArrayWindowStart(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	firstTime := uint64(time2.Now().UnixNano() / 1e6)
+	firstTime := util.GetTimeMilli()
 	previousWindowStart := firstTime - firstTime%uint64(windowLengthImMs_)
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
@@ -60,7 +61,7 @@ func TestLeapArrayWindowStart(t *testing.T) {
 // test sliding window has multi windows
 func TestWindowAfterOneInterval(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	firstTime := uint64(time2.Now().UnixNano() / 1e6)
+	firstTime := util.GetTimeMilli()
 	previousWindowStart := firstTime - firstTime%uint64(windowLengthImMs_)
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
@@ -173,7 +174,7 @@ func _task(wg *sync.WaitGroup, slidingWindow *SlidingWindow, ti uint64, t *testi
 
 func _nTestMultiGoroutineUpdateEmptyWindow(t *testing.T) {
 	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
-	firstTime := uint64(time2.Now().UnixNano() / 1e6)
+	firstTime := util.GetTimeMilli()
 
 	const GoroutineNum = 10000
 	wg := &sync.WaitGroup{}

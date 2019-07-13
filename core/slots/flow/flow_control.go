@@ -2,6 +2,7 @@ package flow
 
 import (
 	"github.com/sentinel-group/sentinel-golang/core/slots/base"
+	"github.com/sentinel-group/sentinel-golang/core/util"
 	"math"
 	"sync/atomic"
 	"time"
@@ -46,7 +47,7 @@ func (rlc *RateLimiterController) CanPass(ctx *base.Context, node *base.DefaultN
 	}
 	// Reject when count is less or equal than 0.
 	// Otherwise,the costTime will be max of long and waitTime will overflow in some cases.
-	currentTime := int64(time.Now().UnixNano()) / 1e6
+	currentTime := int64(util.GetTimeMilli())
 	// Calculate the interval between every two requests.
 	costTime := int64(math.Round(float64(uint64(acquire)/rlc.count) * 1000))
 	// Expected pass time of this request.
@@ -58,7 +59,7 @@ func (rlc *RateLimiterController) CanPass(ctx *base.Context, node *base.DefaultN
 		return true
 	} else {
 		// Calculate the time to wait.
-		waitTime := costTime + atomic.LoadInt64(&rlc.latestPassedTime) - int64(time.Now().UnixNano())/1e6
+		waitTime := costTime + atomic.LoadInt64(&rlc.latestPassedTime) - int64(util.GetTimeMilli())
 		if waitTime > rlc.maxQueueingTimeMs {
 			atomic.AddInt64(&rlc.latestPassedTime, -costTime)
 			return false

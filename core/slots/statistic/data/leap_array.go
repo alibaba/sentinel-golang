@@ -6,7 +6,6 @@ import (
 	"github.com/sentinel-group/sentinel-golang/core/util"
 	"math"
 	"runtime"
-	"time"
 )
 
 type WindowWrap struct {
@@ -34,7 +33,7 @@ type LeapArray struct {
 }
 
 func (la *LeapArray) CurrentWindow(sw BucketGenerator) (*WindowWrap, error) {
-	return la.CurrentWindowWithTime(uint64(time.Now().UnixNano())/1e6, sw)
+	return la.CurrentWindowWithTime(util.GetTimeMilli(), sw)
 }
 
 func (la *LeapArray) CurrentWindowWithTime(timeMillis uint64, sw BucketGenerator) (*WindowWrap, error) {
@@ -91,7 +90,7 @@ func (la *LeapArray) calculateStartTime(timeMillis uint64) uint64 {
 
 //  Get all the bucket in sliding window for current time;
 func (la *LeapArray) Values() []*WindowWrap {
-	return la.valuesWithTime(uint64(time.Now().UnixNano()) / 1e6)
+	return la.valuesWithTime(util.GetTimeMilli())
 }
 
 func (la *LeapArray) valuesWithTime(timeMillis uint64) []*WindowWrap {
@@ -104,7 +103,7 @@ func (la *LeapArray) valuesWithTime(timeMillis uint64) []*WindowWrap {
 			//fmt.Printf("current bucket is nil, index is %d \n", idx)
 			wwp_ = &WindowWrap{
 				windowLengthInMs: 200,
-				windowStart:      uint64(time.Now().UnixNano() / 1e6),
+				windowStart:      util.GetTimeMilli(),
 				value:            newEmptyMetricBucket(),
 			}
 			wwp = append(wwp, wwp_)
