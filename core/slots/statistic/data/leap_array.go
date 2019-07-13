@@ -55,12 +55,19 @@ func (la *LeapArray) CurrentWindowWithTime(timeMillis uint64, sw BucketGenerator
 			// must be thread safe,
 			// some extreme condition,may newer override old empty WindowWrap
 			// 使用cas, 确保la.array[idx]更新前是nil
-			la.mux.Lock()
-			if la.array[idx] == nil {
+			//la.mux.Lock()
+			//if la.array[idx] == nil {
+			//	la.array[idx] = newWrap
+			//}
+			//la.mux.Unlock()
+			//return la.array[idx], nil
+			if la.mux.TryLock() && la.array[idx] == nil {
 				la.array[idx] = newWrap
+				la.mux.Unlock()
+				return la.array[idx], nil
+			} else {
+				runtime.Gosched()
 			}
-			la.mux.Unlock()
-			return la.array[idx], nil
 		} else if windowStart == old.windowStart {
 			return old, nil
 		} else if windowStart > old.windowStart {
@@ -98,23 +105,23 @@ func (la *LeapArray) valuesWithTime(timeMillis uint64) []*WindowWrap {
 		return nil
 	}
 	wwp := make([]*WindowWrap, 0)
-	for _, wwp_ := range la.array {
-		if wwp_ == nil {
+	for _, wwPtr := range la.array {
+		if wwPtr == nil {
 			//fmt.Printf("current bucket is nil, index is %d \n", idx)
-			wwp_ = &WindowWrap{
+			wwPtr = &WindowWrap{
 				windowLengthInMs: 200,
 				windowStart:      util.GetTimeMilli(),
 				value:            newEmptyMetricBucket(),
 			}
-			wwp = append(wwp, wwp_)
+			wwp = append(wwp, wwPtr)
 			continue
 		}
-		ww := &WindowWrap{
-			windowLengthInMs: wwp_.windowLengthInMs,
-			windowStart:      wwp_.windowStart,
-			value:            wwp_.value,
+		newWW := &WindowWrap{
+			windowLengthInMs: wwPtr.windowLengthInMs,
+			windowStart:      wwPtr.windowStart,
+			value:            wwPtr.value,
 		}
-		wwp = append(wwp, ww)
+		wwp = append(wwp, newWW)
 	}
 	return wwp
 }
@@ -138,13 +145,13 @@ func NewSlidingWindow(sampleCount uint32, intervalInMs uint32) *SlidingWindow {
 		panic(fmt.Sprintf("invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
 	}
 	winLengthInMs := intervalInMs / sampleCount
-	array_ := make([]*WindowWrap, 5)
+	arr := make([]*WindowWrap, 5)
 	return &SlidingWindow{
 		data: &LeapArray{
 			windowLengthInMs: winLengthInMs,
 			sampleCount:      sampleCount,
 			intervalInMs:     intervalInMs,
-			array:            array_,
+			array:            arr,
 		},
 		BucketType: "metrics",
 	}

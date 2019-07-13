@@ -8,7 +8,7 @@ import (
 
 const (
 	LimitAppDefault     = "default"
-	LIMIT_APP_OTHER     = "other"
+	LimitAppOther       = "other"
 	ResourceNameDefault = "default"
 )
 

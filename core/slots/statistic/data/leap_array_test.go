@@ -8,14 +8,14 @@ import (
 )
 
 const (
-	windowLengthImMs_ uint32 = 200
-	sampleCount_      uint32 = 5
-	intervalInMs_     uint32 = 1000
+	WindowLengthImMs uint32 = 200
+	SampleCount      uint32 = 5
+	IntervalInMs     uint32 = 1000
 )
 
 //Test sliding windows create windows
 func TestNewWindow(t *testing.T) {
-	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
+	slidingWindow := NewSlidingWindow(SampleCount, IntervalInMs)
 	time := util.GetTimeMilli()
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(time, slidingWindow)
@@ -25,10 +25,10 @@ func TestNewWindow(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	if wr.windowLengthInMs != windowLengthImMs_ {
+	if wr.windowLengthInMs != WindowLengthImMs {
 		t.Errorf("Unexcepted error, winlength is not same")
 	}
-	if wr.windowStart != (time - time%uint64(windowLengthImMs_)) {
+	if wr.windowStart != (time - time%uint64(WindowLengthImMs)) {
 		t.Errorf("Unexcepted error, winlength is not same")
 	}
 	if wr.value == nil {
@@ -41,15 +41,15 @@ func TestNewWindow(t *testing.T) {
 
 // Test the logic get window start time.
 func TestLeapArrayWindowStart(t *testing.T) {
-	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
+	slidingWindow := NewSlidingWindow(SampleCount, IntervalInMs)
 	firstTime := util.GetTimeMilli()
-	previousWindowStart := firstTime - firstTime%uint64(windowLengthImMs_)
+	previousWindowStart := firstTime - firstTime%uint64(WindowLengthImMs)
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	if wr.windowLengthInMs != windowLengthImMs_ {
+	if wr.windowLengthInMs != WindowLengthImMs {
 		t.Errorf("Unexpected error, winLength is not same")
 	}
 	if wr.windowStart != previousWindowStart {
@@ -59,15 +59,15 @@ func TestLeapArrayWindowStart(t *testing.T) {
 
 // test sliding window has multi windows
 func TestWindowAfterOneInterval(t *testing.T) {
-	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
+	slidingWindow := NewSlidingWindow(SampleCount, IntervalInMs)
 	firstTime := util.GetTimeMilli()
-	previousWindowStart := firstTime - firstTime%uint64(windowLengthImMs_)
+	previousWindowStart := firstTime - firstTime%uint64(WindowLengthImMs)
 
 	wr, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	if wr.windowLengthInMs != windowLengthImMs_ {
+	if wr.windowLengthInMs != WindowLengthImMs {
 		t.Errorf("Unexpected error, winLength is not same")
 	}
 	if wr.windowStart != previousWindowStart {
@@ -98,7 +98,7 @@ func TestWindowAfterOneInterval(t *testing.T) {
 		t.Errorf("Unexcepted error")
 	}
 
-	middleTime := previousWindowStart + uint64(windowLengthImMs_)/2
+	middleTime := previousWindowStart + uint64(WindowLengthImMs)/2
 	wr2, err := slidingWindow.data.CurrentWindowWithTime(middleTime, slidingWindow)
 	if err != nil {
 		t.Errorf("Unexcepted error")
@@ -121,15 +121,15 @@ func TestWindowAfterOneInterval(t *testing.T) {
 		t.Errorf("Unexcepted error")
 	}
 
-	lastTime := middleTime + uint64(windowLengthImMs_)/2
+	lastTime := middleTime + uint64(WindowLengthImMs)/2
 	wr3, err := slidingWindow.data.CurrentWindowWithTime(lastTime, slidingWindow)
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	if wr3.windowLengthInMs != windowLengthImMs_ {
+	if wr3.windowLengthInMs != WindowLengthImMs {
 		t.Errorf("Unexpected error")
 	}
-	if (wr3.windowStart - uint64(windowLengthImMs_)) != previousWindowStart {
+	if (wr3.windowStart - uint64(WindowLengthImMs)) != previousWindowStart {
 		t.Errorf("Unexpected error")
 	}
 	mb3, ok := wr3.value.(*MetricBucket)
@@ -172,22 +172,22 @@ func _task(wg *sync.WaitGroup, slidingWindow *SlidingWindow, ti uint64, t *testi
 }
 
 func _nTestMultiGoroutineUpdateEmptyWindow(t *testing.T) {
-	slidingWindow := NewSlidingWindow(sampleCount_, intervalInMs_)
+	slidingWindow := NewSlidingWindow(SampleCount, IntervalInMs)
 	firstTime := util.GetTimeMilli()
 
 	const GoroutineNum = 1000
 	wg := &sync.WaitGroup{}
 	wg.Add(GoroutineNum)
-	st := util.GetTimeNano()
+	//st := util.GetTimeNano()
 	var cnt = uint64(0)
 	for i := 0; i < GoroutineNum; i++ {
 		go _task(wg, slidingWindow, firstTime, t, &cnt)
 	}
 	wg.Wait()
-	t.Logf("finish goroutines:  %d", atomic.LoadUint64(&cnt))
-	et := util.GetTimeNano()
-	dif := et - st
-	t.Logf("finish all goroutines, cost time is %d ns", dif)
+	//t.Logf("finish goroutines:  %d", atomic.LoadUint64(&cnt))
+	//et := util.GetTimeNano()
+	//dif := et - st
+	//t.Logf("finish all goroutines, cost time is %d ns", dif)
 	wr2, err := slidingWindow.data.CurrentWindowWithTime(firstTime, slidingWindow)
 	if err != nil {
 		t.Errorf("Unexcepted error")
