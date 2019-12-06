@@ -18,7 +18,7 @@ type StatPrepareSlotMock1 struct {
 	Name string
 }
 
-func (spl *StatPrepareSlotMock1) Prepare(ctx *Context) {
+func (spl *StatPrepareSlotMock1) Prepare(ctx *EntryContext) {
 	fmt.Println(spl.Name)
 	return
 }
@@ -70,7 +70,7 @@ type RuleCheckSlotMock1 struct {
 	Name string
 }
 
-func (rcs *RuleCheckSlotMock1) Check(ctx *Context) *RuleCheckResult {
+func (rcs *RuleCheckSlotMock1) Check(ctx *EntryContext) *RuleCheckResult {
 	fmt.Println(rcs.Name)
 	return nil
 }
@@ -121,13 +121,13 @@ type StatSlotMock1 struct {
 	Name string
 }
 
-func (ss *StatSlotMock1) OnEntryPassed(ctx *Context) {
+func (ss *StatSlotMock1) OnEntryPassed(ctx *EntryContext) {
 	fmt.Println(ss.Name)
 }
-func (ss *StatSlotMock1) OnEntryBlocked(ctx *Context, blockEvent RuleBasedCheckBlockedEvent) {
+func (ss *StatSlotMock1) OnEntryBlocked(ctx *EntryContext, blockEvent RuleBasedCheckBlockedEvent) {
 	fmt.Println(ss.Name)
 }
-func (ss *StatSlotMock1) OnCompleted(ctx *Context) {
+func (ss *StatSlotMock1) OnCompleted(ctx *EntryContext) {
 	fmt.Println(ss.Name)
 }
 func TestSlotChain_addStatSlotFirstAndLast(t *testing.T) {
@@ -178,7 +178,7 @@ type ResourceBuilderSlotMock struct {
 	mock.Mock
 }
 
-func (m *ResourceBuilderSlotMock) Prepare(ctx *Context) {
+func (m *ResourceBuilderSlotMock) Prepare(ctx *EntryContext) {
 	m.Called(ctx)
 	return
 }
@@ -187,7 +187,7 @@ type FlowSlotMock struct {
 	mock.Mock
 }
 
-func (m *FlowSlotMock) Check(ctx *Context) *RuleCheckResult {
+func (m *FlowSlotMock) Check(ctx *EntryContext) *RuleCheckResult {
 	arg := m.Called(ctx)
 	return arg.Get(0).(*RuleCheckResult)
 }
@@ -196,7 +196,7 @@ type DegradeSlotMock struct {
 	mock.Mock
 }
 
-func (m *DegradeSlotMock) Check(ctx *Context) *RuleCheckResult {
+func (m *DegradeSlotMock) Check(ctx *EntryContext) *RuleCheckResult {
 	arg := m.Called(ctx)
 	return arg.Get(0).(*RuleCheckResult)
 }
@@ -205,15 +205,15 @@ type StatisticSlotMock struct {
 	mock.Mock
 }
 
-func (m *StatisticSlotMock) OnEntryPassed(ctx *Context) {
+func (m *StatisticSlotMock) OnEntryPassed(ctx *EntryContext) {
 	m.Called(ctx)
 	return
 }
-func (m *StatisticSlotMock) OnEntryBlocked(ctx *Context, blockEvent RuleBasedCheckBlockedEvent) {
+func (m *StatisticSlotMock) OnEntryBlocked(ctx *EntryContext, blockEvent RuleBasedCheckBlockedEvent) {
 	m.Called(ctx, blockEvent)
 	return
 }
-func (m *StatisticSlotMock) OnCompleted(ctx *Context) {
+func (m *StatisticSlotMock) OnCompleted(ctx *EntryContext) {
 	m.Called(ctx)
 	return
 }
@@ -226,9 +226,9 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 		FlowType:     InBound,
 	}
 	ctx.ResWrapper = rw
-	ctx.Node = &NodeMock{}
+	ctx.StatNode = &NodeMock{}
 	ctx.Count = 1
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.Node)
+	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
 
 	rbs := &ResourceBuilderSlotMock{}
 	fsm := &FlowSlotMock{}
@@ -264,9 +264,9 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 		FlowType:     InBound,
 	}
 	ctx.ResWrapper = rw
-	ctx.Node = &NodeMock{}
+	ctx.StatNode = &NodeMock{}
 	ctx.Count = 1
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.Node)
+	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
 
 	rbs := &ResourceBuilderSlotMock{}
 	fsm := &FlowSlotMock{}
@@ -300,7 +300,7 @@ type ResourceBuilderSlotMockPanic struct {
 	mock.Mock
 }
 
-func (m *ResourceBuilderSlotMockPanic) Prepare(ctx *Context) {
+func (m *ResourceBuilderSlotMockPanic) Prepare(ctx *EntryContext) {
 	m.Called(ctx)
 	panic("unexpected panic")
 	return
@@ -314,9 +314,9 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 		FlowType:     InBound,
 	}
 	ctx.ResWrapper = rw
-	ctx.Node = &NodeMock{}
+	ctx.StatNode = &NodeMock{}
 	ctx.Count = 1
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.Node)
+	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
 
 	rbs := &ResourceBuilderSlotMockPanic{}
 	fsm := &FlowSlotMock{}

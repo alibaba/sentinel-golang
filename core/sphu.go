@@ -20,7 +20,7 @@ func Entry3(name string, count uint64, entryType TrafficType) *CtxEntry {
 	ctx := sc.GetContext()
 	ctx.ResWrapper = rw
 	ctx.Count = count
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.Node)
+	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
 
 	sc.entry(ctx)
 

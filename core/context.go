@@ -1,17 +1,17 @@
 package core
 
-type Context struct {
+type EntryContext struct {
 	ResWrapper  *ResourceWrapper
 	Entry       *CtxEntry
-	Node        node
+	StatNode    Node
 	Count       uint64
 	Input       *SentinelInput
 	Output      *SentinelOutput
 	FeatureData map[interface{}]interface{}
 }
 
-func NewContext() *Context {
-	ctx := &Context{
+func NewEntryContext() *EntryContext {
+	ctx := &EntryContext{
 		Input:  newInput(),
 		Output: newOutput(),
 	}
@@ -21,7 +21,7 @@ func NewContext() *Context {
 }
 
 type SentinelInput struct {
-	Context *Context
+	Context *EntryContext
 	// store some values in this context when calling context in slot.
 	data map[interface{}]interface{}
 }
@@ -31,7 +31,7 @@ func newInput() *SentinelInput {
 }
 
 type SentinelOutput struct {
-	Context     *Context
+	Context     *EntryContext
 	CheckResult *RuleCheckResult
 	msg         string
 	// store output data.
@@ -42,12 +42,12 @@ func newOutput() *SentinelOutput {
 	return &SentinelOutput{}
 }
 
-// Reset init Context,
-func (ctx *Context) Reset() {
+// Reset init EntryContext,
+func (ctx *EntryContext) Reset() {
 	// reset all fields of ctx
 	ctx.ResWrapper = nil
 	ctx.Entry = nil
-	ctx.Node = nil
+	ctx.StatNode = nil
 	ctx.Count = 0
 	ctx.Input = nil
 	ctx.Output = nil

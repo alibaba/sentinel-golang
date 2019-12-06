@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/sentinel-group/sentinel-golang/util"
 	"log"
 	"sync"
 )
@@ -14,10 +15,10 @@ var _defaultSlotChain = buildDefaultSlotChain()
 type StatPrepareSlot interface {
 	// Prepare function do some initialization
 	// Such as: init statistic structure、node and etc
-	// The result of preparing would store in Context
+	// The result of preparing would store in EntryContext
 	// All StatPrepareSlots execute in sequence
 	// Prepare function should not throw panic.
-	Prepare(ctx *Context)
+	Prepare(ctx *EntryContext)
 }
 
 // RuleCheckSlot is rule based checking strategy
@@ -27,20 +28,20 @@ type RuleCheckSlot interface {
 	// It can break off the slot pipeline
 	// Each RuleCheckSlot will return check result
 	// The upper logic will control pipeline according to SlotResult.
-	Check(ctx *Context) *RuleCheckResult
+	Check(ctx *EntryContext) *RuleCheckResult
 }
 
 // StatSlot is responsible for counting all custom biz metrics.
 type StatSlot interface {
 	// OnEntryPass function will be invoked when StatPrepareSlots and RuleCheckSlots execute pass
 	// StatSlots will do some statistic logic, such as QPS、log、etc
-	OnEntryPassed(ctx *Context)
+	OnEntryPassed(ctx *EntryContext)
 	// OnEntryBlocked function will be invoked when StatPrepareSlots and RuleCheckSlots execute fail
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	// blockEvent is a enum{RuleBasedCheckBlockedEvent} indicate the block event
-	OnEntryBlocked(ctx *Context, blockEvent RuleBasedCheckBlockedEvent)
+	OnEntryBlocked(ctx *EntryContext, blockEvent RuleBasedCheckBlockedEvent)
 	// onComplete function will be invoked when chain exits.
-	OnCompleted(ctx *Context)
+	OnCompleted(ctx *EntryContext)
 }
 
 // SlotChain hold all system Slots and customized slot.
@@ -49,7 +50,7 @@ type SlotChain struct {
 	statPres   []StatPrepareSlot
 	ruleChecks []RuleCheckSlot
 	stats      []StatSlot
-	// Context Pool, used for reuse Context object
+	// EntryContext Pool, used for reuse EntryContext object
 	pool sync.Pool
 }
 
@@ -60,7 +61,7 @@ func NewSlotChain() *SlotChain {
 		stats:      make([]StatSlot, 0, 5),
 		pool: sync.Pool{
 			New: func() interface{} {
-				return NewContext()
+				return NewEntryContext()
 			},
 		},
 	}
@@ -76,9 +77,9 @@ func GetDefaultSlotChain() *SlotChain {
 	return _defaultSlotChain
 }
 
-// Get a Context from Context pool, if pool doesn't have enough Context then new one.
-func (sc *SlotChain) GetContext() *Context {
-	ctx := sc.pool.Get().(*Context)
+// Get a EntryContext from EntryContext pool, if pool doesn't have enough EntryContext then new one.
+func (sc *SlotChain) GetContext() *EntryContext {
+	ctx := sc.pool.Get().(*EntryContext)
 	defer sc.pool.Put(ctx)
 	return ctx
 }
@@ -115,9 +116,9 @@ func (sc *SlotChain) addStatSlotLast(s StatSlot) {
 }
 
 // The entrance of Slot Chain
-func (sc *SlotChain) entry(ctx *Context) {
+func (sc *SlotChain) entry(ctx *EntryContext) {
 	log.Println("entry slot chain")
-	startTime := GetTimeMilli()
+	startTime := util.CurrentTimeMillis()
 
 	// This should not happen, unless there are errors existing in Sentinel internal.
 	// defer to handle it
@@ -173,15 +174,15 @@ func (sc *SlotChain) entry(ctx *Context) {
 	logAccess(ctx, startTime)
 }
 
-func (sc *SlotChain) exit(ctx *Context) {
+func (sc *SlotChain) exit(ctx *EntryContext) {
 	log.Println("exit slot chain")
-	startTime := GetTimeMilli()
+	startTime := util.CurrentTimeMillis()
 	for _, s := range sc.stats {
 		s.OnCompleted(ctx)
 	}
 	logAccess(ctx, startTime)
 }
 
-func logAccess(ctx *Context, startTime uint64) {
-	log.Printf("start: %d, end: %d, Context info %v \n", startTime, GetTimeMilli(), *ctx)
+func logAccess(ctx *EntryContext, startTime uint64) {
+	log.Printf("start: %d, end: %d, EntryContext info %v \n", startTime, util.CurrentTimeMillis(), *ctx)
 }

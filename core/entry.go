@@ -1,38 +1,25 @@
 package core
 
-// TrafficType describe the traffic type: Inbound or OutBound
-type TrafficType int32
+import "github.com/sentinel-group/sentinel-golang/util"
 
-const (
-	InBound TrafficType = iota
-	OutBound
-)
-
-type ResourceWrapper struct {
-	// global unique resource name
-	ResourceName string
-	// InBound or OutBound
-	FlowType TrafficType
-}
-
-// CtxEntry means Context entry,
+// CtxEntry means EntryContext entry,
 type CtxEntry struct {
 	createTime uint64
 	rs         *ResourceWrapper
 	// one entry with one context
-	ctx *Context
+	ctx *EntryContext
 	// each entry holds a slot chain.
 	// it means this entry will go through the sc
 	sc *SlotChain
 	// caller node
-	originNode node
+	originNode Node
 	// current resource node
-	currentNode node
+	currentNode Node
 }
 
-func NewCtEntry(ctx *Context, rw *ResourceWrapper, sc *SlotChain, cn node) *CtxEntry {
+func NewCtEntry(ctx *EntryContext, rw *ResourceWrapper, sc *SlotChain, cn Node) *CtxEntry {
 	return &CtxEntry{
-		createTime:  GetTimeMilli(),
+		createTime:  util.CurrentTimeMillis(),
 		rs:          rw,
 		ctx:         ctx,
 		sc:          sc,
@@ -48,12 +35,12 @@ func (e *CtxEntry) ExitWithCnt(count int32) {
 	e.exitForContext(e.ctx, count)
 }
 
-func (e *CtxEntry) exitForContext(ctx *Context, count int32) {
+func (e *CtxEntry) exitForContext(ctx *EntryContext, count int32) {
 	if e.sc != nil {
 		e.sc.exit(ctx)
 	}
 }
 
-func (e *CtxEntry) GetCurrentNode() node {
+func (e *CtxEntry) GetCurrentNode() Node {
 	return e.currentNode
 }
