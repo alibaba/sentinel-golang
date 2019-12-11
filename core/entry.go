@@ -17,7 +17,7 @@ type CtxEntry struct {
 	currentNode Node
 }
 
-func NewCtEntry(ctx *EntryContext, rw *ResourceWrapper, sc *SlotChain, cn Node) *CtxEntry {
+func NewCtxEntry(ctx *EntryContext, rw *ResourceWrapper, sc *SlotChain, cn Node) *CtxEntry {
 	return &CtxEntry{
 		createTime:  util.CurrentTimeMillis(),
 		rs:          rw,

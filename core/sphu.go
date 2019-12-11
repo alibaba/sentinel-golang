@@ -1,28 +1,50 @@
 package core
 
-// Name based Entry
-func Entry(name string) *CtxEntry {
-	return Entry2(name, 1)
-}
-
-func Entry2(name string, count uint64) *CtxEntry {
-	return Entry3(name, count, InBound)
-}
-
-func Entry3(name string, count uint64, entryType TrafficType) *CtxEntry {
+func Entry(name string, opts ...EntryOption) *CtxEntry {
+	var options = defaultEntryOptions()
+	for _, opt := range opts {
+		opt(&options)
+	}
 	rw := &ResourceWrapper{
 		ResourceName: name,
-		FlowType:     entryType,
+		FlowType:     options.trafficType,
 	}
 
 	sc := GetDefaultSlotChain()
 	// get context
 	ctx := sc.GetContext()
 	ctx.ResWrapper = rw
-	ctx.Count = count
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
+	ctx.Count = options.count
+	ctx.Entry = NewCtxEntry(ctx, rw, sc, ctx.StatNode)
 
 	sc.entry(ctx)
 
 	return ctx.Entry
+}
+
+type (
+	EntryOptions struct {
+		count uint64
+		trafficType TrafficType
+	}
+	EntryOption func(options *EntryOptions)
+)
+
+func defaultEntryOptions() EntryOptions {
+	return EntryOptions{
+		count:       1,
+		trafficType: InBound,
+	}
+}
+
+func WithCount(count uint64) EntryOption {
+	return func(options *EntryOptions) {
+		options.count = count
+	}
+}
+
+func WithTrafficType(trafficType TrafficType) EntryOption {
+	return func(options *EntryOptions) {
+		options.trafficType = trafficType
+	}
 }
