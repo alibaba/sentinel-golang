@@ -14,7 +14,7 @@ func InitDefaultLoggerToConsole() {
 
 // outputFile is the full path(absolute path)
 func NewFileLogger(outputFile, prefix string, flag int) *log.Logger {
-	//get file info
+	// get file info
 	var logFile *os.File
 	_, err := os.Stat(outputFile)
 	if err == nil {

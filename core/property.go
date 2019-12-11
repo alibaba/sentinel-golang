@@ -1,6 +1,8 @@
 package core
 
-import "golang.org/x/sync/errgroup"
+import (
+	"go.uber.org/multierr"
+)
 
 // Listener
 type Listener interface {
@@ -16,24 +18,18 @@ func NewDynamicSentinelProperty() *DynamicSentinelProperty {
 	return &DynamicSentinelProperty{listeners:make([]Listener, 0)}
 }
 
-func (dsp DynamicSentinelProperty) UpdateValue(data []byte) error {
-	var eg errgroup.Group
+func (dsp DynamicSentinelProperty) UpdateValue(data []byte) (err error) {
 	for _, listener := range dsp.listeners {
-		eg.Go(func() error {
-			return listener.ConfigUpdate(data)
-		})
+		err = multierr.Append(err, listener.ConfigUpdate(data))
 	}
-	return eg.Wait()
+	return
 }
 
-func (dsp DynamicSentinelProperty) SetValue(data []byte) error {
-	var eg errgroup.Group
+func (dsp DynamicSentinelProperty) SetValue(data []byte) (err error) {
 	for _, listener := range dsp.listeners {
-		eg.Go(func() error {
-			return listener.ConfigLoad(data)
-		})
+		err = multierr.Append(err, listener.ConfigLoad(data))
 	}
-	return eg.Wait()
+	return
 }
 
 func (dsp *DynamicSentinelProperty) AddListener(listener Listener) {
