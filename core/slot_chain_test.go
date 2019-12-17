@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/sentinel-group/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"reflect"
@@ -11,7 +12,7 @@ import (
 )
 
 func init() {
-	InitDefaultLoggerToConsole()
+	util.InitDefaultLoggerToConsole()
 }
 
 type StatPrepareSlotMock1 struct {
