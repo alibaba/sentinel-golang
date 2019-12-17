@@ -2,13 +2,13 @@ package core
 
 import (
 	"github.com/sentinel-group/sentinel-golang/util"
-	"log"
 	"sync"
 )
 
 // _defaultSlotChain is a default slot chain built by framework
 // _defaultSlotChain is global unique chain
 var _defaultSlotChain = buildDefaultSlotChain()
+var logger = util.GetDefaultLogger()
 
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on
@@ -117,20 +117,20 @@ func (sc *SlotChain) addStatSlotLast(s StatSlot) {
 
 // The entrance of Slot Chain
 func (sc *SlotChain) entry(ctx *EntryContext) {
-	log.Println("entry slot chain")
+	logger.Debugln("entry slot chain")
 	startTime := util.CurrentTimeMillis()
 
 	// This should not happen, unless there are errors existing in Sentinel internal.
 	// defer to handle it
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("unknown panic in SlotChain, err: %+v \n", err)
+			logger.Panicf("unknown panic in SlotChain, err: %+v \n", err)
 			return
 		}
 	}()
 
 	// execute prepare slot
-	log.Println("execute prepare slot")
+	logger.Debugln("execute prepare slot")
 	sps := sc.statPres
 	if len(sps) > 0 {
 		for _, s := range sps {
@@ -139,7 +139,7 @@ func (sc *SlotChain) entry(ctx *EntryContext) {
 	}
 
 	// execute rule based checking slot
-	log.Println("execute rule based checking slot")
+	logger.Debugln("execute rule based checking slot")
 	rcs := sc.ruleChecks
 	ruleCheckRet := NewSlotResultPass()
 	if len(rcs) > 0 {
@@ -150,7 +150,7 @@ func (sc *SlotChain) entry(ctx *EntryContext) {
 				continue
 			}
 			// block or other logic
-			log.Printf("[%v] check fail, reason is %s \n", s, sr.toString())
+			logger.Warningf("[%v] check fail, reason is %s \n", s, sr.toString())
 			ruleCheckRet.Status = sr.Status
 			ruleCheckRet.BlockedMsg = sr.BlockedMsg
 			ruleCheckRet.BlockedEvent = sr.BlockedEvent
@@ -159,7 +159,7 @@ func (sc *SlotChain) entry(ctx *EntryContext) {
 	}
 
 	// execute statistic slot
-	log.Println("execute statistic slot")
+	logger.Debugln("execute statistic slot")
 	ss := sc.stats
 	if len(ss) > 0 {
 		for _, s := range ss {
@@ -175,7 +175,7 @@ func (sc *SlotChain) entry(ctx *EntryContext) {
 }
 
 func (sc *SlotChain) exit(ctx *EntryContext) {
-	log.Println("exit slot chain")
+	logger.Debugln("exit slot chain")
 	startTime := util.CurrentTimeMillis()
 	for _, s := range sc.stats {
 		s.OnCompleted(ctx)
@@ -184,5 +184,5 @@ func (sc *SlotChain) exit(ctx *EntryContext) {
 }
 
 func logAccess(ctx *EntryContext, startTime uint64) {
-	log.Printf("start: %d, end: %d, EntryContext info %v \n", startTime, util.CurrentTimeMillis(), *ctx)
+	logger.Debugf("start: %d, end: %d, EntryContext info %v \n", startTime, util.CurrentTimeMillis(), *ctx)
 }
