@@ -1,55 +1,65 @@
 package core
 
 type EntryContext struct {
-	ResWrapper  *ResourceWrapper
-	Entry       *CtxEntry
-	StatNode    Node
-	Count       uint64
-	Input       *SentinelInput
-	Output      *SentinelOutput
-	FeatureData map[interface{}]interface{}
+	// Use to calculate RT
+	startTime uint64
+
+	Resource *ResourceWrapper
+	StatNode StatNode
+
+	Input  *SentinelInput
+	Output *SentinelOutput
 }
 
-func NewEntryContext() *EntryContext {
-	ctx := &EntryContext{
-		Input:  newInput(),
-		Output: newOutput(),
+func (ctx *EntryContext) StartTime() uint64 {
+	return ctx.startTime
+}
+
+func (ctx *EntryContext) IsBlocked() bool {
+	if ctx.Output.LastResult == nil {
+		return false
 	}
-	ctx.Input.Context = ctx
-	ctx.Output.Context = ctx
+	return ctx.Output.LastResult.IsBlocked()
+}
+
+func NewEmptyEntryContext() *EntryContext {
+	ctx := &EntryContext{
+		Input:  nil,
+		Output: newEmptyOutput(),
+	}
 	return ctx
 }
 
 type SentinelInput struct {
-	Context *EntryContext
+	AcquireCount uint32
+	Flag         int32
+	Args         []interface{}
+
 	// store some values in this context when calling context in slot.
 	data map[interface{}]interface{}
 }
 
-func newInput() *SentinelInput {
+func newEmptyInput() *SentinelInput {
 	return &SentinelInput{}
 }
 
 type SentinelOutput struct {
-	Context     *EntryContext
-	CheckResult *RuleCheckResult
-	msg         string
+	LastResult *TokenResult
+
 	// store output data.
 	data map[interface{}]interface{}
 }
 
-func newOutput() *SentinelOutput {
+func newEmptyOutput() *SentinelOutput {
 	return &SentinelOutput{}
 }
 
 // Reset init EntryContext,
 func (ctx *EntryContext) Reset() {
 	// reset all fields of ctx
-	ctx.ResWrapper = nil
-	ctx.Entry = nil
+	ctx.startTime = 0
+	ctx.Resource = nil
 	ctx.StatNode = nil
-	ctx.Count = 0
 	ctx.Input = nil
-	ctx.Output = nil
-	ctx.FeatureData = nil
+	ctx.Output = newEmptyOutput()
 }

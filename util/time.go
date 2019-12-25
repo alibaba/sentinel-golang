@@ -5,12 +5,17 @@ import (
 )
 
 const (
-	DateFormat         = "2006-01-02 15:04:05"
+	TimeFormat         = "2006-01-02 15:04:05"
+	DateFormat         = "2006-01-02"
 	UnixTimeUnitOffset = uint64(time.Millisecond / time.Nanosecond)
 )
 
 func FormatTimeMillis(ts uint64) string {
-	return time.Unix(0, int64(ts*UnixTimeUnitOffset)).Format(DateFormat)
+	return time.Unix(0, int64(ts*UnixTimeUnitOffset)).Format(TimeFormat)
+}
+
+func FormatDate(tsMillis uint64) string {
+	return time.Unix(0, int64(tsMillis*UnixTimeUnitOffset)).Format(DateFormat)
 }
 
 // Returns the current Unix timestamp in milliseconds.

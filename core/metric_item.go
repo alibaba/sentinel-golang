@@ -1,4 +1,4 @@
-package statistic
+package core
 
 import (
 	"errors"
@@ -23,6 +23,10 @@ type MetricItem struct {
 	AvgRt           uint64
 	OccupiedPassQps uint64
 	Concurrency     uint32
+}
+
+type MetricItemRetriever interface {
+	MetricsOnCondition(predicate TimePredicate) []*MetricItem
 }
 
 func (m *MetricItem) ToFatString() (string, error) {
@@ -67,6 +71,7 @@ func MetricItemFromFatString(line string) (*MetricItem, error) {
 		return nil, err
 	}
 	item.Timestamp = ts
+	item.Resource = arr[2]
 	p, err := strconv.ParseUint(arr[3], 10, 64)
 	if err != nil {
 		return nil, err
