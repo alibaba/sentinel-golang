@@ -4,47 +4,67 @@ import (
 	"fmt"
 )
 
-type RuleBasedCheckBlockedEvent int8
+type BlockType int32
 
 const (
-	UnknownEvent RuleBasedCheckBlockedEvent = iota
+	BlockTypeUnknown         BlockType = 0
+	BlockTypeFlow            BlockType = 1
+	BlockTypeCircuitBreaking BlockType = 2
 )
 
-type SlotResultStatus int8
+type TokenResultStatus int32
 
 const (
-	ResultStatusPass SlotResultStatus = iota
+	ResultStatusPass TokenResultStatus = iota
 	ResultStatusBlocked
+	ResultStatusShouldWait
 )
 
-type RuleCheckResult struct {
-	Status       SlotResultStatus
-	BlockedEvent RuleBasedCheckBlockedEvent
-	BlockedMsg   string
+type TokenResult struct {
+	status TokenResultStatus
+
+	blockErr *BlockError
+	waitMs   uint64
 }
 
-func (r *RuleCheckResult) status() string {
-	if r.Status == ResultStatusPass {
-		return "ResultStatusPass"
-	} else if r.Status == ResultStatusBlocked {
-		return "ResultStatusBlocked"
+func (r *TokenResult) IsBlocked() bool {
+	return r.status == ResultStatusBlocked
+}
+
+func (r *TokenResult) Status() TokenResultStatus {
+	return r.status
+}
+
+func (r *TokenResult) BlockError() *BlockError {
+	return r.blockErr
+}
+
+func (r *TokenResult) WaitMs() uint64 {
+	return r.waitMs
+}
+
+func (r *TokenResult) String() string {
+	var blockMsg string
+	if r.blockErr == nil {
+		blockMsg = "none"
 	} else {
-		return "Unknown"
+		blockMsg = r.blockErr.Error()
+	}
+	return fmt.Sprintf("TokenResult{status=%d, blockErr=%s, waitMs=%d}", r.status, blockMsg, r.waitMs)
+}
+
+func NewTokenResultPass() *TokenResult {
+	return &TokenResult{status: ResultStatusPass, waitMs: 0}
+}
+
+func NewTokenResultBlocked(blockType BlockType, blockMsg string) *TokenResult {
+	return &TokenResult{
+		status:   ResultStatusBlocked,
+		blockErr: NewBlockError(blockType, blockMsg),
+		waitMs:   0,
 	}
 }
 
-func (r *RuleCheckResult) toString() string {
-	return fmt.Sprintf("check result:%s; BlockedEvent is:%v; BlockedMsg is:%s;", r.status(), r.BlockedEvent, r.BlockedMsg)
-}
-
-func NewSlotResultPass() *RuleCheckResult {
-	return &RuleCheckResult{Status: ResultStatusPass}
-}
-
-func NewSlotResultBlocked(blockEvent RuleBasedCheckBlockedEvent, blockReason string) *RuleCheckResult {
-	return &RuleCheckResult{
-		Status:       ResultStatusBlocked,
-		BlockedEvent: blockEvent,
-		BlockedMsg:   blockReason,
-	}
+func NewTokenResultShouldWait(waitMs uint64) *TokenResult {
+	return &TokenResult{status: ResultStatusShouldWait, waitMs: waitMs}
 }

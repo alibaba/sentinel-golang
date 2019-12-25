@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/sentinel-group/sentinel-golang/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"reflect"
@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	util.InitDefaultLoggerToConsole()
+	log.InitDefaultLoggerToConsole()
 }
 
 type StatPrepareSlotMock1 struct {
@@ -27,27 +27,27 @@ func (spl *StatPrepareSlotMock1) Prepare(ctx *EntryContext) {
 func TestSlotChain_addStatPrepareSlotFirstAndLast(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
-		sc.addStatPrepareSlotFirst(&StatPrepareSlotMock1{
+		sc.AddStatPrepareSlotFirst(&StatPrepareSlotMock1{
 			Name: "mock2" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.addStatPrepareSlotFirst(&StatPrepareSlotMock1{
+		sc.AddStatPrepareSlotFirst(&StatPrepareSlotMock1{
 			Name: "mock1" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.addStatPrepareSlotLast(&StatPrepareSlotMock1{
+		sc.AddStatPrepareSlotLast(&StatPrepareSlotMock1{
 			Name: "mock3" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.addStatPrepareSlotFirst(&StatPrepareSlotMock1{
+		sc.AddStatPrepareSlotFirst(&StatPrepareSlotMock1{
 			Name: "mock" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.addStatPrepareSlotLast(&StatPrepareSlotMock1{
+		sc.AddStatPrepareSlotLast(&StatPrepareSlotMock1{
 			Name: "mock4" + strconv.Itoa(i),
 		})
 	}
@@ -71,34 +71,34 @@ type RuleCheckSlotMock1 struct {
 	Name string
 }
 
-func (rcs *RuleCheckSlotMock1) Check(ctx *EntryContext) *RuleCheckResult {
+func (rcs *RuleCheckSlotMock1) Check(ctx *EntryContext) *TokenResult {
 	fmt.Println(rcs.Name)
 	return nil
 }
 func TestSlotChain_addRuleCheckSlotFirstAndLast(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
-		sc.addRuleCheckSlotFirst(&RuleCheckSlotMock1{
+		sc.AddRuleCheckSlotFirst(&RuleCheckSlotMock1{
 			Name: "mock2" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.addRuleCheckSlotFirst(&RuleCheckSlotMock1{
+		sc.AddRuleCheckSlotFirst(&RuleCheckSlotMock1{
 			Name: "mock1" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.addRuleCheckSlotLast(&RuleCheckSlotMock1{
+		sc.AddRuleCheckSlotLast(&RuleCheckSlotMock1{
 			Name: "mock3" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.addRuleCheckSlotFirst(&RuleCheckSlotMock1{
+		sc.AddRuleCheckSlotFirst(&RuleCheckSlotMock1{
 			Name: "mock" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.addRuleCheckSlotLast(&RuleCheckSlotMock1{
+		sc.AddRuleCheckSlotLast(&RuleCheckSlotMock1{
 			Name: "mock4" + strconv.Itoa(i),
 		})
 	}
@@ -125,8 +125,8 @@ type StatSlotMock1 struct {
 func (ss *StatSlotMock1) OnEntryPassed(ctx *EntryContext) {
 	fmt.Println(ss.Name)
 }
-func (ss *StatSlotMock1) OnEntryBlocked(ctx *EntryContext, blockEvent RuleBasedCheckBlockedEvent) {
-	fmt.Println(ss.Name)
+func (ss *StatSlotMock1) OnEntryBlocked(ctx *EntryContext, blockError *BlockError) {
+	fmt.Printf("%s blocked: %v\n", ss.Name, blockError)
 }
 func (ss *StatSlotMock1) OnCompleted(ctx *EntryContext) {
 	fmt.Println(ss.Name)
@@ -134,27 +134,27 @@ func (ss *StatSlotMock1) OnCompleted(ctx *EntryContext) {
 func TestSlotChain_addStatSlotFirstAndLast(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
-		sc.addStatSlotFirst(&StatSlotMock1{
+		sc.AddStatSlotFirst(&StatSlotMock1{
 			Name: "mock2" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.addStatSlotFirst(&StatSlotMock1{
+		sc.AddStatSlotFirst(&StatSlotMock1{
 			Name: "mock1" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.addStatSlotLast(&StatSlotMock1{
+		sc.AddStatSlotLast(&StatSlotMock1{
 			Name: "mock3" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.addStatSlotFirst(&StatSlotMock1{
+		sc.AddStatSlotFirst(&StatSlotMock1{
 			Name: "mock" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.addStatSlotLast(&StatSlotMock1{
+		sc.AddStatSlotLast(&StatSlotMock1{
 			Name: "mock4" + strconv.Itoa(i),
 		})
 	}
@@ -175,83 +175,87 @@ func TestSlotChain_addStatSlotFirstAndLast(t *testing.T) {
 	}
 }
 
-type ResourceBuilderSlotMock struct {
+type prepareSlotMock struct {
 	mock.Mock
 }
 
-func (m *ResourceBuilderSlotMock) Prepare(ctx *EntryContext) {
+func (m *prepareSlotMock) Prepare(ctx *EntryContext) {
 	m.Called(ctx)
 	return
 }
 
-type FlowSlotMock struct {
+type mockRuleCheckSlot1 struct {
 	mock.Mock
 }
 
-func (m *FlowSlotMock) Check(ctx *EntryContext) *RuleCheckResult {
+func (m *mockRuleCheckSlot1) Check(ctx *EntryContext) *TokenResult {
 	arg := m.Called(ctx)
-	return arg.Get(0).(*RuleCheckResult)
+	return arg.Get(0).(*TokenResult)
 }
 
-type DegradeSlotMock struct {
+type mockRuleCheckSlot2 struct {
 	mock.Mock
 }
 
-func (m *DegradeSlotMock) Check(ctx *EntryContext) *RuleCheckResult {
+func (m *mockRuleCheckSlot2) Check(ctx *EntryContext) *TokenResult {
 	arg := m.Called(ctx)
-	return arg.Get(0).(*RuleCheckResult)
+	return arg.Get(0).(*TokenResult)
 }
 
-type StatisticSlotMock struct {
+type statisticSlotMock struct {
 	mock.Mock
 }
 
-func (m *StatisticSlotMock) OnEntryPassed(ctx *EntryContext) {
+func (m *statisticSlotMock) OnEntryPassed(ctx *EntryContext) {
 	m.Called(ctx)
 	return
 }
-func (m *StatisticSlotMock) OnEntryBlocked(ctx *EntryContext, blockEvent RuleBasedCheckBlockedEvent) {
-	m.Called(ctx, blockEvent)
+func (m *statisticSlotMock) OnEntryBlocked(ctx *EntryContext, blockError *BlockError) {
+	m.Called(ctx, blockError)
 	return
 }
-func (m *StatisticSlotMock) OnCompleted(ctx *EntryContext) {
+func (m *statisticSlotMock) OnCompleted(ctx *EntryContext) {
 	m.Called(ctx)
 	return
 }
 
 func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 	sc := NewSlotChain()
-	ctx := sc.GetContext()
-	rw := &ResourceWrapper{
-		ResourceName: "abc",
-		FlowType:     InBound,
-	}
-	ctx.ResWrapper = rw
+	ctx := sc.GetPooledContext()
+	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
+	ctx.Resource = rw
 	ctx.StatNode = &NodeMock{}
-	ctx.Count = 1
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
+	ctx.Input = &SentinelInput{
+		AcquireCount: 1,
+		Flag:         0,
+		Args:         nil,
+		data:         nil,
+	}
 
-	rbs := &ResourceBuilderSlotMock{}
-	fsm := &FlowSlotMock{}
-	dsm := &DegradeSlotMock{}
-	ssm := &StatisticSlotMock{}
-	sc.addStatPrepareSlotFirst(rbs)
-	sc.addRuleCheckSlotFirst(fsm)
-	sc.addRuleCheckSlotFirst(dsm)
-	sc.addStatSlotFirst(ssm)
+	ps1 := &prepareSlotMock{}
+	rcs1 := &mockRuleCheckSlot1{}
+	rcs2 := &mockRuleCheckSlot2{}
+	ssm := &statisticSlotMock{}
+	sc.AddStatPrepareSlotFirst(ps1)
+	sc.AddRuleCheckSlotFirst(rcs1)
+	sc.AddRuleCheckSlotFirst(rcs2)
+	sc.AddStatSlotFirst(ssm)
 
-	rbs.On("Prepare", mock.Anything).Return()
-	fsm.On("Check", mock.Anything).Return(NewSlotResultPass())
-	dsm.On("Check", mock.Anything).Return(NewSlotResultPass())
+	ps1.On("Prepare", mock.Anything).Return()
+	rcs1.On("Check", mock.Anything).Return(NewTokenResultPass())
+	rcs2.On("Check", mock.Anything).Return(NewTokenResultPass())
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
 
-	sc.entry(ctx)
-	time.Sleep(time.Second * 1)
+	r := sc.Entry(ctx)
+	assert.Equal(t, ResultStatusPass, r.status, "expected to pass but actually blocked")
+	time.Sleep(time.Millisecond * 100)
+
 	sc.exit(ctx)
-	rbs.AssertNumberOfCalls(t, "Prepare", 1)
-	fsm.AssertNumberOfCalls(t, "Check", 1)
-	dsm.AssertNumberOfCalls(t, "Check", 1)
+
+	ps1.AssertNumberOfCalls(t, "Prepare", 1)
+	rcs1.AssertNumberOfCalls(t, "Check", 1)
+	rcs2.AssertNumberOfCalls(t, "Check", 1)
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 1)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 0)
 	ssm.AssertNumberOfCalls(t, "OnCompleted", 1)
@@ -259,34 +263,41 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 
 func TestSlotChain_Entry_Block(t *testing.T) {
 	sc := NewSlotChain()
-	ctx := sc.GetContext()
-	rw := &ResourceWrapper{
-		ResourceName: "abc",
-		FlowType:     InBound,
-	}
-	ctx.ResWrapper = rw
+	ctx := sc.GetPooledContext()
+	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
+	ctx.Resource = rw
 	ctx.StatNode = &NodeMock{}
-	ctx.Count = 1
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
+	ctx.Input = &SentinelInput{
+		AcquireCount: 1,
+		Flag:         0,
+		Args:         nil,
+		data:         nil,
+	}
 
-	rbs := &ResourceBuilderSlotMock{}
-	fsm := &FlowSlotMock{}
-	dsm := &DegradeSlotMock{}
-	ssm := &StatisticSlotMock{}
-	sc.addStatPrepareSlotFirst(rbs)
-	sc.addRuleCheckSlotFirst(fsm)
-	sc.addRuleCheckSlotLast(dsm)
-	sc.addStatSlotFirst(ssm)
+	rbs := &prepareSlotMock{}
+	fsm := &mockRuleCheckSlot1{}
+	dsm := &mockRuleCheckSlot2{}
+	ssm := &statisticSlotMock{}
+	sc.AddStatPrepareSlotFirst(rbs)
+	sc.AddRuleCheckSlotFirst(fsm)
+	sc.AddRuleCheckSlotLast(dsm)
+	sc.AddStatSlotFirst(ssm)
+
+	blockType := BlockTypeFlow
 
 	rbs.On("Prepare", mock.Anything).Return()
-	fsm.On("Check", mock.Anything).Return(NewSlotResultPass())
-	dsm.On("Check", mock.Anything).Return(NewSlotResultBlocked(UnknownEvent, "UnknownEvent"))
+	fsm.On("Check", mock.Anything).Return(NewTokenResultPass())
+	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(blockType, "Unknown"))
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
 
-	sc.entry(ctx)
-	time.Sleep(time.Second * 1)
+	r := sc.Entry(ctx)
+	assert.True(t, r.IsBlocked(), "expected to be blocked but actually passed")
+	if r.blockErr == nil || r.blockErr.blockType != blockType {
+		t.Fatalf("invalid block error: expected blockType is %v", blockType)
+		return
+	}
 	sc.exit(ctx)
 
 	rbs.AssertNumberOfCalls(t, "Prepare", 1)
@@ -297,11 +308,11 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	ssm.AssertNumberOfCalls(t, "OnCompleted", 1)
 }
 
-type ResourceBuilderSlotMockPanic struct {
+type badPrepareSlotMock struct {
 	mock.Mock
 }
 
-func (m *ResourceBuilderSlotMockPanic) Prepare(ctx *EntryContext) {
+func (m *badPrepareSlotMock) Prepare(ctx *EntryContext) {
 	m.Called(ctx)
 	panic("unexpected panic")
 	return
@@ -309,40 +320,39 @@ func (m *ResourceBuilderSlotMockPanic) Prepare(ctx *EntryContext) {
 
 func TestSlotChain_Entry_With_Panic(t *testing.T) {
 	sc := NewSlotChain()
-	ctx := sc.GetContext()
-	rw := &ResourceWrapper{
-		ResourceName: "abc",
-		FlowType:     InBound,
-	}
-	ctx.ResWrapper = rw
+	ctx := sc.GetPooledContext()
+	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
+	ctx.Resource = rw
 	ctx.StatNode = &NodeMock{}
-	ctx.Count = 1
-	ctx.Entry = NewCtEntry(ctx, rw, sc, ctx.StatNode)
+	ctx.Input = &SentinelInput{
+		AcquireCount: 1,
+		Flag:         0,
+		Args:         nil,
+		data:         nil,
+	}
 
-	rbs := &ResourceBuilderSlotMockPanic{}
-	fsm := &FlowSlotMock{}
-	dsm := &DegradeSlotMock{}
-	ssm := &StatisticSlotMock{}
-	sc.addStatPrepareSlotFirst(rbs)
-	sc.addRuleCheckSlotFirst(fsm)
-	sc.addRuleCheckSlotLast(dsm)
-	sc.addStatSlotFirst(ssm)
+	rbs := &badPrepareSlotMock{}
+	fsm := &mockRuleCheckSlot1{}
+	dsm := &mockRuleCheckSlot2{}
+	ssm := &statisticSlotMock{}
+	sc.AddStatPrepareSlotFirst(rbs)
+	sc.AddRuleCheckSlotFirst(fsm)
+	sc.AddRuleCheckSlotLast(dsm)
+	sc.AddStatSlotFirst(ssm)
 
 	rbs.On("Prepare", mock.Anything).Return()
-	fsm.On("Check", mock.Anything).Return(NewSlotResultPass())
-	dsm.On("Check", mock.Anything).Return(NewSlotResultBlocked(UnknownEvent, "UnknownEvent"))
+	fsm.On("Check", mock.Anything).Return(NewTokenResultPass())
+	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(BlockTypeUnknown, "Unknown"))
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
 
-	sc.entry(ctx)
-	time.Sleep(time.Second * 1)
-	sc.exit(ctx)
+	r := sc.Entry(ctx)
+	assert.Nil(t, r, "internal error in slots should recover and yield nil TokenResult")
 
 	rbs.AssertNumberOfCalls(t, "Prepare", 1)
 	fsm.AssertNumberOfCalls(t, "Check", 0)
 	dsm.AssertNumberOfCalls(t, "Check", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 0)
-	ssm.AssertNumberOfCalls(t, "OnCompleted", 1)
 }

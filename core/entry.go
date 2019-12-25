@@ -1,46 +1,34 @@
 package core
 
-import "github.com/sentinel-group/sentinel-golang/util"
+import (
+	"sync"
+)
 
-// CtxEntry means EntryContext entry,
-type CtxEntry struct {
-	createTime uint64
-	rs         *ResourceWrapper
+type SentinelEntry struct {
+	res *ResourceWrapper
 	// one entry with one context
 	ctx *EntryContext
 	// each entry holds a slot chain.
 	// it means this entry will go through the sc
 	sc *SlotChain
-	// caller node
-	originNode Node
-	// current resource node
-	currentNode Node
+
+	exitCtl sync.Once
 }
 
-func NewCtEntry(ctx *EntryContext, rw *ResourceWrapper, sc *SlotChain, cn Node) *CtxEntry {
-	return &CtxEntry{
-		createTime:  util.CurrentTimeMillis(),
-		rs:          rw,
-		ctx:         ctx,
-		sc:          sc,
-		currentNode: cn,
-	}
+func (e *SentinelEntry) Resource() *ResourceWrapper {
+	return e.res
 }
 
-func (e *CtxEntry) Exit() {
-	e.ExitWithCnt(1)
+func NewSentinelEntry(ctx *EntryContext, rw *ResourceWrapper, sc *SlotChain) *SentinelEntry {
+	return &SentinelEntry{res: rw, ctx: ctx, sc: sc}
 }
 
-func (e *CtxEntry) ExitWithCnt(count int32) {
-	e.exitForContext(e.ctx, count)
-}
-
-func (e *CtxEntry) exitForContext(ctx *EntryContext, count int32) {
-	if e.sc != nil {
-		e.sc.exit(ctx)
-	}
-}
-
-func (e *CtxEntry) GetCurrentNode() Node {
-	return e.currentNode
+func (e *SentinelEntry) Exit() {
+	ctx := e.ctx
+	e.exitCtl.Do(func() {
+		if e.sc != nil {
+			e.sc.exit(ctx)
+			e.sc.RefurbishContext(ctx)
+		}
+	})
 }

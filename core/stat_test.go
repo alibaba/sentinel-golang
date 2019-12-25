@@ -6,29 +6,9 @@ type NodeMock struct {
 	mock.Mock
 }
 
-func (m *NodeMock) TotalCountInMinute() uint64 {
+func (m *NodeMock) MetricsOnCondition(predicate TimePredicate) []*MetricItem {
 	args := m.Called()
-	return uint64(args.Int(0))
-}
-
-func (m *NodeMock) PassCountInMinute() uint64 {
-	args := m.Called()
-	return uint64(args.Int(0))
-}
-
-func (m *NodeMock) BlockCountInMinute() uint64 {
-	args := m.Called()
-	return uint64(args.Int(0))
-}
-
-func (m *NodeMock) CompleteCountInMinute() uint64 {
-	args := m.Called()
-	return uint64(args.Int(0))
-}
-
-func (m *NodeMock) ErrorCountInMinute() uint64 {
-	args := m.Called()
-	return uint64(args.Int(0))
+	return args.Get(0).([]*MetricItem)
 }
 
 func (m *NodeMock) TotalQPS() float64 {
@@ -66,9 +46,9 @@ func (m *NodeMock) MinRT() float64 {
 	return float64(args.Int(0))
 }
 
-func (m *NodeMock) CurrentGoroutineNum() uint32 {
+func (m *NodeMock) CurrentGoroutineNum() int32 {
 	args := m.Called()
-	return uint32(args.Int(0))
+	return int32(args.Int(0))
 }
 
 func (m *NodeMock) AddPassRequest(count uint64) {
