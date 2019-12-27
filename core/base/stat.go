@@ -1,4 +1,4 @@
-package core
+package base
 
 type TimePredicate func(uint64) bool
 type MetricEvent int32
