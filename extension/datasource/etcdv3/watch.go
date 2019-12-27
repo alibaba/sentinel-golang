@@ -2,7 +2,6 @@ package etcdv3
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -34,7 +33,7 @@ func (w *Watch) update(resp *clientv3.WatchResponse) {
 	}
 
 	if err := resp.Err(); err != nil {
-		log.Printf("resp err = %+v\n", err)
+		logger.Errorf("resp err = %+v\n", err)
 		return
 	}
 
@@ -42,7 +41,7 @@ func (w *Watch) update(resp *clientv3.WatchResponse) {
 		select {
 		case w.eventChan <- event:
 		default:
-			log.Println("blocked event chan")
+			logger.Info("blocked event chan")
 		}
 	}
 }

@@ -1,12 +1,17 @@
 package datasource
 
 import (
-	"github.com/sentinel-group/sentinel-golang/logging"
 	"reflect"
 	"sync"
+
+	"github.com/sentinel-group/sentinel-golang/logging"
 )
 
-const FlagInitialLoaded int32 = 1
+const (
+	FlagInitialLoaded int32 = 1
+	FlagUpdate int32 = 2
+	FlagDelete int32 = 3
+)
 
 var logger = logging.GetDefaultLogger()
 
