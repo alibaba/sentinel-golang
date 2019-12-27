@@ -1,17 +1,19 @@
 package api
 
-import "github.com/sentinel-group/sentinel-golang/core"
+import (
+	"github.com/sentinel-group/sentinel-golang/core/base"
+)
 
 // defaultSlotChain is a default slot chain built by framework
 // defaultSlotChain is global unique chain
 var defaultSlotChain = buildDefaultSlotChain()
 
-func buildDefaultSlotChain() *core.SlotChain {
-	sc := core.NewSlotChain()
+func buildDefaultSlotChain() *base.SlotChain {
+	sc := base.NewSlotChain()
 	// insert slots
 	return sc
 }
 
-func DefaultSlotChain() *core.SlotChain {
+func DefaultSlotChain() *base.SlotChain {
 	return defaultSlotChain
 }
