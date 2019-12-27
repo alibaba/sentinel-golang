@@ -58,3 +58,6 @@ Temporary Items
 
 # VSCode
 .vscode
+
+# log
+*.log
