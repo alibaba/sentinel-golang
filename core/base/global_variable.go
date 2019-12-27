@@ -1,4 +1,4 @@
-package core
+package base
 
 const (
 	TotalInBoundResourceName = "__total_inbound_traffic__"

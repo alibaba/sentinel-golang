@@ -1,12 +1,12 @@
-package core
+package base
 
 import (
-	"github.com/sentinel-group/sentinel-golang/log"
+	"github.com/sentinel-group/sentinel-golang/logging"
 	"github.com/sentinel-group/sentinel-golang/util"
 	"sync"
 )
 
-var logger = log.GetDefaultLogger()
+var logger = logging.GetDefaultLogger()
 
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on
