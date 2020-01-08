@@ -36,7 +36,7 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 	}
 
 	if len(resNodeMap) >= int(base.DefaultMaxResourceAmount) {
-		logger.Warnf("Resource amount exceeds the threshold: %d", base.DefaultMaxResourceAmount)
+		logger.Warnf("Resource amount exceeds the threshold: %d.", base.DefaultMaxResourceAmount)
 	}
 	node = NewResourceNode(resource, resourceType)
 	resNodeMap[resource] = node
@@ -44,5 +44,7 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 }
 
 func ResetResourceNodes() {
-
+	rnsMux.Lock()
+	defer rnsMux.Unlock()
+	resNodeMap = make(ResourceNodeMap, 0)
 }

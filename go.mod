@@ -1,6 +1,6 @@
 module github.com/sentinel-group/sentinel-golang
 
-go 1.12
+go 1.13
 
 require (
 	github.com/pkg/errors v0.8.1

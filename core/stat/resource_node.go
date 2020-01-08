@@ -2,6 +2,7 @@ package stat
 
 import (
 	"github.com/sentinel-group/sentinel-golang/core/base"
+	sbase "github.com/sentinel-group/sentinel-golang/core/stat/base"
 )
 
 type ResourceNode struct {
@@ -12,7 +13,29 @@ type ResourceNode struct {
 }
 
 func NewResourceNode(resourceName string, resourceType base.ResourceType) *ResourceNode {
-	return &ResourceNode{resourceName: resourceName, resourceType: resourceType}
+	return &ResourceNode{
+		BaseStatNode: BaseStatNode{
+			goroutineNum:   0,
+			sampleCount:    base.DefaultSampleCount,
+			intervalInMs:   base.DefaultIntervalInMs,
+			rollingCounter: sbase.NewBucketLeapArray(base.DefaultSampleCount, base.DefaultIntervalInMs),
+		},
+		resourceName: resourceName,
+		resourceType: resourceType,
+	}
+}
+
+func NewCustomResourceNode(resourceName string, resourceType base.ResourceType, sampleCount uint32, intervalInMs uint32) *ResourceNode {
+	return &ResourceNode{
+		BaseStatNode: BaseStatNode{
+			goroutineNum:   0,
+			sampleCount:    sampleCount,
+			intervalInMs:   intervalInMs,
+			rollingCounter: sbase.NewBucketLeapArray(sampleCount, intervalInMs),
+		},
+		resourceName: resourceName,
+		resourceType: resourceType,
+	}
 }
 
 func (n *ResourceNode) ResourceType() base.ResourceType {

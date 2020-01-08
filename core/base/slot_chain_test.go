@@ -314,8 +314,7 @@ type badPrepareSlotMock struct {
 
 func (m *badPrepareSlotMock) Prepare(ctx *EntryContext) {
 	m.Called(ctx)
-	panic("unexpected panic")
-	return
+	panic("sentinel internal panic")
 }
 
 func TestSlotChain_Entry_With_Panic(t *testing.T) {
@@ -323,7 +322,9 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
 	ctx.Resource = rw
-	ctx.StatNode = &NodeMock{}
+	statNodeMock := &NodeMock{}
+	statNodeMock.On("AddErrorRequest", mock.Anything).Return()
+	ctx.StatNode = statNodeMock
 	ctx.Input = &SentinelInput{
 		AcquireCount: 1,
 		Flag:         0,
