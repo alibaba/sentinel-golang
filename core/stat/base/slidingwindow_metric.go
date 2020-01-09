@@ -35,7 +35,7 @@ func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapAr
 	// winLengthInMs of BucketLeapArray must be divisible by winLengthInMs of SlidingWindowMetric
 	// for example: winLengthInMs of BucketLeapArray is 500ms, and winLengthInMs of SlidingWindowMetric is 2000ms
 	// for example: winLengthInMs of BucketLeapArray is 500ms, and winLengthInMs of SlidingWindowMetric is 500ms
-	if winLengthInMs%parentWindowLengthInMs!=0 {
+	if winLengthInMs%parentWindowLengthInMs != 0 {
 		panic(fmt.Sprintf("BucketLeapArray's WindowLengthInMs(%d) is not divisible by SlidingWindowMetric's WindowLengthInMs(%d).", parentWindowLengthInMs, winLengthInMs))
 	}
 
@@ -61,7 +61,7 @@ func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapAr
 func (m *SlidingWindowMetric) getTimeInterval(now uint64) (start, end uint64) {
 	curWindowWrapStartTime := calculateStartTime(now, m.real.WindowLengthInMs())
 	end = curWindowWrapStartTime
-	start = end - uint64(m.intervalInMs)
+	start = end - uint64(m.intervalInMs) + 1
 	return
 }
 
@@ -86,16 +86,15 @@ func (m *SlidingWindowMetric) GetIntervalSum(event base.MetricEvent) int64 {
 	now := util.CurrentTimeMillis()
 	start, end := m.getTimeInterval(now)
 	satisfiedBuckets := m.real.ValuesWithConditional(now, func(ws uint64) bool {
-		return ws>=start && ws<end
+		return ws >= start && ws <= end
 	})
 	return m.count(event, satisfiedBuckets)
 }
 
-
 func (m *SlidingWindowMetric) GetIntervalSumWithTime(now uint64, event base.MetricEvent) int64 {
 	start, end := m.getTimeInterval(now)
 	satisfiedBuckets := m.real.ValuesWithConditional(now, func(ws uint64) bool {
-		return ws>=start && ws<end
+		return ws >= start && ws <= end
 	})
 	return m.count(event, satisfiedBuckets)
 }
@@ -104,26 +103,26 @@ func (m *SlidingWindowMetric) GetIntervalQPS(event base.MetricEvent) float64 {
 	now := util.CurrentTimeMillis()
 	start, end := m.getTimeInterval(now)
 	satisfiedBuckets := m.real.ValuesWithConditional(now, func(ws uint64) bool {
-		return ws>=start && ws<end
+		return ws >= start && ws <= end
 	})
 	cnt := m.count(event, satisfiedBuckets)
-	return float64(cnt)/m.getIntervalInSecond()
+	return float64(cnt) / m.getIntervalInSecond()
 }
 
 func (m *SlidingWindowMetric) GetIntervalQPSWithTime(now uint64, event base.MetricEvent) float64 {
 	start, end := m.getTimeInterval(now)
 	satisfiedBuckets := m.real.ValuesWithConditional(now, func(ws uint64) bool {
-		return ws>=start && ws<end
+		return ws >= start && ws <= end
 	})
 	cnt := m.count(event, satisfiedBuckets)
-	return float64(cnt)/m.getIntervalInSecond()
+	return float64(cnt) / m.getIntervalInSecond()
 }
 
 func (m *SlidingWindowMetric) MinRT() int64 {
 	now := util.CurrentTimeMillis()
 	start, end := m.getTimeInterval(now)
 	satisfiedBuckets := m.real.ValuesWithConditional(now, func(ws uint64) bool {
-		return ws>=start && ws<end
+		return ws >= start && ws <= end
 
 	})
 	minRt := int64(math.MaxInt64)

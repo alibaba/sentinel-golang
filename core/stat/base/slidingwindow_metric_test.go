@@ -33,7 +33,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416554500,
+			wantStart: 1578416554501,
 			wantEnd:   1578416556500,
 		},
 		{
@@ -47,7 +47,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416555500,
+			wantStart: 1578416555501,
 			wantEnd:   1578416556500,
 		},
 		{
@@ -61,7 +61,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416554000,
+			wantStart: 1578416554001,
 			wantEnd:   1578416556000,
 		},
 		{
@@ -75,7 +75,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416546000,
+			wantStart: 1578416546001,
 			wantEnd:   1578416556000,
 		},
 		{
@@ -89,7 +89,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556500, //
 			},
-			wantStart: 1578416555500,
+			wantStart: 1578416555501,
 			wantEnd:   1578416556500,
 		},
 	}
@@ -196,9 +196,9 @@ func Test_NewSlidingWindowMetric(t *testing.T) {
 
 func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 	type fields struct {
-		sampleCount      uint32
-		intervalInMs     uint32
-		real             *BucketLeapArray
+		sampleCount  uint32
+		intervalInMs uint32
+		real         *BucketLeapArray
 	}
 	type args struct {
 		event base.MetricEvent
@@ -213,21 +213,24 @@ func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 		{
 			name: "",
 			fields: fields{
-				sampleCount:      2,
-				intervalInMs:     2000,
-				real: NewBucketLeapArray(SampleCount, IntervalInMs),
+				sampleCount:  2,
+				intervalInMs: 2000,
+				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
 			},
 			args: args{
 				event: base.MetricEventPass,
-				now:   1678416556501,
+				now:   1678416556599,
 			},
 			want: 2000,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for i:=0; i<int(tt.fields.intervalInMs); i++{
-				tt.fields.real.AddCountWithTime(tt.args.now-2-uint64(i), tt.args.event, 1)
+			for i := 0; i < 500; i++ {
+				tt.fields.real.AddCountWithTime(tt.args.now, tt.args.event, 1)
+			}
+			for i := 0; i < int(tt.fields.intervalInMs); i++ {
+				tt.fields.real.AddCountWithTime(tt.args.now-100-uint64(i), tt.args.event, 1)
 			}
 			m := NewSlidingWindowMetric(tt.fields.sampleCount, tt.fields.intervalInMs, tt.fields.real)
 			if got := m.GetIntervalSumWithTime(tt.args.now, tt.args.event); got != tt.want {

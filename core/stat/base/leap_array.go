@@ -31,8 +31,8 @@ func (ww *windowWrap) resetTo(startTime uint64) {
 	ww.windowStart = startTime
 }
 
-func (ww *windowWrap) isTimeInWindow(timeMillis uint64, windowLengthInMs uint32) bool {
-	return ww.windowStart <= timeMillis && timeMillis < ww.windowStart+uint64(windowLengthInMs)
+func (ww *windowWrap) isTimeInWindow(now uint64, windowLengthInMs uint32) bool {
+	return ww.windowStart <= now && now < ww.windowStart+uint64(windowLengthInMs)
 }
 
 func calculateStartTime(now uint64, windowLengthInMs uint32) uint64 {
@@ -116,13 +116,13 @@ func (la *leapArray) currentWindow(bg bucketGenerator) (*windowWrap, error) {
 	return la.currentWindowWithTime(util.CurrentTimeMillis(), bg)
 }
 
-func (la *leapArray) currentWindowWithTime(timeMillis uint64, bg bucketGenerator) (*windowWrap, error) {
-	if timeMillis < 0 {
+func (la *leapArray) currentWindowWithTime(now uint64, bg bucketGenerator) (*windowWrap, error) {
+	if now < 0 {
 		return nil, errors.New("Current time is less than 0.")
 	}
 
-	idx := la.calculateTimeIdx(timeMillis)
-	windowStart := calculateStartTime(timeMillis, la.windowLengthInMs)
+	idx := la.calculateTimeIdx(now)
+	windowStart := calculateStartTime(now, la.windowLengthInMs)
 
 	for { //spin to get the current windowWrap
 		old := la.array.get(idx)
@@ -157,8 +157,8 @@ func (la *leapArray) currentWindowWithTime(timeMillis uint64, bg bucketGenerator
 	}
 }
 
-func (la *leapArray) calculateTimeIdx(timeMillis uint64) int {
-	timeId := timeMillis / uint64(la.windowLengthInMs)
+func (la *leapArray) calculateTimeIdx(now uint64) int {
+	timeId := now / uint64(la.windowLengthInMs)
 	return int(timeId) % la.array.length
 }
 
@@ -167,14 +167,14 @@ func (la *leapArray) values() []*windowWrap {
 	return la.valuesWithTime(util.CurrentTimeMillis())
 }
 
-func (la *leapArray) valuesWithTime(timeMillis uint64) []*windowWrap {
-	if timeMillis <= 0 {
+func (la *leapArray) valuesWithTime(now uint64) []*windowWrap {
+	if now <= 0 {
 		return make([]*windowWrap, 0)
 	}
 	ret := make([]*windowWrap, 0)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
-		if ww == nil || la.isWindowDeprecated(timeMillis, ww) {
+		if ww == nil || la.isWindowDeprecated(now, ww) {
 			continue
 		}
 		newWW := &windowWrap{
@@ -186,14 +186,14 @@ func (la *leapArray) valuesWithTime(timeMillis uint64) []*windowWrap {
 	return ret
 }
 
-func (la *leapArray)ValuesWithConditional(timeMillis uint64, predicate base.TimePredicate) []*windowWrap {
-	if timeMillis <= 0 {
+func (la *leapArray) ValuesWithConditional(now uint64, predicate base.TimePredicate) []*windowWrap {
+	if now <= 0 {
 		return make([]*windowWrap, 0)
 	}
 	ret := make([]*windowWrap, 0)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
-		if ww == nil || la.isWindowDeprecated(timeMillis, ww) || !predicate(ww.windowStart) {
+		if ww == nil || la.isWindowDeprecated(now, ww) || !predicate(ww.windowStart) {
 			continue
 		}
 		newWW := &windowWrap{
@@ -207,8 +207,8 @@ func (la *leapArray)ValuesWithConditional(timeMillis uint64, predicate base.Time
 }
 
 // Judge whether the windowWrap is expired
-func (la *leapArray) isWindowDeprecated(startTime uint64, ww *windowWrap) bool {
-	return (startTime - ww.windowStart) > uint64(la.intervalInMs)
+func (la *leapArray) isWindowDeprecated(now uint64, ww *windowWrap) bool {
+	return (now - ww.windowStart) > uint64(la.intervalInMs)
 }
 
 // Generic interface to generate bucket
