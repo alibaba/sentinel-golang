@@ -9,8 +9,8 @@ import (
 
 func TestNewSentinelFileLogger(t *testing.T) {
 	fileName := os.TempDir() + "/logger-test.log"
-	logger := NewSentinelFileLogger(fileName, "test-log", log.LstdFlags|log.Lshortfile)
-	logger.Debug("debug info test\n")
+	logger := NewSentinelFileLogger(fileName, "test-log", log.LstdFlags)
+	logger.Debug("debug info test.")
 	logger.Debugf("debug name is %s", "sim")
 	time.Sleep(time.Second * 2)
 	_ = os.Remove(fileName)

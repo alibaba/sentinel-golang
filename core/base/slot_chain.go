@@ -30,19 +30,22 @@ type RuleCheckSlot interface {
 }
 
 // StatSlot is responsible for counting all custom biz metrics.
+// StatSlot would not handle any panic, and pass up all panic to slot chain
 type StatSlot interface {
 	// OnEntryPass function will be invoked when StatPrepareSlots and RuleCheckSlots execute pass
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	OnEntryPassed(ctx *EntryContext)
-	// OnEntryBlocked function will be invoked when StatPrepareSlots and RuleCheckSlots execute fail
+	// OnEntryBlocked function will be invoked when StatPrepareSlots and RuleCheckSlots fail to execute
+	// It may be inbound flow control or outbound cir
 	// StatSlots will do some statistic logic, such as QPS、log、etc
-	// blockEvent is a enum{RuleBasedCheckBlockedEvent} indicate the block event
+	// blockError introduce the block detail
 	OnEntryBlocked(ctx *EntryContext, blockError *BlockError)
 	// onComplete function will be invoked when chain exits.
+	// The request may be executed successful or blocked or internal error
 	OnCompleted(ctx *EntryContext)
 }
 
-// SlotChain hold all system Slots and customized slot.
+// SlotChain hold all system slots and customized slot.
 // SlotChain support plug-in slots developed by developer.
 type SlotChain struct {
 	statPres   []StatPrepareSlot
@@ -110,13 +113,14 @@ func (sc *SlotChain) AddStatSlotLast(s StatSlot) {
 	sc.stats = append(sc.stats, s)
 }
 
-// The entrance of Slot Chain
+// The entrance of slot chain
+// Return the TokenResult and nil if internal panic.
 func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	// This should not happen, unless there are errors existing in Sentinel internal.
-	// defer to handle it
+	// If happened, need to add TokenResult in EntryContext
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Panicf("Unknown panic in SlotChain, err: %+v\n", err)
+			logger.Panicf("Sentinel internal panic in SlotChain, err: %+v", err)
 			return
 		}
 	}()
@@ -152,7 +156,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	if len(ss) > 0 {
 		for _, s := range ss {
 			// indicate the result of rule based checking slot.
-			if ruleCheckRet.Status() == ResultStatusPass {
+			if !ruleCheckRet.IsBlocked() {
 				s.OnEntryPassed(ctx)
 			} else {
 				// The block error should not be nil.

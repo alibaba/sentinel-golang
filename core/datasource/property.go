@@ -56,7 +56,7 @@ func (s *SentinelProperty) UpdateValue(v interface{}, flag int32) (bool, error) 
 	for listener := range s.listeners {
 		err = listener.OnConfigUpdate(v, flag)
 		if err != nil {
-			logger.Warnf("Error when updating data value: %+v", err)
+			logger.Warnf("Error when updating data value: %+v.", err)
 		}
 	}
 	return true, err

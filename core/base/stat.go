@@ -1,14 +1,24 @@
 package base
 
 type TimePredicate func(uint64) bool
-type MetricEvent int32
 
+type MetricEvent int8
+
+// There are five events to record
+// pass + block == Total
 const (
+	// sentinel rules check pass
 	MetricEventPass MetricEvent = iota
+	// sentinel rules check block
 	MetricEventBlock
+
 	MetricEventComplete
+	// Biz error, used for circuit breaker
 	MetricEventError
-	MetricEventRT
+	// request execute rt, unit is millisecond
+	MetricEventRt
+	// hack for the number of event
+	MetricEventTotal
 )
 
 type StatGetter interface {
@@ -25,20 +35,16 @@ type StatNode interface {
 	MetricItemRetriever
 
 	// total  = pass + blocked
+	GetQPS(event MetricEvent) float64
 	TotalQPS() float64
-	PassQPS() float64
-	BlockQPS() float64
-	CompleteQPS() float64
-	ErrorQPS() float64
+
+	AddRequest(event MetricEvent, count uint64)
+	AddRtAndCompleteRequest(rt, count uint64)
 
 	AvgRT() float64
 	MinRT() float64
-	CurrentGoroutineNum() int32
 
-	AddPassRequest(count uint64)
-	AddRtAndCompleteRequest(rt, count uint64)
-	AddBlockRequest(count uint64)
-	AddErrorRequest(count uint64)
+	CurrentGoroutineNum() int32
 	IncreaseGoroutineNum()
 	DecreaseGoroutineNum()
 
