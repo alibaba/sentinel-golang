@@ -5,6 +5,10 @@ const (
 
 	DefaultMaxResourceAmount uint32 = 10000
 
-	DefaultSampleCount  uint32 = 2
-	DefaultIntervalInMs uint32 = 1000
+	// default 10*1000/500 = 20
+	DefaultSampleCount uint32 = 20
+	// default 10s
+	DefaultIntervalInMs uint32 = 10000
+
+	DefaultStatisticMaxRt = int64(5000)
 )

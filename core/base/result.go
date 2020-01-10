@@ -7,9 +7,10 @@ import (
 type BlockType int32
 
 const (
-	BlockTypeUnknown         BlockType = 0
-	BlockTypeFlow            BlockType = 1
-	BlockTypeCircuitBreaking BlockType = 2
+	// sentinel internal error
+	BlockTypeUnknown BlockType = iota
+	BlockTypeFlow
+	BlockTypeCircuitBreaking
 )
 
 type TokenResultStatus int32
@@ -25,6 +26,10 @@ type TokenResult struct {
 
 	blockErr *BlockError
 	waitMs   uint64
+}
+
+func (r *TokenResult) IsPass() bool {
+	return r.status == ResultStatusPass
 }
 
 func (r *TokenResult) IsBlocked() bool {

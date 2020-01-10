@@ -31,21 +31,27 @@ func (s *StatisticSlot) OnCompleted(ctx *base.EntryContext) {
 }
 
 func (s *StatisticSlot) recordPassFor(sn base.StatNode, count uint32) {
-	if sn != nil {
-		sn.IncreaseGoroutineNum()
-		sn.AddPassRequest(uint64(count))
+	logger.Debug("Entry passed.")
+	if sn == nil {
+		return
 	}
+	sn.IncreaseGoroutineNum()
+	sn.AddRequest(base.MetricEventPass, uint64(count))
 }
 
 func (s *StatisticSlot) recordBlockFor(sn base.StatNode, count uint32) {
-	if sn != nil {
-		sn.AddBlockRequest(uint64(count))
+	logger.Debug("Entry blocked.")
+	if sn == nil {
+		return
 	}
+	sn.AddRequest(base.MetricEventBlock, uint64(count))
 }
 
 func (s *StatisticSlot) recordCompleteFor(sn base.StatNode, count uint32, rt uint64) {
-	if sn != nil {
-		sn.AddRtAndCompleteRequest(rt, uint64(count))
-		sn.DecreaseGoroutineNum()
+	logger.Debug("Entry completed.")
+	if sn == nil {
+		return
 	}
+	sn.AddRtAndCompleteRequest(rt, uint64(count))
+	sn.DecreaseGoroutineNum()
 }

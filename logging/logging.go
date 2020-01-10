@@ -24,7 +24,7 @@ const RecordLogFileName = "sentinel-record.log"
 // format default console log
 func InitDefaultLoggerToConsole() {
 	fmt.Println("Init default log, output to console")
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags)
 	log.SetPrefix("[sentinel]")
 }
 
@@ -41,7 +41,7 @@ func SetGlobalLoggerLevel(l Level) {
 
 func init() {
 	initLogger.Do(func() {
-		defaultLogger = NewSentinelFileLogger(RecordLogFileName, "default", log.LstdFlags|log.Lshortfile)
+		defaultLogger = NewSentinelFileLogger(RecordLogFileName, "default", log.LstdFlags)
 	})
 }
 
@@ -55,7 +55,7 @@ func NewSentinelFileLogger(outputFile, namespace string, flag int) *SentinelLogg
 	var logFile *os.File
 	logFile, err := os.OpenFile(outputFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
-		log.Fatal("open log file error, ", err)
+		log.Fatal("open log file error:", err)
 	}
 	return &SentinelLogger{
 		log:       log.New(logFile, "", flag),
