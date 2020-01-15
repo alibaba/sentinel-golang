@@ -5,8 +5,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sentinel-group/sentinel-golang/core/base"
 	"github.com/sentinel-group/sentinel-golang/logging"
+	"github.com/sentinel-group/sentinel-golang/util"
 	"sync/atomic"
-	"unsafe"
 )
 
 var logger = logging.GetDefaultLogger()
@@ -62,33 +62,14 @@ func (bla *BucketLeapArray) newEmptyBucket() interface{} {
 
 func (bla *BucketLeapArray) resetWindowTo(ww *windowWrap, startTime uint64) *windowWrap {
 	atomic.StoreUint64(&ww.windowStart, startTime)
-	oldValP, ok := ww.value.(*metricBucket)
-	if !ok {
-		panic("windowWrap value assert fail.")
-	}
-	oldValPtr := unsafe.Pointer(oldValP)
-	atomic.StorePointer(&oldValPtr, unsafe.Pointer(newMetricBucket()))
+	ww.value.Store(newMetricBucket())
 	return ww
 }
 
 // Write method
 // It might panic
 func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
-	curWindow, err := bla.data.currentWindow(bla)
-	if err != nil {
-		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
-		return
-	}
-	if curWindow == nil || curWindow.value == nil {
-		logger.Error("Current window is nil.")
-		return
-	}
-	mb, ok := curWindow.value.(*metricBucket)
-	if !ok {
-		logger.Error("Fail to assert metricBucket type.")
-		return
-	}
-	mb.add(event, count)
+	bla.AddCountWithTime(util.CurrentTimeMillis(), event, count)
 }
 
 // For test
@@ -98,36 +79,27 @@ func (bla *BucketLeapArray) AddCountWithTime(now uint64, event base.MetricEvent,
 		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
 		return
 	}
-	if curWindow == nil || curWindow.value == nil {
+	if curWindow == nil {
 		logger.Error("Current window is nil.")
 		return
 	}
-	mb, ok := curWindow.value.(*metricBucket)
+	mb := curWindow.value.Load()
+	if mb == nil {
+		logger.Error("Current window's value is nil.")
+		return
+	}
+	b, ok := mb.(*metricBucket)
 	if !ok {
 		logger.Error("Fail to assert metricBucket type.")
 		return
 	}
-	mb.add(event, count)
+	b.add(event, count)
 }
-
 
 // Read method, need to adapt upper application
 // it might panic
 func (bla *BucketLeapArray) Count(event base.MetricEvent) int64 {
-	_, err := bla.data.currentWindow(bla)
-	if err != nil {
-		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
-	}
-	count := int64(0)
-	for _, ww := range bla.data.values() {
-		mb, ok := ww.value.(*metricBucket)
-		if !ok {
-			logger.Error("Fail to assert metricBucket type.")
-			continue
-		}
-		count += mb.get(event)
-	}
-	return count
+	return bla.CountWithTime(util.CurrentTimeMillis(), event)
 }
 
 func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) int64 {
@@ -136,17 +108,21 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
 	}
 	count := int64(0)
-	for _, ww := range bla.data.values() {
-		mb, ok := ww.value.(*metricBucket)
+	for _, ww := range bla.data.valuesWithTime(now) {
+		mb := ww.value.Load()
+		if mb == nil {
+			logger.Error("Current window's value is nil.")
+			continue
+		}
+		b, ok := mb.(*metricBucket)
 		if !ok {
 			logger.Error("Fail to assert metricBucket type.")
 			continue
 		}
-		count += mb.get(event)
+		count += b.get(event)
 	}
 	return count
 }
-
 
 // Read method, get all windowWrap.
 func (bla *BucketLeapArray) Values(now uint64) []*windowWrap {
@@ -165,7 +141,6 @@ func (bla *BucketLeapArray) ValuesWithConditional(now uint64, predicate base.Tim
 	return bla.data.ValuesWithConditional(now, predicate)
 }
 
-
 func (bla *BucketLeapArray) MinRt() int64 {
 	_, err := bla.data.currentWindow(bla)
 	if err != nil {
@@ -175,12 +150,17 @@ func (bla *BucketLeapArray) MinRt() int64 {
 	ret := base.DefaultStatisticMaxRt
 
 	for _, v := range bla.data.values() {
-		w, ok := v.value.(*metricBucket)
-		if !ok {
-			logger.Errorf("Fail to assert windowWrap.value(%+v) to metricBucket.", v.value)
+		mb := v.value.Load()
+		if mb == nil {
+			logger.Error("Current window's value is nil.")
 			continue
 		}
-		mr := w.getMinRt()
+		b, ok := mb.(*metricBucket)
+		if !ok {
+			logger.Error("Fail to assert metricBucket type.")
+			continue
+		}
+		mr := b.getMinRt()
 		if ret > mr {
 			ret = mr
 		}

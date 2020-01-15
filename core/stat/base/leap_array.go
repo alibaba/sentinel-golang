@@ -23,8 +23,8 @@ type windowWrap struct {
 	// Start time of this windowWrap
 	windowStart uint64
 	// Value is the actual data structure to record the metrics.
-	// Such as metricBucket
-	value interface{}
+	// Such as metricBucket, the size is 16 bytes.
+	value atomic.Value
 }
 
 func (ww *windowWrap) resetTo(startTime uint64) {
@@ -66,8 +66,9 @@ func newAtomicWindowWrapArray(len int, windowLengthInMs uint32, generator bucket
 	for i := len - 1; i >= 0; i-- {
 		ww := &windowWrap{
 			windowStart: startTime,
-			value:       generator.newEmptyBucket(),
+			value:       atomic.Value{},
 		}
+		ww.value.Store(generator.newEmptyBucket())
 		ret.data[i] = ww
 		startTime -= uint64(windowLengthInMs)
 	}
@@ -82,8 +83,8 @@ func (aa *atomicWindowWrapArray) elementOffset(idx int) unsafe.Pointer {
 	if idx >= aa.length && idx < 0 {
 		panic(fmt.Sprintf("The index (%d) is out of bounds, length is %d.", idx, aa.length))
 	}
-	base := aa.base
-	return unsafe.Pointer(uintptr(base) + uintptr(idx*PtrSize))
+	basePtr := aa.base
+	return unsafe.Pointer(uintptr(basePtr) + uintptr(idx*PtrSize))
 }
 
 func (aa *atomicWindowWrapArray) get(idx int) *windowWrap {
@@ -131,8 +132,9 @@ func (la *leapArray) currentWindowWithTime(now uint64, bg bucketGenerator) (*win
 			// theoretically, here is not reachable
 			newWrap := &windowWrap{
 				windowStart: windowStart,
-				value:       bg.newEmptyBucket(),
+				value:       atomic.Value{},
 			}
+			newWrap.value.Store(bg.newEmptyBucket())
 			if la.array.compareAndSet(idx, nil, newWrap) {
 				return newWrap, nil
 			} else {
@@ -177,11 +179,7 @@ func (la *leapArray) valuesWithTime(now uint64) []*windowWrap {
 		if ww == nil || la.isWindowDeprecated(now, ww) {
 			continue
 		}
-		newWW := &windowWrap{
-			windowStart: ww.windowStart,
-			value:       ww.value,
-		}
-		ret = append(ret, newWW)
+		ret = append(ret, ww)
 	}
 	return ret
 }
@@ -196,11 +194,7 @@ func (la *leapArray) ValuesWithConditional(now uint64, predicate base.TimePredic
 		if ww == nil || la.isWindowDeprecated(now, ww) || !predicate(ww.windowStart) {
 			continue
 		}
-		newWW := &windowWrap{
-			windowStart: ww.windowStart,
-			value:       ww.value,
-		}
-		ret = append(ret, newWW)
+		ret = append(ret, ww)
 	}
 	return ret
 

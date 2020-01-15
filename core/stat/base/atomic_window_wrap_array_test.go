@@ -149,8 +149,9 @@ func Test_atomicWindowWrapArray_compareAndSet(t *testing.T) {
 			aa := newAtomicWindowWrapArray(tt.args.len, tt.args.windowLengthInMs, tt.args.bg)
 			update := &windowWrap{
 				windowStart: 8888888888888,
-				value:       int64(666666),
+				value:       atomic.Value{},
 			}
+			update.value.Store(int64(666666))
 			except := aa.get(9)
 			if got := aa.compareAndSet(tt.args.idx, except, update); got != tt.want {
 				t.Errorf("atomicWindowWrapArray.compareAndSet() = %v, want %v", got, tt.want)
@@ -166,7 +167,8 @@ func taskGet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
 	time.Sleep(time.Millisecond * 3)
 	idx := rand.Int() % 20
 	wwPtr := at.get(idx)
-	vp, ok := wwPtr.value.(*int64)
+	vInterface := wwPtr.value.Load()
+	vp, ok := vInterface.(*int64)
 	if !ok {
 		t.Error("windowWrap value assert fail.\n")
 	}
@@ -179,28 +181,12 @@ func taskGet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
 	wg.Done()
 }
 
-func taskSet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
-	time.Sleep(time.Millisecond * 3)
-	idx := rand.Int() % 20
-	ww := at.get(idx)
-	vp := new(int64)
-	*vp = 100
-	replace := &windowWrap{
-		windowStart: util.CurrentTimeMillis(),
-		value:       vp,
-	}
-	for !at.compareAndSet(idx, ww, replace) {
-		ww = at.get(idx)
-	}
-	wg.Done()
-}
-
 func Test_atomicWindowWrapArray_Concurrency_Get(t *testing.T) {
 	ret := newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{})
 	for _, ww := range ret.data {
 		c := new(int64)
 		*c = 0
-		ww.value = c
+		ww.value.Store(c)
 	}
 	const GoroutineNum = 1000
 	wg1 := &sync.WaitGroup{}
@@ -211,11 +197,12 @@ func Test_atomicWindowWrapArray_Concurrency_Get(t *testing.T) {
 	wg1.Wait()
 	sum := int64(0)
 	for _, ww := range ret.data {
-		val, ok := ww.value.(*int64)
+		val := ww.value.Load()
+		count, ok := val.(*int64)
 		if !ok {
 			t.Error("assert error")
 		}
-		sum += *val
+		sum += *count
 	}
 	if sum != GoroutineNum {
 		t.Error("sum error")
@@ -223,12 +210,30 @@ func Test_atomicWindowWrapArray_Concurrency_Get(t *testing.T) {
 	t.Log("all done")
 }
 
+func taskSet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
+	time.Sleep(time.Millisecond * 3)
+	idx := rand.Int() % 20
+	ww := at.get(idx)
+	bucket := new(int64)
+	*bucket = 100
+	val := atomic.Value{}
+	val.Store(bucket)
+	replace := &windowWrap{
+		windowStart: util.CurrentTimeMillis(),
+		value:       val,
+	}
+	for !at.compareAndSet(idx, ww, replace) {
+		ww = at.get(idx)
+	}
+	wg.Done()
+}
+
 func Test_atomicWindowWrapArray_Concurrency_Set(t *testing.T) {
 	ret := newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{})
 	for _, ww := range ret.data {
 		c := new(int64)
 		*c = 0
-		ww.value = c
+		ww.value.Store(c)
 	}
 	const GoroutineNum = 1000
 	wg2 := &sync.WaitGroup{}
@@ -239,7 +244,8 @@ func Test_atomicWindowWrapArray_Concurrency_Set(t *testing.T) {
 	}
 	wg2.Wait()
 	for _, ww := range ret.data {
-		val, ok := ww.value.(*int64)
+		v := ww.value.Load()
+		val, ok := v.(*int64)
 		if !ok || *val != 100 {
 			t.Error("assert error")
 		}

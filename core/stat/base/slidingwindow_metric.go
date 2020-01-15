@@ -72,9 +72,14 @@ func (m *SlidingWindowMetric) getIntervalInSecond() float64 {
 func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*windowWrap) int64 {
 	ret := int64(0)
 	for _, ww := range values {
-		counter, ok := ww.value.(*metricBucket)
+		mb := ww.value.Load()
+		if mb == nil {
+			logger.Error("Current window's value is nil.")
+			continue
+		}
+		counter, ok := mb.(*metricBucket)
 		if !ok {
-			logger.Errorf("Fail to assert windowWrap value(%+v) to metricBucket.", ww.value)
+			logger.Errorf("Fail to assert windowWrap's value(%+v) to metricBucket.", mb)
 			continue
 		}
 		ret += counter.get(event)
@@ -127,9 +132,14 @@ func (m *SlidingWindowMetric) MinRT() int64 {
 	})
 	minRt := int64(math.MaxInt64)
 	for _, w := range satisfiedBuckets {
-		counter, ok := w.value.(*metricBucket)
+		mb := w.value.Load()
+		if mb == nil {
+			logger.Error("Current window's value is nil.")
+			continue
+		}
+		counter, ok := mb.(*metricBucket)
 		if !ok {
-			logger.Errorf("Fail to assert windowWrap value(%+v) to metricBucket.", w.value)
+			logger.Errorf("Fail to assert windowWrap's value(%+v) to metricBucket.", mb)
 			continue
 		}
 		rt := counter.get(base.MetricEventRt)
