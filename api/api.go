@@ -4,24 +4,25 @@ import (
 	"github.com/sentinel-group/sentinel-golang/core/base"
 )
 
-func Entry(name string) (*base.SentinelEntry, *base.BlockError) {
-	return EntryWithType(name, base.ResTypeCommon, base.Outbound)
+func Entry(resource string, opts ...Option) (*base.SentinelEntry, *base.BlockError) {
+	var options = Options{
+		resourceType: base.ResTypeCommon,
+		entryType:    base.Outbound,
+		acquireCount: 1,
+		flag:         0,
+		slotChain: 	defaultSlotChain,
+		args:         []interface{}{},
+	}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return entry(resource, &options)
 }
 
-func EntryWithType(resource string, resType base.ResourceType, entryType base.TrafficType) (*base.SentinelEntry, *base.BlockError) {
-	return EntryWithTypeAndCount(resource, resType, entryType, 1)
-}
-
-func EntryWithTypeAndCount(resource string, resType base.ResourceType, entryType base.TrafficType, acquireCount uint32) (*base.SentinelEntry, *base.BlockError) {
-	return EntryWithArgs(resource, resType, entryType, acquireCount, 0)
-}
-
-func EntryWithArgs(resource string, resType base.ResourceType, entryType base.TrafficType, acquireCount uint32, flag int32, args ...interface{}) (*base.SentinelEntry, *base.BlockError) {
-	return entryWithArgsAndChain(resource, resType, entryType, acquireCount, flag, DefaultSlotChain(), args)
-}
-
-func entryWithArgsAndChain(resource string, resType base.ResourceType, entryType base.TrafficType, acquireCount uint32, flag int32, sc *base.SlotChain, args ...interface{}) (*base.SentinelEntry, *base.BlockError) {
-	rw := base.NewResourceWrapper(resource, resType, entryType)
+func entry(resource string, options *Options) (*base.SentinelEntry, *base.BlockError) {
+	rw := base.NewResourceWrapper(resource, options.resourceType, options.entryType)
+	sc := options.slotChain
 
 	if sc == nil {
 		return base.NewSentinelEntry(nil, rw, nil), nil
@@ -30,9 +31,9 @@ func entryWithArgsAndChain(resource string, resType base.ResourceType, entryType
 	ctx := sc.GetPooledContext()
 	ctx.Resource = rw
 	ctx.Input = &base.SentinelInput{
-		AcquireCount: acquireCount,
-		Flag:         flag,
-		Args:         args,
+		AcquireCount: options.acquireCount,
+		Flag:         options.flag,
+		Args:         options.args,
 	}
 
 	e := base.NewSentinelEntry(ctx, rw, sc)
