@@ -2,6 +2,7 @@ package base
 
 import (
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"unsafe"
 
@@ -31,7 +32,7 @@ func Test_windowWrapper_Size(t *testing.T) {
 	}
 	ww := &windowWrap{
 		windowStart: util.CurrentTimeMillis(),
-		value:       &Obj{},
+		value:       atomic.Value{},
 	}
 	if unsafe.Sizeof(*ww) != 24 {
 		t.Errorf("the size of windowWrap is not equal 20.\n")
@@ -41,9 +42,9 @@ func Test_windowWrapper_Size(t *testing.T) {
 	}
 }
 
-type metricBucketMock struct {
-	mock.Mock
-}
+//type metricBucketMock struct {
+//	mock.Mock
+//}
 
 // mock ArrayMock and implement bucketGenerator
 type leapArrayMock struct {
@@ -51,12 +52,12 @@ type leapArrayMock struct {
 }
 
 func (bla *leapArrayMock) newEmptyBucket() interface{} {
-	return new(metricBucketMock)
+	return new(int64)
 }
 
 func (bla *leapArrayMock) resetWindowTo(ww *windowWrap, startTime uint64) *windowWrap {
 	ww.windowStart = startTime
-	ww.value = new(metricBucketMock)
+	ww.value.Store(new(int64))
 	return ww
 }
 
