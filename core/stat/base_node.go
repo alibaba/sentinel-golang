@@ -27,7 +27,7 @@ func (n *BaseStatNode) MetricsOnCondition(predicate base.TimePredicate) []*base.
 }
 
 func (n *BaseStatNode) TotalQPS() float64 {
-	return n.GetQPS(base.MetricEventPass) +n.GetQPS(base.MetricEventBlock)
+	return n.GetQPS(base.MetricEventPass) + n.GetQPS(base.MetricEventBlock)
 }
 
 func (n *BaseStatNode) GetQPS(event base.MetricEvent) float64 {
@@ -40,7 +40,7 @@ func (n *BaseStatNode) AddRequest(event base.MetricEvent, count uint64) {
 
 func (n *BaseStatNode) AddRtAndCompleteRequest(rt, count uint64) {
 	n.rollingCounter.AddCount(base.MetricEventComplete, int64(count))
-	n.rollingCounter.AddCount(base.MetricEventRt, int64(count))
+	n.rollingCounter.AddCount(base.MetricEventRt, int64(rt))
 }
 
 func (n *BaseStatNode) AvgRT() float64 {

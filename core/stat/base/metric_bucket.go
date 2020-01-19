@@ -35,7 +35,7 @@ func (mb *metricBucket) get(event base.MetricEvent) int64 {
 	if event > base.MetricEventTotal || event < 0 {
 		panic(fmt.Sprintf("Event %v is unknown.", event))
 	}
-	return mb.counter[event]
+	return atomic.LoadInt64(&mb.counter[event])
 }
 
 func (mb *metricBucket) reset() {
