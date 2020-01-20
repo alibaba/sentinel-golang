@@ -33,7 +33,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416554501,
+			wantStart: 1578416555000,
 			wantEnd:   1578416556500,
 		},
 		{
@@ -47,7 +47,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416555501,
+			wantStart: 1578416556000,
 			wantEnd:   1578416556500,
 		},
 		{
@@ -61,7 +61,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416554001,
+			wantStart: 1578416555000,
 			wantEnd:   1578416556000,
 		},
 		{
@@ -75,7 +75,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556900, //
 			},
-			wantStart: 1578416546001,
+			wantStart: 1578416548000,
 			wantEnd:   1578416556000,
 		},
 		{
@@ -89,7 +89,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 				// bucket start time:1578416556500
 				now: 1578416556500, //
 			},
-			wantStart: 1578416555501,
+			wantStart: 1578416556000,
 			wantEnd:   1578416556500,
 		},
 	}
@@ -233,8 +233,8 @@ func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 				tt.fields.real.AddCountWithTime(tt.args.now-100-uint64(i), tt.args.event, 1)
 			}
 			m := NewSlidingWindowMetric(tt.fields.sampleCount, tt.fields.intervalInMs, tt.fields.real)
-			if got := m.GetIntervalSumWithTime(tt.args.now, tt.args.event); got != tt.want {
-				t.Errorf("SlidingWindowMetric.GetIntervalSumWithTime() = %v, want %v", got, tt.want)
+			if got := m.GetSumWithTime(tt.args.now, tt.args.event); got != tt.want {
+				t.Errorf("SlidingWindowMetric.GetSumWithTime() = %v, want %v", got, tt.want)
 			}
 		})
 	}

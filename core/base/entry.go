@@ -15,6 +15,10 @@ type SentinelEntry struct {
 	exitCtl sync.Once
 }
 
+func (e *SentinelEntry) Context() *EntryContext {
+	return e.ctx
+}
+
 func (e *SentinelEntry) Resource() *ResourceWrapper {
 	return e.res
 }

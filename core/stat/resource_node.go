@@ -45,3 +45,7 @@ func (n *ResourceNode) ResourceType() base.ResourceType {
 func (n *ResourceNode) ResourceName() string {
 	return n.resourceName
 }
+
+func (n *ResourceNode) RealBucketLeapArray() *sbase.BucketLeapArray {
+	return n.rollingCounter
+}

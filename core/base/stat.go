@@ -30,19 +30,28 @@ type StatUpdater interface {
 	AddMetric(e MetricEvent, count uint64)
 }
 
+type ReadStat interface {
+	GetQPS(event MetricEvent) float64
+	GetQPSWithTime(now uint64, event MetricEvent) float64
+
+	GetSum(event MetricEvent) int64
+	GetSumWithTime(now uint64, event MetricEvent) int64
+
+	MinRT() int64
+	AvgRT() float64
+}
+
+type WriteStat interface {
+	AddRequest(event MetricEvent, count uint64)
+	AddRtAndCompleteRequest(rt, count uint64)
+}
+
 // StatNode holds real-time statistics for resources.
 type StatNode interface {
 	MetricItemRetriever
 
-	// total  = pass + blocked
-	GetQPS(event MetricEvent) float64
-	TotalQPS() float64
-
-	AddRequest(event MetricEvent, count uint64)
-	AddRtAndCompleteRequest(rt, count uint64)
-
-	AvgRT() float64
-	MinRT() float64
+	ReadStat
+	WriteStat
 
 	CurrentGoroutineNum() int32
 	IncreaseGoroutineNum()
