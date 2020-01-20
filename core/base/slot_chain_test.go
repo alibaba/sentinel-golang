@@ -224,7 +224,7 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
 	ctx.Resource = rw
-	ctx.StatNode = &NodeMock{}
+	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
 		AcquireCount: 1,
 		Flag:         0,
@@ -266,7 +266,7 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
 	ctx.Resource = rw
-	ctx.StatNode = &NodeMock{}
+	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
 		AcquireCount: 1,
 		Flag:         0,
@@ -322,7 +322,7 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
 	ctx.Resource = rw
-	statNodeMock := &NodeMock{}
+	statNodeMock := &StatNodeMock{}
 	statNodeMock.On("AddErrorRequest", mock.Anything).Return()
 	ctx.StatNode = statNodeMock
 	ctx.Input = &SentinelInput{

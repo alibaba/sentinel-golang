@@ -26,12 +26,20 @@ func (n *BaseStatNode) MetricsOnCondition(predicate base.TimePredicate) []*base.
 	panic("implement me")
 }
 
-func (n *BaseStatNode) TotalQPS() float64 {
-	return n.GetQPS(base.MetricEventPass) + n.GetQPS(base.MetricEventBlock)
-}
-
 func (n *BaseStatNode) GetQPS(event base.MetricEvent) float64 {
 	return float64(n.rollingCounter.Count(event)) / n.rollingCounter.GetIntervalInSecond()
+}
+
+func (n *BaseStatNode) GetQPSWithTime(now uint64, event base.MetricEvent) float64 {
+	return float64(n.rollingCounter.CountWithTime(now, event)) / n.rollingCounter.GetIntervalInSecond()
+}
+
+func (n *BaseStatNode) GetSum(event base.MetricEvent) int64 {
+	return n.rollingCounter.Count(event)
+}
+
+func (n *BaseStatNode) GetSumWithTime(now uint64, event base.MetricEvent) int64 {
+	return n.rollingCounter.CountWithTime(now, event)
 }
 
 func (n *BaseStatNode) AddRequest(event base.MetricEvent, count uint64) {
@@ -51,8 +59,8 @@ func (n *BaseStatNode) AvgRT() float64 {
 	return float64(n.rollingCounter.Count(base.MetricEventRt) / complete)
 }
 
-func (n *BaseStatNode) MinRT() float64 {
-	return float64(n.rollingCounter.MinRt())
+func (n *BaseStatNode) MinRT() int64 {
+	return n.rollingCounter.MinRt()
 }
 
 func (n *BaseStatNode) CurrentGoroutineNum() int32 {
