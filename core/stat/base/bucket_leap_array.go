@@ -11,12 +11,12 @@ import (
 
 var logger = logging.GetDefaultLogger()
 
-// The implement of sliding window based on leapArray and metricBucket
-// metricBucket is used to record statistic metrics
-// Default, BucketLeapArray is per resource
+// The implementation of sliding window based on LeapArray (as the sliding window infrastructure)
+// and MetricBucket (as the data type). The MetricBucket is used to record statistic
+// metrics per minimum time unit (i.e. the bucket time span).
 type BucketLeapArray struct {
-	data          leapArray
-	LeapArrayType string
+	data     leapArray
+	dataType string
 }
 
 // sampleCount is the number of slots
@@ -33,7 +33,7 @@ func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArra
 			intervalInMs:     intervalInMs,
 			array:            nil,
 		},
-		LeapArrayType: "metricBucket",
+		dataType: "MetricBucket",
 	}
 	arr := newAtomicWindowWrapArray(int(sampleCount), winLengthInMs, ret)
 	ret.data.array = arr
@@ -52,48 +52,51 @@ func (bla *BucketLeapArray) WindowLengthInMs() uint32 {
 	return bla.data.windowLengthInMs
 }
 
+func (bla *BucketLeapArray) DataType() string {
+	return bla.dataType
+}
+
 func (bla *BucketLeapArray) GetIntervalInSecond() float64 {
 	return float64(bla.IntervalInMs()) / 1000.0
 }
 
 func (bla *BucketLeapArray) newEmptyBucket() interface{} {
-	return newMetricBucket()
+	return NewMetricBucket()
 }
 
 func (bla *BucketLeapArray) resetWindowTo(ww *windowWrap, startTime uint64) *windowWrap {
-	atomic.StoreUint64(&ww.windowStart, startTime)
-	ww.value.Store(newMetricBucket())
+	atomic.StoreUint64(&ww.bucketStart, startTime)
+	ww.value.Store(NewMetricBucket())
 	return ww
 }
 
 // Write method
 // It might panic
 func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
-	bla.AddCountWithTime(util.CurrentTimeMillis(), event, count)
+	bla.addCountWithTime(util.CurrentTimeMillis(), event, count)
 }
 
-// For test
-func (bla *BucketLeapArray) AddCountWithTime(now uint64, event base.MetricEvent, count int64) {
-	curWindow, err := bla.data.currentWindowWithTime(now, bla)
+func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent, count int64) {
+	curWindow, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
+		logger.Errorf("Failed to get current window, current ts=%d, err: %+v.", now, errors.WithStack(err))
 		return
 	}
 	if curWindow == nil {
-		logger.Error("Current window is nil.")
+		logger.Error("Failed to add count: current bucket is nil")
 		return
 	}
 	mb := curWindow.value.Load()
 	if mb == nil {
-		logger.Error("Current window's value is nil.")
+		logger.Error("Failed to add count: current bucket atomic value is nil")
 		return
 	}
-	b, ok := mb.(*metricBucket)
+	b, ok := mb.(*MetricBucket)
 	if !ok {
-		logger.Error("Fail to assert metricBucket type.")
+		logger.Error("Failed to add count: bucket data type error")
 		return
 	}
-	b.add(event, count)
+	b.Add(event, count)
 }
 
 // Read method, need to adapt upper application
@@ -103,7 +106,7 @@ func (bla *BucketLeapArray) Count(event base.MetricEvent) int64 {
 }
 
 func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) int64 {
-	_, err := bla.data.currentWindowWithTime(now, bla)
+	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
 		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
 	}
@@ -114,31 +117,31 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 			logger.Error("Current window's value is nil.")
 			continue
 		}
-		b, ok := mb.(*metricBucket)
+		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logger.Error("Fail to assert metricBucket type.")
+			logger.Error("Fail to assert MetricBucket type.")
 			continue
 		}
-		count += b.get(event)
+		count += b.Get(event)
 	}
 	return count
 }
 
 // Read method, get all windowWrap.
 func (bla *BucketLeapArray) Values(now uint64) []*windowWrap {
-	_, err := bla.data.currentWindowWithTime(now, bla)
+	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
 		logger.Errorf("Fail to get current(%d) window, err: %+v.", now, errors.WithStack(err))
 	}
 	return bla.data.valuesWithTime(now)
 }
 
-func (bla *BucketLeapArray) ValuesWithConditional(now uint64, predicate base.TimePredicate) []*windowWrap {
-	_, err := bla.data.currentWindowWithTime(now, bla)
+func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*windowWrap {
+	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
 		logger.Errorf("Fail to get current(%d) window, err: %+v.", now, errors.WithStack(err))
 	}
-	return bla.data.ValuesWithConditional(now, predicate)
+	return bla.data.ValuesConditional(now, predicate)
 }
 
 func (bla *BucketLeapArray) MinRt() int64 {
@@ -155,12 +158,12 @@ func (bla *BucketLeapArray) MinRt() int64 {
 			logger.Error("Current window's value is nil.")
 			continue
 		}
-		b, ok := mb.(*metricBucket)
+		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logger.Error("Fail to assert metricBucket type.")
+			logger.Error("Fail to cast data as MetricBucket type")
 			continue
 		}
-		mr := b.getMinRt()
+		mr := b.MinRt()
 		if ret > mr {
 			ret = mr
 		}

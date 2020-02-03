@@ -148,7 +148,7 @@ func Test_atomicWindowWrapArray_compareAndSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			aa := newAtomicWindowWrapArray(tt.args.len, tt.args.windowLengthInMs, tt.args.bg)
 			update := &windowWrap{
-				windowStart: 8888888888888,
+				bucketStart: 8888888888888,
 				value:       atomic.Value{},
 			}
 			update.value.Store(int64(666666))
@@ -219,7 +219,7 @@ func taskSet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
 	val := atomic.Value{}
 	val.Store(bucket)
 	replace := &windowWrap{
-		windowStart: util.CurrentTimeMillis(),
+		bucketStart: util.CurrentTimeMillis(),
 		value:       val,
 	}
 	for !at.compareAndSet(idx, ww, replace) {

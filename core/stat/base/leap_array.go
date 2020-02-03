@@ -20,19 +20,18 @@ const (
 // The scope of time is [startTime, startTime+windowLength)
 // The size of windowWrap is 24(8+16) bytes
 type windowWrap struct {
-	// Start time of this windowWrap
-	windowStart uint64
-	// Value is the actual data structure to record the metrics.
-	// Such as metricBucket, the size is 16 bytes.
+	// The start timestamp of this statistic bucket wrapper.
+	bucketStart uint64
+	// The actual data structure to record the metrics (e.g. MetricBucket).
 	value atomic.Value
 }
 
 func (ww *windowWrap) resetTo(startTime uint64) {
-	ww.windowStart = startTime
+	ww.bucketStart = startTime
 }
 
 func (ww *windowWrap) isTimeInWindow(now uint64, windowLengthInMs uint32) bool {
-	return ww.windowStart <= now && now < ww.windowStart+uint64(windowLengthInMs)
+	return ww.bucketStart <= now && now < ww.bucketStart+uint64(windowLengthInMs)
 }
 
 func calculateStartTime(now uint64, windowLengthInMs uint32) uint64 {
@@ -65,7 +64,7 @@ func newAtomicWindowWrapArray(len int, windowLengthInMs uint32, generator bucket
 	startTime := calculateStartTime(util.CurrentTimeMillis(), windowLengthInMs)
 	for i := len - 1; i >= 0; i-- {
 		ww := &windowWrap{
-			windowStart: startTime,
+			bucketStart: startTime,
 			value:       atomic.Value{},
 		}
 		ww.value.Store(generator.newEmptyBucket())
@@ -110,14 +109,14 @@ type leapArray struct {
 	intervalInMs     uint32
 	array            *atomicWindowWrapArray
 	// update lock
-	updateLock triableMutex
+	updateLock mutex
 }
 
 func (la *leapArray) currentWindow(bg bucketGenerator) (*windowWrap, error) {
-	return la.currentWindowWithTime(util.CurrentTimeMillis(), bg)
+	return la.currentBucketOfTime(util.CurrentTimeMillis(), bg)
 }
 
-func (la *leapArray) currentWindowWithTime(now uint64, bg bucketGenerator) (*windowWrap, error) {
+func (la *leapArray) currentBucketOfTime(now uint64, bg bucketGenerator) (*windowWrap, error) {
 	if now < 0 {
 		return nil, errors.New("Current time is less than 0.")
 	}
@@ -131,7 +130,7 @@ func (la *leapArray) currentWindowWithTime(now uint64, bg bucketGenerator) (*win
 			// because la.array.data had initiated when new la.array
 			// theoretically, here is not reachable
 			newWrap := &windowWrap{
-				windowStart: windowStart,
+				bucketStart: windowStart,
 				value:       atomic.Value{},
 			}
 			newWrap.value.Store(bg.newEmptyBucket())
@@ -140,9 +139,9 @@ func (la *leapArray) currentWindowWithTime(now uint64, bg bucketGenerator) (*win
 			} else {
 				runtime.Gosched()
 			}
-		} else if windowStart == atomic.LoadUint64(&old.windowStart) {
+		} else if windowStart == atomic.LoadUint64(&old.bucketStart) {
 			return old, nil
-		} else if windowStart > atomic.LoadUint64(&old.windowStart) {
+		} else if windowStart > atomic.LoadUint64(&old.bucketStart) {
 			// current time has been next cycle of leapArray and leapArray dont't count in last cycle.
 			// reset windowWrap
 			if la.updateLock.TryLock() {
@@ -152,9 +151,9 @@ func (la *leapArray) currentWindowWithTime(now uint64, bg bucketGenerator) (*win
 			} else {
 				runtime.Gosched()
 			}
-		} else if windowStart < old.windowStart {
-			// used for some special case(e.g. when occupying "future" buckets).
-			return nil, errors.New(fmt.Sprintf("Provided time timeMillis=%d is already behind old.windowStart=%d.", windowStart, old.windowStart))
+		} else if windowStart < old.bucketStart {
+			// TODO: reserve for some special case (e.g. when occupying "future" buckets).
+			return nil, errors.New(fmt.Sprintf("Provided time timeMillis=%d is already behind old.bucketStart=%d.", windowStart, old.bucketStart))
 		}
 	}
 }
@@ -184,25 +183,25 @@ func (la *leapArray) valuesWithTime(now uint64) []*windowWrap {
 	return ret
 }
 
-func (la *leapArray) ValuesWithConditional(now uint64, predicate base.TimePredicate) []*windowWrap {
+func (la *leapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*windowWrap {
 	if now <= 0 {
 		return make([]*windowWrap, 0)
 	}
 	ret := make([]*windowWrap, 0)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
-		if ww == nil || la.isWindowDeprecated(now, ww) || !predicate(ww.windowStart) {
+		if ww == nil || la.isWindowDeprecated(now, ww) || !predicate(atomic.LoadUint64(&ww.bucketStart)) {
 			continue
 		}
 		ret = append(ret, ww)
 	}
 	return ret
-
 }
 
 // Judge whether the windowWrap is expired
 func (la *leapArray) isWindowDeprecated(now uint64, ww *windowWrap) bool {
-	return (now - ww.windowStart) > uint64(la.intervalInMs)
+	ws := atomic.LoadUint64(&ww.bucketStart)
+	return (now - ws) > uint64(la.intervalInMs)
 }
 
 // Generic interface to generate bucket

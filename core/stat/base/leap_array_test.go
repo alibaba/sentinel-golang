@@ -31,7 +31,7 @@ func Test_windowWrapper_Size(t *testing.T) {
 		a8 int32
 	}
 	ww := &windowWrap{
-		windowStart: util.CurrentTimeMillis(),
+		bucketStart: util.CurrentTimeMillis(),
 		value:       atomic.Value{},
 	}
 	if unsafe.Sizeof(*ww) != 24 {
@@ -56,7 +56,7 @@ func (bla *leapArrayMock) newEmptyBucket() interface{} {
 }
 
 func (bla *leapArrayMock) resetWindowTo(ww *windowWrap, startTime uint64) *windowWrap {
-	ww.windowStart = startTime
+	ww.bucketStart = startTime
 	ww.value.Store(new(int64))
 	return ww
 }
@@ -67,7 +67,7 @@ func Test_leapArray_calculateTimeIdx_normal(t *testing.T) {
 		sampleCount      uint32
 		intervalInMs     uint32
 		array            *atomicWindowWrapArray
-		mux              triableMutex
+		mux              mutex
 	}
 	type args struct {
 		timeMillis uint64
@@ -85,7 +85,7 @@ func Test_leapArray_calculateTimeIdx_normal(t *testing.T) {
 				sampleCount:      SampleCount,
 				intervalInMs:     IntervalInMs,
 				array:            newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{}),
-				mux:              triableMutex{},
+				mux:              mutex{},
 			},
 			args: args{
 				timeMillis: 1576296044907,
@@ -147,7 +147,7 @@ func Test_leapArray_WindowStartCheck_normal(t *testing.T) {
 		sampleCount      uint32
 		intervalInMs     uint32
 		array            *atomicWindowWrapArray
-		mux              triableMutex
+		mux              mutex
 	}
 	type args struct {
 		bg         bucketGenerator
@@ -166,7 +166,7 @@ func Test_leapArray_WindowStartCheck_normal(t *testing.T) {
 				sampleCount:      SampleCount,
 				intervalInMs:     IntervalInMs,
 				array:            newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{}),
-				mux:              triableMutex{},
+				mux:              mutex{},
 			},
 			args: args{
 				bg:         new(leapArrayMock),
@@ -176,7 +176,7 @@ func Test_leapArray_WindowStartCheck_normal(t *testing.T) {
 		},
 	}
 	wwPtr := tests[0].fields.array.get(9)
-	wwPtr.windowStart = 1576296044500 //start time of cycle 1576296040000
+	wwPtr.bucketStart = 1576296044500 //start time of cycle 1576296040000
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -187,13 +187,13 @@ func Test_leapArray_WindowStartCheck_normal(t *testing.T) {
 				array:            tt.fields.array,
 				updateLock:       tt.fields.mux,
 			}
-			got, err := la.currentWindowWithTime(tt.args.timeMillis, tt.args.bg)
+			got, err := la.currentBucketOfTime(tt.args.timeMillis, tt.args.bg)
 			if err != nil {
-				t.Errorf("leapArray.currentWindowWithTime() error = %v\n", err)
+				t.Errorf("leapArray.currentBucketOfTime() error = %v\n", err)
 				return
 			}
-			if got.windowStart != tt.want {
-				t.Errorf("windowStart = %v, want %v", got.windowStart, tt.want)
+			if got.bucketStart != tt.want {
+				t.Errorf("bucketStart = %v, want %v", got.bucketStart, tt.want)
 			}
 		})
 	}
@@ -205,7 +205,7 @@ func Test_leapArray_currentWindowWithTime_normal(t *testing.T) {
 		sampleCount      uint32
 		intervalInMs     uint32
 		array            *atomicWindowWrapArray
-		mux              triableMutex
+		mux              mutex
 	}
 	type args struct {
 		bg         bucketGenerator
@@ -225,7 +225,7 @@ func Test_leapArray_currentWindowWithTime_normal(t *testing.T) {
 				sampleCount:      SampleCount,
 				intervalInMs:     IntervalInMs,
 				array:            newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{}),
-				mux:              triableMutex{},
+				mux:              mutex{},
 			},
 			args: args{
 				bg:         new(leapArrayMock),
@@ -237,7 +237,7 @@ func Test_leapArray_currentWindowWithTime_normal(t *testing.T) {
 	}
 
 	wwPtr := tests[0].fields.array.get(9)
-	wwPtr.windowStart = 1576296044500 //start time of cycle 1576296040000
+	wwPtr.bucketStart = 1576296044500 //start time of cycle 1576296040000
 	tests[0].want = tests[0].fields.array.get(9)
 
 	for _, tt := range tests {
@@ -249,13 +249,13 @@ func Test_leapArray_currentWindowWithTime_normal(t *testing.T) {
 				array:            tt.fields.array,
 				updateLock:       tt.fields.mux,
 			}
-			got, err := la.currentWindowWithTime(tt.args.timeMillis, tt.args.bg)
+			got, err := la.currentBucketOfTime(tt.args.timeMillis, tt.args.bg)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("leapArray.currentWindowWithTime() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("leapArray.currentBucketOfTime() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("leapArray.currentWindowWithTime() = %v, want %v", got, tt.want)
+				t.Errorf("leapArray.currentBucketOfTime() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -267,7 +267,7 @@ func Test_leapArray_valuesWithTime_normal(t *testing.T) {
 		sampleCount      uint32
 		intervalInMs     uint32
 		array            *atomicWindowWrapArray
-		mux              triableMutex
+		mux              mutex
 	}
 	type args struct {
 		timeMillis uint64
@@ -286,7 +286,7 @@ func Test_leapArray_valuesWithTime_normal(t *testing.T) {
 				sampleCount:      SampleCount,
 				intervalInMs:     IntervalInMs,
 				array:            newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{}),
-				mux:              triableMutex{},
+				mux:              mutex{},
 			},
 			args: args{
 				timeMillis: 1576296049907,
@@ -299,7 +299,7 @@ func Test_leapArray_valuesWithTime_normal(t *testing.T) {
 	start := uint64(1576296040000)
 	for idx := 0; idx < tests[0].fields.array.length; idx++ {
 		ww := tests[0].fields.array.get(idx)
-		ww.windowStart = start
+		ww.bucketStart = start
 		start += 500
 	}
 
@@ -317,7 +317,7 @@ func Test_leapArray_valuesWithTime_normal(t *testing.T) {
 				find := false
 				for i := 0; i < tests[0].fields.array.length; i++ {
 					w := tests[0].fields.array.get(i)
-					if w.windowStart == g.windowStart {
+					if w.bucketStart == g.bucketStart {
 						find = true
 						break
 					}
@@ -336,7 +336,7 @@ func Test_leapArray_isWindowDeprecated_normal(t *testing.T) {
 		sampleCount      uint32
 		intervalInMs     uint32
 		array            *atomicWindowWrapArray
-		mux              triableMutex
+		mux              mutex
 	}
 	type args struct {
 		startTime uint64
@@ -355,12 +355,12 @@ func Test_leapArray_isWindowDeprecated_normal(t *testing.T) {
 				sampleCount:      SampleCount,
 				intervalInMs:     IntervalInMs,
 				array:            newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{}),
-				mux:              triableMutex{},
+				mux:              mutex{},
 			},
 			args: args{
 				startTime: 1576296044907,
 				ww: &windowWrap{
-					windowStart: 1576296004907,
+					bucketStart: 1576296004907,
 				},
 			},
 			want: true,

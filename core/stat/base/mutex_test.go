@@ -7,27 +7,27 @@ import (
 	"time"
 )
 
-func Test_triableMutex_TryLock(t *testing.T) {
-	var m triableMutex
+func Test_Mutex_TryLock(t *testing.T) {
+	var m mutex
 	m.Lock()
 	time.Sleep(time.Second)
 	if m.TryLock() {
-		t.Error("TryLock get lock error \n")
+		t.Error("TryLock get lock error")
 	}
 	m.Unlock()
 	if !m.TryLock() {
-		t.Error("TryLock get lock error \n")
+		t.Error("TryLock get lock error")
 	}
 	m.Unlock()
 }
 
 func utTriableMutexConcurrent(t *testing.T) {
-	m := &triableMutex{}
+	m := &mutex{}
 	cnt := int32(0)
 	wg := &sync.WaitGroup{}
 	wg.Add(1000)
 	for i := 0; i < 1000; i++ {
-		go func(tm *triableMutex, wgi *sync.WaitGroup, cntPtr *int32, t *testing.T) {
+		go func(tm *mutex, wgi *sync.WaitGroup, cntPtr *int32, t *testing.T) {
 			for {
 				if tm.TryLock() {
 					*cntPtr = *cntPtr + 1
@@ -47,11 +47,11 @@ func utTriableMutexConcurrent(t *testing.T) {
 	}
 }
 
-func Test_triableMutex_TryLock_Concurrent(t *testing.T) {
+func Test_Mutex_TryLock_Concurrent(t *testing.T) {
 	utTriableMutexConcurrent(t)
 }
 
-func Benchmark_triableMutex_TryLock(b *testing.B) {
+func Benchmark_Mutex_TryLock(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		utTriableMutexConcurrent(nil)
 	}
