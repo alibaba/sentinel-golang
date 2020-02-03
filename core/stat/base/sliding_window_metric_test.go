@@ -8,7 +8,7 @@ import (
 	"github.com/sentinel-group/sentinel-golang/core/base"
 )
 
-func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
+func TestSlidingWindowMetric_getBucketStartRange(t *testing.T) {
 	type args struct {
 		sampleCount      uint32
 		intervalInMs     uint32
@@ -23,7 +23,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 		wantEnd   uint64
 	}{
 		{
-			name: "TestSlidingWindowMetric_getTimeInterval-1",
+			name: "TestSlidingWindowMetric_getBucketStartRange-1",
 			args: args{
 				sampleCount:      4,
 				intervalInMs:     2000,
@@ -37,7 +37,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 			wantEnd:   1578416556500,
 		},
 		{
-			name: "TestSlidingWindowMetric_getTimeInterval-2",
+			name: "TestSlidingWindowMetric_getBucketStartRange-2",
 			args: args{
 				sampleCount:      2,
 				intervalInMs:     1000,
@@ -51,7 +51,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 			wantEnd:   1578416556500,
 		},
 		{
-			name: "TestSlidingWindowMetric_getTimeInterval-3",
+			name: "TestSlidingWindowMetric_getBucketStartRange-3",
 			args: args{
 				sampleCount:      1,
 				intervalInMs:     2000,
@@ -65,7 +65,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 			wantEnd:   1578416556000,
 		},
 		{
-			name: "TestSlidingWindowMetric_getTimeInterval-4",
+			name: "TestSlidingWindowMetric_getBucketStartRange-4",
 			args: args{
 				sampleCount:      1,
 				intervalInMs:     10000,
@@ -79,7 +79,7 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 			wantEnd:   1578416556000,
 		},
 		{
-			name: "TestSlidingWindowMetric_getTimeInterval-5",
+			name: "TestSlidingWindowMetric_getBucketStartRange-5",
 			args: args{
 				sampleCount:      2,
 				intervalInMs:     1000,
@@ -96,12 +96,12 @@ func TestSlidingWindowMetric_getTimeInterval(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewSlidingWindowMetric(tt.args.sampleCount, tt.args.intervalInMs, NewBucketLeapArray(tt.args.realSampleCount, tt.args.realIntervalInMs))
-			gotStart, gotEnd := m.getTimeInterval(tt.args.now)
+			gotStart, gotEnd := m.getBucketStartRange(tt.args.now)
 			if gotStart != tt.wantStart {
-				t.Errorf("SlidingWindowMetric.getTimeInterval() gotStart = %v, want %v", gotStart, tt.wantStart)
+				t.Errorf("SlidingWindowMetric.getBucketStartRange() gotStart = %v, want %v", gotStart, tt.wantStart)
 			}
 			if gotEnd != tt.wantEnd {
-				t.Errorf("SlidingWindowMetric.getTimeInterval() gotEnd = %v, want %v", gotEnd, tt.wantEnd)
+				t.Errorf("SlidingWindowMetric.getBucketStartRange() gotEnd = %v, want %v", gotEnd, tt.wantEnd)
 			}
 		})
 	}
@@ -227,14 +227,14 @@ func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 500; i++ {
-				tt.fields.real.AddCountWithTime(tt.args.now, tt.args.event, 1)
+				tt.fields.real.addCountWithTime(tt.args.now, tt.args.event, 1)
 			}
 			for i := 0; i < int(tt.fields.intervalInMs); i++ {
-				tt.fields.real.AddCountWithTime(tt.args.now-100-uint64(i), tt.args.event, 1)
+				tt.fields.real.addCountWithTime(tt.args.now-100-uint64(i), tt.args.event, 1)
 			}
 			m := NewSlidingWindowMetric(tt.fields.sampleCount, tt.fields.intervalInMs, tt.fields.real)
-			if got := m.GetSumWithTime(tt.args.now, tt.args.event); got != tt.want {
-				t.Errorf("SlidingWindowMetric.GetSumWithTime() = %v, want %v", got, tt.want)
+			if got := m.getSumWithTime(tt.args.now, tt.args.event); got != tt.want {
+				t.Errorf("SlidingWindowMetric.getSumWithTime() = %v, want %v", got, tt.want)
 			}
 		})
 	}

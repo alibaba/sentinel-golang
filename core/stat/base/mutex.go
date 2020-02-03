@@ -8,10 +8,12 @@ import (
 
 const mutexLocked = 1 << iota
 
-type triableMutex struct {
+// The mutex which supports try-locking.
+type mutex struct {
 	sync.Mutex
 }
 
-func (tl *triableMutex) TryLock() bool {
+// TryLock acquires the lock only if it is free at the time of invocation.
+func (tl *mutex) TryLock() bool {
 	return atomic.CompareAndSwapInt32((*int32)(unsafe.Pointer(&tl.Mutex)), 0, mutexLocked)
 }

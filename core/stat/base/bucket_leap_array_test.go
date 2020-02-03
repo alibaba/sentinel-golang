@@ -15,14 +15,15 @@ func Test_NewBucketLeapArray(t *testing.T) {
 	slidingWindow := NewBucketLeapArray(SampleCount, IntervalInMs)
 	now := util.CurrentTimeMillis()
 
-	wr, err := slidingWindow.data.currentWindowWithTime(now, slidingWindow)
+	wr, err := slidingWindow.data.currentBucketOfTime(now, slidingWindow)
 	if wr == nil || wr.value.Load() == nil {
 		t.Errorf("Unexcepted error")
+		return
 	}
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	if wr.windowStart != (now - now%uint64(WindowLengthInMs)) {
+	if wr.bucketStart != (now - now%uint64(WindowLengthInMs)) {
 		t.Errorf("Unexcepted error, window length is not same")
 	}
 	if wr.value.Load() == nil {
@@ -67,11 +68,11 @@ func Test_UpdateBucket_Concurrent(t *testing.T) {
 
 func coroutineTask(wg *sync.WaitGroup, slidingWindow *BucketLeapArray, now uint64, counter *uint64) {
 	inc := rand.Uint64() % 10000
-	slidingWindow.AddCountWithTime(now+inc, base.MetricEventComplete, 1)
-	slidingWindow.AddCountWithTime(now+inc, base.MetricEventPass, 1)
-	slidingWindow.AddCountWithTime(now+inc, base.MetricEventBlock, 1)
-	slidingWindow.AddCountWithTime(now+inc, base.MetricEventError, 1)
-	slidingWindow.AddCountWithTime(now+inc, base.MetricEventRt, 10)
+	slidingWindow.addCountWithTime(now+inc, base.MetricEventComplete, 1)
+	slidingWindow.addCountWithTime(now+inc, base.MetricEventPass, 1)
+	slidingWindow.addCountWithTime(now+inc, base.MetricEventBlock, 1)
+	slidingWindow.addCountWithTime(now+inc, base.MetricEventError, 1)
+	slidingWindow.addCountWithTime(now+inc, base.MetricEventRt, 10)
 
 	atomic.AddUint64(counter, 1)
 	wg.Done()
@@ -85,12 +86,12 @@ func TestBucketLeapArray_resetWindowTo(t *testing.T) {
 	if oldBucket == nil {
 		t.Errorf("BucketLeapArray init error.")
 	}
-	bucket, ok := oldBucket.(*metricBucket)
+	bucket, ok := oldBucket.(*MetricBucket)
 	if !ok {
-		t.Errorf("Fail to assert bucket to metricBucket.")
+		t.Errorf("Fail to assert bucket to MetricBucket.")
 	}
-	bucket.addPass(100)
-	bucket.addBlock(100)
+	bucket.Add(base.MetricEventPass, 100)
+	bucket.Add(base.MetricEventBlock, 100)
 
 	wantStartTime := util.CurrentTimeMillis() + 1000
 	got := bla.resetWindowTo(oldWindow, wantStartTime)
@@ -98,14 +99,14 @@ func TestBucketLeapArray_resetWindowTo(t *testing.T) {
 	if newBucket == nil {
 		t.Errorf("got window is nil.")
 	}
-	newRealBucket, ok := newBucket.(*metricBucket)
+	newRealBucket, ok := newBucket.(*MetricBucket)
 	if !ok {
-		t.Errorf("Fail to assert bucket to metricBucket.")
+		t.Errorf("Fail to assert bucket to MetricBucket.")
 	}
-	if newRealBucket.getPass() != 0 {
+	if newRealBucket.Get(base.MetricEventPass) != 0 {
 		t.Errorf("BucketLeapArray.resetWindowTo() execute fail.")
 	}
-	if newRealBucket.getBlock() != 0 {
+	if newRealBucket.Get(base.MetricEventBlock) != 0 {
 		t.Errorf("BucketLeapArray.resetWindowTo() execute fail.")
 	}
 }
