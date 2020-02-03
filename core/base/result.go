@@ -7,11 +7,26 @@ import (
 type BlockType int32
 
 const (
-	// sentinel internal error
 	BlockTypeUnknown BlockType = iota
 	BlockTypeFlow
 	BlockTypeCircuitBreaking
+	BlockTypeSystemFlow
 )
+
+func (t BlockType) String() string {
+	switch t {
+	case BlockTypeUnknown:
+		return "Unknown"
+	case BlockTypeFlow:
+		return "FlowControl"
+	case BlockTypeCircuitBreaking:
+		return "CircuitBreaking"
+	case BlockTypeSystemFlow:
+		return "System"
+	default:
+		return fmt.Sprintf("%d", t)
+	}
+}
 
 type TokenResultStatus int32
 
@@ -66,6 +81,14 @@ func NewTokenResultBlocked(blockType BlockType, blockMsg string) *TokenResult {
 	return &TokenResult{
 		status:   ResultStatusBlocked,
 		blockErr: NewBlockError(blockType, blockMsg),
+		waitMs:   0,
+	}
+}
+
+func NewTokenResultBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) *TokenResult {
+	return &TokenResult{
+		status:   ResultStatusBlocked,
+		blockErr: NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot),
 		waitMs:   0,
 	}
 }
