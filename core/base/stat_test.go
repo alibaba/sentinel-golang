@@ -6,33 +6,22 @@ type StatNodeMock struct {
 	mock.Mock
 }
 
+func (m *StatNodeMock) AddMetric(event MetricEvent, count uint64) {
+	m.Called(event, count)
+}
+
 func (m *StatNodeMock) MetricsOnCondition(predicate TimePredicate) []*MetricItem {
-	args := m.Called()
+	args := m.Called(predicate)
 	return args.Get(0).([]*MetricItem)
 }
 
 func (m *StatNodeMock) GetQPS(event MetricEvent) float64 {
-	args := m.Called()
-	return float64(args.Int(0))
-}
-
-func (m *StatNodeMock) GetQPSWithTime(now uint64, event MetricEvent) float64 {
-	args := m.Called()
-	return float64(args.Int(0))
-}
-
-func (m *StatNodeMock) TotalQPS() float64 {
-	args := m.Called()
+	args := m.Called(event)
 	return float64(args.Int(0))
 }
 
 func (m *StatNodeMock) GetSum(event MetricEvent) int64 {
-	args := m.Called()
-	return int64(args.Int(0))
-}
-
-func (m *StatNodeMock) GetSumWithTime(now uint64, event MetricEvent) int64 {
-	args := m.Called()
+	args := m.Called(event)
 	return int64(args.Int(0))
 }
 
@@ -41,19 +30,9 @@ func (m *StatNodeMock) AvgRT() float64 {
 	return float64(args.Int(0))
 }
 
-func (m *StatNodeMock) MinRT() int64 {
+func (m *StatNodeMock) MinRT() float64 {
 	args := m.Called()
-	return int64(args.Int(0))
-}
-
-func (m *StatNodeMock) AddRequest(event MetricEvent, count uint64) {
-	m.Called(event, count)
-	return
-}
-
-func (m *StatNodeMock) AddRtAndCompleteRequest(rt, count uint64) {
-	m.Called(rt, count)
-	return
+	return float64(args.Int(0))
 }
 
 func (m *StatNodeMock) CurrentGoroutineNum() int32 {
