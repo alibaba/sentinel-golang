@@ -16,10 +16,16 @@ func (s *StatisticSlot) String() string {
 
 func (s *StatisticSlot) OnEntryPassed(ctx *base.EntryContext) {
 	s.recordPassFor(ctx.StatNode, ctx.Input.AcquireCount)
+	if ctx.Resource.FlowType() == base.Inbound {
+		s.recordPassFor(InboundNode(), ctx.Input.AcquireCount)
+	}
 }
 
 func (s *StatisticSlot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
 	s.recordBlockFor(ctx.StatNode, ctx.Input.AcquireCount)
+	if ctx.Resource.FlowType() == base.Inbound {
+		s.recordBlockFor(InboundNode(), ctx.Input.AcquireCount)
+	}
 }
 
 func (s *StatisticSlot) OnCompleted(ctx *base.EntryContext) {
@@ -28,30 +34,31 @@ func (s *StatisticSlot) OnCompleted(ctx *base.EntryContext) {
 	}
 	rt := util.CurrentTimeMillis() - ctx.StartTime()
 	s.recordCompleteFor(ctx.StatNode, ctx.Input.AcquireCount, rt)
+	if ctx.Resource.FlowType() == base.Inbound {
+		s.recordCompleteFor(InboundNode(), ctx.Input.AcquireCount, rt)
+	}
 }
 
 func (s *StatisticSlot) recordPassFor(sn base.StatNode, count uint32) {
-	logger.Debug("Entry passed.")
 	if sn == nil {
 		return
 	}
 	sn.IncreaseGoroutineNum()
-	sn.AddRequest(base.MetricEventPass, uint64(count))
+	sn.AddMetric(base.MetricEventPass, uint64(count))
 }
 
 func (s *StatisticSlot) recordBlockFor(sn base.StatNode, count uint32) {
-	logger.Debug("Entry blocked.")
 	if sn == nil {
 		return
 	}
-	sn.AddRequest(base.MetricEventBlock, uint64(count))
+	sn.AddMetric(base.MetricEventBlock, uint64(count))
 }
 
 func (s *StatisticSlot) recordCompleteFor(sn base.StatNode, count uint32, rt uint64) {
-	logger.Debug("Entry completed.")
 	if sn == nil {
 		return
 	}
-	sn.AddRtAndCompleteRequest(rt, uint64(count))
+	sn.AddMetric(base.MetricEventRt, rt)
+	sn.AddMetric(base.MetricEventComplete, uint64(count))
 	sn.DecreaseGoroutineNum()
 }

@@ -11,9 +11,28 @@ type ResourceNodeMap map[string]*ResourceNode
 var (
 	logger = logging.GetDefaultLogger()
 
+	inboundNode = NewResourceNode(base.TotalInBoundResourceName, base.ResTypeCommon)
+
 	resNodeMap = make(ResourceNodeMap, 0)
 	rnsMux     = new(sync.RWMutex)
 )
+
+// InboundNode returns the global inbound statistic node.
+func InboundNode() *ResourceNode {
+	return inboundNode
+}
+
+// ResourceNodeList returns the slice of all existing resource nodes.
+func ResourceNodeList() []*ResourceNode {
+	rnsMux.RLock()
+	defer rnsMux.RUnlock()
+
+	list := make([]*ResourceNode, 0, len(resNodeMap))
+	for _, v := range resNodeMap {
+		list = append(list, v)
+	}
+	return list
+}
 
 func GetResourceNode(resource string) *ResourceNode {
 	rnsMux.RLock()
@@ -43,7 +62,7 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 	return node
 }
 
-func ResetResourceNodes() {
+func ResetResourceNodeMap() {
 	rnsMux.Lock()
 	defer rnsMux.Unlock()
 	resNodeMap = make(ResourceNodeMap, 0)

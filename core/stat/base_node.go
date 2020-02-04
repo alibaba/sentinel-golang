@@ -7,60 +7,53 @@ import (
 )
 
 type BaseStatNode struct {
-	goroutineNum   int32
-	sampleCount    uint32
-	intervalInMs   uint32
-	rollingCounter *sbase.BucketLeapArray
+	sampleCount uint32
+	intervalMs  uint32
+
+	goroutineNum int32
+
+	arr    *sbase.BucketLeapArray
+	metric *sbase.SlidingWindowMetric
 }
 
 func NewBaseStatNode(sampleCount uint32, intervalInMs uint32) *BaseStatNode {
+	la := sbase.NewBucketLeapArray(base.DefaultSampleCountTotal, base.DefaultIntervalMsTotal)
+	metric := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, la)
 	return &BaseStatNode{
-		goroutineNum:   0,
-		sampleCount:    sampleCount,
-		intervalInMs:   intervalInMs,
-		rollingCounter: sbase.NewBucketLeapArray(sampleCount, intervalInMs),
+		goroutineNum: 0,
+		sampleCount:  sampleCount,
+		intervalMs:   intervalInMs,
+		arr:          la,
+		metric:       metric,
 	}
 }
 
 func (n *BaseStatNode) MetricsOnCondition(predicate base.TimePredicate) []*base.MetricItem {
-	panic("implement me")
+	return n.metric.SecondMetricsOnCondition(predicate)
 }
 
 func (n *BaseStatNode) GetQPS(event base.MetricEvent) float64 {
-	return float64(n.rollingCounter.Count(event)) / n.rollingCounter.GetIntervalInSecond()
-}
-
-func (n *BaseStatNode) GetQPSWithTime(now uint64, event base.MetricEvent) float64 {
-	return float64(n.rollingCounter.CountWithTime(now, event)) / n.rollingCounter.GetIntervalInSecond()
+	return n.metric.GetAvg(event)
 }
 
 func (n *BaseStatNode) GetSum(event base.MetricEvent) int64 {
-	return n.rollingCounter.Count(event)
+	return n.metric.GetSum(event)
 }
 
-func (n *BaseStatNode) GetSumWithTime(now uint64, event base.MetricEvent) int64 {
-	return n.rollingCounter.CountWithTime(now, event)
-}
-
-func (n *BaseStatNode) AddRequest(event base.MetricEvent, count uint64) {
-	n.rollingCounter.AddCount(event, int64(count))
-}
-
-func (n *BaseStatNode) AddRtAndCompleteRequest(rt, count uint64) {
-	n.rollingCounter.AddCount(base.MetricEventComplete, int64(count))
-	n.rollingCounter.AddCount(base.MetricEventRt, int64(rt))
+func (n *BaseStatNode) AddMetric(event base.MetricEvent, count uint64) {
+	n.arr.AddCount(event, int64(count))
 }
 
 func (n *BaseStatNode) AvgRT() float64 {
-	complete := n.rollingCounter.Count(base.MetricEventComplete)
+	complete := n.metric.GetSum(base.MetricEventComplete)
 	if complete <= 0 {
 		return float64(0)
 	}
-	return float64(n.rollingCounter.Count(base.MetricEventRt) / complete)
+	return float64(n.metric.GetSum(base.MetricEventRt) / complete)
 }
 
-func (n *BaseStatNode) MinRT() int64 {
-	return n.rollingCounter.MinRt()
+func (n *BaseStatNode) MinRT() float64 {
+	return float64(n.metric.MinRT())
 }
 
 func (n *BaseStatNode) CurrentGoroutineNum() int32 {
@@ -76,5 +69,6 @@ func (n *BaseStatNode) DecreaseGoroutineNum() {
 }
 
 func (n *BaseStatNode) Reset() {
-	n.rollingCounter = sbase.NewBucketLeapArray(n.sampleCount, n.intervalInMs)
+	// TODO: this should be thread-safe, or error may occur
+	panic("to be implemented")
 }
