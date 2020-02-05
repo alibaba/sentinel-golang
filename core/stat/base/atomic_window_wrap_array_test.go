@@ -10,22 +10,22 @@ import (
 	"time"
 )
 
-func Test_newAtomicWindowWrapArray_normal(t *testing.T) {
+func Test_newAtomicBucketWrapArray_normal(t *testing.T) {
 	type args struct {
 		len              int
-		windowLengthInMs uint32
+		bucketLengthInMs uint32
 		bg               bucketGenerator
 	}
 	tests := []struct {
 		name string
 		args args
-		want *atomicWindowWrapArray
+		want *atomicBucketWrapArray
 	}{
 		{
-			name: "Test_newAtomicWindowWrapArray_normal",
+			name: "Test_newAtomicBucketWrapArray_normal",
 			args: args{
 				len:              int(SampleCount),
-				windowLengthInMs: WindowLengthInMs,
+				bucketLengthInMs: BucketLengthInMs,
 				bg:               &leapArrayMock{},
 			},
 			want: nil,
@@ -34,9 +34,9 @@ func Test_newAtomicWindowWrapArray_normal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ret := newAtomicWindowWrapArray(tt.args.len, tt.args.windowLengthInMs, tt.args.bg)
+			ret := newAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
 			if ret == nil || uintptr(ret.base) == uintptr(0) || ret.length != tt.args.len || ret.data == nil || len(ret.data) == 0 {
-				t.Errorf("newAtomicWindowWrapArray() %+v is illegal.\n", ret)
+				t.Errorf("newAtomicBucketWrapArray() %+v is illegal.\n", ret)
 				return
 			}
 			dataNil := false
@@ -47,17 +47,17 @@ func Test_newAtomicWindowWrapArray_normal(t *testing.T) {
 				}
 			}
 			if dataNil {
-				t.Error("newAtomicWindowWrapArray exists nil windowWrap.")
+				t.Error("newAtomicBucketWrapArray exists nil bucketWrap.")
 			}
 
 		})
 	}
 }
 
-func Test_atomicWindowWrapArray_elementOffset(t *testing.T) {
+func Test_atomicBucketWrapArray_elementOffset(t *testing.T) {
 	type args struct {
 		len              int
-		windowLengthInMs uint32
+		bucketLengthInMs uint32
 		bg               bucketGenerator
 		idx              int
 	}
@@ -67,10 +67,10 @@ func Test_atomicWindowWrapArray_elementOffset(t *testing.T) {
 		want uintptr
 	}{
 		{
-			name: "Test_atomicWindowWrapArray_elementOffset",
+			name: "Test_atomicBucketWrapArray_elementOffset",
 			args: args{
 				len:              int(SampleCount),
-				windowLengthInMs: WindowLengthInMs,
+				bucketLengthInMs: BucketLengthInMs,
 				bg:               &leapArrayMock{},
 				idx:              9,
 			},
@@ -79,31 +79,31 @@ func Test_atomicWindowWrapArray_elementOffset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			aa := newAtomicWindowWrapArray(tt.args.len, tt.args.windowLengthInMs, tt.args.bg)
+			aa := newAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
 			if got := uintptr(aa.elementOffset(tt.args.idx)) - uintptr(aa.base); got != tt.want {
-				t.Errorf("atomicWindowWrapArray.elementOffset() = %v, want %v \n", got, tt.want)
+				t.Errorf("atomicBucketWrapArray.elementOffset() = %v, want %v \n", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_atomicWindowWrapArray_get(t *testing.T) {
+func Test_atomicBucketWrapArray_get(t *testing.T) {
 	type args struct {
 		len              int
-		windowLengthInMs uint32
+		bucketLengthInMs uint32
 		bg               bucketGenerator
 		idx              int
 	}
 	tests := []struct {
 		name string
 		args args
-		want *windowWrap
+		want *bucketWrap
 	}{
 		{
-			name: "Test_atomicWindowWrapArray_get",
+			name: "Test_atomicBucketWrapArray_get",
 			args: args{
 				len:              int(SampleCount),
-				windowLengthInMs: WindowLengthInMs,
+				bucketLengthInMs: BucketLengthInMs,
 				bg:               &leapArrayMock{},
 				idx:              9,
 			},
@@ -112,19 +112,19 @@ func Test_atomicWindowWrapArray_get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			aa := newAtomicWindowWrapArray(tt.args.len, tt.args.windowLengthInMs, tt.args.bg)
+			aa := newAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
 			tt.want = aa.data[9]
 			if got := aa.get(tt.args.idx); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("atomicWindowWrapArray.get() = %v, want %v", got, tt.want)
+				t.Errorf("atomicBucketWrapArray.get() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_atomicWindowWrapArray_compareAndSet(t *testing.T) {
+func Test_atomicBucketWrapArray_compareAndSet(t *testing.T) {
 	type args struct {
 		len              int
-		windowLengthInMs uint32
+		bucketLengthInMs uint32
 		bg               bucketGenerator
 		idx              int
 	}
@@ -134,10 +134,10 @@ func Test_atomicWindowWrapArray_compareAndSet(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Test_atomicWindowWrapArray_compareAndSet",
+			name: "Test_atomicBucketWrapArray_compareAndSet",
 			args: args{
 				len:              int(SampleCount),
-				windowLengthInMs: WindowLengthInMs,
+				bucketLengthInMs: BucketLengthInMs,
 				bg:               &leapArrayMock{},
 				idx:              9,
 			},
@@ -146,31 +146,31 @@ func Test_atomicWindowWrapArray_compareAndSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			aa := newAtomicWindowWrapArray(tt.args.len, tt.args.windowLengthInMs, tt.args.bg)
-			update := &windowWrap{
+			aa := newAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
+			update := &bucketWrap{
 				bucketStart: 8888888888888,
 				value:       atomic.Value{},
 			}
 			update.value.Store(int64(666666))
 			except := aa.get(9)
 			if got := aa.compareAndSet(tt.args.idx, except, update); got != tt.want {
-				t.Errorf("atomicWindowWrapArray.compareAndSet() = %v, want %v", got, tt.want)
+				t.Errorf("atomicBucketWrapArray.compareAndSet() = %v, want %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(aa.get(9), update) {
-				t.Errorf("atomicWindowWrapArray.compareAndSet() update fail")
+				t.Errorf("atomicBucketWrapArray.compareAndSet() update fail")
 			}
 		})
 	}
 }
 
-func taskGet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
+func taskGet(wg *sync.WaitGroup, at *atomicBucketWrapArray, t *testing.T) {
 	time.Sleep(time.Millisecond * 3)
 	idx := rand.Int() % 20
 	wwPtr := at.get(idx)
 	vInterface := wwPtr.value.Load()
 	vp, ok := vInterface.(*int64)
 	if !ok {
-		t.Error("windowWrap value assert fail.\n")
+		t.Error("bucketWrap value assert fail.\n")
 	}
 	v := atomic.LoadInt64(vp)
 	newV := v + 1
@@ -181,8 +181,8 @@ func taskGet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
 	wg.Done()
 }
 
-func Test_atomicWindowWrapArray_Concurrency_Get(t *testing.T) {
-	ret := newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{})
+func Test_atomicBucketWrapArray_Concurrency_Get(t *testing.T) {
+	ret := newAtomicBucketWrapArray(int(SampleCount), BucketLengthInMs, &leapArrayMock{})
 	for _, ww := range ret.data {
 		c := new(int64)
 		*c = 0
@@ -210,7 +210,7 @@ func Test_atomicWindowWrapArray_Concurrency_Get(t *testing.T) {
 	t.Log("all done")
 }
 
-func taskSet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
+func taskSet(wg *sync.WaitGroup, at *atomicBucketWrapArray, t *testing.T) {
 	time.Sleep(time.Millisecond * 3)
 	idx := rand.Int() % 20
 	ww := at.get(idx)
@@ -218,7 +218,7 @@ func taskSet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
 	*bucket = 100
 	val := atomic.Value{}
 	val.Store(bucket)
-	replace := &windowWrap{
+	replace := &bucketWrap{
 		bucketStart: util.CurrentTimeMillis(),
 		value:       val,
 	}
@@ -228,8 +228,8 @@ func taskSet(wg *sync.WaitGroup, at *atomicWindowWrapArray, t *testing.T) {
 	wg.Done()
 }
 
-func Test_atomicWindowWrapArray_Concurrency_Set(t *testing.T) {
-	ret := newAtomicWindowWrapArray(int(SampleCount), WindowLengthInMs, &leapArrayMock{})
+func Test_atomicBucketWrapArray_Concurrency_Set(t *testing.T) {
+	ret := newAtomicBucketWrapArray(int(SampleCount), BucketLengthInMs, &leapArrayMock{})
 	for _, ww := range ret.data {
 		c := new(int64)
 		*c = 0

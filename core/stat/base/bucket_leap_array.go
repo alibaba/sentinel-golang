@@ -25,17 +25,17 @@ func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArra
 	if intervalInMs%sampleCount != 0 {
 		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
 	}
-	winLengthInMs := intervalInMs / sampleCount
+	bucketLengthInMs := intervalInMs / sampleCount
 	ret := &BucketLeapArray{
 		data: leapArray{
-			windowLengthInMs: winLengthInMs,
+			bucketLengthInMs: bucketLengthInMs,
 			sampleCount:      sampleCount,
 			intervalInMs:     intervalInMs,
 			array:            nil,
 		},
 		dataType: "MetricBucket",
 	}
-	arr := newAtomicWindowWrapArray(int(sampleCount), winLengthInMs, ret)
+	arr := newAtomicBucketWrapArray(int(sampleCount), bucketLengthInMs, ret)
 	ret.data.array = arr
 	return ret
 }
@@ -48,8 +48,8 @@ func (bla *BucketLeapArray) IntervalInMs() uint32 {
 	return bla.data.intervalInMs
 }
 
-func (bla *BucketLeapArray) WindowLengthInMs() uint32 {
-	return bla.data.windowLengthInMs
+func (bla *BucketLeapArray) BucketLengthInMs() uint32 {
+	return bla.data.bucketLengthInMs
 }
 
 func (bla *BucketLeapArray) DataType() string {
@@ -64,7 +64,7 @@ func (bla *BucketLeapArray) newEmptyBucket() interface{} {
 	return NewMetricBucket()
 }
 
-func (bla *BucketLeapArray) resetWindowTo(ww *windowWrap, startTime uint64) *windowWrap {
+func (bla *BucketLeapArray) resetBucketTo(ww *bucketWrap, startTime uint64) *bucketWrap {
 	atomic.StoreUint64(&ww.bucketStart, startTime)
 	ww.value.Store(NewMetricBucket())
 	return ww
@@ -77,16 +77,16 @@ func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
 }
 
 func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent, count int64) {
-	curWindow, err := bla.data.currentBucketOfTime(now, bla)
+	curBucket, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Failed to get current window, current ts=%d, err: %+v.", now, errors.WithStack(err))
+		logger.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", now, errors.WithStack(err))
 		return
 	}
-	if curWindow == nil {
+	if curBucket == nil {
 		logger.Error("Failed to add count: current bucket is nil")
 		return
 	}
-	mb := curWindow.value.Load()
+	mb := curBucket.value.Load()
 	if mb == nil {
 		logger.Error("Failed to add count: current bucket atomic value is nil")
 		return
@@ -108,13 +108,13 @@ func (bla *BucketLeapArray) Count(event base.MetricEvent) int64 {
 func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) int64 {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
+		logger.Errorf("Fail to get current bucket, err: %+v.", errors.WithStack(err))
 	}
 	count := int64(0)
 	for _, ww := range bla.data.valuesWithTime(now) {
 		mb := ww.value.Load()
 		if mb == nil {
-			logger.Error("Current window's value is nil.")
+			logger.Error("Current bucket's value is nil.")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)
@@ -127,27 +127,27 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 	return count
 }
 
-// Read method, get all windowWrap.
-func (bla *BucketLeapArray) Values(now uint64) []*windowWrap {
+// Read method, get all bucketWrap.
+func (bla *BucketLeapArray) Values(now uint64) []*bucketWrap {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current(%d) window, err: %+v.", now, errors.WithStack(err))
+		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, errors.WithStack(err))
 	}
 	return bla.data.valuesWithTime(now)
 }
 
-func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*windowWrap {
+func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*bucketWrap {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current(%d) window, err: %+v.", now, errors.WithStack(err))
+		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, errors.WithStack(err))
 	}
 	return bla.data.ValuesConditional(now, predicate)
 }
 
 func (bla *BucketLeapArray) MinRt() int64 {
-	_, err := bla.data.currentWindow(bla)
+	_, err := bla.data.currentBucket(bla)
 	if err != nil {
-		logger.Errorf("Fail to get current window, err: %+v.", errors.WithStack(err))
+		logger.Errorf("Fail to get current bucket, err: %+v.", errors.WithStack(err))
 	}
 
 	ret := base.DefaultStatisticMaxRt
@@ -155,7 +155,7 @@ func (bla *BucketLeapArray) MinRt() int64 {
 	for _, v := range bla.data.values() {
 		mb := v.value.Load()
 		if mb == nil {
-			logger.Error("Current window's value is nil.")
+			logger.Error("Current bucket's value is nil.")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)

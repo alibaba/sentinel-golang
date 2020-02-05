@@ -8,11 +8,11 @@ import (
 )
 
 // SlidingWindowMetric represents the sliding window metric wrapper.
-// It does not store any data and is the wrapper of BucketLeapArray to adapt to different internal window
+// It does not store any data and is the wrapper of BucketLeapArray to adapt to different internal bucket
 // SlidingWindowMetric is used for SentinelRules and BucketLeapArray is used for monitor
 // BucketLeapArray is per resource, and SlidingWindowMetric support only read operation.
 type SlidingWindowMetric struct {
-	windowLengthInMs uint32
+	bucketLengthInMs uint32
 	sampleCount      uint32
 	intervalInMs     uint32
 	real             *BucketLeapArray
@@ -27,16 +27,16 @@ func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapAr
 	if intervalInMs%sampleCount != 0 {
 		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
 	}
-	winLengthInMs := intervalInMs / sampleCount
+	bucketLengthInMs := intervalInMs / sampleCount
 
 	parentIntervalInMs := real.IntervalInMs()
-	parentWindowLengthInMs := real.WindowLengthInMs()
+	parentBucketLengthInMs := real.BucketLengthInMs()
 
-	// winLengthInMs of BucketLeapArray must be divisible by winLengthInMs of SlidingWindowMetric
-	// for example: winLengthInMs of BucketLeapArray is 500ms, and winLengthInMs of SlidingWindowMetric is 2000ms
-	// for example: winLengthInMs of BucketLeapArray is 500ms, and winLengthInMs of SlidingWindowMetric is 500ms
-	if winLengthInMs%parentWindowLengthInMs != 0 {
-		panic(fmt.Sprintf("BucketLeapArray's WindowLengthInMs(%d) is not divisible by SlidingWindowMetric's WindowLengthInMs(%d).", parentWindowLengthInMs, winLengthInMs))
+	// bucketLengthInMs of BucketLeapArray must be divisible by bucketLengthInMs of SlidingWindowMetric
+	// for example: bucketLengthInMs of BucketLeapArray is 500ms, and bucketLengthInMs of SlidingWindowMetric is 2000ms
+	// for example: bucketLengthInMs of BucketLeapArray is 500ms, and bucketLengthInMs of SlidingWindowMetric is 500ms
+	if bucketLengthInMs%parentBucketLengthInMs != 0 {
+		panic(fmt.Sprintf("BucketLeapArray's BucketLengthInMs(%d) is not divisible by SlidingWindowMetric's BucketLengthInMs(%d).", parentBucketLengthInMs, bucketLengthInMs))
 	}
 
 	if intervalInMs > parentIntervalInMs {
@@ -50,7 +50,7 @@ func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapAr
 	}
 
 	return &SlidingWindowMetric{
-		windowLengthInMs: winLengthInMs,
+		bucketLengthInMs: bucketLengthInMs,
 		sampleCount:      sampleCount,
 		intervalInMs:     intervalInMs,
 		real:             real,
@@ -60,9 +60,9 @@ func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapAr
 // Get the start time range of the bucket for the provided time.
 // The actual time span is: [start, end + in.bucketTimeLength)
 func (m *SlidingWindowMetric) getBucketStartRange(timeMs uint64) (start, end uint64) {
-	curBucketStartTime := calculateStartTime(timeMs, m.real.WindowLengthInMs())
+	curBucketStartTime := calculateStartTime(timeMs, m.real.BucketLengthInMs())
 	end = curBucketStartTime
-	start = end - uint64(m.intervalInMs) + uint64(m.real.WindowLengthInMs())
+	start = end - uint64(m.intervalInMs) + uint64(m.real.BucketLengthInMs())
 	return
 }
 
@@ -70,7 +70,7 @@ func (m *SlidingWindowMetric) getIntervalInSecond() float64 {
 	return float64(m.intervalInMs) / 1000.0
 }
 
-func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*windowWrap) int64 {
+func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*bucketWrap) int64 {
 	ret := int64(0)
 	for _, ww := range values {
 		mb := ww.value.Load()
@@ -173,14 +173,14 @@ func (m *SlidingWindowMetric) SecondMetricsOnCondition(predicate base.TimePredic
 	ws := m.real.ValuesConditional(util.CurrentTimeMillis(), predicate)
 
 	// Aggregate second-level MetricItem (only for stable metrics)
-	wm := make(map[uint64][]*windowWrap)
+	wm := make(map[uint64][]*bucketWrap)
 	for _, w := range ws {
 		bucketStart := atomic.LoadUint64(&w.bucketStart)
 		secStart := bucketStart - bucketStart%1000
 		if arr, hasData := wm[secStart]; hasData {
 			wm[secStart] = append(arr, w)
 		} else {
-			wm[secStart] = []*windowWrap{w}
+			wm[secStart] = []*bucketWrap{w}
 		}
 	}
 	items := make([]*base.MetricItem, 0)
@@ -197,7 +197,7 @@ func (m *SlidingWindowMetric) SecondMetricsOnCondition(predicate base.TimePredic
 
 // metricItemFromBuckets aggregates multiple bucket wrappers (based on the same startTime in second)
 // to the single MetricItem.
-func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*windowWrap) *base.MetricItem {
+func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*bucketWrap) *base.MetricItem {
 	item := &base.MetricItem{Timestamp: ts}
 	var allRt int64 = 0
 	for _, w := range ws {
@@ -225,7 +225,7 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*windowWrap)
 	return item
 }
 
-func (m *SlidingWindowMetric) metricItemFromBucket(w *windowWrap) *base.MetricItem {
+func (m *SlidingWindowMetric) metricItemFromBucket(w *bucketWrap) *base.MetricItem {
 	mi := w.value.Load()
 	if mi == nil {
 		logger.Error("Get nil bucket when generating MetricItem from buckets")
