@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/sentinel-group/sentinel-golang/core/base"
 	"github.com/sentinel-group/sentinel-golang/util"
-	"math"
 	"sync/atomic"
 )
 
@@ -109,28 +108,57 @@ func (m *SlidingWindowMetric) getAvgWithTime(now uint64, event base.MetricEvent)
 	return float64(m.getSumWithTime(now, event)) / m.getIntervalInSecond()
 }
 
+func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64 {
+	now := util.CurrentTimeMillis()
+	start, end := m.getBucketStartRange(now)
+	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
+		return ws >= start && ws <= end
+	})
+	var curMax int64 = 0
+	for _, w := range satisfiedBuckets {
+		mb := w.value.Load()
+		if mb == nil {
+			logger.Error("Illegal state: current bucket value is nil when GetMaxOfSingleBucket")
+			continue
+		}
+		counter, ok := mb.(*MetricBucket)
+		if !ok {
+			logger.Errorf("Failed to cast data value(%+v) to MetricBucket type", mb)
+			continue
+		}
+		v := counter.Get(event)
+		if v > curMax {
+			curMax = v
+		}
+	}
+	return curMax
+}
+
 func (m *SlidingWindowMetric) MinRT() int64 {
 	now := util.CurrentTimeMillis()
 	start, end := m.getBucketStartRange(now)
 	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
 		return ws >= start && ws <= end
 	})
-	minRt := int64(math.MaxInt64)
+	minRt := base.DefaultStatisticMaxRt
 	for _, w := range satisfiedBuckets {
 		mb := w.value.Load()
 		if mb == nil {
-			logger.Error("Illegal state: current bucket value is nil when calculating min")
+			logger.Error("Illegal state: current bucket value is nil when calculating minRT")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logger.Errorf("Fail to cast data value(%+v) to MetricBucket type", mb)
+			logger.Errorf("Failed to cast data value(%+v) to MetricBucket type", mb)
 			continue
 		}
-		rt := counter.Get(base.MetricEventRt)
-		if rt < minRt {
-			minRt = rt
+		v := counter.MinRt()
+		if v < minRt {
+			minRt = v
 		}
+	}
+	if minRt < 1 {
+		minRt = 1
 	}
 	return minRt
 }
