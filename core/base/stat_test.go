@@ -20,6 +20,11 @@ func (m *StatNodeMock) GetQPS(event MetricEvent) float64 {
 	return float64(args.Int(0))
 }
 
+func (m *StatNodeMock) GetMaxAvg(event MetricEvent) float64 {
+	args := m.Called(event)
+	return float64(args.Int(0))
+}
+
 func (m *StatNodeMock) GetSum(event MetricEvent) int64 {
 	args := m.Called(event)
 	return int64(args.Int(0))

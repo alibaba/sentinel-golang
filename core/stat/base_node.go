@@ -40,6 +40,10 @@ func (n *BaseStatNode) GetSum(event base.MetricEvent) int64 {
 	return n.metric.GetSum(event)
 }
 
+func (n *BaseStatNode) GetMaxAvg(event base.MetricEvent) float64 {
+	return float64(n.metric.GetMaxOfSingleBucket(event)) * float64(n.sampleCount) / float64(n.intervalMs) * 1000
+}
+
 func (n *BaseStatNode) AddMetric(event base.MetricEvent, count uint64) {
 	n.arr.AddCount(event, int64(count))
 }
