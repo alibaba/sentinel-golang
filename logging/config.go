@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const defaultDirName = "logs" + string(os.PathSeparator) + "csp"
+const defaultDirName = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
 
 var (
 	logBaseDir     string
@@ -16,6 +16,20 @@ var (
 
 	initLoggerConfig sync.Once
 )
+
+func initDefaultDir() {
+	if d, err := getDefaultLogDir(); err == nil {
+		logBaseDir = d
+	}
+}
+
+func LogBaseDir() string {
+	return logBaseDir
+}
+
+func LogNameWithPid() bool {
+	return logNameWithPid
+}
 
 func InitializeLogConfigFromEnv() error {
 	addPid := os.Getenv(config.LogNamePidEnvKey)

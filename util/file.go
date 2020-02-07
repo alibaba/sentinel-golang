@@ -22,3 +22,14 @@ func FileExists(name string) (b bool, err error) {
 	// Propagates the error if the error is not FileNotExist error.
 	return true, err
 }
+
+func CreateDirIfNotExists(dirname string) error {
+	if _, err := os.Stat(dirname); err != nil {
+		if os.IsNotExist(err) {
+			return os.MkdirAll(dirname, os.ModePerm)
+		} else {
+			return err
+		}
+	}
+	return nil
+}
