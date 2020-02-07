@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"github.com/sentinel-group/sentinel-golang/util"
 	"log"
 	"os"
 	"sync"
@@ -40,6 +41,8 @@ func SetGlobalLoggerLevel(l Level) {
 }
 
 func init() {
+	// TODO: temporary logic here
+	initDefaultDir()
 	initLogger.Do(func() {
 		defaultLogger = NewSentinelFileLogger(RecordLogFileName, "default", log.LstdFlags)
 	})
@@ -51,11 +54,13 @@ func GetDefaultLogger() *SentinelLogger {
 
 // outputFile is the full path(absolute path)
 func NewSentinelFileLogger(outputFile, namespace string, flag int) *SentinelLogger {
-	//get file info
 	var logFile *os.File
-	logFile, err := os.OpenFile(outputFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	logDir := addSeparatorIfNeeded(LogBaseDir())
+	util.CreateDirIfNotExists(logDir)
+	logFile, err := os.OpenFile(logDir+outputFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
-		log.Fatal("open log file error:", err)
+		// TODO: do not fatal here
+		log.Fatalf("Failed to operate the log file: %+v", err)
 	}
 	return &SentinelLogger{
 		log:       log.New(logFile, "", flag),
