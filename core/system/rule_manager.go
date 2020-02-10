@@ -2,6 +2,7 @@ package system
 
 import (
 	"github.com/sentinel-group/sentinel-golang/logging"
+	"github.com/sentinel-group/sentinel-golang/util"
 	"sync"
 )
 
@@ -25,7 +26,7 @@ func init() {
 }
 
 func initRuleRecvTask() {
-	go func() {
+	go util.RunWithRecover(func() {
 		for {
 			select {
 			case rules := <-ruleChan:
@@ -35,7 +36,7 @@ func initRuleRecvTask() {
 				}
 			}
 		}
-	}()
+	}, logger)
 }
 
 func GetRules() []*SystemRule {

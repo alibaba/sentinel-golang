@@ -1,6 +1,7 @@
 package system
 
 import (
+	"github.com/sentinel-group/sentinel-golang/util"
 	"sync/atomic"
 	"time"
 
@@ -24,7 +25,7 @@ func init() {
 	currentCpuUsage.Store(notRetrievedValue)
 
 	ticker := time.NewTicker(1 * time.Second)
-	go func() {
+	go util.RunWithRecover(func() {
 		for {
 			select {
 			case <-ticker.C:
@@ -34,7 +35,7 @@ func init() {
 				return
 			}
 		}
-	}()
+	}, logger)
 }
 
 func retrieveAndUpdateSystemStat() {
