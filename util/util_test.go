@@ -6,7 +6,7 @@ import (
 )
 
 func TestWithRecoverGo(t *testing.T) {
-	go WithRecoverGo(func() {
+	go RunWithRecover(func() {
 		panic("internal error!\n")
 	}, logging.GetDefaultLogger())
 }

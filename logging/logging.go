@@ -2,7 +2,6 @@ package logging
 
 import (
 	"fmt"
-	"github.com/sentinel-group/sentinel-golang/util"
 	"log"
 	"os"
 	"sync"
@@ -54,9 +53,11 @@ func GetDefaultLogger() *SentinelLogger {
 
 // outputFile is the full path(absolute path)
 func NewSentinelFileLogger(outputFile, namespace string, flag int) *SentinelLogger {
-	var logFile *os.File
 	logDir := addSeparatorIfNeeded(LogBaseDir())
-	util.CreateDirIfNotExists(logDir)
+	err := createDirIfNotExists(logDir)
+	if err != nil {
+		log.Printf("Failed to create the log directory: %+v", err)
+	}
 	logFile, err := os.OpenFile(logDir+outputFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		// TODO: do not fatal here
@@ -66,6 +67,17 @@ func NewSentinelFileLogger(outputFile, namespace string, flag int) *SentinelLogg
 		log:       log.New(logFile, "", flag),
 		namespace: namespace,
 	}
+}
+
+func createDirIfNotExists(dirname string) error {
+	if _, err := os.Stat(dirname); err != nil {
+		if os.IsNotExist(err) {
+			return os.MkdirAll(dirname, os.ModePerm)
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
 type Logger interface {

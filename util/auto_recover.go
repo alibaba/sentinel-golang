@@ -5,10 +5,10 @@ import (
 	"github.com/sentinel-group/sentinel-golang/logging"
 )
 
-func WithRecoverGo(f func(), logger *logging.SentinelLogger) {
+func RunWithRecover(f func(), logger *logging.SentinelLogger) {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Errorf("Panic:%+v.", errors.Errorf("%+v", err))
+			logger.Errorf("Unexpected panic: %+v", errors.Errorf("%+v", err))
 		}
 	}()
 	f()
