@@ -13,5 +13,5 @@ const (
 	// default 10s (total length)
 	DefaultIntervalMsTotal uint32 = 10000
 
-	DefaultStatisticMaxRt = int64(5000)
+	DefaultStatisticMaxRt = int64(60000)
 )
