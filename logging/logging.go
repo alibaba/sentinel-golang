@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 )
 
-// log level: PANIC、FATAL、ERROR、WARN、INFO、DEBUG
+// Level represents the level of logging.
 type Level uint8
 
 const (
@@ -19,65 +18,41 @@ const (
 	Panic
 )
 
-const RecordLogFileName = "sentinel-record.log"
-
-// format default console log
-func InitDefaultLoggerToConsole() {
-	fmt.Println("Init default log, output to console")
-	log.SetFlags(log.LstdFlags)
-	log.SetPrefix("[sentinel]")
-}
-
 var (
-	GlobalLogLevel = Debug
-	defaultLogger  *SentinelLogger
-	// init default logger only once
-	initLogger sync.Once
+	globalLogLevel = Info
+
+	defaultLogger = NewConsoleLogger(defaultNamespace)
 )
 
+func GetGlobalLoggerLevel() Level {
+	return globalLogLevel
+}
+
 func SetGlobalLoggerLevel(l Level) {
-	GlobalLogLevel = l
+	globalLogLevel = l
 }
 
-func init() {
-	// TODO: temporary logic here
-	initDefaultDir()
-	initLogger.Do(func() {
-		defaultLogger = NewSentinelFileLogger(RecordLogFileName, "default", log.LstdFlags)
-	})
-}
-
-func GetDefaultLogger() *SentinelLogger {
+func GetDefaultLogger() Logger {
 	return defaultLogger
 }
 
-// outputFile is the full path(absolute path)
-func NewSentinelFileLogger(outputFile, namespace string, flag int) *SentinelLogger {
-	logDir := addSeparatorIfNeeded(LogBaseDir())
-	err := createDirIfNotExists(logDir)
-	if err != nil {
-		log.Printf("Failed to create the log directory: %+v", err)
+func NewConsoleLogger(namespace string) *SentinelLogger {
+	return &SentinelLogger{
+		log:       log.New(os.Stdout, "", log.LstdFlags),
+		namespace: defaultNamespace,
 	}
-	logFile, err := os.OpenFile(logDir+outputFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+}
+
+// outputFile is the full path(absolute path)
+func NewSimpleFileLogger(filepath, namespace string, flag int) (*SentinelLogger, error) {
+	logFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
-		// TODO: do not fatal here
-		log.Fatalf("Failed to operate the log file: %+v", err)
+		return nil, err
 	}
 	return &SentinelLogger{
 		log:       log.New(logFile, "", flag),
 		namespace: namespace,
-	}
-}
-
-func createDirIfNotExists(dirname string) error {
-	if _, err := os.Stat(dirname); err != nil {
-		if os.IsNotExist(err) {
-			return os.MkdirAll(dirname, os.ModePerm)
-		} else {
-			return err
-		}
-	}
-	return nil
+	}, err
 }
 
 type Logger interface {
@@ -113,84 +88,84 @@ func merge(namespace, logLevel, msg string) string {
 }
 
 func (l *SentinelLogger) Debug(v ...interface{}) {
-	if Debug < GlobalLogLevel || len(v) == 0 {
+	if Debug < globalLogLevel || len(v) == 0 {
 		return
 	}
 	l.log.Print(merge(l.namespace, "DEBUG", fmt.Sprint(v...)))
 }
 
 func (l *SentinelLogger) Debugf(format string, v ...interface{}) {
-	if Debug < GlobalLogLevel {
+	if Debug < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "DEBUG", fmt.Sprintf(format, v...)))
 }
 
 func (l *SentinelLogger) Info(v ...interface{}) {
-	if Info < GlobalLogLevel {
+	if Info < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "INFO", fmt.Sprint(v...)))
 }
 
 func (l *SentinelLogger) Infof(format string, v ...interface{}) {
-	if Info < GlobalLogLevel {
+	if Info < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "INFO", fmt.Sprintf(format, v...)))
 }
 
 func (l *SentinelLogger) Warn(v ...interface{}) {
-	if Warn < GlobalLogLevel {
+	if Warn < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "WARNING", fmt.Sprint(v...)))
 }
 
 func (l *SentinelLogger) Warnf(format string, v ...interface{}) {
-	if Warn < GlobalLogLevel {
+	if Warn < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "WARNING", fmt.Sprintf(format, v...)))
 }
 
 func (l *SentinelLogger) Error(v ...interface{}) {
-	if Error < GlobalLogLevel {
+	if Error < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "ERROR", fmt.Sprint(v...)))
 }
 
 func (l *SentinelLogger) Errorf(format string, v ...interface{}) {
-	if Error < GlobalLogLevel {
+	if Error < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "ERROR", fmt.Sprintf(format, v...)))
 }
 
 func (l *SentinelLogger) Fatal(v ...interface{}) {
-	if Fatal < GlobalLogLevel {
+	if Fatal < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "FATAL", fmt.Sprint(v...)))
 }
 
 func (l *SentinelLogger) Fatalf(format string, v ...interface{}) {
-	if Fatal < GlobalLogLevel {
+	if Fatal < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "FATAL", fmt.Sprintf(format, v...)))
 }
 
 func (l *SentinelLogger) Panic(v ...interface{}) {
-	if Panic < GlobalLogLevel {
+	if Panic < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "PANIC", fmt.Sprint(v...)))
 }
 
 func (l *SentinelLogger) Panicf(format string, v ...interface{}) {
-	if Panic < GlobalLogLevel {
+	if Panic < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "PANIC", fmt.Sprintf(format, v...)))

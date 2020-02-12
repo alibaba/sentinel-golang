@@ -1,42 +1,51 @@
 package logging
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/core/config"
+	"log"
 	"os"
+	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
 )
 
-const defaultDirName = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
+const (
+	LogDirEnvKey     = "SENTINEL_LOG_DIR"
+	LogNamePidEnvKey = "SENTINEL_LOG_USE_PID"
+
+	// RecordLogFileName represents the default file name of the record log.
+	RecordLogFileName = "sentinel-record.log"
+
+	defaultNamespace = "default"
+	defaultDirName   = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
+)
 
 var (
 	logBaseDir     string
 	logNameWithPid = false
 
-	initLoggerConfig sync.Once
+	logInitialized int32 = 0
 )
 
-func initDefaultDir() {
-	if d, err := getDefaultLogDir(); err == nil {
-		logBaseDir = d
-	}
-}
-
+// LogBaseDir returns the directory of Sentinel logs.
 func LogBaseDir() string {
 	return logBaseDir
 }
 
+// LogNameWithPid indicates whether log filename ends with the process ID (PID).
 func LogNameWithPid() bool {
 	return logNameWithPid
 }
 
+// InitializeLogConfigFromEnv initializes the configuration from system environment.
+// If relevant properties are absent, Sentinel will use the default configuration.
 func InitializeLogConfigFromEnv() error {
-	addPid := os.Getenv(config.LogNamePidEnvKey)
+	addPid := os.Getenv(LogNamePidEnvKey)
 	if strings.ToLower(addPid) == "true" {
 		logNameWithPid = true
 	}
-	logDir := os.Getenv(config.LogDirEnvKey)
+	logDir := os.Getenv(LogDirEnvKey)
 	if logDir == "" {
 		d, err := getDefaultLogDir()
 		if err != nil {
@@ -46,17 +55,57 @@ func InitializeLogConfigFromEnv() error {
 	}
 	logBaseDir = logDir
 
-	// TODO: create dir if not exists
-
-	return nil
+	return InitializeLogConfig(logBaseDir, logNameWithPid)
 }
 
 func InitializeLogConfig(logPath string, usePid bool) error {
 	if logPath == "" {
 		return errors.New("invalid empty log path")
 	}
+	if !atomic.CompareAndSwapInt32(&logInitialized, 0, 1) {
+		return nil
+	}
+
 	logBaseDir = logPath
 	logNameWithPid = usePid
+
+	if err := createDirIfNotExists(logBaseDir); err != nil {
+		return err
+	}
+	return reconfigureRecordLogger()
+}
+
+func reconfigureRecordLogger() error {
+	logDir := addSeparatorIfNeeded(LogBaseDir())
+	filePath := logDir + RecordLogFileName
+	if logNameWithPid {
+		filePath = filePath + ".pid" + strconv.Itoa(os.Getpid())
+	}
+	if defaultLogger == nil {
+		return errors.New("Unexpected state: defaultLogger == nil")
+	}
+	logFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	if err != nil {
+		return err
+	}
+
+	// Note: not thread-safe!
+	defaultLogger.log = log.New(logFile, "", log.LstdFlags)
+	defaultLogger.namespace = defaultNamespace
+
+	fmt.Println("INFO: log base directory is: " + logDir)
+
+	return nil
+}
+
+func createDirIfNotExists(dirname string) error {
+	if _, err := os.Stat(dirname); err != nil {
+		if os.IsNotExist(err) {
+			return os.MkdirAll(dirname, os.ModePerm)
+		} else {
+			return err
+		}
+	}
 	return nil
 }
 
