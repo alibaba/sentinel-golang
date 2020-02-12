@@ -10,7 +10,7 @@ func Entry(resource string, opts ...Option) (*base.SentinelEntry, *base.BlockErr
 		entryType:    base.Outbound,
 		acquireCount: 1,
 		flag:         0,
-		slotChain: 	defaultSlotChain,
+		slotChain:    globalSlotChain,
 		args:         []interface{}{},
 	}
 	for _, opt := range opts {
