@@ -100,11 +100,11 @@ func (m *SlidingWindowMetric) getSumWithTime(now uint64, event base.MetricEvent)
 	return m.count(event, satisfiedBuckets)
 }
 
-func (m *SlidingWindowMetric) GetAvg(event base.MetricEvent) float64 {
-	return m.getAvgWithTime(util.CurrentTimeMillis(), event)
+func (m *SlidingWindowMetric) GetQPS(event base.MetricEvent) float64 {
+	return m.getQPSWithTime(util.CurrentTimeMillis(), event)
 }
 
-func (m *SlidingWindowMetric) getAvgWithTime(now uint64, event base.MetricEvent) float64 {
+func (m *SlidingWindowMetric) getQPSWithTime(now uint64, event base.MetricEvent) float64 {
 	return float64(m.getSumWithTime(now, event)) / m.getIntervalInSecond()
 }
 
@@ -134,7 +134,7 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 	return curMax
 }
 
-func (m *SlidingWindowMetric) MinRT() int64 {
+func (m *SlidingWindowMetric) MinRT() float64 {
 	now := util.CurrentTimeMillis()
 	start, end := m.getBucketStartRange(now)
 	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
@@ -160,7 +160,7 @@ func (m *SlidingWindowMetric) MinRT() int64 {
 	if minRt < 1 {
 		minRt = 1
 	}
-	return minRt
+	return float64(minRt)
 }
 
 func (m *SlidingWindowMetric) AvgRT() float64 {

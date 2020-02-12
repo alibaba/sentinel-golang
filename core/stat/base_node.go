@@ -33,7 +33,7 @@ func (n *BaseStatNode) MetricsOnCondition(predicate base.TimePredicate) []*base.
 }
 
 func (n *BaseStatNode) GetQPS(event base.MetricEvent) float64 {
-	return n.metric.GetAvg(event)
+	return n.metric.GetQPS(event)
 }
 
 func (n *BaseStatNode) GetSum(event base.MetricEvent) int64 {
