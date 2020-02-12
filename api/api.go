@@ -4,6 +4,7 @@ import (
 	"github.com/sentinel-group/sentinel-golang/core/base"
 )
 
+// Entry is the basic API of Sentinel.
 func Entry(resource string, opts ...Option) (*base.SentinelEntry, *base.BlockError) {
 	var options = Options{
 		resourceType: base.ResTypeCommon,
