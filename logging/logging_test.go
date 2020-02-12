@@ -1,17 +1,26 @@
 package logging
 
 import (
+	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestNewSentinelFileLogger(t *testing.T) {
+func TestNewSimpleFileLogger(t *testing.T) {
 	fileName := "logger-test.log"
-	logger := NewSentinelFileLogger(fileName, "test-log", log.LstdFlags)
+	tmpDir := os.TempDir()
+	if !strings.HasSuffix(tmpDir, string(os.PathSeparator)) {
+		tmpDir = tmpDir + string(os.PathSeparator)
+	}
+	logger, err := NewSimpleFileLogger(tmpDir+fileName, "test-log", log.LstdFlags)
+	assert.NoError(t, err)
+
 	logger.Debug("debug info test.")
-	logger.Debugf("debug name is %s", "sim")
-	time.Sleep(time.Second * 2)
+	logger.Infof("Hello %s", "sentinel")
+
+	time.Sleep(time.Second * 1)
 	_ = os.Remove(fileName)
 }
