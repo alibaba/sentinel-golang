@@ -10,23 +10,23 @@ import (
 	"github.com/sentinel-group/sentinel-golang/util"
 )
 
-//Test sliding windows create windows
+//Test sliding windows create buckets
 func Test_NewBucketLeapArray(t *testing.T) {
 	slidingWindow := NewBucketLeapArray(SampleCount, IntervalInMs)
 	now := util.CurrentTimeMillis()
 
-	wr, err := slidingWindow.data.currentBucketOfTime(now, slidingWindow)
-	if wr == nil || wr.value.Load() == nil {
+	br, err := slidingWindow.data.currentBucketOfTime(now, slidingWindow)
+	if br == nil || br.value.Load() == nil {
 		t.Errorf("Unexcepted error")
 		return
 	}
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	if wr.bucketStart != (now - now%uint64(WindowLengthInMs)) {
-		t.Errorf("Unexcepted error, window length is not same")
+	if br.bucketStart != (now - now%uint64(BucketLengthInMs)) {
+		t.Errorf("Unexcepted error, bucket length is not same")
 	}
-	if wr.value.Load() == nil {
+	if br.value.Load() == nil {
 		t.Errorf("Unexcepted error, value is nil")
 	}
 	if slidingWindow.Count(base.MetricEventPass) != 0 {
@@ -78,11 +78,11 @@ func coroutineTask(wg *sync.WaitGroup, slidingWindow *BucketLeapArray, now uint6
 	wg.Done()
 }
 
-func TestBucketLeapArray_resetWindowTo(t *testing.T) {
+func TestBucketLeapArray_resetBucketTo(t *testing.T) {
 	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
 	idx := 6
-	oldWindow := bla.data.array.get(idx)
-	oldBucket := oldWindow.value.Load()
+	oldBucketWrap := bla.data.array.get(idx)
+	oldBucket := oldBucketWrap.value.Load()
 	if oldBucket == nil {
 		t.Errorf("BucketLeapArray init error.")
 	}
@@ -94,19 +94,19 @@ func TestBucketLeapArray_resetWindowTo(t *testing.T) {
 	bucket.Add(base.MetricEventBlock, 100)
 
 	wantStartTime := util.CurrentTimeMillis() + 1000
-	got := bla.resetWindowTo(oldWindow, wantStartTime)
+	got := bla.resetBucketTo(oldBucketWrap, wantStartTime)
 	newBucket := got.value.Load()
 	if newBucket == nil {
-		t.Errorf("got window is nil.")
+		t.Errorf("got bucket is nil.")
 	}
 	newRealBucket, ok := newBucket.(*MetricBucket)
 	if !ok {
 		t.Errorf("Fail to assert bucket to MetricBucket.")
 	}
 	if newRealBucket.Get(base.MetricEventPass) != 0 {
-		t.Errorf("BucketLeapArray.resetWindowTo() execute fail.")
+		t.Errorf("BucketLeapArray.resetBucketTo() execute fail.")
 	}
 	if newRealBucket.Get(base.MetricEventBlock) != 0 {
-		t.Errorf("BucketLeapArray.resetWindowTo() execute fail.")
+		t.Errorf("BucketLeapArray.resetBucketTo() execute fail.")
 	}
 }
