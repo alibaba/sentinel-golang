@@ -2,18 +2,33 @@ package api
 
 import (
 	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/sentinel-group/sentinel-golang/core/flow"
+	"github.com/sentinel-group/sentinel-golang/core/log"
+	"github.com/sentinel-group/sentinel-golang/core/stat"
+	"github.com/sentinel-group/sentinel-golang/core/system"
 )
 
-// defaultSlotChain is a default slot chain built by framework
-// defaultSlotChain is global unique chain
-var defaultSlotChain = buildDefaultSlotChain()
+var globalSlotChain = BuildDefaultSlotChain()
 
-func buildDefaultSlotChain() *base.SlotChain {
-	sc := base.NewSlotChain()
-	// insert slots
-	return sc
+// SetSlotChain replaces current slot chain with the given one.
+// Note that this operation is not thread-safe, so it should be
+// called when pre-initializing Sentinel.
+func SetSlotChain(chain *base.SlotChain) {
+	if chain != nil {
+		globalSlotChain = chain
+	}
 }
 
-func DefaultSlotChain() *base.SlotChain {
-	return defaultSlotChain
+func GlobalSlotChain() *base.SlotChain {
+	return globalSlotChain
+}
+
+func BuildDefaultSlotChain() *base.SlotChain {
+	sc := base.NewSlotChain()
+	sc.AddStatPrepareSlotLast(&stat.StatNodePrepareSlot{})
+	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
+	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
+	sc.AddStatSlotLast(&stat.StatisticSlot{})
+	sc.AddStatSlotLast(&log.LogSlot{})
+	return sc
 }
