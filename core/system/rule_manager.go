@@ -1,6 +1,7 @@
 package system
 
 import (
+	"github.com/pkg/errors"
 	"github.com/sentinel-group/sentinel-golang/logging"
 	"github.com/sentinel-group/sentinel-golang/util"
 	"sync"
@@ -72,8 +73,8 @@ func buildRuleMap(rules []*SystemRule) RuleMap {
 	}
 	m := make(RuleMap, 0)
 	for _, rule := range rules {
-		if !IsValidSystemRule(rule) {
-			logger.Warnf("Ignoring invalid system rule: %v", rule)
+		if err := IsValidSystemRule(rule); err != nil {
+			logger.Warnf("Ignoring invalid system rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
 		rulesOfRes, exists := m[rule.MetricType]
@@ -86,12 +87,19 @@ func buildRuleMap(rules []*SystemRule) RuleMap {
 	return m
 }
 
-func IsValidSystemRule(rule *SystemRule) bool {
-	if rule == nil || rule.TriggerCount < 0 || rule.MetricType >= MetricTypeSize {
-		return false
+func IsValidSystemRule(rule *SystemRule) error {
+	if rule == nil {
+		return errors.New("nil SystemRule")
 	}
+	if rule.TriggerCount < 0 {
+		return errors.New("negative threshold")
+	}
+	if rule.MetricType >= MetricTypeSize {
+		return errors.New("invalid metric type")
+	}
+
 	if rule.MetricType == CpuUsage && rule.TriggerCount > 1 {
-		return false
+		return errors.New("invalid CPU usage, valid range is [0.0, 1.0]")
 	}
-	return true
+	return nil
 }

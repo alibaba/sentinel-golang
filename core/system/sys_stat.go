@@ -20,7 +20,7 @@ var (
 	ssStopChan = make(chan struct{})
 )
 
-func init() {
+func InitCollector() {
 	currentLoad.Store(notRetrievedValue)
 	currentCpuUsage.Store(notRetrievedValue)
 
