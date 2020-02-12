@@ -3,6 +3,7 @@ package flow
 import (
 	"github.com/pkg/errors"
 	"github.com/sentinel-group/sentinel-golang/logging"
+	"github.com/sentinel-group/sentinel-golang/util"
 	"sync"
 )
 
@@ -41,7 +42,7 @@ func init() {
 }
 
 func initRuleRecvTask() {
-	go func() {
+	go util.RunWithRecover(func() {
 		for {
 			select {
 			case rules := <-ruleChan:
@@ -51,7 +52,7 @@ func initRuleRecvTask() {
 				}
 			}
 		}
-	}()
+	}, logger)
 }
 
 func onRuleUpdate(rules []*FlowRule) error {
@@ -67,8 +68,8 @@ func onRuleUpdate(rules []*FlowRule) error {
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
 func LoadRules(rules []*FlowRule) (bool, error) {
 	// TODO: rethink the design
-	ruleChan <- rules
-	return true, nil
+	err := onRuleUpdate(rules)
+	return true, err
 }
 
 // SetTrafficShapingGenerator sets the traffic controller generator for the given control behavior.
@@ -112,8 +113,8 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 	}
 	m := make(TrafficControllerMap, 0)
 	for _, rule := range rules {
-		if !IsValidFlowRule(rule) {
-			logger.Warnf("Ignoring invalid flow rule: %v", rule)
+		if err := IsValidFlowRule(rule); err != nil {
+			logger.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
 		if rule.LimitOrigin == "" {
@@ -125,6 +126,10 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 			continue
 		}
 		tsc := generator(rule)
+		if tsc == nil {
+			logger.Warnf("Ignoring the rule due to bad generated traffic controller: %v", rule)
+			continue
+		}
 
 		rulesOfRes, exists := m[rule.Resource]
 		if !exists {
@@ -137,37 +142,56 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 }
 
 // IsValidFlowRule checks whether the given FlowRule is valid.
-func IsValidFlowRule(rule *FlowRule) bool {
-	if rule == nil || rule.Resource == "" || rule.Count < 0 {
-		return false
+func IsValidFlowRule(rule *FlowRule) error {
+	if rule == nil {
+		return errors.New("nil FlowRule")
 	}
-	if rule.MetricType < 0 || rule.RelationStrategy < 0 || rule.ControlBehavior < 0 {
-		return false
+	if rule.Resource == "" {
+		return errors.New("empty resource name")
+	}
+	if rule.Count < 0 {
+		return errors.New("negative threshold")
+	}
+	if rule.MetricType < 0 {
+		return errors.New("invalid metric type")
+	}
+	if rule.RelationStrategy < 0 {
+		return errors.New("invalid relation strategy")
+	}
+	if rule.ControlBehavior < 0 {
+		return errors.New("invalid control behavior")
 	}
 
 	if rule.RelationStrategy == AssociatedResource && rule.RefResource == "" {
-		return false
+		return errors.New("Bad flow rule: invalid control behavior")
+	}
+	if err := checkClusterField(rule); err != nil {
+		return err
 	}
 
-	return checkClusterField(rule) && checkControlBehaviorField(rule)
+	return checkControlBehaviorField(rule)
 }
 
-func checkClusterField(rule *FlowRule) bool {
+func checkClusterField(rule *FlowRule) error {
 	if rule.ClusterMode && rule.ID <= 0 {
-		return false
+		return errors.New("invalid cluster rule ID")
 	}
-	return true
+	return nil
 }
 
-func checkControlBehaviorField(rule *FlowRule) bool {
+func checkControlBehaviorField(rule *FlowRule) error {
 	switch rule.ControlBehavior {
 	case WarmUp:
-		return rule.WarmUpPeriodSec > 0
-	case Throttling:
-		return true
+		if rule.WarmUpPeriodSec <= 0 {
+			return errors.New("invalid warmUpPeriodSec")
+		}
+		return nil
 	case WarmUpThrottling:
-		return rule.WarmUpPeriodSec > 0 && rule.MaxQueueingTimeMs > 0
+		if rule.WarmUpPeriodSec <= 0 {
+			return errors.New("invalid warmUpPeriodSec")
+		}
+		return nil
 	default:
-		return true
 	}
+	return nil
 }
