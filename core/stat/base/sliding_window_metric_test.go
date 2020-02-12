@@ -152,7 +152,7 @@ func Test_NewSlidingWindowMetric(t *testing.T) {
 				sampleCount:  2,
 				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
 			},
-			want: "BucketLeapArray's WindowLengthInMs(500) is not divisible by SlidingWindowMetric's WindowLengthInMs(1001).",
+			want: "BucketLeapArray's BucketLengthInMs(500) is not divisible by SlidingWindowMetric's BucketLengthInMs(1001).",
 		},
 		{
 			name: "Test_NewSlidingWindowMetric-5",
