@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/sentinel-group/sentinel-golang/logging"
 	"github.com/sentinel-group/sentinel-golang/util"
@@ -55,7 +56,17 @@ func initRuleRecvTask() {
 	}, logger)
 }
 
-func onRuleUpdate(rules []*FlowRule) error {
+func onRuleUpdate(rules []*FlowRule) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+
 	tcMux.Lock()
 	defer tcMux.Unlock()
 

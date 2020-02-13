@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/sentinel-group/sentinel-golang/core/config"
 	"github.com/sentinel-group/sentinel-golang/core/log/metric"
 	"github.com/sentinel-group/sentinel-golang/core/system"
@@ -27,8 +28,16 @@ func InitWithLogDir(configPath string, logDir string) error {
 	return initSentinel(configPath, logDir)
 }
 
-func initSentinel(configPath string, logDir string) error {
-	var err error
+func initSentinel(configPath string, logDir string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
 
 	// First we initialize the logging module.
 	if logDir == "" {
