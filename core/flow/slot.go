@@ -39,14 +39,19 @@ func (s *FlowSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 }
 
 func canPassCheck(tc *TrafficShapingController, node base.StatNode, acquireCount uint32) *base.TokenResult {
-	return canPassCheckWithFlag(tc, node, acquireCount, 0)
+	return canPassCheckWithPrioritization(tc, node, acquireCount, false)
 }
 
-func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
+
+/** This function name "canPassCheckWithFlag" is ambiguous, and should've been renamed to "canPassCheckWithPrioritization".
+	Parameter "flag" modified to "prioritized"
+
+ */
+func canPassCheckWithPrioritization(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, prioritized bool) *base.TokenResult {
 	if tc.rule.ClusterMode {
-		// TODO: support cluster mode
+		return checkInCluster(tc, node, acquireCount, prioritized)
 	}
-	return checkInLocal(tc, node, acquireCount, flag)
+	return checkInLocal(tc, node, acquireCount, prioritized)
 }
 
 func selectNodeByRelStrategy(rule *FlowRule, node base.StatNode) base.StatNode {
@@ -56,10 +61,23 @@ func selectNodeByRelStrategy(rule *FlowRule, node base.StatNode) base.StatNode {
 	return node
 }
 
-func checkInLocal(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
+func checkInLocal(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, prioritized bool) *base.TokenResult {
 	actual := selectNodeByRelStrategy(tc.rule, node)
 	if actual == nil {
 		return base.NewTokenResultPass()
 	}
-	return tc.PerformChecking(node, acquireCount, flag)
+	return tc.PerformChecking(node, acquireCount, prioritized)
+}
+
+func checkInCluster(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, prioritized bool) *base.TokenResult{
+	return fallbackToLocalOrPass(tc, node, acquireCount, prioritized)
+}
+
+func fallbackToLocalOrPass(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, prioritized bool) *base.TokenResult{
+	if tc.rule.ClusterConfig.FallbackToLocalWhenFail{
+		return checkInLocal(tc, node, acquireCount, prioritized)
+	}
+
+	return base.NewTokenResultPass()
+
 }

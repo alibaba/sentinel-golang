@@ -12,7 +12,7 @@ func NewDefaultTrafficShapingCalculator(threshold float64) *DefaultTrafficShapin
 	return &DefaultTrafficShapingCalculator{threshold: threshold}
 }
 
-func (d *DefaultTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, uint32, int32) float64 {
+func (d *DefaultTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, uint32, bool) float64 {
 	return d.threshold
 }
 

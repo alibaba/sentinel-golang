@@ -7,7 +7,7 @@ import (
 // TrafficShapingCalculator calculates the actual traffic shaping threshold
 // based on the threshold of rule and the traffic shaping strategy.
 type TrafficShapingCalculator interface {
-	CalculateAllowedTokens(node base.StatNode, acquireCount uint32, flag int32) float64
+	CalculateAllowedTokens(node base.StatNode, acquireCount uint32, prioritized bool) float64
 }
 
 // TrafficShapingChecker performs checking according to current metrics and the traffic
@@ -40,7 +40,7 @@ func (t *TrafficShapingController) FlowCalculator() TrafficShapingCalculator {
 	return t.flowCalculator
 }
 
-func (t *TrafficShapingController) PerformChecking(node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
-	allowedTokens := t.flowCalculator.CalculateAllowedTokens(node, acquireCount, flag)
+func (t *TrafficShapingController) PerformChecking(node base.StatNode, acquireCount uint32, prioritized bool) *base.TokenResult {
+	allowedTokens := t.flowCalculator.CalculateAllowedTokens(node, acquireCount, prioritized)
 	return t.flowChecker.DoCheck(node, acquireCount, allowedTokens)
 }

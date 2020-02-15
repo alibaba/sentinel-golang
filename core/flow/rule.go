@@ -53,6 +53,7 @@ const (
 
 type ClusterRuleConfig struct {
 	ThresholdType ClusterThresholdMode `json:"thresholdType"`
+	FallbackToLocalWhenFail bool `json:"fallbackToLocalWhenFail"`
 }
 
 // FlowRule describes the strategy of flow control.
