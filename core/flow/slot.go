@@ -70,6 +70,8 @@ func checkInLocal(tc *TrafficShapingController, node base.StatNode, acquireCount
 }
 
 func checkInCluster(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, prioritized bool) *base.TokenResult{
+	//TODO: cluster check logic
+
 	return fallbackToLocalOrPass(tc, node, acquireCount, prioritized)
 }
 

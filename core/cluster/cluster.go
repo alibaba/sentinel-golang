@@ -1,4 +1,4 @@
-package flow
+package cluster
 
 type TokenService interface {
 	RequestToken(ruleId int64, acquireCount uint32, prioritized bool) TokenResult
