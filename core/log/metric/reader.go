@@ -197,6 +197,6 @@ func openFileAndSeekTo(filename string, offset uint64) (*os.File, error) {
 	return file, nil
 }
 
-func newDefaultMetricLogReader() (MetricLogReader, error) {
-	return &defaultMetricLogReader{}, nil
+func newDefaultMetricLogReader() MetricLogReader {
+	return &defaultMetricLogReader{}
 }
