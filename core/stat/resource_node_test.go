@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 func TestResourceNode_GetOrCreateSlidingWindowMetric(t *testing.T) {
