@@ -89,6 +89,9 @@ func listMetricFilesConditional(baseDir string, filePattern string, predicate fu
 	return arr, nil
 }
 
+// List metrics files
+// baseDir: the directory of metrics files
+// filePattern: metric file pattern
 func listMetricFiles(baseDir, filePattern string) ([]string, error) {
 	return listMetricFilesConditional(baseDir, filePattern, filenameMatches)
 }
