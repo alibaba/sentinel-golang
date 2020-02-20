@@ -1,7 +1,7 @@
 package system
 
 import (
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/util"
 	"sync/atomic"
 	"time"
 

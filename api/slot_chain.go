@@ -1,11 +1,11 @@
 package api
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	"github.com/sentinel-group/sentinel-golang/core/flow"
-	"github.com/sentinel-group/sentinel-golang/core/log"
-	"github.com/sentinel-group/sentinel-golang/core/stat"
-	"github.com/sentinel-group/sentinel-golang/core/system"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/core/log"
+	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/core/system"
 )
 
 var globalSlotChain = BuildDefaultSlotChain()

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 // Entry is the basic API of Sentinel.

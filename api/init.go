@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
-	"github.com/sentinel-group/sentinel-golang/core/config"
-	"github.com/sentinel-group/sentinel-golang/core/log/metric"
-	"github.com/sentinel-group/sentinel-golang/core/system"
-	"github.com/sentinel-group/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/core/log/metric"
+	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 // InitDefault initializes Sentinel using the configuration from system
