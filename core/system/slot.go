@@ -1,8 +1,8 @@
 package system
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	"github.com/sentinel-group/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/stat"
 )
 
 const SlotName = "SystemAdaptiveSlot"

@@ -2,7 +2,7 @@ package util
 
 import (
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 func RunWithRecover(f func(), logger logging.Logger) {

@@ -24,14 +24,14 @@ See the [中文文档](https://github.com/alibaba/sentinel-golang/wiki/介绍) f
 See the [Wiki](https://github.com/alibaba/sentinel-golang/wiki) for full documentation, examples, blog posts, and other information.
 
 If you are using Sentinel, please [**leave a comment here**](https://github.com/alibaba/Sentinel/issues/18) to tell us your scenario to make Sentinel better.
-It's also encouraged to add the link of your blog post, tutorial, demo or customized components to [**Awesome Sentinel**](https://github.com/sentinel-group/sentinel-awesome).
+It's also encouraged to add the link of your blog post, tutorial, demo or customized components to [**Awesome Sentinel**](https://github.com/alibaba/sentinel-awesome).
 
 ## Bugs and Feedback
 
-For bug report, questions and discussions please submit [GitHub Issues](https://github.com/sentinel-group/sentinel-golang/issues).
+For bug report, questions and discussions please submit [GitHub Issues](https://github.com/alibaba/sentinel-golang/issues).
 
 ## Contributing
 
 Contributions are always welcomed! Please see [CONTRIBUTING](./CONTRIBUTING.md) for detailed guidelines.
 
-You can start with the issues labeled with [`good first issue`](https://github.com/sentinel-group/sentinel-golang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+You can start with the issues labeled with [`good first issue`](https://github.com/alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).

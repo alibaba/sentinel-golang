@@ -3,8 +3,8 @@ package system
 import (
 	"encoding/json"
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/logging"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"sync"
 )
 

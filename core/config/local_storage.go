@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/sentinel-group/sentinel-golang/logging"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"

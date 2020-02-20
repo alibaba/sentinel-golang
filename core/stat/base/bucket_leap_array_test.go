@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 //Test sliding windows create buckets
