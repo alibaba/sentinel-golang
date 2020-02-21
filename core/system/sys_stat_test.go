@@ -7,9 +7,9 @@ import (
 )
 
 func Test_recordCpuUsage(t *testing.T) {
-	emptyStat := cpu.TimesStat{}
+	var emptyStat *cpu.TimesStat = nil
 	// total: 2260, user+nice: 950, system+irqs=210
-	prev := cpu.TimesStat{
+	prev := &cpu.TimesStat{
 		CPU:     "all",
 		User:    900,
 		System:  200,
@@ -21,7 +21,7 @@ func Test_recordCpuUsage(t *testing.T) {
 		Steal:   700,
 	}
 	// total: 4180, user+nice: 1600, system+irqs=430
-	cur := cpu.TimesStat{
+	cur := &cpu.TimesStat{
 		CPU:     "all",
 		User:    1500,
 		System:  400,

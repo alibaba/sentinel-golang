@@ -3,6 +3,7 @@ package system
 import (
 	"github.com/alibaba/sentinel-golang/util"
 	"math"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -18,7 +19,8 @@ var (
 	currentLoad     atomic.Value
 	currentCpuUsage atomic.Value
 
-	prevCpuStat cpu.TimesStat
+	prevCpuStat *cpu.TimesStat
+	initOnce    sync.Once
 
 	ssStopChan = make(chan struct{})
 )
@@ -28,22 +30,27 @@ func init() {
 	currentCpuUsage.Store(notRetrievedValue)
 }
 
-func InitCollector() {
-	// Initial retrieval.
-	retrieveAndUpdateSystemStat()
+func InitCollector(intervalMs uint32) {
+	if intervalMs == 0 {
+		return
+	}
+	initOnce.Do(func() {
+		// Initial retrieval.
+		retrieveAndUpdateSystemStat()
 
-	ticker := time.NewTicker(900 * time.Millisecond)
-	go util.RunWithRecover(func() {
-		for {
-			select {
-			case <-ticker.C:
-				retrieveAndUpdateSystemStat()
-			case <-ssStopChan:
-				ticker.Stop()
-				return
+		ticker := time.NewTicker(time.Duration(intervalMs) * time.Millisecond)
+		go util.RunWithRecover(func() {
+			for {
+				select {
+				case <-ticker.C:
+					retrieveAndUpdateSystemStat()
+				case <-ssStopChan:
+					ticker.Stop()
+					return
+				}
 			}
-		}
-	}, logger)
+		}, logger)
+	})
 }
 
 func retrieveAndUpdateSystemStat() {
@@ -56,7 +63,7 @@ func retrieveAndUpdateSystemStat() {
 		logger.Warnf("Failed to retrieve current system load: %+v", err)
 	}
 	if len(cpuStats) > 0 {
-		curCpuStat := cpuStats[0]
+		curCpuStat := &cpuStats[0]
 		recordCpuUsage(prevCpuStat, curCpuStat)
 		// Cache the latest CPU stat info.
 		prevCpuStat = curCpuStat
@@ -66,8 +73,8 @@ func retrieveAndUpdateSystemStat() {
 	}
 }
 
-func recordCpuUsage(prev, curCpuStat cpu.TimesStat) {
-	if prev.CPU != "" && curCpuStat.CPU != "" {
+func recordCpuUsage(prev, curCpuStat *cpu.TimesStat) {
+	if prev != nil && curCpuStat != nil {
 		prevTotal := calculateTotalCpuTick(prev)
 		curTotal := calculateTotalCpuTick(curCpuStat)
 
@@ -86,16 +93,16 @@ func recordCpuUsage(prev, curCpuStat cpu.TimesStat) {
 	}
 }
 
-func calculateTotalCpuTick(stat cpu.TimesStat) float64 {
+func calculateTotalCpuTick(stat *cpu.TimesStat) float64 {
 	return stat.User + stat.Nice + stat.System + stat.Idle +
 		stat.Iowait + stat.Irq + stat.Softirq + stat.Steal
 }
 
-func calculateUserCpuTick(stat cpu.TimesStat) float64 {
+func calculateUserCpuTick(stat *cpu.TimesStat) float64 {
 	return stat.User + stat.Nice
 }
 
-func calculateKernelCpuTick(stat cpu.TimesStat) float64 {
+func calculateKernelCpuTick(stat *cpu.TimesStat) float64 {
 	return stat.System + stat.Irq + stat.Softirq
 }
 
