@@ -2,6 +2,7 @@ package system
 
 import (
 	"github.com/alibaba/sentinel-golang/util"
+	"math"
 	"sync/atomic"
 	"time"
 
@@ -17,14 +18,21 @@ var (
 	currentLoad     atomic.Value
 	currentCpuUsage atomic.Value
 
+	prevCpuStat cpu.TimesStat
+
 	ssStopChan = make(chan struct{})
 )
 
-func InitCollector() {
+func init() {
 	currentLoad.Store(notRetrievedValue)
 	currentCpuUsage.Store(notRetrievedValue)
+}
 
-	ticker := time.NewTicker(1 * time.Second)
+func InitCollector() {
+	// Initial retrieval.
+	retrieveAndUpdateSystemStat()
+
+	ticker := time.NewTicker(900 * time.Millisecond)
 	go util.RunWithRecover(func() {
 		for {
 			select {
@@ -48,13 +56,47 @@ func retrieveAndUpdateSystemStat() {
 		logger.Warnf("Failed to retrieve current system load: %+v", err)
 	}
 	if len(cpuStats) > 0 {
-		// TODO: calculate the real CPU usage
-		// cpuStat := cpuStats[0]
-		// currentCpuUsage.Store(cpuStat.User)
+		curCpuStat := cpuStats[0]
+		recordCpuUsage(prevCpuStat, curCpuStat)
+		// Cache the latest CPU stat info.
+		prevCpuStat = curCpuStat
 	}
 	if loadStat != nil {
 		currentLoad.Store(loadStat.Load1)
 	}
+}
+
+func recordCpuUsage(prev, curCpuStat cpu.TimesStat) {
+	if prev.CPU != "" && curCpuStat.CPU != "" {
+		prevTotal := calculateTotalCpuTick(prev)
+		curTotal := calculateTotalCpuTick(curCpuStat)
+
+		tDiff := curTotal - prevTotal
+		var cpuUsage float64
+		if tDiff == 0 {
+			cpuUsage = 0
+		} else {
+			prevUsed := calculateUserCpuTick(prev) + calculateKernelCpuTick(prev)
+			curUsed := calculateUserCpuTick(curCpuStat) + calculateKernelCpuTick(curCpuStat)
+			cpuUsage = (curUsed - prevUsed) / tDiff
+			cpuUsage = math.Max(0.0, cpuUsage)
+			cpuUsage = math.Min(1.0, cpuUsage)
+		}
+		currentCpuUsage.Store(cpuUsage)
+	}
+}
+
+func calculateTotalCpuTick(stat cpu.TimesStat) float64 {
+	return stat.User + stat.Nice + stat.System + stat.Idle +
+		stat.Iowait + stat.Irq + stat.Softirq + stat.Steal
+}
+
+func calculateUserCpuTick(stat cpu.TimesStat) float64 {
+	return stat.User + stat.Nice
+}
+
+func calculateKernelCpuTick(stat cpu.TimesStat) float64 {
+	return stat.System + stat.Irq + stat.Softirq
 }
 
 func CurrentLoad() float64 {
