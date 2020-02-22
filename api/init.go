@@ -55,7 +55,7 @@ func initSentinel(configPath string, logDir string) (err error) {
 	}
 
 	metric.InitTask()
-	system.InitCollector()
+	system.InitCollector(config.SystemStatCollectIntervalMs())
 
 	return err
 }
