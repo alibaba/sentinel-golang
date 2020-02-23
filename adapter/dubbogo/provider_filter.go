@@ -2,10 +2,10 @@ package dubbogo
 
 import (
 	"github.com/apache/dubbo-go/protocol"
-	"github.com/sentinel-group/sentinel-golang/core/base"
 )
 import (
-	sentinel "github.com/sentinel-group/sentinel-golang/api"
+	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 type providerFilter struct{}
