@@ -2,10 +2,11 @@ package metric
 
 import (
 	"bufio"
-	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/pkg/errors"
 	"io"
 	"os"
+
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/pkg/errors"
 )
 
 const maxItemAmount = 100000
@@ -174,7 +175,7 @@ func readLine(bufReader *bufio.Reader) (string, error) {
 }
 
 func getLatestSecond(items []*base.MetricItem) uint64 {
-	if items == nil {
+	if items == nil || len(items) == 0 {
 		return 0
 	}
 	return items[len(items)-1].Timestamp / 1000
