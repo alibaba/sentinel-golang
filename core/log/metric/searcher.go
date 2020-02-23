@@ -3,8 +3,8 @@ package metric
 import (
 	"encoding/binary"
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/util"
 	"io"
 	"os"
 	"sync"
@@ -50,6 +50,8 @@ func (s *DefaultMetricSearcher) searchOffsetAndRead(beginTimeMs uint64, doRead f
 	if err != nil {
 		return nil, err
 	}
+	// Try to position the latest file index and offset from the cache (fast-path).
+	// If cache is not up-to-date, we'll read from the initial position (offset 0 of the first file).
 	offsetStart, fileNo, err := s.getOffsetStartAndFileIdx(filenames, beginTimeMs)
 	if err != nil {
 		logger.Warnf("Failed to getOffsetStartAndFileIdx, beginTimeMs=%d, error: %+v", beginTimeMs, err)
@@ -57,6 +59,8 @@ func (s *DefaultMetricSearcher) searchOffsetAndRead(beginTimeMs uint64, doRead f
 	fileAmount := uint32(len(filenames))
 	for i := fileNo; i < fileAmount; i++ {
 		filename := filenames[i]
+		// Retrieve the start offset that is valid for given condition.
+		// If offset = -1, it indicates that current file (i) does not satisfy the condition.
 		offset, err := s.findOffsetToStart(filename, beginTimeMs, offsetStart)
 		if err != nil {
 			logger.Warnf("Failed to findOffsetToStart, will try next file. Current beginTimeMs=%d, filename: %s, offsetStart: %d, err: %+v",
@@ -64,7 +68,8 @@ func (s *DefaultMetricSearcher) searchOffsetAndRead(beginTimeMs uint64, doRead f
 			continue
 		}
 		if offset >= 0 {
-			return doRead(filenames, fileNo, uint64(offset))
+			// Read metric items from the offset of current file (number i).
+			return doRead(filenames, i, uint64(offset))
 		}
 	}
 	return make([]*base.MetricItem, 0), nil
@@ -184,10 +189,7 @@ func NewDefaultMetricSearcher(baseDir, baseFilename string) (MetricSearcher, err
 	if baseDir[len(baseDir)-1] != os.PathSeparator {
 		baseDir = baseDir + string(os.PathSeparator)
 	}
-	reader, err := newDefaultMetricLogReader()
-	if err != nil {
-		return nil, err
-	}
+	reader := newDefaultMetricLogReader()
 	return &DefaultMetricSearcher{
 		baseDir:      baseDir,
 		baseFilename: baseFilename,

@@ -1,8 +1,8 @@
 package stat
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	"github.com/sentinel-group/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/logging"
 	"sync"
 )
 

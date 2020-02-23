@@ -1,7 +1,7 @@
 package base
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 	"sync"
 	"testing"
 	"unsafe"

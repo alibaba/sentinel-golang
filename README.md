@@ -2,7 +2,7 @@
 
 # Sentinel: The Sentinel of Your Microservices
 
-[![Build Status](https://travis-ci.org/sentinel-group/sentinel-golang.svg?branch=master)](https://travis-ci.org/sentinel-group/sentinel-golang)
+[![Build Status](https://travis-ci.org/alibaba/sentinel-golang.svg?branch=master)](https://travis-ci.org/alibaba/sentinel-golang)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Gitter](https://badges.gitter.im/alibaba/Sentinel.svg)](https://gitter.im/alibaba/Sentinel)
 
@@ -19,19 +19,19 @@ Sentinel has the following features:
 
 ## Documentation
 
-See the [中文文档](https://github.com/sentinel-group/sentinel-golang/wiki/介绍) for document in Chinese.
+See the [中文文档](https://github.com/alibaba/sentinel-golang/wiki/介绍) for document in Chinese.
 
-See the [Wiki](https://github.com/sentinel-group/sentinel-golang/wiki) for full documentation, examples, blog posts, and other information.
+See the [Wiki](https://github.com/alibaba/sentinel-golang/wiki) for full documentation, examples, blog posts, and other information.
 
 If you are using Sentinel, please [**leave a comment here**](https://github.com/alibaba/Sentinel/issues/18) to tell us your scenario to make Sentinel better.
-It's also encouraged to add the link of your blog post, tutorial, demo or customized components to [**Awesome Sentinel**](https://github.com/sentinel-group/sentinel-awesome).
+It's also encouraged to add the link of your blog post, tutorial, demo or customized components to [**Awesome Sentinel**](https://github.com/alibaba/sentinel-awesome).
 
 ## Bugs and Feedback
 
-For bug report, questions and discussions please submit [GitHub Issues](https://github.com/sentinel-group/sentinel-golang/issues).
+For bug report, questions and discussions please submit [GitHub Issues](https://github.com/alibaba/sentinel-golang/issues).
 
 ## Contributing
 
 Contributions are always welcomed! Please see [CONTRIBUTING](./CONTRIBUTING.md) for detailed guidelines.
 
-You can start with the issues labeled with [`good first issue`](https://github.com/sentinel-group/sentinel-golang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+You can start with the issues labeled with [`good first issue`](https://github.com/alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).

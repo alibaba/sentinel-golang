@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	sentinel "github.com/sentinel-group/sentinel-golang/api"
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	"github.com/sentinel-group/sentinel-golang/core/flow"
-	"github.com/sentinel-group/sentinel-golang/util"
+	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/util"
 	"log"
 	"math/rand"
 	"time"

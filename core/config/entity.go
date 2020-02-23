@@ -2,28 +2,25 @@ package config
 
 import "github.com/pkg/errors"
 
-type Config struct {
-	Version  string
-	Sentinel struct {
-		App struct {
-			// Name represents the name of current running service.
-			Name string
-			// Type indicates the classification of the service (e.g. web service, API gateway).
-			Type int32
-		}
-		Log struct {
-			// Dir represents the log directory path.
-			Dir string
-			// UsePid indicates whether the filename ends with the process ID (PID).
-			UsePid bool
-			// Metric represents the configuration items of the metric log.
-			Metric struct {
-				SingleFileMaxSize uint64
-				MaxFileCount      uint32
-				FlushIntervalSec  uint32
-			}
-		}
+type Entity struct {
+	// Version represents the format version of the entity.
+	Version string
+
+	Sentinel SentinelConfig
+}
+
+// SentinelConfig represent the general configuration of Sentinel.
+type SentinelConfig struct {
+	App struct {
+		// Name represents the name of current running service.
+		Name string
+		// Type indicates the classification of the service (e.g. web service, API gateway).
+		Type int32
 	}
+	// Log represents configuration items related to logging.
+	Log LogConfig
+	// Stat represents configuration items related to statistics.
+	Stat StatConfig
 }
 
 // LogConfig represent the configuration of logging in Sentinel.
@@ -43,23 +40,15 @@ type MetricLogConfig struct {
 	FlushIntervalSec  uint32 `yaml:"flushIntervalSec"`
 }
 
-// SentinelConfig represent the general configuration of Sentinel.
-type SentinelConfig struct {
-	App struct {
-		// Name represents the name of current running service.
-		Name string
-		// Type indicates the classification of the service (e.g. web service, API gateway).
-		Type int32
-	}
-	// Log represents configuration items related to logging.
-	Log LogConfig
+// StatConfig represents the configuration items of statistics.
+type StatConfig struct {
+	System SystemStatConfig `yaml:"system"`
 }
 
-type Entity struct {
-	// Version represents the format version of the entity.
-	Version string
-
-	Sentinel SentinelConfig
+// SystemStatConfig represents the configuration items of system statistics.
+type SystemStatConfig struct {
+	// CollectIntervalMs represents the collecting interval of the system metrics collector.
+	CollectIntervalMs uint32 `yaml:"collectIntervalMs"`
 }
 
 func NewDefaultConfig() *Entity {
@@ -73,7 +62,11 @@ func NewDefaultConfig() *Entity {
 				Name: UnknownProjectName,
 				Type: DefaultAppType,
 			},
-			Log: LogConfig{Metric: MetricLogConfig{SingleFileMaxSize: DefaultMetricLogSingleFileMaxSize, MaxFileCount: DefaultMetricLogMaxFileAmount, FlushIntervalSec: DefaultMetricLogFlushIntervalSec}},
+			Log: LogConfig{Metric: MetricLogConfig{SingleFileMaxSize: DefaultMetricLogSingleFileMaxSize,
+				MaxFileCount: DefaultMetricLogMaxFileAmount, FlushIntervalSec: DefaultMetricLogFlushIntervalSec}},
+			Stat: StatConfig{
+				System: SystemStatConfig{CollectIntervalMs: DefaultSystemStatCollectIntervalMs},
+			},
 		},
 	}
 }
@@ -91,6 +84,9 @@ func checkValid(conf *SentinelConfig) error {
 	}
 	if mc.SingleFileMaxSize <= 0 {
 		return errors.New("Bad metric log config: singleFileMaxSize <= 0")
+	}
+	if conf.Stat.System.CollectIntervalMs == 0 {
+		return errors.New("Bad system stat config: collectIntervalMs = 0")
 	}
 	return nil
 }

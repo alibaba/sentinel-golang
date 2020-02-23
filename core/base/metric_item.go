@@ -6,11 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 const metricPartSeparator = "|"
 
+// MetricItem represents the data of metric log per line.
 type MetricItem struct {
 	Resource       string
 	Classification int32
