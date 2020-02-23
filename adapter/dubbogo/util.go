@@ -3,12 +3,16 @@ package dubbogo
 import (
 	"bytes"
 	"fmt"
+)
+import (
 	"github.com/apache/dubbo-go/common"
 	"github.com/apache/dubbo-go/common/constant"
 	"github.com/apache/dubbo-go/protocol"
 )
 
 const (
+	ProviderFilterName    = "sentinel-provider"
+	ConsumerFilterName    = "sentinel-consumer"
 	DefaultProviderPrefix = "dubbo:provider:"
 	DefaultConsumerPrefix = "dubbo:consumer:"
 )
@@ -16,12 +20,12 @@ const (
 // Currently, a ConcurrentHashMap mechanism is missing.
 // All values are filled with default values first.
 
-func getResourceName(invoker protocol.Invoker, invocation protocol.Invocation) string {
+func getResourceName(invoker protocol.Invoker, invocation protocol.Invocation, prefix string) string {
 	var (
 		buf               bytes.Buffer
 		interfaceResource string
 	)
-	buf.WriteString(getConsumerPrefix())
+	buf.WriteString(prefix)
 	if getInterfaceGroupAndVersionEnabled() {
 		interfaceResource = getColonSeparatedKey(invoker.GetUrl())
 	} else {

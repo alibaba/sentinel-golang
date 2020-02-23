@@ -1,16 +1,17 @@
 package dubbogo
 
 import (
-	"context"
 	"github.com/apache/dubbo-go/protocol"
-	sentinel "github.com/sentinel-group/sentinel-golang/api"
 	"github.com/sentinel-group/sentinel-golang/core/base"
 )
+import (
+	sentinel "github.com/sentinel-group/sentinel-golang/api"
+)
 
-type dubboConsumerFilter struct{}
+type consumerFilter struct{}
 
-func (d *dubboConsumerFilter) Invoke(ctx context.Context, invoker protocol.Invoker, invocation protocol.Invocation) protocol.Result {
-	methodResourceName := getResourceName(invoker, invocation)
+func (d *consumerFilter) Invoke(invoker protocol.Invoker, invocation protocol.Invocation) protocol.Result {
+	methodResourceName := getResourceName(invoker, invocation, getConsumerPrefix())
 	interfaceResourceName := ""
 	if getInterfaceGroupAndVersionEnabled() {
 		interfaceResourceName = getColonSeparatedKey(invoker.GetUrl())
@@ -39,10 +40,11 @@ func (d *dubboConsumerFilter) Invoke(ctx context.Context, invoker protocol.Invok
 		}
 	} else {
 		// todo : Need to implement asynchronous current limiting
+		//  unlimited flow for the time being
 	}
 	return invoker.Invoke(invocation)
 }
 
-func (d *dubboConsumerFilter) OnResponse(_ context.Context, result protocol.Result, _ protocol.Invoker, _ protocol.Invocation) protocol.Result {
+func (d *consumerFilter) OnResponse(result protocol.Result, _ protocol.Invoker, _ protocol.Invocation) protocol.Result {
 	return result
 }
