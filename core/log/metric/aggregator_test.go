@@ -1,11 +1,15 @@
 package metric
 
 import (
+	"fmt"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 const (
@@ -27,7 +31,7 @@ func Test_aggregateIntoMap(t *testing.T) {
 			args: args{
 				mm:      make(metricTimeMap, 0),
 				metrics: make(map[uint64]*base.MetricItem, 0),
-				node: stat.NewResourceNode(defaultTestResourceName, base.ResTypeCommon),
+				node:    stat.NewResourceNode(defaultTestResourceName, base.ResTypeCommon),
 			},
 		},
 	}
@@ -87,9 +91,9 @@ func Test_aggregateIntoMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			aggregateIntoMap(tt.args.mm, tt.args.metrics, tt.args.node)
-			assert.True(t, len(tt.args.mm[mi1.Timestamp])==1)
-			assert.True(t, len(tt.args.mm[mi2.Timestamp])==1)
-			assert.True(t, len(tt.args.mm[mi3.Timestamp])==2)
+			assert.True(t, len(tt.args.mm[mi1.Timestamp]) == 1)
+			assert.True(t, len(tt.args.mm[mi2.Timestamp]) == 1)
+			assert.True(t, len(tt.args.mm[mi3.Timestamp]) == 2)
 		})
 	}
 }
@@ -168,7 +172,6 @@ func Test_isItemTimestampInTime(t *testing.T) {
 	}
 }
 
-
 type MetricItemRetrieverMock struct {
 	mock.Mock
 }
@@ -180,7 +183,7 @@ func (m *MetricItemRetrieverMock) MetricsOnCondition(predicate base.TimePredicat
 
 func Test_currentMetricItems(t *testing.T) {
 	type args struct {
-		retriever        base.MetricItemRetriever
+		retriever   base.MetricItemRetriever
 		currentTime uint64
 	}
 	tests := []struct {
@@ -191,7 +194,7 @@ func Test_currentMetricItems(t *testing.T) {
 		{
 			name: "Test_currentMetricItems",
 			args: args{
-				retriever: nil,
+				retriever:   nil,
 				currentTime: 1581959014000,
 			},
 			want: nil,
@@ -243,12 +246,35 @@ func Test_currentMetricItems(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := currentMetricItems(tt.args.retriever, tt.args.currentTime)
-			if len(got) !=2 {
+			if len(got) != 2 {
 				t.Errorf("get map len = %v, want %v", len(got), 2)
 			}
-			if got[1581959010000] == nil || got[1581959011000]==nil {
+			if got[1581959010000] == nil || got[1581959011000] == nil {
 				t.Errorf("result error, %v", got)
 			}
+		})
+	}
+}
+
+func Test_doAggregate(t *testing.T) {
+	go func() {
+		for {
+			select {
+			case maps := <-writeChan:
+				{
+					fmt.Println("writeChan:", len(maps))
+				}
+			case <-time.After(time.Second * 10):
+				{
+					fmt.Println("time out")
+					return
+				}
+			}
+		}
+	}()
+	for i := 0; i < 10; i++ {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			doAggregate()
 		})
 	}
 }

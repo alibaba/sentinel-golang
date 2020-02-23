@@ -1,7 +1,10 @@
 package metric
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strconv"
@@ -105,7 +108,7 @@ func Test_listMetricFiles(t *testing.T) {
 				baseDir:     "../../../tests/testdata/metric",
 				filePattern: "app1-metrics.log",
 			},
-			want:    []string{
+			want: []string{
 				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14",
 				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.12",
 				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.32",
@@ -128,4 +131,94 @@ func Test_listMetricFiles(t *testing.T) {
 			}
 		})
 	}
+}
+
+// FileName case sensitive
+func Test_formMetricIdxFileName(t *testing.T) {
+	type args struct {
+		metricFilename string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"test1", args{"test"}, "test.idx"},
+		{"test2", args{"sentinal"}, "sentinal.idx"},
+		{"test3", args{"Sentinal"}, "Sentinal.idx"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formMetricIdxFileName(tt.args.metricFilename); got != tt.want {
+				t.Errorf("formMetricIdxFileName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_listMetricFilesConditional(t *testing.T) {
+	type args struct {
+		baseDir     string
+		filePattern string
+		predicate   func(string, string) bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			"test1",
+			args{
+				"../../../tests/testdata/metric",
+				"app1-metrics.log",
+				filenameMatches,
+			},
+			[]string{
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.12",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.32",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-15",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-16",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-16.100",
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := listMetricFilesConditional(tt.args.baseDir, tt.args.filePattern, tt.args.predicate)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("listMetricFilesConditional() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("listMetricFilesConditional() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_filenameComparator(t *testing.T) {
+	dir, _ := ioutil.ReadDir("../../../tests/testdata/metric")
+	arrx := make([]string, 0)
+	for _, f := range dir {
+		if f.IsDir() {
+			continue
+		}
+		name := f.Name()
+		if filenameMatches(name, "app1-metrics.log") && !strings.HasSuffix(name, MetricIdxSuffix) && !strings.HasSuffix(name, FileLockSuffix) {
+			// Put the absolute path into the slice.
+			arrx = append(arrx, filepath.Join("../../../tests/testdata/metric", name))
+		}
+	}
+	fmt.Println(arrx)
+
+	t.Run("test1", func(t *testing.T) {
+		if got := filenameComparator(arrx); got != nil {
+			sort.Slice(arrx, filenameComparator(arrx))
+			fmt.Println(arrx)
+		}
+	})
 }
