@@ -69,6 +69,8 @@ func loadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
+
+	logging.GetDefaultLogger().Infof("Resolving Sentinel config from file: %s", filePath)
 	return nil
 }
 
@@ -77,11 +79,13 @@ func loadFromSystemEnv() {
 		localConf.Sentinel.App.Name = appName
 	}
 	appTypeStr := os.Getenv(AppTypeEnvKey)
-	appType, err := strconv.ParseInt(appTypeStr, 10, 32)
-	if err != nil {
-		logging.GetDefaultLogger().Warnf("Ignoring bad appType from system env: %s", appTypeStr)
-	} else {
-		localConf.Sentinel.App.Type = int32(appType)
+	if appTypeStr != "" {
+		appType, err := strconv.ParseInt(appTypeStr, 10, 32)
+		if err != nil {
+			logging.GetDefaultLogger().Warnf("Ignoring bad appType from system env: %s", appTypeStr)
+		} else {
+			localConf.Sentinel.App.Type = int32(appType)
+		}
 	}
 }
 
