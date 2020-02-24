@@ -19,7 +19,8 @@ const (
 
 var (
 	logger = logging.GetDefaultLogger()
-
+	// the unit is millisecond, equals to currentSecond*1000
+	// example: 1581959014000
 	lastFetchTime int64 = -1
 	writeChan           = make(chan metricTimeMap, logFlushQueueSize)
 	stopChan            = make(chan struct{})
@@ -129,9 +130,9 @@ func isItemTimestampInTime(ts uint64, currentSecStart uint64) bool {
 	return int64(ts) >= lastFetchTime && ts < currentSecStart
 }
 
-func currentMetricItems(node *stat.ResourceNode, currentTime uint64) map[uint64]*base.MetricItem {
+func currentMetricItems(retriever base.MetricItemRetriever, currentTime uint64) map[uint64]*base.MetricItem {
 	m := make(map[uint64]*base.MetricItem, 2)
-	items := node.MetricsOnCondition(func(ts uint64) bool {
+	items := retriever.MetricsOnCondition(func(ts uint64) bool {
 		return isItemTimestampInTime(ts, currentTime)
 	})
 	for _, item := range items {
