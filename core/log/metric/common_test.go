@@ -102,16 +102,16 @@ func Test_listMetricFiles(t *testing.T) {
 		{
 			name: "Test_listMetricFiles",
 			args: args{
-				baseDir:     "./test_data",
+				baseDir:     "../../../tests/testdata/metric",
 				filePattern: "app1-metrics.log",
 			},
 			want:    []string{
-				"test_data/app1-metrics.log.2020-02-14",
-				"test_data/app1-metrics.log.2020-02-14.12",
-				"test_data/app1-metrics.log.2020-02-14.32",
-				"test_data/app1-metrics.log.2020-02-15",
-				"test_data/app1-metrics.log.2020-02-16",
-				"test_data/app1-metrics.log.2020-02-16.100",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.12",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.32",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-15",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-16",
+				"../../../tests/testdata/metric/app1-metrics.log.2020-02-16.100",
 			},
 			wantErr: false,
 		},
