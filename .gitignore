@@ -61,3 +61,6 @@ Temporary Items
 
 # log
 *.log
+
+# coverage file
+coverage.html
