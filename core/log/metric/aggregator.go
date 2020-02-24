@@ -19,7 +19,7 @@ const (
 
 var (
 	logger = logging.GetDefaultLogger()
-	// the unit is millisecond, but the The millisecond value is 0
+	// the unit is millisecond, equals to currentSecond*1000
 	// example: 1581959014000
 	lastFetchTime int64 = -1
 	writeChan           = make(chan metricTimeMap, logFlushQueueSize)
@@ -120,7 +120,6 @@ func aggregateIntoMap(mm metricTimeMap, metrics map[uint64]*base.MetricItem, nod
 	}
 }
 
-// TODO Might the condition should be stricter here?
 func isActiveMetricItem(item *base.MetricItem) bool {
 	return item.PassQps > 0 || item.BlockQps > 0 || item.CompleteQps > 0 || item.ErrorQps > 0 ||
 		item.AvgRt > 0 || item.Concurrency > 0
