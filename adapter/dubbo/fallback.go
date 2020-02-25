@@ -2,7 +2,6 @@ package dubbo
 
 import (
 	"context"
-
 	"github.com/apache/dubbo-go/protocol"
 )
 import (
