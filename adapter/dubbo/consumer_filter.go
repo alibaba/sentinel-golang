@@ -44,13 +44,13 @@ func (d *consumerFilter) Invoke(ctx context.Context, invoker protocol.Invoker, i
 }
 
 func (d *consumerFilter) OnResponse(ctx context.Context, result protocol.Result, _ protocol.Invoker, _ protocol.Invocation) protocol.Result {
-	if interfaceEntry := ctx.Value(InterfaceEntryKey); interfaceEntry != nil {
-		// TODO traceEntry()
-		interfaceEntry.(*base.SentinelEntry).Exit()
-	}
 	if methodEntry := ctx.Value(MethodEntryKey); methodEntry != nil {
 		// TODO traceEntry()
 		methodEntry.(*base.SentinelEntry).Exit()
+	}
+	if interfaceEntry := ctx.Value(InterfaceEntryKey); interfaceEntry != nil {
+		// TODO traceEntry()
+		interfaceEntry.(*base.SentinelEntry).Exit()
 	}
 	return result
 }

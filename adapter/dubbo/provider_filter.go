@@ -19,26 +19,32 @@ func (d *providerFilter) Invoke(ctx context.Context, invoker protocol.Invoker, i
 	} else {
 		interfaceResourceName = invoker.GetUrl().Service()
 	}
-	_, b := sentinel.Entry(interfaceResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound))
+	var (
+		interfaceEntry *base.SentinelEntry
+		methodEntry    *base.SentinelEntry
+		b              *base.BlockError
+	)
+	interfaceEntry, b = sentinel.Entry(interfaceResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound))
 	if b != nil { // blocked
 		return providerDubboFallback(ctx, invoker, invocation, b)
 	}
-	_, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound), sentinel.WithArgs(invocation.Attachments()))
+	methodEntry, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound), sentinel.WithArgs(invocation.Attachments()))
 	if b != nil { // blocked
 		return providerDubboFallback(ctx, invoker, invocation, b)
 	}
-
+	ctx = context.WithValue(ctx, InterfaceEntryKey, interfaceEntry)
+	ctx = context.WithValue(ctx, MethodEntryKey, methodEntry)
 	return invoker.Invoke(ctx, invocation)
 }
 
 func (d *providerFilter) OnResponse(ctx context.Context, result protocol.Result, _ protocol.Invoker, _ protocol.Invocation) protocol.Result {
-	if interfaceEntry := ctx.Value(InterfaceEntryKey); interfaceEntry != nil {
-		// TODO traceEntry()
-		interfaceEntry.(*base.SentinelEntry).Exit()
-	}
 	if methodEntry := ctx.Value(MethodEntryKey); methodEntry != nil {
 		// TODO traceEntry()
 		methodEntry.(*base.SentinelEntry).Exit()
+	}
+	if interfaceEntry := ctx.Value(InterfaceEntryKey); interfaceEntry != nil {
+		// TODO traceEntry()
+		interfaceEntry.(*base.SentinelEntry).Exit()
 	}
 	return result
 }
