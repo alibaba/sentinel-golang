@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-//要考虑时区
+//Time zone should be considered for time related operations
 func TestFormatTimeMillis(t *testing.T) {
 	type args struct {
 		ts uint64
