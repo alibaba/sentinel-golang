@@ -1,4 +1,4 @@
-package dubbogo
+package dubbo
 
 import (
 	"github.com/apache/dubbo-go/common/extension"

@@ -1,4 +1,4 @@
-package dubbogo
+package dubbo
 
 import (
 	"bytes"
@@ -11,10 +11,14 @@ import (
 )
 
 const (
-	ProviderFilterName    = "sentinel-provider"
-	ConsumerFilterName    = "sentinel-consumer"
+	ProviderFilterName = "sentinel-provider"
+	ConsumerFilterName = "sentinel-consumer"
+
 	DefaultProviderPrefix = "dubbo:provider:"
 	DefaultConsumerPrefix = "dubbo:consumer:"
+
+	MethodEntryKey    = "dubboMethodEntry"
+	InterfaceEntryKey = "dubboInterfaceEntry"
 )
 
 // Currently, a ConcurrentHashMap mechanism is missing.
