@@ -18,7 +18,7 @@ func TestTraceErrorToCtx(t *testing.T) {
 	type args struct {
 		ctx   *base.EntryContext
 		err   error
-		count uint64
+		count TraceErrorOption
 	}
 	tests := []struct {
 		name string
@@ -30,7 +30,7 @@ func TestTraceErrorToCtx(t *testing.T) {
 			args: args{
 				ctx: nil,
 				err: nil,
-				count: 10,
+				count: WithCount(10),
 			},
 			want: 10,
 		},
@@ -56,7 +56,7 @@ func TestTraceErrorToEntry(t *testing.T) {
 	type args struct {
 		entry *base.SentinelEntry
 		err   error
-		count uint64
+		count TraceErrorOption
 	}
 	tests := []struct {
 		name string
@@ -68,7 +68,7 @@ func TestTraceErrorToEntry(t *testing.T) {
 			args: args{
 				entry: nil,
 				err:   nil,
-				count: 10,
+				count: WithCount(10),
 			},
 			want: 10,
 		},
