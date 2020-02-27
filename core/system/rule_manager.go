@@ -1,9 +1,10 @@
 package system
 
 import (
+	"encoding/json"
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/logging"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"sync"
 )
 
@@ -64,7 +65,22 @@ func onRuleUpdate(rules []*SystemRule) error {
 	defer ruleMapMux.Unlock()
 
 	ruleMap = m
+	logRuleUpdate(m)
+
 	return nil
+}
+
+func logRuleUpdate(m RuleMap) {
+	rules := make([]*SystemRule, 0)
+	for _, rs := range m {
+		rules = append(rules, rs...)
+	}
+	bs, err := json.Marshal(rules)
+	if err != nil {
+		logger.Info("[SystemRuleManager] System rules loaded")
+	} else {
+		logger.Infof("[SystemRuleManager] System rules loaded: %s", bs)
+	}
 }
 
 func buildRuleMap(rules []*SystemRule) RuleMap {

@@ -3,7 +3,7 @@ package metric
 import (
 	"bufio"
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 	"io"
 	"os"
 )
@@ -197,6 +197,6 @@ func openFileAndSeekTo(filename string, offset uint64) (*os.File, error) {
 	return file, nil
 }
 
-func newDefaultMetricLogReader() (MetricLogReader, error) {
-	return &defaultMetricLogReader{}, nil
+func newDefaultMetricLogReader() MetricLogReader {
+	return &defaultMetricLogReader{}
 }

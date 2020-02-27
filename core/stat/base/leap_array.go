@@ -3,8 +3,8 @@ package base
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/util"
 	"runtime"
 	"sync/atomic"
 	"unsafe"

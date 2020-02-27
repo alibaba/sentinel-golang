@@ -1,7 +1,7 @@
 package base
 
 import (
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/util"
 	"math/rand"
 	"reflect"
 	"sync"

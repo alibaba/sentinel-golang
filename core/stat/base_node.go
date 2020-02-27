@@ -1,8 +1,8 @@
 package stat
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
-	sbase "github.com/sentinel-group/sentinel-golang/core/stat/base"
+	"github.com/alibaba/sentinel-golang/core/base"
+	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"sync/atomic"
 )
 

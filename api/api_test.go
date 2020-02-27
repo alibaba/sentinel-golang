@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
@@ -68,7 +68,7 @@ func Test_entryWithArgsAndChainPass(t *testing.T) {
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
 
-	entry, b := entry("abc", &Options{
+	entry, b := entry("abc", &EntryOptions{
 		resourceType: base.ResTypeCommon,
 		entryType:    base.Inbound,
 		acquireCount: 1,
@@ -108,7 +108,7 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
 
-	entry, b := entry("abc", &Options{
+	entry, b := entry("abc", &EntryOptions{
 		resourceType: base.ResTypeCommon,
 		entryType:    base.Inbound,
 		acquireCount: 1,
