@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/sentinel-group/sentinel-golang/logging"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -17,11 +17,12 @@ const (
 	AppNameEnvKey = "SENTINEL_APP_NAME"
 	AppTypeEnvKey = "SENTINEL_APP_TYPE"
 
-	DefaultConfigFilename                    = "sentinel.yml"
-	DefaultAppType                    int32  = 0
-	DefaultMetricLogFlushIntervalSec  uint32 = 1
-	DefaultMetricLogSingleFileMaxSize uint64 = 1024 * 1024 * 50
-	DefaultMetricLogMaxFileAmount     uint32 = 8
+	DefaultConfigFilename                     = "sentinel.yml"
+	DefaultAppType                     int32  = 0
+	DefaultMetricLogFlushIntervalSec   uint32 = 1
+	DefaultMetricLogSingleFileMaxSize  uint64 = 1024 * 1024 * 50
+	DefaultMetricLogMaxFileAmount      uint32 = 8
+	DefaultSystemStatCollectIntervalMs uint32 = 1000
 )
 
 var localConf = NewDefaultConfig()
@@ -44,6 +45,10 @@ func InitConfigFromFile(filePath string) error {
 	}
 	loadFromSystemEnv()
 
+	if err = checkValid(&localConf.Sentinel); err != nil {
+		return err
+	}
+
 	logger := logging.GetDefaultLogger()
 	logger.Infof("App name resolved: %s", AppName())
 
@@ -64,6 +69,8 @@ func loadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
+
+	logging.GetDefaultLogger().Infof("Resolving Sentinel config from file: %s", filePath)
 	return nil
 }
 
@@ -72,11 +79,13 @@ func loadFromSystemEnv() {
 		localConf.Sentinel.App.Name = appName
 	}
 	appTypeStr := os.Getenv(AppTypeEnvKey)
-	appType, err := strconv.ParseInt(appTypeStr, 10, 32)
-	if err != nil {
-
-	} else {
-		localConf.Sentinel.App.Type = int32(appType)
+	if appTypeStr != "" {
+		appType, err := strconv.ParseInt(appTypeStr, 10, 32)
+		if err != nil {
+			logging.GetDefaultLogger().Warnf("Ignoring bad appType from system env: %s", appTypeStr)
+		} else {
+			localConf.Sentinel.App.Type = int32(appType)
+		}
 	}
 }
 
@@ -98,4 +107,8 @@ func MetricLogSingleFileMaxSize() uint64 {
 
 func MetricLogMaxFileAmount() uint32 {
 	return localConf.Sentinel.Log.Metric.MaxFileCount
+}
+
+func SystemStatCollectIntervalMs() uint32 {
+	return localConf.Sentinel.Stat.System.CollectIntervalMs
 }

@@ -1,10 +1,11 @@
 package flow
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/sentinel-group/sentinel-golang/logging"
-	"github.com/sentinel-group/sentinel-golang/util"
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"sync"
 )
 
@@ -56,6 +57,15 @@ func initRuleRecvTask() {
 	}, logger)
 }
 
+func logRuleUpdate(m TrafficControllerMap) {
+	bs, err := json.Marshal(rulesFrom(m))
+	if err != nil {
+		logger.Info("[FlowRuleManager] Flow rules loaded")
+	} else {
+		logger.Infof("[FlowRuleManager] Flow rules loaded: %s", bs)
+	}
+}
+
 func onRuleUpdate(rules []*FlowRule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -73,6 +83,8 @@ func onRuleUpdate(rules []*FlowRule) (err error) {
 	m := buildFlowMap(rules)
 
 	tcMap = m
+	logRuleUpdate(m)
+
 	return nil
 }
 
@@ -81,6 +93,31 @@ func LoadRules(rules []*FlowRule) (bool, error) {
 	// TODO: rethink the design
 	err := onRuleUpdate(rules)
 	return true, err
+}
+
+func GetRules() []*FlowRule {
+	tcMux.RLock()
+	defer tcMux.RUnlock()
+
+	return rulesFrom(tcMap)
+}
+
+func rulesFrom(m TrafficControllerMap) []*FlowRule {
+	rules := make([]*FlowRule, 0)
+	if len(m) == 0 {
+		return rules
+	}
+	for _, rs := range m {
+		if len(rs) == 0 {
+			continue
+		}
+		for _, r := range rs {
+			if r != nil && r.Rule() != nil {
+				rules = append(rules, r.Rule())
+			}
+		}
+	}
+	return rules
 }
 
 // SetTrafficShapingGenerator sets the traffic controller generator for the given control behavior.
@@ -117,7 +154,7 @@ func getTrafficControllerListFor(name string) []*TrafficShapingController {
 	return tcMap[name]
 }
 
-// NotThreadSafe
+// NotThreadSafe (should be guarded by the lock)
 func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 	if len(rules) == 0 {
 		return make(TrafficControllerMap, 0)

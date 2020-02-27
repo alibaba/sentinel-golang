@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 func TestSlidingWindowMetric_getBucketStartRange(t *testing.T) {

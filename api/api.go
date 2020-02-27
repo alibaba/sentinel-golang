@@ -1,12 +1,61 @@
 package api
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
+
+// EntryOptions represents the options of a Sentinel resource entry.
+type EntryOptions struct {
+	resourceType base.ResourceType
+	entryType    base.TrafficType
+	acquireCount uint32
+	flag         int32
+	slotChain    *base.SlotChain
+	args         []interface{}
+}
+
+type EntryOption func(*EntryOptions)
+
+// WithResourceType sets the resource entry with the given resource type.
+func WithResourceType(resourceType base.ResourceType) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.resourceType = resourceType
+	}
+}
+
+// WithTrafficType sets the resource entry with the given traffic type.
+func WithTrafficType(entryType base.TrafficType) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.entryType = entryType
+	}
+}
+
+// WithAcquireCount sets the resource entry with the given batch count (by default 1).
+func WithAcquireCount(acquireCount uint32) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.acquireCount = acquireCount
+	}
+}
+
+// WithFlag sets the resource entry with the given additional flag.
+func WithFlag(flag int32) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.flag = flag
+	}
+}
+
+// WithArgs sets the resource entry with the given additional parameters.
+func WithArgs(args ...interface{}) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.args = append(opts.args, args...)
+	}
+}
+
+
 // Entry is the basic API of Sentinel.
-func Entry(resource string, opts ...Option) (*base.SentinelEntry, *base.BlockError) {
-	var options = Options{
+func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.BlockError) {
+	var options = EntryOptions{
 		resourceType: base.ResTypeCommon,
 		entryType:    base.Outbound,
 		acquireCount: 1,
@@ -21,7 +70,7 @@ func Entry(resource string, opts ...Option) (*base.SentinelEntry, *base.BlockErr
 	return entry(resource, &options)
 }
 
-func entry(resource string, options *Options) (*base.SentinelEntry, *base.BlockError) {
+func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.BlockError) {
 	rw := base.NewResourceWrapper(resource, options.resourceType, options.entryType)
 	sc := options.slotChain
 

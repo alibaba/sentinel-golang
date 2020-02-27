@@ -1,7 +1,7 @@
 package flow
 
 import (
-	"github.com/sentinel-group/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"sync/atomic"
