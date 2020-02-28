@@ -1,11 +1,12 @@
 package system
 
 import (
-	"github.com/alibaba/sentinel-golang/util"
 	"math"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/util"
 
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/load"

@@ -2,10 +2,12 @@ package system
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"sync"
+
+	"github.com/pkg/errors"
 )
 
 type RuleMap map[MetricType][]*SystemRule
