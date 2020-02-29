@@ -3,15 +3,18 @@ package flow
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
+	"sync"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"sync"
+	"github.com/pkg/errors"
 )
 
 // const
 var (
 	logger = logging.GetDefaultLogger()
+	ErrFlowRuleChanBlocked = errors.New("blocked rule chan")
 )
 
 // TrafficControllerGenFunc represents the TrafficShapingController generator function of a specific control behavior.
@@ -32,6 +35,7 @@ var (
 func init() {
 	propertyInit.Do(func() {
 		initRuleRecvTask()
+		base.RegisterPropertyConsumer(decodeProperty, resetProperty)
 	})
 
 	// Initialize the traffic shaping controller generator map for existing control behaviors.
@@ -41,6 +45,28 @@ func init() {
 	tcGenFuncMap[Throttling] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
+}
+
+func decodeProperty(decoder base.PropertyDecoder) error {
+	var rules []*FlowRule
+	if err := decoder.Decode(&rules); err != nil {
+		return err
+	}
+	select {
+	case ruleChan <- rules:
+	default:
+		return ErrFlowRuleChanBlocked
+	}
+	return nil
+}
+
+func resetProperty() error {
+	select {
+	case ruleChan <- []*FlowRule{}:
+	default:
+		return ErrFlowRuleChanBlocked
+	}
+	return nil
 }
 
 func initRuleRecvTask() {

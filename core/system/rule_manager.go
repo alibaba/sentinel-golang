@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 
@@ -21,11 +22,14 @@ var (
 
 	ruleChan     = make(chan []*SystemRule, 10)
 	propertyInit sync.Once
+
+	ErrSystemRuleChanBlocked = errors.New("blocked system rule chan")
 )
 
 func init() {
 	propertyInit.Do(func() {
 		initRuleRecvTask()
+		base.RegisterPropertyConsumer(decodeProperty, resetProperty)
 	})
 }
 
@@ -41,6 +45,28 @@ func initRuleRecvTask() {
 			}
 		}
 	}, logger)
+}
+
+func decodeProperty(decoder base.PropertyDecoder) error {
+	var rules []*SystemRule
+	if err := decoder.Decode(&rules); err != nil {
+		return err
+	}
+	select {
+	case ruleChan <- rules:
+	default:
+		return ErrSystemRuleChanBlocked
+	}
+	return nil
+}
+
+func resetProperty() error {
+	select {
+	case ruleChan <- []*SystemRule{}:
+	default:
+		return ErrSystemRuleChanBlocked
+	}
+	return nil
 }
 
 func GetRules() []*SystemRule {
