@@ -2,10 +2,10 @@ package system
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
 
 	"github.com/pkg/errors"
 )
@@ -19,29 +19,8 @@ var (
 	ruleMap    = make(RuleMap, 0)
 	ruleMapMux = new(sync.RWMutex)
 
-	ruleChan     = make(chan []*SystemRule, 10)
 	propertyInit sync.Once
 )
-
-func init() {
-	propertyInit.Do(func() {
-		initRuleRecvTask()
-	})
-}
-
-func initRuleRecvTask() {
-	go util.RunWithRecover(func() {
-		for {
-			select {
-			case rules := <-ruleChan:
-				err := onRuleUpdate(rules)
-				if err != nil {
-					logger.Errorf("Failed to update system rules: %+v", err)
-				}
-			}
-		}
-	}, logger)
-}
 
 func GetRules() []*SystemRule {
 	ruleMapMux.RLock()
@@ -55,12 +34,22 @@ func GetRules() []*SystemRule {
 }
 
 // LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
-func LoadRules(rules []*SystemRule) (bool, error) {
-	ruleChan <- rules
-	return true, nil
+func LoadRules(rules []*SystemRule) error {
+	err := onRuleUpdate(rules)
+	return err
 }
 
-func onRuleUpdate(rules []*SystemRule) error {
+func onRuleUpdate(rules []*SystemRule) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+
 	m := buildRuleMap(rules)
 
 	ruleMapMux.Lock()

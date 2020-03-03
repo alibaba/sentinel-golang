@@ -23,7 +23,7 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	assert.NoError(t, err)
 
 	resource := "test-customized-tc"
-	_, err = LoadRules([]*FlowRule{
+	err = LoadRules([]*FlowRule{
 		{
 			ID:              10,
 			Count:           20,
@@ -41,7 +41,7 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotContains(t, tcGenFuncMap, cb)
 
-	_, _ = LoadRules([]*FlowRule{})
+	_ = LoadRules([]*FlowRule{})
 }
 
 func TestIsValidFlowRule(t *testing.T) {

@@ -32,9 +32,8 @@ func TestGetRules(t *testing.T) {
 
 func TestLoadRules(t *testing.T) {
 	t.Run("NilSystemRule", func(t *testing.T) {
-		isOK, err := LoadRules(nil)
+		err := LoadRules(nil)
 		assert.NoError(t, err)
-		assert.Equal(t, true, isOK)
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
@@ -42,9 +41,8 @@ func TestLoadRules(t *testing.T) {
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: Concurrency, TriggerCount: 2},
 		}
-		isOK, err := LoadRules(sRule)
+		err := LoadRules(sRule)
 		assert.NoError(t, err)
-		assert.Equal(t, true, isOK)
 	})
 }
 
