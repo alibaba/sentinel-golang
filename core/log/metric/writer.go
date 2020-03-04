@@ -4,11 +4,10 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 	"os"
 	"strconv"
 	"strings"
@@ -281,8 +280,8 @@ func NewDefaultMetricLogWriterOfApp(maxSize uint64, maxFileAmount uint32, appNam
 	}
 	_, offset := time.Now().Zone()
 
-	baseDir := logging.LogBaseDir()
-	baseFilename := FormMetricFileName(appName, logging.LogNameWithPid())
+	baseDir := config.LogBaseDir()
+	baseFilename := FormMetricFileName(appName, config.LogUsePid())
 
 	writer := &DefaultMetricLogWriter{
 		maxSingleSize:     maxSize,

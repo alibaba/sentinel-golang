@@ -2,6 +2,7 @@ package stat
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/constant"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"sync/atomic"
 )
@@ -17,7 +18,7 @@ type BaseStatNode struct {
 }
 
 func NewBaseStatNode(sampleCount uint32, intervalInMs uint32) *BaseStatNode {
-	la := sbase.NewBucketLeapArray(base.DefaultSampleCountTotal, base.DefaultIntervalMsTotal)
+	la := sbase.NewBucketLeapArray(constant.DefaultSampleCountTotal, constant.DefaultIntervalMsTotal)
 	metric := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, la)
 	return &BaseStatNode{
 		goroutineNum: 0,
