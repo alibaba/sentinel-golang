@@ -117,10 +117,6 @@ func (la *leapArray) currentBucket(bg bucketGenerator) (*bucketWrap, error) {
 }
 
 func (la *leapArray) currentBucketOfTime(now uint64, bg bucketGenerator) (*bucketWrap, error) {
-	if now < 0 {
-		return nil, errors.New("Current time is less than 0.")
-	}
-
 	idx := la.calculateTimeIdx(now)
 	bucketStart := calculateStartTime(now, la.bucketLengthInMs)
 
@@ -169,7 +165,7 @@ func (la *leapArray) values() []*bucketWrap {
 }
 
 func (la *leapArray) valuesWithTime(now uint64) []*bucketWrap {
-	if now <= 0 {
+	if now == 0 {
 		return make([]*bucketWrap, 0)
 	}
 	ret := make([]*bucketWrap, 0)
@@ -184,7 +180,7 @@ func (la *leapArray) valuesWithTime(now uint64) []*bucketWrap {
 }
 
 func (la *leapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*bucketWrap {
-	if now <= 0 {
+	if now == 0 {
 		return make([]*bucketWrap, 0)
 	}
 	ret := make([]*bucketWrap, 0)

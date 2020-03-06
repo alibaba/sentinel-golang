@@ -2,9 +2,10 @@ package stat
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-	"sync"
 )
 
 type ResourceNode struct {
@@ -14,16 +15,16 @@ type ResourceNode struct {
 	resourceType base.ResourceType
 	// key is "sampleCount/intervalInMs"
 	readOnlyStats map[string]*sbase.SlidingWindowMetric
-	updateLock sync.RWMutex
+	updateLock    sync.RWMutex
 }
 
 // NewResourceNode creates a new resource node with given name and classification.
 func NewResourceNode(resourceName string, resourceType base.ResourceType) *ResourceNode {
 	return &ResourceNode{
 		// TODO: make this configurable
-		BaseStatNode: *NewBaseStatNode(base.DefaultSampleCount, base.DefaultIntervalMs),
-		resourceName: resourceName,
-		resourceType: resourceType,
+		BaseStatNode:  *NewBaseStatNode(base.DefaultSampleCount, base.DefaultIntervalMs),
+		resourceName:  resourceName,
+		resourceType:  resourceType,
 		readOnlyStats: make(map[string]*sbase.SlidingWindowMetric),
 	}
 }
@@ -49,15 +50,11 @@ func (n *ResourceNode) GetOrCreateSlidingWindowMetric(sampleCount, intervalInMs 
 		return fastVal
 	}
 
+	newSlidingWindow := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, n.arr)
+
 	n.updateLock.Lock()
 	defer n.updateLock.Unlock()
 
-	v, exist := n.readOnlyStats[key]
-	if exist {
-		return v
-	}
-
-	newSlidingWindow := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, n.arr)
 	n.readOnlyStats[key] = newSlidingWindow
 	// TODO clean unused entity in readOnlyStats.
 	return newSlidingWindow

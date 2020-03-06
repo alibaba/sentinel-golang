@@ -7,6 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -39,6 +40,31 @@ func Test_bucketWrapper_Size(t *testing.T) {
 	}
 	if unsafe.Sizeof(ww) != 8 {
 		t.Errorf("the size of bucketWrap is not equal 20.\n")
+	}
+}
+
+func Test_bucketWrapper_Resetto(t *testing.T) {
+	b := &bucketWrap{}
+	b.resetTo(1582720520)
+	assert.Equal(t, uint64(1582720520), b.bucketStart)
+}
+
+func Test_buketWrapper_IsTimeInBucket(t *testing.T) {
+	var tests = []struct {
+		start            uint64
+		now              uint64
+		bucketLengthInMs uint32
+		expect           bool
+	}{
+		{start: 1582720520, now: 1582720525, bucketLengthInMs: 10, expect: true},
+		{start: 1582720520, now: 1582720525, bucketLengthInMs: 3, expect: false},
+		{start: 1582720528, now: 1582720525, bucketLengthInMs: 10, expect: false},
+	}
+
+	for _, tc := range tests {
+		b := &bucketWrap{}
+		b.resetTo(tc.start)
+		assert.Equal(t, tc.expect, b.isTimeInBucket(tc.now, tc.bucketLengthInMs))
 	}
 }
 
@@ -261,6 +287,12 @@ func Test_leapArray_currentBucketWithTime_normal(t *testing.T) {
 	}
 }
 
+func Test_leapArray_valuesWithTime_invalidNow(t *testing.T) {
+	test := &leapArray{}
+	bs := test.valuesWithTime(0)
+	assert.Equal(t, 0, len(bs))
+}
+
 func Test_leapArray_valuesWithTime_normal(t *testing.T) {
 	type fields struct {
 		bucketLengthInMs uint32
@@ -381,4 +413,10 @@ func Test_leapArray_isBucketDeprecated_normal(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_leapArray_ValuesConditional_invalidNow(t *testing.T) {
+	test := &leapArray{}
+	bs := test.ValuesConditional(0, nil)
+	assert.Equal(t, 0, len(bs))
 }

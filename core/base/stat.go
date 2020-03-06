@@ -33,6 +33,8 @@ type WriteStat interface {
 	AddMetric(event MetricEvent, count uint64)
 }
 
+//go:generate mockery -dir . -name StatNode -case underscore -output mocks/
+
 // StatNode holds real-time statistics for resources.
 type StatNode interface {
 	MetricItemRetriever

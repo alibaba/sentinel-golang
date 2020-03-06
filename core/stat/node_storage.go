@@ -1,9 +1,10 @@
 package stat
 
 import (
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
-	"sync"
 )
 
 type ResourceNodeMap map[string]*ResourceNode
@@ -46,19 +47,16 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 	if node != nil {
 		return node
 	}
-	rnsMux.Lock()
-	defer rnsMux.Unlock()
-
-	node = resNodeMap[resource]
-	if node != nil {
-		return node
-	}
 
 	if len(resNodeMap) >= int(base.DefaultMaxResourceAmount) {
 		logger.Warnf("Resource amount exceeds the threshold: %d.", base.DefaultMaxResourceAmount)
 	}
 	node = NewResourceNode(resource, resourceType)
+
+	rnsMux.Lock()
+	defer rnsMux.Unlock()
 	resNodeMap[resource] = node
+
 	return node
 }
 
