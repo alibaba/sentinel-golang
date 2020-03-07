@@ -19,7 +19,7 @@ type AtomicBool struct {
 }
 
 func (b *AtomicBool) CompareAndSet(old, new bool) bool {
-	if old == new{
+	if old == new {
 		return true
 	}
 	var oldInt, newInt int32
