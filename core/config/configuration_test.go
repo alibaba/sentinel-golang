@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"os"
 	"testing"
 )
@@ -55,10 +54,10 @@ func TestOverrideFromSystemEnv(t *testing.T) {
 	if err != nil {
 		t.Errorf("Fail to initialize data.")
 	}
-	_ = os.Setenv(constant.AppNameEnvKey, "app-name")
-	_ = os.Setenv(constant.AppTypeEnvKey, "1")
-	_ = os.Setenv(constant.LogDirEnvKey, testDataBaseDir + "sentinel.yml.2")
-	_ = os.Setenv(constant.LogNamePidEnvKey, "true")
+	_ = os.Setenv(AppNameEnvKey, "app-name")
+	_ = os.Setenv(AppTypeEnvKey, "1")
+	_ = os.Setenv(LogDirEnvKey, testDataBaseDir + "sentinel.yml.2")
+	_ = os.Setenv(LogNamePidEnvKey, "true")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

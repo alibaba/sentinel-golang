@@ -3,7 +3,6 @@ package base
 import (
 	"fmt"
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -151,7 +150,7 @@ func (bla *BucketLeapArray) MinRt() int64 {
 		logger.Errorf("Fail to get current bucket, err: %+v.", errors.WithStack(err))
 	}
 
-	ret := constant.DefaultStatisticMaxRt
+	ret := base.DefaultStatisticMaxRt
 
 	for _, v := range bla.data.values() {
 		mb := v.value.Load()

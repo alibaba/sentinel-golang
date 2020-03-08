@@ -44,6 +44,10 @@ func GetDefaultLogger() Logger {
 }
 
 func ResetDefaultLogger(log *log.Logger, namespace string) {
+	if log==nil {
+		defaultLogger.Errorf("Fail to reset defaultLogger, log is nil.")
+		return
+	}
 	defaultLogger.log = log
 	defaultLogger.namespace = namespace
 }

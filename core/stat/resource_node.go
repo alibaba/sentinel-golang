@@ -3,7 +3,6 @@ package stat
 import (
 	"fmt"
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/constant"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"sync"
 )
@@ -22,7 +21,7 @@ type ResourceNode struct {
 func NewResourceNode(resourceName string, resourceType base.ResourceType) *ResourceNode {
 	return &ResourceNode{
 		// TODO: make this configurable
-		BaseStatNode: *NewBaseStatNode(constant.DefaultSampleCount, constant.DefaultIntervalMs),
+		BaseStatNode: *NewBaseStatNode(base.DefaultSampleCount, base.DefaultIntervalMs),
 		resourceName: resourceName,
 		resourceType: resourceType,
 		readOnlyStats: make(map[string]*sbase.SlidingWindowMetric),

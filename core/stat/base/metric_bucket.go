@@ -3,7 +3,6 @@ package base
 import (
 	"fmt"
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"sync/atomic"
 )
 
@@ -17,7 +16,7 @@ type MetricBucket struct {
 
 func NewMetricBucket() *MetricBucket {
 	mb := &MetricBucket{
-		minRt: constant.DefaultStatisticMaxRt,
+		minRt: base.DefaultStatisticMaxRt,
 	}
 	return mb
 }
@@ -50,7 +49,7 @@ func (mb *MetricBucket) reset() {
 	for i := 0; i < int(base.MetricEventTotal); i++ {
 		atomic.StoreInt64(&mb.counter[i], 0)
 	}
-	atomic.StoreInt64(&mb.minRt, constant.DefaultStatisticMaxRt)
+	atomic.StoreInt64(&mb.minRt, base.DefaultStatisticMaxRt)
 }
 
 func (mb *MetricBucket) AddRt(rt int64) {

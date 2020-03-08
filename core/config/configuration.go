@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -20,9 +19,38 @@ var (
 	initLogOnce sync.Once
 )
 
+func InitConfig(configPath string) error {
+	//Firstly, get config file path
+	if util.IsBlank(configPath) {
+		// If the config file path is absent, Sentinel will try to resolve it from the system env.
+		configPath = os.Getenv(ConfFilePathEnvKey)
+	}
+	if util.IsBlank(configPath) {
+		configPath = DefaultConfigFilename
+	}
+	// load config from yaml file
+	// if use don't set config path, then use default config
+	err := LoadFromYamlFile(configPath)
+	if err != nil {
+		return err
+	}
+	// Secondly, use variable from ENV to override config
+	err = OverrideFromSystemEnv()
+	if err != nil {
+		return err
+	}
+
+	err = InitializeLogConfig(LogBaseDir(), LogUsePid())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
 func LoadFromYamlFile(filePath string) error {
-	if filePath == constant.DefaultConfigFilename {
-		if _, err := os.Stat(constant.DefaultConfigFilename); err != nil {
+	if filePath == DefaultConfigFilename {
+		if _, err := os.Stat(DefaultConfigFilename); err != nil {
 			//use default globalCfg.
 			return nil
 		}
@@ -44,11 +72,11 @@ func LoadFromYamlFile(filePath string) error {
 }
 
 func OverrideFromSystemEnv() error{
-	if appName := os.Getenv(constant.AppNameEnvKey); !util.IsBlank(appName) {
+	if appName := os.Getenv(AppNameEnvKey); !util.IsBlank(appName) {
 		globalCfg.Sentinel.App.Name = appName
 	}
 
-	if appTypeStr := os.Getenv(constant.AppTypeEnvKey); !util.IsBlank(appTypeStr) {
+	if appTypeStr := os.Getenv(AppTypeEnvKey); !util.IsBlank(appTypeStr) {
 		appType, err := strconv.ParseInt(appTypeStr, 10, 32)
 		if err != nil {
 			return err
@@ -57,7 +85,7 @@ func OverrideFromSystemEnv() error{
 		}
 	}
 
-	if addPidStr := os.Getenv(constant.LogNamePidEnvKey); !util.IsBlank(addPidStr) {
+	if addPidStr := os.Getenv(LogNamePidEnvKey); !util.IsBlank(addPidStr) {
 		addPid, err := strconv.ParseBool(addPidStr)
 		if err != nil {
 			return err
@@ -66,7 +94,7 @@ func OverrideFromSystemEnv() error{
 		}
 	}
 
-	if logDir := os.Getenv(constant.LogDirEnvKey); !util.IsBlank(logDir) {
+	if logDir := os.Getenv(LogDirEnvKey); !util.IsBlank(logDir) {
 		if _, err := os.Stat(logDir); err != nil && !os.IsExist(err) {
 			return err
 		}

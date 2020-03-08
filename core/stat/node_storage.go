@@ -2,7 +2,6 @@ package stat
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"github.com/alibaba/sentinel-golang/logging"
 	"sync"
 )
@@ -12,7 +11,7 @@ type ResourceNodeMap map[string]*ResourceNode
 var (
 	logger = logging.GetDefaultLogger()
 
-	inboundNode = NewResourceNode(constant.TotalInBoundResourceName, base.ResTypeCommon)
+	inboundNode = NewResourceNode(base.TotalInBoundResourceName, base.ResTypeCommon)
 
 	resNodeMap = make(ResourceNodeMap, 0)
 	rnsMux     = new(sync.RWMutex)
@@ -55,8 +54,8 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 		return node
 	}
 
-	if len(resNodeMap) >= int(constant.DefaultMaxResourceAmount) {
-		logger.Warnf("Resource amount exceeds the threshold: %d.", constant.DefaultMaxResourceAmount)
+	if len(resNodeMap) >= int(base.DefaultMaxResourceAmount) {
+		logger.Warnf("Resource amount exceeds the threshold: %d.", base.DefaultMaxResourceAmount)
 	}
 	node = NewResourceNode(resource, resourceType)
 	resNodeMap[resource] = node

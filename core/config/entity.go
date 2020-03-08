@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"github.com/pkg/errors"
 )
 
@@ -62,21 +61,21 @@ func NewDefaultConfig() *Entity {
 				Name string
 				Type int32
 			}{
-				Name: constant.UnknownProjectName,
-				Type: constant.DefaultAppType,
+				Name: UnknownProjectName,
+				Type: DefaultAppType,
 			},
 			Log: LogConfig{
 				Dir:    GetDefaultLogDir(),
 				UsePid: false,
 				Metric: MetricLogConfig{
-					SingleFileMaxSize: constant.DefaultMetricLogSingleFileMaxSize,
-					MaxFileCount:      constant.DefaultMetricLogMaxFileAmount,
-					FlushIntervalSec:  constant.DefaultMetricLogFlushIntervalSec,
+					SingleFileMaxSize: DefaultMetricLogSingleFileMaxSize,
+					MaxFileCount:      DefaultMetricLogMaxFileAmount,
+					FlushIntervalSec:  DefaultMetricLogFlushIntervalSec,
 				},
 			},
 			Stat: StatConfig{
 				System: SystemStatConfig{
-					CollectIntervalMs: constant.DefaultSystemStatCollectIntervalMs,
+					CollectIntervalMs: DefaultSystemStatCollectIntervalMs,
 				},
 			},
 		},

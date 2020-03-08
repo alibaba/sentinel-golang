@@ -3,11 +3,8 @@ package api
 import (
 	"fmt"
 	"github.com/alibaba/sentinel-golang/core/config"
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system"
-	"github.com/alibaba/sentinel-golang/util"
-	"os"
 )
 
 // InitDefault initializes Sentinel using the configuration from system
@@ -23,7 +20,6 @@ func Init(configPath string) error {
 	return initSentinel(configPath)
 }
 
-//
 // The priority: ENV > yaml file > default configuration
 func initSentinel(configPath string) (err error) {
 	defer func() {
@@ -35,32 +31,7 @@ func initSentinel(configPath string) (err error) {
 			}
 		}
 	}()
-
-	//Firstly, get config file path
-	if util.IsBlank(configPath) {
-		// If the config file path is absent, Sentinel will try to resolve it from the system env.
-		configPath = os.Getenv(constant.ConfFilePathEnvKey)
-	}
-	if util.IsBlank(configPath) {
-		configPath = constant.DefaultConfigFilename
-	}
-	// load config from yaml file
-	// if use don't set config path, then use default config
-	err = config.LoadFromYamlFile(configPath)
-	if err != nil {
-		return err
-	}
-	// Secondly, use variable from ENV to override config
-	err = config.OverrideFromSystemEnv()
-	if err != nil {
-		return err
-	}
-
-	err = config.InitializeLogConfig(config.LogBaseDir(), config.LogUsePid())
-	if err != nil {
-		return err
-	}
-
+	err = config.InitConfig(configPath)
 	initCoreComponents()
 	return err
 }

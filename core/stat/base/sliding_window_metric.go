@@ -3,7 +3,6 @@ package base
 import (
 	"fmt"
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/constant"
 	"github.com/alibaba/sentinel-golang/util"
 	"sync/atomic"
 )
@@ -141,7 +140,7 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
 		return ws >= start && ws <= end
 	})
-	minRt := constant.DefaultStatisticMaxRt
+	minRt := base.DefaultStatisticMaxRt
 	for _, w := range satisfiedBuckets {
 		mb := w.value.Load()
 		if mb == nil {
