@@ -4,7 +4,6 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
-
 // EntryOptions represents the options of a Sentinel resource entry.
 type EntryOptions struct {
 	resourceType base.ResourceType
@@ -51,7 +50,6 @@ func WithArgs(args ...interface{}) EntryOption {
 		opts.args = append(opts.args, args...)
 	}
 }
-
 
 // Entry is the basic API of Sentinel.
 func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.BlockError) {
