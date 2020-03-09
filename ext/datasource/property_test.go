@@ -9,42 +9,42 @@ import (
 	"testing"
 )
 
-func MockSystemRulesConvert(src []byte) interface{} {
+func MockSystemRulesConverter(src []byte) interface{} {
 	ret := make([]system.SystemRule, 0)
 	_ = json.Unmarshal(src, &ret)
 	return ret
 }
-func MockSystemRulesConvertReturnNil(src []byte) interface{} {
+func MockSystemRulesConverterReturnNil(src []byte) interface{} {
 	return nil
 }
-func MockSystemRulesUpdateReturnNil(data interface{}) error {
+func MockSystemRulesUpdaterReturnNil(data interface{}) error {
 	return nil
 }
-func MockSystemRulesUpdateReturnError(data interface{}) error {
-	return errors.New("MockSystemRulesUpdateReturnError")
+func MockSystemRulesUpdaterReturnError(data interface{}) error {
+	return errors.New("MockSystemRulesUpdaterReturnError")
 }
 
 func TestNewSinglePropertyHandler(t *testing.T) {
-	got := NewSinglePropertyHandler(MockSystemRulesConvert, MockSystemRulesUpdateReturnNil)
-	assert.Truef(t, got.lastUpdateProperty == nil, "lastUpdatePropertyHash:%d, expect nil", got.lastUpdateProperty)
+	got := NewSinglePropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
+	assert.Truef(t, got.lastUpdateProperty == nil, "lastUpdateProperty:%d, expect nil", got.lastUpdateProperty)
 }
 
 func TestSinglePropertyHandler_Handle(t *testing.T) {
-	h1 := NewSinglePropertyHandler(MockSystemRulesConvertReturnNil, MockSystemRulesUpdateReturnNil)
+	h1 := NewSinglePropertyHandler(MockSystemRulesConverterReturnNil, MockSystemRulesUpdaterReturnNil)
 	r1 := h1.Handle(nil)
 	assert.True(t, r1 == nil, "Fail to execute Handle func.")
 
-	h2 := NewSinglePropertyHandler(MockSystemRulesConvert, MockSystemRulesUpdateReturnError)
+	h2 := NewSinglePropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnError)
 	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}
 	r2 := h2.Handle(src)
-	assert.True(t, r2 != nil&&r2.Error()=="MockSystemRulesUpdateReturnError", "Fail to execute Handle func.")
+	assert.True(t, r2 != nil && r2.Error() == "MockSystemRulesUpdaterReturnError", "Fail to execute Handle func.")
 }
 
 func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
-	h := NewSinglePropertyHandler(MockSystemRulesConvert, MockSystemRulesUpdateReturnNil)
+	h := NewSinglePropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
 	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)

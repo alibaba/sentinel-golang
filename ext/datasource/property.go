@@ -1,14 +1,18 @@
 package datasource
 
 import (
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/pkg/errors"
 	"reflect"
 )
 
-// PropertyConvert func is to convert source message bytes to the specific property.
-type PropertyConvert func(src []byte) interface{}
+var logger = logging.GetDefaultLogger()
 
-// PropertyUpdate func is to update the specific properties to downstream.
-type PropertyUpdate func(data interface{}) error
+// PropertyConverter func is to converter source message bytes to the specific property.
+type PropertyConverter func(src []byte) interface{}
+
+// PropertyUpdater func is to update the specific properties to downstream.
+type PropertyUpdater func(data interface{}) error
 
 // abstract interface to
 type PropertyHandler interface {
@@ -26,8 +30,8 @@ type PropertyHandler interface {
 type DefaultPropertyHandler struct {
 	lastUpdateProperty interface{}
 
-	convert PropertyConvert
-	update  PropertyUpdate
+	converter PropertyConverter
+	updater   PropertyUpdater
 }
 
 func (h *DefaultPropertyHandler) isPropertyConsistent(src interface{}) bool {
@@ -41,18 +45,23 @@ func (h *DefaultPropertyHandler) isPropertyConsistent(src interface{}) bool {
 }
 
 func (h *DefaultPropertyHandler) Handle(src []byte) error {
-	// convert to target property
-	realProperty := h.convert(src)
+	defer func() {
+		if err := recover(); err != nil && logger != nil {
+			logger.Panicf("Unexpected panic: %+v", errors.Errorf("%+v", err))
+		}
+	}()
+	// converter to target property
+	realProperty := h.converter(src)
 	isConsistent := h.isPropertyConsistent(realProperty)
 	if isConsistent {
 		return nil
 	}
-	return h.update(realProperty)
+	return h.updater(realProperty)
 }
 
-func NewSinglePropertyHandler(convert PropertyConvert, update PropertyUpdate) *DefaultPropertyHandler {
+func NewSinglePropertyHandler(converter PropertyConverter, updater PropertyUpdater) *DefaultPropertyHandler {
 	return &DefaultPropertyHandler{
-		convert: convert,
-		update:  update,
+		converter: converter,
+		updater:   updater,
 	}
 }
