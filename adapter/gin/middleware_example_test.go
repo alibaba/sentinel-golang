@@ -10,7 +10,7 @@ func Example() {
 		SentinelMiddleware(
 			// customize resource extractor if required
 			// method_path by default
-			WithResourceExtract(func(ctx *gin.Context) string {
+			WithResourceExtractor(func(ctx *gin.Context) string {
 				return ctx.GetHeader("X-Real-IP")
 			}),
 			// customize block fallback if required

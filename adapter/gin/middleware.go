@@ -12,7 +12,7 @@ import (
 func SentinelMiddleware(opts ...Option) gin.HandlerFunc {
 	options := evaluateOptions(opts)
 	return func(c *gin.Context) {
-		resourceName := c.Request.Method + "_" + c.Request.URL.Path
+		resourceName := c.Request.Method + ":" + c.Request.URL.Path
 
 		if options.resourceExtract != nil {
 			resourceName = options.resourceExtract(c)

@@ -74,7 +74,7 @@ func TestSentinelMiddleware(t *testing.T) {
 				name: "customize resource extract",
 				args: args{
 					opts: []Option{
-						WithResourceExtract(func(ctx *gin.Context) string {
+						WithResourceExtractor(func(ctx *gin.Context) string {
 							return ctx.Request.URL.Path
 						}),
 					},
@@ -93,7 +93,7 @@ func TestSentinelMiddleware(t *testing.T) {
 				name: "customize block fallback",
 				args: args{
 					opts: []Option{
-						WithResourceExtract(func(ctx *gin.Context) string {
+						WithResourceExtractor(func(ctx *gin.Context) string {
 							return ctx.Request.URL.Path
 						}),
 						WithBlockFallback(func(ctx *gin.Context) {

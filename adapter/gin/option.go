@@ -21,8 +21,8 @@ func evaluateOptions(opts []Option) *options {
 	return optCopy
 }
 
-// WithResourceExtract set resourceExtract
-func WithResourceExtract(fn func(*gin.Context) string) Option {
+// WithResourceExtractor set resourceExtract
+func WithResourceExtractor(fn func(*gin.Context) string) Option {
 	return func(opts *options) {
 		opts.resourceExtract = fn
 	}
