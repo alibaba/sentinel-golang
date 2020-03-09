@@ -67,10 +67,10 @@ func onRuleUpdate(rules []*FlowRule) (err error) {
 }
 
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
-func LoadRules(rules []*FlowRule) error {
+func LoadRules(rules []*FlowRule) (bool, error) {
 	// TODO: rethink the design
 	err := onRuleUpdate(rules)
-	return err
+	return true, err
 }
 
 func GetRules() []*FlowRule {
