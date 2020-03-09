@@ -23,8 +23,6 @@ var (
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
 	tcMap        = make(TrafficControllerMap, 0)
 	tcMux        = new(sync.RWMutex)
-
-	propertyInit sync.Once
 )
 
 func init() {
@@ -69,7 +67,7 @@ func onRuleUpdate(rules []*FlowRule) (err error) {
 }
 
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
-func LoadRules(rules []*FlowRule) (error) {
+func LoadRules(rules []*FlowRule) error {
 	// TODO: rethink the design
 	err := onRuleUpdate(rules)
 	return err
