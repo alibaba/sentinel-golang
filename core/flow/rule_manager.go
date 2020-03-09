@@ -3,9 +3,8 @@ package flow
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 	"sync"
 )
 
@@ -24,16 +23,9 @@ var (
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
 	tcMap        = make(TrafficControllerMap, 0)
 	tcMux        = new(sync.RWMutex)
-
-	ruleChan     = make(chan []*FlowRule, 10)
-	propertyInit sync.Once
 )
 
 func init() {
-	propertyInit.Do(func() {
-		initRuleRecvTask()
-	})
-
 	// Initialize the traffic shaping controller generator map for existing control behaviors.
 	tcGenFuncMap[Reject] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule.MetricType), rule)
@@ -41,20 +33,6 @@ func init() {
 	tcGenFuncMap[Throttling] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
-}
-
-func initRuleRecvTask() {
-	go util.RunWithRecover(func() {
-		for {
-			select {
-			case rules := <-ruleChan:
-				err := onRuleUpdate(rules)
-				if err != nil {
-					logger.Errorf("Failed to update flow rules: %+v", err)
-				}
-			}
-		}
-	}, logger)
 }
 
 func logRuleUpdate(m TrafficControllerMap) {
