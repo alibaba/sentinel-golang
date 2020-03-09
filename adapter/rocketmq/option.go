@@ -7,17 +7,27 @@ import (
 type (
 	Option func(*options)
 	options struct {
-		resourceExtract func(*primitive.ProducerCtx) string
+		consumerResourceExtract func(*primitive.ConsumeMessageContext) string
+		providerResourceExtract func(*primitive.ProducerCtx) string
 		blockFallback primitive.Interceptor
 	}
 )
 
-func WithResourceExtract(fn func(ctx *primitive.ProducerCtx) string) Option {
+// WithConsumerResourceExtract set consumerResourceExtract
+func WithConsumerResourceExtract(fn func(ctx *primitive.ConsumeMessageContext) string) Option {
 	return func(options *options) {
-		options.resourceExtract = fn
+		options.consumerResourceExtract = fn
 	}
 }
 
+// WithProviderResourceExtract set providerResourceExtract
+func WithProviderResourceExtract(fn func(ctx *primitive.ProducerCtx) string) Option {
+	return func(options *options) {
+		options.providerResourceExtract = fn
+	}
+}
+
+// WithBlockFallback set blockFallback
 func WithBlockFallback(fn primitive.Interceptor) Option {
 	return func(options *options) {
 		options.blockFallback = fn

@@ -8,20 +8,23 @@ import (
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
+// SentinelConsumerInterceptor returns interceptor for consumer
 func SentinelConsumerInterceptor(opts ...Option) primitive.Interceptor {
 	options := evaluateOptions(opts)
 	return func(ctx context.Context, req, reply interface{}, next primitive.Invoker) error {
-		producerCtx := primitive.GetProducerCtx(ctx)
-		resourceName := producerCtx.Message.Topic
+		consumerCtx, _ := primitive.GetConsumerCtx(ctx)
+		resourceName := consumerCtx.MQ.Topic
 
-		if options.resourceExtract != nil {
-			resourceName = options.resourceExtract(producerCtx)
+		if options.consumerResourceExtract != nil {
+			resourceName = options.consumerResourceExtract(consumerCtx)
 		}
 
 		entry, err := sentinel.Entry(
 			resourceName,
 			sentinel.WithResourceType(base.ResTypeMQ),
 			sentinel.WithTrafficType(base.Inbound),
+			sentinel.WithArgs("topic", consumerCtx.MQ.Topic),
+			sentinel.WithArgs("broker", consumerCtx.MQ.BrokerName),
 		)
 
 		if err != nil {
