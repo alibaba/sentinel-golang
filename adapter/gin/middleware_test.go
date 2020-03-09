@@ -89,6 +89,28 @@ func TestSentinelMiddleware(t *testing.T) {
 					code:http.StatusTooManyRequests,
 				},
 			},
+			{
+				name: "customize block fallback",
+				args: args{
+					opts: []Option{
+						WithResourceExtract(func(ctx *gin.Context) string {
+							return ctx.Request.URL.Path
+						}),
+						WithBlockFallback(func(ctx *gin.Context) {
+							ctx.String(http.StatusBadRequest, "block")
+						}),
+					},
+					method: http.MethodGet,
+					path: "/ping",
+					handler: func(ctx *gin.Context) {
+						ctx.String(http.StatusOK, "ping")
+					},
+					body: nil,
+				},
+				want: want{
+					code:http.StatusBadRequest,
+				},
+			},
 		}
 	)
 	initSentinel(t)
