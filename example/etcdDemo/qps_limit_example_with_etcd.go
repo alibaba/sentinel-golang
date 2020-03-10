@@ -1,6 +1,12 @@
+/*
+Before you run this demo, you should install etcd in your local machine or you can
+change 127.0.0.1:2379 to your machine which have etcd cluster.
+*/
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -9,12 +15,57 @@ import (
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/ext/datasource/etcdv3"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/coreos/etcd/clientv3"
 	"log"
 	"math/rand"
 	"time"
 )
 
+func WriteDataToLocalEtcd(){
+	client, _ := clientv3.New(clientv3.Config{Endpoints:[]string{"127.0.0.1:2379",}})
+	data := []*flow.FlowRule{
+		{
+			Resource:        "some-test",
+			MetricType:      flow.QPS,
+			Count:           1000,
+			ControlBehavior: flow.Reject,
+		},
+		{
+			Resource:        "some-test",
+			MetricType:      flow.QPS,
+			Count:           10,
+			ControlBehavior: flow.Reject,
+		},
+	}
+	value, _ := json.Marshal(data)
+	client.Put(context.Background(),"flow",string(value))
+}
+
+func Delete(client *clientv3.Client){
+	client.Delete(context.Background(),"flow")
+}
+
+// The function will update etcd data every two second.
+func OperationEtcd(client *clientv3.Client){
+	t1 := time.NewTimer(2 * time.Second)
+	flag := 0
+	for{
+		select {
+		case <-t1.C:
+			if flag == 0{
+				Delete(client)
+				flag = 1
+			}else{
+				WriteDataToLocalEtcd()
+				flag = 0
+			}
+			t1.Reset(time.Second * 2)
+		}
+	}
+}
 func main() {
+	//Write the default configuration into etcd.
+	WriteDataToLocalEtcd()
 	// We should initialize Sentinel first.
 	err := sentinel.InitDefault()
 	if err != nil {
@@ -22,12 +73,14 @@ func main() {
 	}
 	config.SetConfig(etcdv3.EndPoints,"127.0.0.1:2379")
 	handler := datasource.NewSinglePropertyHandler(flow.FlowRulesConvert, flow.FlowRulesUpdate)
-	client := etcdv3.NewEtcdDataSource("flow",handler)
-	if client == nil {
+	dataSourceClient := etcdv3.NewEtcdDataSource("flow",handler)
+	defer dataSourceClient.Close()
+	if dataSourceClient == nil {
 		log.Fatal("Create etcd client failed")
 		return
 	}
-
+	client, _ := clientv3.New(clientv3.Config{Endpoints:[]string{"127.0.0.1:2379",}})
+	go OperationEtcd(client)
 	ch := make(chan struct{})
 
 	for i := 0; i < 10; i++ {

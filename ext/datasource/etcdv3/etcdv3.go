@@ -73,7 +73,13 @@ func (c *etcdv3DataSource)watch(){
 		}
 	}
 }
-
+func (c *etcdv3DataSource)Close() error {
+	if c.client != nil{
+		err := c.client.Close()
+		return err
+	}
+	return nil
+}
 func NewEtcdDataSource(key string, handler datasource.PropertyHandler) *etcdv3DataSource{
 	var err error
 	ds := &etcdv3DataSource{
