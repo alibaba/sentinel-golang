@@ -1,5 +1,6 @@
 package base
 
+// global variable
 const (
 	TotalInBoundResourceName = "__total_inbound_traffic__"
 

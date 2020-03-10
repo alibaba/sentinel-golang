@@ -2,9 +2,9 @@ package metric
 
 import (
 	"encoding/binary"
-	"github.com/pkg/errors"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"sync"
