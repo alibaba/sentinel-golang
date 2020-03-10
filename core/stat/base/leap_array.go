@@ -2,9 +2,9 @@ package base
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 	"runtime"
 	"sync/atomic"
 	"unsafe"

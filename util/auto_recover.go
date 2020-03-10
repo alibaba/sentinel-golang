@@ -1,8 +1,8 @@
 package util
 
 import (
-	"github.com/pkg/errors"
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/pkg/errors"
 )
 
 func RunWithRecover(f func(), logger logging.Logger) {

@@ -1,6 +1,8 @@
 package config
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 type Entity struct {
 	// Version represents the format version of the entity.
@@ -62,10 +64,19 @@ func NewDefaultConfig() *Entity {
 				Name: UnknownProjectName,
 				Type: DefaultAppType,
 			},
-			Log: LogConfig{Metric: MetricLogConfig{SingleFileMaxSize: DefaultMetricLogSingleFileMaxSize,
-				MaxFileCount: DefaultMetricLogMaxFileAmount, FlushIntervalSec: DefaultMetricLogFlushIntervalSec}},
+			Log: LogConfig{
+				Dir:    GetDefaultLogDir(),
+				UsePid: false,
+				Metric: MetricLogConfig{
+					SingleFileMaxSize: DefaultMetricLogSingleFileMaxSize,
+					MaxFileCount:      DefaultMetricLogMaxFileAmount,
+					FlushIntervalSec:  DefaultMetricLogFlushIntervalSec,
+				},
+			},
 			Stat: StatConfig{
-				System: SystemStatConfig{CollectIntervalMs: DefaultSystemStatCollectIntervalMs},
+				System: SystemStatConfig{
+					CollectIntervalMs: DefaultSystemStatCollectIntervalMs,
+				},
 			},
 		},
 	}
@@ -73,20 +84,20 @@ func NewDefaultConfig() *Entity {
 
 func checkValid(conf *SentinelConfig) error {
 	if conf == nil {
-		return errors.New("nil config")
+		return errors.New("Nil globalCfg")
 	}
 	if conf.App.Name == "" {
-		return errors.New("app.name cannot be empty")
+		return errors.New("App.Name is empty")
 	}
 	mc := conf.Log.Metric
 	if mc.MaxFileCount <= 0 {
-		return errors.New("Bad metric log config: maxFileCount <= 0")
+		return errors.New("Illegal metric log globalCfg: maxFileCount <= 0")
 	}
 	if mc.SingleFileMaxSize <= 0 {
-		return errors.New("Bad metric log config: singleFileMaxSize <= 0")
+		return errors.New("Illegal metric log globalCfg: singleFileMaxSize <= 0")
 	}
 	if conf.Stat.System.CollectIntervalMs == 0 {
-		return errors.New("Bad system stat config: collectIntervalMs = 0")
+		return errors.New("Bad system stat globalCfg: collectIntervalMs = 0")
 	}
 	return nil
 }
