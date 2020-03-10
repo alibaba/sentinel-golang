@@ -1,0 +1,12 @@
+version: "v1"
+sentinel:
+  app:
+    name: "sentinel-go-demo"
+    type: 0
+  log:
+    dir: "sentinel.yml"
+    usePid: false
+    metric:
+      singleFileMaxSize: 52428800
+      maxFileCount: 7
+      flushIntervalSec: 1
