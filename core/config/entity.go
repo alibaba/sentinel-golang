@@ -1,6 +1,11 @@
 package config
 
-import "github.com/pkg/errors"
+import (
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/pkg/errors"
+)
+
+var props map[string]string
 
 type Entity struct {
 	// Version represents the format version of the entity.
@@ -89,4 +94,25 @@ func checkValid(conf *SentinelConfig) error {
 		return errors.New("Bad system stat config: collectIntervalMs = 0")
 	}
 	return nil
+}
+
+func SetConfig(key, value string){
+	if props == nil{
+		props = make(map[string]string)
+	}
+	logger := logging.GetDefaultLogger()
+	if key == "" || value == ""{
+		logger.Error("Can't set config with empty key or value")
+		return
+	}
+	props[key] = value
+}
+
+func GetConfig(key string)string{
+	logger := logging.GetDefaultLogger()
+	if key == ""{
+		logger.Error("Can't get config with empty key")
+		return ""
+	}
+	return props[key]
 }
