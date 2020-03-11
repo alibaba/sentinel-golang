@@ -12,9 +12,12 @@ type DataSource interface {
 	// Remove specified property handler in current datasource
 	RemovePropertyHandler(h PropertyHandler)
 	// Read original data from the data source.
-	ReadSource() []byte
-	// Initialize, init datasource and load initial rules
-	// start listener
+	// return source bytes if succeed to read, if not, return error when reading
+	ReadSource() ([]byte, error)
+	// Initialize the datasource and load initial rules
+	// start listener to listen on dynamic source
+	// panic if initialize failed;
+	// once initialized, listener should recover all panic and error.
 	Initialize()
 	// Close the data source.
 	io.Closer
