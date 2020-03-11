@@ -14,13 +14,11 @@ func InitDefault() error {
 }
 
 // Init loads Sentinel general configuration from the given YAML file
-// and initializes Sentinel. Note that the logging module will be initialized
-// using the configuration from system environment or the default value.
+// and initializes Sentinel.
 func Init(configPath string) error {
 	return initSentinel(configPath)
 }
 
-// The priority: ENV > yaml file > default configuration
 func initSentinel(configPath string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31,12 +29,18 @@ func initSentinel(configPath string) (err error) {
 			}
 		}
 	}()
-	err = config.InitConfig(configPath)
-	initCoreComponents()
-	return err
+	// Initialize general config and logging module.
+	if err = config.InitConfig(configPath); err != nil {
+		return err
+	}
+	return initCoreComponents()
 }
 
-func initCoreComponents()  {
-	metric.InitTask()
+func initCoreComponents() (err error) {
+	if err = metric.InitTask(); err != nil {
+		return err
+	}
+
 	system.InitCollector(config.SystemStatCollectIntervalMs())
+	return err
 }
