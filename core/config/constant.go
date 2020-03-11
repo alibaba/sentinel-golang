@@ -1,7 +1,8 @@
 package config
 
-// configuration
 const (
+	// UnknownProjectName represents the "default" value
+	// that indicates the project name is absent.
 	UnknownProjectName = "unknown_go_service"
 
 	ConfFilePathEnvKey = "SENTINEL_CONFIG_FILE_PATH"

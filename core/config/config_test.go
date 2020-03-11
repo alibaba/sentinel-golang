@@ -56,13 +56,13 @@ func TestOverrideFromSystemEnv(t *testing.T) {
 	}
 	_ = os.Setenv(AppNameEnvKey, "app-name")
 	_ = os.Setenv(AppTypeEnvKey, "1")
-	_ = os.Setenv(LogDirEnvKey, testDataBaseDir + "sentinel.yml.2")
+	_ = os.Setenv(LogDirEnvKey, testDataBaseDir+"sentinel.yml.2")
 	_ = os.Setenv(LogNamePidEnvKey, "true")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := OverrideFromSystemEnv(); (err != nil) != tt.wantErr {
-				t.Errorf("OverrideFromSystemEnv() error = %v, wantErr %v", err, tt.wantErr)
+			if err := overrideItemsFromSystemEnv(); (err != nil) != tt.wantErr {
+				t.Errorf("overrideItemsFromSystemEnv() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -10,17 +10,17 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 )
 
 var (
-	globalCfg = NewDefaultConfig()
+	globalCfg   = NewDefaultConfig()
 	initLogOnce sync.Once
 )
 
+// InitConfig loads general configuration from the given file.
 func InitConfig(configPath string) error {
-	//Firstly, get config file path
+	// Priority: system environment > YAML file > default config
 	if util.IsBlank(configPath) {
 		// If the config file path is absent, Sentinel will try to resolve it from the system env.
 		configPath = os.Getenv(ConfFilePathEnvKey)
@@ -28,25 +28,27 @@ func InitConfig(configPath string) error {
 	if util.IsBlank(configPath) {
 		configPath = DefaultConfigFilename
 	}
-	// load config from yaml file
-	// if use don't set config path, then use default config
+	// First Sentinel will try to load config from the given file.
+	// If the path is empty (not set), Sentinel will use the default config.
 	err := LoadFromYamlFile(configPath)
 	if err != nil {
 		return err
 	}
-	// Secondly, use variable from ENV to override config
-	err = OverrideFromSystemEnv()
+	// Then Sentinel will try to get fundamental config items from system environment.
+	// If present, the value in system env will override the value in config file.
+	err = overrideItemsFromSystemEnv()
 	if err != nil {
 		return err
 	}
-
 	err = InitializeLogConfig(LogBaseDir(), LogUsePid())
 	if err != nil {
 		return err
 	}
+
+	logging.GetDefaultLogger().Infof("App name resolved: %s", AppName())
+
 	return nil
 }
-
 
 func LoadFromYamlFile(filePath string) error {
 	if filePath == DefaultConfigFilename {
@@ -56,7 +58,7 @@ func LoadFromYamlFile(filePath string) error {
 		}
 	}
 	_, err := os.Stat(filePath)
-	if err != nil && !os.IsExist(err){
+	if err != nil && !os.IsExist(err) {
 		return err
 	}
 	content, err := ioutil.ReadFile(filePath)
@@ -67,11 +69,11 @@ func LoadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	logging.GetDefaultLogger().Infof("Resolving Sentinel globalCfg from file: %s", filePath)
+	logging.GetDefaultLogger().Infof("Resolving Sentinel config from file: %s", filePath)
 	return checkValid(&(globalCfg.Sentinel))
 }
 
-func OverrideFromSystemEnv() error{
+func overrideItemsFromSystemEnv() error {
 	if appName := os.Getenv(AppNameEnvKey); !util.IsBlank(appName) {
 		globalCfg.Sentinel.App.Name = appName
 	}
@@ -95,9 +97,6 @@ func OverrideFromSystemEnv() error{
 	}
 
 	if logDir := os.Getenv(LogDirEnvKey); !util.IsBlank(logDir) {
-		if _, err := os.Stat(logDir); err != nil && !os.IsExist(err) {
-			return err
-		}
 		globalCfg.Sentinel.Log.Dir = logDir
 	}
 	return checkValid(&(globalCfg.Sentinel))
@@ -118,7 +117,7 @@ func InitializeLogConfig(logDir string, usePid bool) (err error) {
 }
 
 func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
-	logDir := addSeparatorIfNeeded(logBaseDir)
+	logDir := util.AddPathSeparatorIfAbsent(logBaseDir)
 	filePath := logDir + logging.RecordLogFileName
 	if withPid {
 		filePath = filePath + ".pid" + strconv.Itoa(os.Getpid())
@@ -145,18 +144,8 @@ func GetDefaultLogDir() string {
 	if err != nil {
 		return ""
 	}
-	return addSeparatorIfNeeded(home) + logging.DefaultDirName
+	return util.AddPathSeparatorIfAbsent(home) + logging.DefaultDirName
 }
-
-func addSeparatorIfNeeded(path string) string {
-	s := string(os.PathSeparator)
-	if !strings.HasSuffix(path, s) {
-		return path + s
-	}
-	return path
-}
-
-
 
 func AppName() string {
 	return globalCfg.Sentinel.App.Name
@@ -170,6 +159,7 @@ func LogBaseDir() string {
 	return globalCfg.Sentinel.Log.Dir
 }
 
+// LogUsePid returns whether the log file name contains the PID suffix.
 func LogUsePid() bool {
 	return globalCfg.Sentinel.Log.UsePid
 }

@@ -19,8 +19,7 @@ const (
 
 var (
 	logger = logging.GetDefaultLogger()
-	// the unit is millisecond, equals to currentSecond*1000
-	// example: 1581959014000
+	// The timestamp of the last fetching. The time unit is ms (= second * 1000).
 	lastFetchTime int64 = -1
 	writeChan           = make(chan metricTimeMap, logFlushQueueSize)
 	stopChan            = make(chan struct{})
@@ -29,9 +28,8 @@ var (
 	initOnce     sync.Once
 )
 
-func InitTask() {
+func InitTask() (err error) {
 	initOnce.Do(func() {
-		var err error
 		metricWriter, err = NewDefaultMetricLogWriter(config.MetricLogSingleFileMaxSize(), config.MetricLogMaxFileAmount())
 		if err != nil {
 			logger.Errorf("Failed to initialize the MetricLogWriter: %+v", err)
@@ -58,6 +56,7 @@ func InitTask() {
 			}
 		}, logger)
 	})
+	return err
 }
 
 func writeTaskLoop() {
