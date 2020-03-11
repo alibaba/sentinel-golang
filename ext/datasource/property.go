@@ -18,7 +18,6 @@ type PropertyConverter func(src []byte) (interface{}, error)
 // return nil if succeed to update, if not, return the error.
 type PropertyUpdater func(data interface{}) error
 
-// abstract interface to describe the property handler
 type PropertyHandler interface {
 	// check whether the current src is consistent with last update property
 	isPropertyConsistent(src interface{}) bool
