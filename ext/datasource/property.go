@@ -54,9 +54,9 @@ func (h *DefaultPropertyHandler) Handle(src []byte) error {
 			logger.Panicf("Unexpected panic: %+v", errors.Errorf("%+v", err))
 		}
 	}()
-	// converter to target property
+	// convert to target property
 	realProperty, err := h.converter(src)
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	isConsistent := h.isPropertyConsistent(realProperty)

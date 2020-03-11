@@ -15,7 +15,7 @@ func MockSystemRulesConverter(src []byte) (interface{}, error) {
 	return ret, nil
 }
 func MockSystemRulesConverterReturnNil(src []byte) (interface{}, error) {
-	return nil,nil
+	return nil, nil
 }
 func MockSystemRulesUpdaterReturnNil(data interface{}) error {
 	return nil

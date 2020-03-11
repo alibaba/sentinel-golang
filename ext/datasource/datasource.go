@@ -16,9 +16,9 @@ type DataSource interface {
 	ReadSource() ([]byte, error)
 	// Initialize the datasource and load initial rules
 	// start listener to listen on dynamic source
-	// panic if initialize failed;
+	// return error if initialize failed;
 	// once initialized, listener should recover all panic and error.
-	Initialize()
+	Initialize() error
 	// Close the data source.
 	io.Closer
 }
