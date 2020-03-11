@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strings"
 )
 
 func FilePosition(file *os.File) (int64, error) {
@@ -32,4 +33,12 @@ func CreateDirIfNotExists(dirname string) error {
 		}
 	}
 	return nil
+}
+
+func AddPathSeparatorIfAbsent(path string) string {
+	s := string(os.PathSeparator)
+	if !strings.HasSuffix(path, s) {
+		return path + s
+	}
+	return path
 }

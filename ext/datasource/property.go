@@ -9,12 +9,15 @@ import (
 var logger = logging.GetDefaultLogger()
 
 // PropertyConverter func is to converter source message bytes to the specific property.
-type PropertyConverter func(src []byte) interface{}
+// the first  return value: is the real property;
+// the second return value: return nil if succeed to convert src, if not return the detailed error when convert src.
+// if src is nil or len(src)==0, the return value is (nil,nil)
+type PropertyConverter func(src []byte) (interface{}, error)
 
 // PropertyUpdater func is to update the specific properties to downstream.
+// return nil if succeed to update, if not, return the error.
 type PropertyUpdater func(data interface{}) error
 
-// abstract interface to
 type PropertyHandler interface {
 	// check whether the current src is consistent with last update property
 	isPropertyConsistent(src interface{}) bool
@@ -50,8 +53,11 @@ func (h *DefaultPropertyHandler) Handle(src []byte) error {
 			logger.Panicf("Unexpected panic: %+v", errors.Errorf("%+v", err))
 		}
 	}()
-	// converter to target property
-	realProperty := h.converter(src)
+	// convert to target property
+	realProperty, err := h.converter(src)
+	if err != nil {
+		return err
+	}
 	isConsistent := h.isPropertyConsistent(realProperty)
 	if isConsistent {
 		return nil
@@ -59,7 +65,7 @@ func (h *DefaultPropertyHandler) Handle(src []byte) error {
 	return h.updater(realProperty)
 }
 
-func NewSinglePropertyHandler(converter PropertyConverter, updater PropertyUpdater) *DefaultPropertyHandler {
+func NewDefaultPropertyHandler(converter PropertyConverter, updater PropertyUpdater) *DefaultPropertyHandler {
 	return &DefaultPropertyHandler{
 		converter: converter,
 		updater:   updater,

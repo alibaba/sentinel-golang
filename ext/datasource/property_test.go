@@ -9,13 +9,13 @@ import (
 	"testing"
 )
 
-func MockSystemRulesConverter(src []byte) interface{} {
+func MockSystemRulesConverter(src []byte) (interface{}, error) {
 	ret := make([]system.SystemRule, 0)
 	_ = json.Unmarshal(src, &ret)
-	return ret
+	return ret, nil
 }
-func MockSystemRulesConverterReturnNil(src []byte) interface{} {
-	return nil
+func MockSystemRulesConverterReturnNil(src []byte) (interface{}, error) {
+	return nil, nil
 }
 func MockSystemRulesUpdaterReturnNil(data interface{}) error {
 	return nil
@@ -25,16 +25,16 @@ func MockSystemRulesUpdaterReturnError(data interface{}) error {
 }
 
 func TestNewSinglePropertyHandler(t *testing.T) {
-	got := NewSinglePropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
+	got := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
 	assert.Truef(t, got.lastUpdateProperty == nil, "lastUpdateProperty:%d, expect nil", got.lastUpdateProperty)
 }
 
 func TestSinglePropertyHandler_Handle(t *testing.T) {
-	h1 := NewSinglePropertyHandler(MockSystemRulesConverterReturnNil, MockSystemRulesUpdaterReturnNil)
+	h1 := NewDefaultPropertyHandler(MockSystemRulesConverterReturnNil, MockSystemRulesUpdaterReturnNil)
 	r1 := h1.Handle(nil)
 	assert.True(t, r1 == nil, "Fail to execute Handle func.")
 
-	h2 := NewSinglePropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnError)
+	h2 := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnError)
 	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
@@ -44,7 +44,7 @@ func TestSinglePropertyHandler_Handle(t *testing.T) {
 }
 
 func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
-	h := NewSinglePropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
+	h := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
 	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)

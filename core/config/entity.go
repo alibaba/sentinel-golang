@@ -56,6 +56,7 @@ type SystemStatConfig struct {
 	CollectIntervalMs uint32 `yaml:"collectIntervalMs"`
 }
 
+// NewDefaultConfig creates a new default config entity.
 func NewDefaultConfig() *Entity {
 	return &Entity{
 		Version: "v1",
