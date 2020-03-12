@@ -37,11 +37,9 @@ func (c *etcdv3DataSource)ReadSource() ([]byte, error){
 	defer cancel()
 	resp, err := c.client.Get(ctx, c.ruleKey)
 	if err != nil{
-		logger.Warnf("Read configuration from etcd failed with error: %v", err)
 		return nil, err
 	}
 	if resp.Count == 0{
-		logger.Warnf("Read configuration from etcd failed with invalid key")
 		return nil, errors.Errorf("No %v key in etcd", c.ruleKey)
 	}
 	return resp.Kvs[0].Value, nil

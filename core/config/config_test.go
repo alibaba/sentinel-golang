@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
@@ -66,4 +67,13 @@ func TestOverrideFromSystemEnv(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetConfig(t *testing.T){
+	SetConfig("test","v1")
+	assert.Equal(t, GetConfig("test"), "v1")
+	SetConfig("test","")
+	assert.Equal(t, GetConfig("test"), "v1")
+	SetConfig("test","v2")
+	assert.Equal(t, GetConfig("test"), "v2")
 }
