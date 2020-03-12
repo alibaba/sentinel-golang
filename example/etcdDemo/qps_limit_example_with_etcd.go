@@ -72,12 +72,13 @@ func main() {
 	WriteDataToLocalEtcd()
 	// We should initialize Sentinel first.
 	err := sentinel.InitDefault()
+	var dataSourceClient datasource.DataSource
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 	config.SetConfig(etcdv3.EndPoints,"127.0.0.1:2379")
 	handler := datasource.NewDefaultPropertyHandler(flow.FlowRulesConvert, flow.FlowRulesUpdate)
-	dataSourceClient, err := etcdv3.NewEtcdDataSource("flow",handler)
+	dataSourceClient, err = etcdv3.NewEtcdDataSource("flow",handler)
 	if err != nil {
 		log.Fatalf("Create etcd data source client failed with error: %v",err)
 		return

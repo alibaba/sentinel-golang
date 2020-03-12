@@ -2,21 +2,21 @@ package system
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/go-errors/errors"
 )
 
-func SystemRulesConvert(src []byte) interface{} {
+func SystemRulesConvert(src []byte) (interface{}, error) {
 	if src == nil{
-		return nil
+		return nil, nil
 	}
 	rule := make([]*SystemRule, 0)
 	err := json.Unmarshal(src, &rule)
 	if err != nil{
 		logger.Errorf("Parsing data failed:%v", err)
-		return nil
+		return nil, errors.Errorf("Fail to unmarshal source:%+v to []system.SystemRule, err:%+v", src, err)
 	}
-	return rule
+	return rule, nil
 }
 
 func SystemRulesUpdate(data interface{}) error {

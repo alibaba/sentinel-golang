@@ -7,6 +7,7 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/go-errors/errors"
 	"time"
 )
 
@@ -31,25 +32,30 @@ func (c *etcdv3DataSource)RemovePropertyHandler(h datasource.PropertyHandler){
 	}
 }
 
-func (c *etcdv3DataSource)ReadSource() []byte{
+func (c *etcdv3DataSource)ReadSource() ([]byte, error){
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	resp, _ := c.client.Get(ctx, c.ruleKey)
-	if resp.Count == 0{
-		logger.Warnf("Get data from etcd failed")
-		return nil
+	resp, err := c.client.Get(ctx, c.ruleKey)
+	if err != nil{
+		logger.Warnf("Read configuration from etcd failed with error: %v", err)
+		return nil, err
 	}
-	return resp.Kvs[0].Value
+	if resp.Count == 0{
+		logger.Warnf("Read configuration from etcd failed with invalid key")
+		return nil, errors.Errorf("No %v key in etcd", c.ruleKey)
+	}
+	return resp.Kvs[0].Value, nil
 }
 
-func (c *etcdv3DataSource)Initialize(){
+func (c *etcdv3DataSource)Initialize() error{
 	go util.RunWithRecover(c.watch, logger)
-	newValue := c.ReadSource()
-	if newValue != nil{
-		c.updateValue(newValue)
-	}else{
+	newValue, err := c.ReadSource()
+	if err != nil{
 		logger.Warnf("[EtcdDataSource] Initial configuration is null, you may have to check your data source")
+	}else{
+		c.updateValue(newValue)
 	}
+	return err
 }
 
 func (c *etcdv3DataSource)updateValue(newValue []byte){
@@ -65,7 +71,11 @@ func (c *etcdv3DataSource)watch(){
 		for wresp := range rch {
 			for _, ev := range wresp.Events {
 				if ev.Type == mvccpb.PUT{
-					newValue := c.ReadSource()
+					newValue, err := c.ReadSource()
+					if err != nil{
+						logger.Warnf("receive etcd put event, but fail to read configuration from etcd")
+						continue
+					}
 					c.updateValue(newValue)
 				}
 				if ev.Type == mvccpb.DELETE{
@@ -99,6 +109,6 @@ func NewEtcdDataSource(key string, handler ...datasource.PropertyHandler) (*etcd
 		logger.Errorf("Etcd client init failed with error: %v", err)
 		return nil, err
 	}
-	ds.Initialize()
+	err = ds.Initialize()
 	return ds, err
 }
