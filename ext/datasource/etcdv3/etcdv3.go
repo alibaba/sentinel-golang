@@ -59,7 +59,9 @@ func (c *etcdv3DataSource)Initialize() error{
 func (c *etcdv3DataSource)updateValue(newValue []byte){
 	for _, handler := range c.handler{
 		err := handler.Handle(newValue)
-		logger.Warnf("Handler:%v update property failed with error: %v", handler, err)
+		if err != nil{
+			logger.Warnf("Handler:%v update property failed with error: %v", handler, err)
+		}
 	}
 }
 
