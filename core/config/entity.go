@@ -5,13 +5,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-var props map[string]string
-
 type Entity struct {
 	// Version represents the format version of the entity.
 	Version string
 
 	Sentinel SentinelConfig
+	props map[string]string
 }
 
 // SentinelConfig represent the general configuration of Sentinel.
@@ -83,6 +82,7 @@ func NewDefaultConfig() *Entity {
 				},
 			},
 		},
+		props: make(map[string]string),
 	}
 }
 
@@ -107,15 +107,12 @@ func checkValid(conf *SentinelConfig) error {
 }
 
 func SetConfig(key, value string){
-	if props == nil{
-		props = make(map[string]string)
-	}
 	logger := logging.GetDefaultLogger()
 	if key == "" || value == ""{
 		logger.Error("Can't set config with empty key or value")
 		return
 	}
-	props[key] = value
+	globalCfg.props[key] = value
 }
 
 func GetConfig(key string)string{
@@ -124,5 +121,5 @@ func GetConfig(key string)string{
 		logger.Error("Can't get config with empty key")
 		return ""
 	}
-	return props[key]
+	return globalCfg.props[key]
 }

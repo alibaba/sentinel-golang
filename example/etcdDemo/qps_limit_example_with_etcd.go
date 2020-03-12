@@ -38,7 +38,11 @@ func WriteDataToLocalEtcd(){
 		},
 	}
 	value, _ := json.Marshal(data)
-	client.Put(context.Background(),"flow",string(value))
+	ctx, _:= context.WithTimeout(context.Background(), time.Second)
+	_ ,err := client.Put(ctx,"flow",string(value))
+	if  err != nil{
+		log.Fatalf("Put data to etcd failed with %v, please check the etcd status", err)
+	}
 }
 
 func Delete(client *clientv3.Client){
@@ -72,13 +76,13 @@ func main() {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 	config.SetConfig(etcdv3.EndPoints,"127.0.0.1:2379")
-	handler := datasource.NewSinglePropertyHandler(flow.FlowRulesConvert, flow.FlowRulesUpdate)
-	dataSourceClient := etcdv3.NewEtcdDataSource("flow",handler)
-	defer dataSourceClient.Close()
-	if dataSourceClient == nil {
-		log.Fatal("Create etcd client failed")
+	handler := datasource.NewDefaultPropertyHandler(flow.FlowRulesConvert, flow.FlowRulesUpdate)
+	dataSourceClient, err := etcdv3.NewEtcdDataSource("flow",handler)
+	if err != nil {
+		log.Fatalf("Create etcd data source client failed with error: %v",err)
 		return
 	}
+	defer dataSourceClient.Close()
 	client, _ := clientv3.New(clientv3.Config{Endpoints:[]string{"127.0.0.1:2379",}})
 	go OperationEtcd(client)
 	ch := make(chan struct{})

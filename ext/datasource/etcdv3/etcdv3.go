@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"time"
@@ -42,7 +43,7 @@ func (c *etcdv3DataSource)ReadSource() []byte{
 }
 
 func (c *etcdv3DataSource)Initialize(){
-	go c.watch()
+	go util.RunWithRecover(c.watch, logger)
 	newValue := c.ReadSource()
 	if newValue != nil{
 		c.updateValue(newValue)
@@ -53,7 +54,8 @@ func (c *etcdv3DataSource)Initialize(){
 
 func (c *etcdv3DataSource)updateValue(newValue []byte){
 	for _, handler := range c.handler{
-		handler.Handle(newValue)
+		err := handler.Handle(newValue)
+		logger.Warnf("Handler:%v update property failed with error: %v", handler, err)
 	}
 }
 
@@ -80,10 +82,10 @@ func (c *etcdv3DataSource)Close() error {
 	}
 	return nil
 }
-func NewEtcdDataSource(key string, handler datasource.PropertyHandler) *etcdv3DataSource{
+func NewEtcdDataSource(key string, handler ...datasource.PropertyHandler) (*etcdv3DataSource, error){
 	var err error
 	ds := &etcdv3DataSource{
-		handler: make([]datasource.PropertyHandler,0),
+		handler: handler,
 		client:  nil,
 		ruleKey: "",
 	}
@@ -95,9 +97,8 @@ func NewEtcdDataSource(key string, handler datasource.PropertyHandler) *etcdv3Da
 	}
 	if err != nil{
 		logger.Errorf("Etcd client init failed with error: %v", err)
-		return nil
+		return nil, err
 	}
-	ds.AddPropertyHandler(handler)
 	ds.Initialize()
-	return ds
+	return ds, err
 }

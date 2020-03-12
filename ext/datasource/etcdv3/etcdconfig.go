@@ -6,10 +6,10 @@ import (
 )
 
 const(
-	EndPoints = "endpoints"
-	User = "user"
-	PassWord = "password"
-	AuthEnable = "enable"
+	EndPoints = "csp.sentinel.etcd.endpoint"
+	User = "csp.sentinel.etcd.user"
+	PassWord = "csp.sentinel.etcd.password"
+	AuthEnable = "csp.sentinel.etcd.auth.enable"
 )
 
 func getEndPoint()[]string{

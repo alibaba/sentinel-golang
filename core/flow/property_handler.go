@@ -2,21 +2,20 @@ package flow
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 )
 
-func FlowRulesConvert(src []byte) interface{} {
+func FlowRulesConvert(src []byte) (interface{}, error) {
 	if src == nil{
-		return nil
+		return nil, nil
 	}
 	rule := make([]*FlowRule,0)
 	err := json.Unmarshal(src, &rule)
 	if err != nil{
-		logger.Errorf("Parsing data failed:%v", err)
-		return nil
+		return nil, errors.Errorf("Fail to unmarshal source:%+v to []flow.FlowRule, err:%+v", src, err)
 	}
-	return rule
+	return rule, nil
 }
 
 func FlowRulesUpdate(data interface{}) error {
