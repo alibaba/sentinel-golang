@@ -3,7 +3,7 @@ package system
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 )
 
 func SystemRulesConvert(src []byte) (interface{}, error) {

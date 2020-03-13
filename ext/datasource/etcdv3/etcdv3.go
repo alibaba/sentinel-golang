@@ -7,7 +7,7 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -60,7 +60,7 @@ func (c *etcdv3DataSource)updateValue(newValue []byte){
 	for _, handler := range c.handler{
 		err := handler.Handle(newValue)
 		if err != nil{
-			logger.Warnf("Handler:%v update property failed with error: %v", handler, err)
+			logger.Warnf("Handler:%+v update property failed with error: %+v", handler, err)
 		}
 	}
 }
@@ -106,7 +106,7 @@ func NewEtcdDataSource(key string, handler ...datasource.PropertyHandler) (*etcd
 		ds.client, err = clientv3.New(clientv3.Config{Endpoints:getEndPoint(), Username:getUser(),Password:getPassWord()})
 	}
 	if err != nil{
-		logger.Errorf("Etcd client init failed with error: %v", err)
+		logger.Errorf("Etcd client init failed with error: %+v", err)
 		return nil, err
 	}
 	err = ds.Initialize()
