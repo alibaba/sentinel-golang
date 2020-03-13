@@ -14,4 +14,4 @@ props:
   csp.sentinel.etcd.endpoint: "127.0.0.1:2379"
   csp.sentinel.etcd.auth.enable: "false"
   csp.sentinel.etcd.user: "sentinel"
-  csp.sentinel.etcd.password: ""
+  csp.sentinel.etcd.password: "123456"

@@ -44,6 +44,10 @@ func TestLoadFromYamlFile(t *testing.T) {
 			}
 		})
 	}
+	assert.Equal(t,GetConfig(EndPoints), "127.0.0.1:2379")
+	assert.Equal(t,GetConfig(AuthEnable), "false")
+	assert.Equal(t,GetConfig(User), "sentinel")
+	assert.Equal(t,GetConfig(PassWord), "123456")
 }
 
 func TestOverrideFromSystemEnv(t *testing.T) {
@@ -72,15 +76,4 @@ func TestOverrideFromSystemEnv(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestGetConfig(t *testing.T){
-	assert.Equal(t,GetConfig(EndPoints), "127.0.0.1:2379")
-	assert.Equal(t,GetConfig(AuthEnable), "false")
-	assert.Equal(t,GetConfig(User), "sentinel")
-	assert.Equal(t,GetConfig(PassWord), "")
-	SetConfig(User, "sentinel2")
-	SetConfig(EndPoints,"")
-	assert.Equal(t,GetConfig(User), "sentinel2")
-	assert.Equal(t,GetConfig(EndPoints), "")
 }
