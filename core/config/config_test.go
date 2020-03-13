@@ -1,13 +1,18 @@
 package config
 
 import (
-	"github.com/stretchr/testify/assert"
+	"github.com/magiconair/properties/assert"
 	"os"
 	"testing"
 )
 
-const testDataBaseDir = "../../tests/testdata/config/"
-
+const (
+	testDataBaseDir = "../../tests/testdata/config/"
+	EndPoints = "csp.sentinel.etcd.endpoint"
+	User = "csp.sentinel.etcd.user"
+	PassWord = "csp.sentinel.etcd.password"
+	AuthEnable = "csp.sentinel.etcd.auth.enable"
+)
 func TestLoadFromYamlFile(t *testing.T) {
 	type args struct {
 		filePath string
@@ -70,10 +75,12 @@ func TestOverrideFromSystemEnv(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T){
-	SetConfig("test","v1")
-	assert.Equal(t, GetConfig("test"), "v1")
-	SetConfig("test","")
-	assert.Equal(t, GetConfig("test"), "v1")
-	SetConfig("test","v2")
-	assert.Equal(t, GetConfig("test"), "v2")
+	assert.Equal(t,GetConfig(EndPoints), "127.0.0.1:2379")
+	assert.Equal(t,GetConfig(AuthEnable), "false")
+	assert.Equal(t,GetConfig(User), "sentinel")
+	assert.Equal(t,GetConfig(PassWord), "")
+	SetConfig(User, "sentinel2")
+	SetConfig(EndPoints,"")
+	assert.Equal(t,GetConfig(User), "sentinel2")
+	assert.Equal(t,GetConfig(EndPoints), "")
 }

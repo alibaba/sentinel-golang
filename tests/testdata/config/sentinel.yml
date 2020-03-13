@@ -10,3 +10,8 @@ sentinel:
       singleFileMaxSize: 52428800
       maxFileCount: 7
       flushIntervalSec: 1
+props:
+  csp.sentinel.etcd.endpoint: "127.0.0.1:2379"
+  csp.sentinel.etcd.auth.enable: "false"
+  csp.sentinel.etcd.user: "sentinel"
+  csp.sentinel.etcd.password: ""

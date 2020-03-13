@@ -8,6 +8,7 @@ require (
 	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/go-errors/errors v1.0.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/magiconair/properties v1.8.1
 	github.com/pkg/errors v0.8.1
 	github.com/shirou/gopsutil v2.19.12+incompatible
 	github.com/stretchr/testify v1.4.0
