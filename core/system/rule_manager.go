@@ -41,12 +41,8 @@ func initRuleRecvTask() {
 	}, logger)
 }
 func ClearRules() error {
-	isUpdated, err := LoadRules(nil)
-	if isUpdated {
-		return err
-	} else {
-		return errors.Wrap(err, "Fail to clear rules.")
-	}
+	_, err := LoadRules(nil)
+	return err
 }
 
 func GetRules() []*SystemRule {
