@@ -8,11 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SentinelMiddleware
+// SentinelMiddleware returns new gin.HandlerFunc
+// Default resource name is {method}:{path}, such as "GET:/api/users/:id"
+// Default block fallback is returning 429 code
+// Define your own behavior by setting options
 func SentinelMiddleware(opts ...Option) gin.HandlerFunc {
 	options := evaluateOptions(opts)
 	return func(c *gin.Context) {
-		resourceName := c.Request.Method + ":" + c.Request.URL.Path
+		resourceName := c.Request.Method + ":" + c.FullPath()
 
 		if options.resourceExtract != nil {
 			resourceName = options.resourceExtract(c)
