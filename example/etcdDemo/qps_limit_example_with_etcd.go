@@ -77,7 +77,7 @@ func main() {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 	config.SetConfig(etcdv3.EndPoints,"127.0.0.1:2379")
-	handler := datasource.NewDefaultPropertyHandler(flow.FlowRulesConvert, flow.FlowRulesUpdate)
+	handler := datasource.NewDefaultPropertyHandler(datasource.FlowRulesJsonConverter, datasource.FlowRulesUpdater)
 	dataSourceClient, err = etcdv3.NewEtcdDataSource("flow",handler)
 	if err != nil {
 		log.Fatalf("Create etcd data source client failed with error: %+v",err)
