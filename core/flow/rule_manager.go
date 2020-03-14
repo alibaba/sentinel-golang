@@ -80,6 +80,11 @@ func GetRules() []*FlowRule {
 	return rulesFrom(tcMap)
 }
 
+func ClearRules() error {
+	_, err := LoadRules(nil)
+	return err
+}
+
 func rulesFrom(m TrafficControllerMap) []*FlowRule {
 	rules := make([]*FlowRule, 0)
 	if len(m) == 0 {
