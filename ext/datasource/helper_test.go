@@ -79,11 +79,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 }
 
 func TestFlowRulesUpdater(t *testing.T) {
-	t.Run("TestFlowRulesUpdater_Nil", func(t *testing.T) {
-		err := FlowRulesUpdater(nil)
-		assert.True(t, err == nil && len(flow.GetRules()) == 0, "Fail to test TestFlowRulesUpdater_Nil")
-	})
-
 	t.Run("TestFlowRulesUpdater_Assert_Failed", func(t *testing.T) {
 		flow.ClearRules()
 		err := FlowRulesUpdater("xxxxxxxx")
@@ -117,6 +112,11 @@ func TestFlowRulesUpdater(t *testing.T) {
 		p = append(p, fw)
 		err := FlowRulesUpdater(p)
 		assert.True(t, err == nil && len(flow.GetRules()) == 1)
+	})
+
+	t.Run("TestFlowRulesUpdater_Nil", func(t *testing.T) {
+		err := FlowRulesUpdater(nil)
+		assert.True(t, err == nil && len(flow.GetRules()) == 0, "Fail to test TestFlowRulesUpdater_Nil")
 	})
 }
 
@@ -186,11 +186,6 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 }
 
 func TestSystemRulesUpdater(t *testing.T) {
-	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
-		err := SystemRulesUpdater(nil)
-		assert.True(t, err == nil && len(system.GetRules()) == 0, "Fail to test TestSystemRulesUpdater_Nil")
-	})
-
 	t.Run("TestSystemRulesUpdater_Assert_Failed", func(t *testing.T) {
 		system.ClearRules()
 		err := SystemRulesUpdater("xxxxxxxx")
@@ -216,5 +211,10 @@ func TestSystemRulesUpdater(t *testing.T) {
 		p = append(p, sr)
 		err := SystemRulesUpdater(p)
 		assert.True(t, err == nil && len(system.GetRules()) == 1)
+	})
+
+	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
+		err := SystemRulesUpdater(nil)
+		assert.True(t, err == nil && len(system.GetRules()) == 0, "Fail to test TestSystemRulesUpdater_Nil")
 	})
 }
