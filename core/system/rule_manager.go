@@ -40,6 +40,14 @@ func initRuleRecvTask() {
 		}
 	}, logger)
 }
+func ClearRules() error {
+	isUpdated, err := LoadRules(nil)
+	if isUpdated {
+		return err
+	} else {
+		return errors.Wrap(err, "Fail to clear rules.")
+	}
+}
 
 func GetRules() []*SystemRule {
 	ruleMapMux.RLock()
@@ -54,8 +62,8 @@ func GetRules() []*SystemRule {
 
 // LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
 func LoadRules(rules []*SystemRule) (bool, error) {
-	ruleChan <- rules
-	return true, nil
+	err := onRuleUpdate(rules)
+	return true, err
 }
 
 func onRuleUpdate(rules []*SystemRule) error {

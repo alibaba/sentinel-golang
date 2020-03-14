@@ -80,6 +80,15 @@ func GetRules() []*FlowRule {
 	return rulesFrom(tcMap)
 }
 
+func ClearRules() error {
+	isUpdated, err := LoadRules(nil)
+	if isUpdated {
+		return err
+	} else {
+		return errors.Wrap(err, "Fail to clear rules.")
+	}
+}
+
 func rulesFrom(m TrafficControllerMap) []*FlowRule {
 	rules := make([]*FlowRule, 0)
 	if len(m) == 0 {
