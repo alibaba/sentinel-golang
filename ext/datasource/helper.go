@@ -24,7 +24,7 @@ func FlowRulesJsonConverter(src []byte) (interface{}, error) {
 // FlowRulesUpdater load the newest []flow.FlowRule to downstream flow component.
 func FlowRulesUpdater(data interface{}) error {
 	if data == nil {
-		return nil
+		return flow.ClearRules()
 	}
 
 	rules := make([]*flow.FlowRule, 0)
@@ -64,7 +64,7 @@ func SystemRulesJsonConverter(src []byte) (interface{}, error) {
 // SystemRulesUpdater load the newest []system.SystemRule to downstream system component.
 func SystemRulesUpdater(data interface{}) error {
 	if data == nil {
-		return nil
+		return system.ClearRules()
 	}
 
 	rules := make([]*system.SystemRule, 0)
