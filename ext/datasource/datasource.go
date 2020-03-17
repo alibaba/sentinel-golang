@@ -22,3 +22,39 @@ type DataSource interface {
 	// Close the data source.
 	io.Closer
 }
+
+type Base struct {
+	handlers []PropertyHandler
+}
+
+func (b *Base) Handlers() []PropertyHandler {
+	return b.handlers
+}
+
+// return idx if existed, else return -1
+func (b *Base) indexOfHandler(h PropertyHandler) int {
+	for idx, handler := range b.handlers {
+		if handler == h {
+			return idx
+		}
+	}
+	return -1
+}
+
+func (b *Base) AddPropertyHandler(h PropertyHandler) {
+	if h == nil || b.indexOfHandler(h) >= 0 {
+		return
+	}
+	b.handlers = append(b.handlers, h)
+}
+
+func (b *Base) RemovePropertyHandler(h PropertyHandler) {
+	if h == nil {
+		return
+	}
+	idx := b.indexOfHandler(h)
+	if idx < 0 {
+		return
+	}
+	b.handlers = append(b.handlers[:idx], b.handlers[idx+1:]...)
+}
