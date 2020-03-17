@@ -78,8 +78,8 @@ const (
         "adaptiveStrategy": 0
     }
 ]`
-	TestFlowRulesFile   = "../../../tests/testdata/extension/refreshable_file/FlowRule.json"
-	TestSystemRulesFile = "../../../tests/testdata/extension/refreshable_file/FlowRule.json"
+	TestFlowRulesFile   = "../../../tests/testdata/extension/refreshable_file/FlowRules.json"
+	TestSystemRulesFile = "../../../tests/testdata/extension/refreshable_file/SystemRules.json"
 )
 
 func prepareFlowRulesTestFile() error {

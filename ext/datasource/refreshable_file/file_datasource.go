@@ -114,6 +114,6 @@ func (s *RefreshableFileDataSource) doReadAndUpdate() error {
 
 func (s *RefreshableFileDataSource) Close() error {
 	s.closeChan <- struct{}{}
-	logger.Info("The RefreshableFileDataSource had been closed.")
+	logger.Infof("The RefreshableFileDataSource for [%s] had been closed.", s.sourceFilePath)
 	return nil
 }
