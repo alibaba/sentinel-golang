@@ -14,53 +14,6 @@ import (
 )
 
 const (
-	TestFlowRules = `[
-    {
-        "id": 0,
-        "resource": "abc0",
-        "limitApp": "default",
-        "grade": 1,
-        "strategy": 0,
-        "controlBehavior": 0,
-        "refResource": "refDefault",
-        "warmUpPeriodSec": 10,
-        "maxQueueingTimeMs": 1000,
-        "clusterMode": false,
-        "clusterConfig": {
-            "thresholdType": 0
-        }
-    },
-    {
-        "id": 1,
-        "resource": "abc1",
-        "limitApp": "default",
-        "grade": 1,
-        "strategy": 0,
-        "controlBehavior": 0,
-        "refResource": "refDefault",
-        "warmUpPeriodSec": 10,
-        "maxQueueingTimeMs": 1000,
-        "clusterMode": false,
-        "clusterConfig": {
-            "thresholdType": 0
-        }
-    },
-    {
-        "id": 2,
-        "resource": "abc2",
-        "limitApp": "default",
-        "grade": 1,
-        "strategy": 0,
-        "controlBehavior": 0,
-        "refResource": "refDefault",
-        "warmUpPeriodSec": 10,
-        "maxQueueingTimeMs": 1000,
-        "clusterMode": false,
-        "clusterConfig": {
-            "thresholdType": 0
-        }
-    }
-]`
 	TestSystemRules = `[
     {
         "id": 0,
@@ -78,18 +31,12 @@ const (
         "adaptiveStrategy": 0
     }
 ]`
-	TestFlowRulesFile   = "../../../tests/testdata/extension/refreshable_file/FlowRules.json"
-	TestSystemRulesFile = "../../../tests/testdata/extension/refreshable_file/SystemRules.json"
 )
 
-func prepareFlowRulesTestFile() error {
-	content := []byte(TestFlowRules)
-	return ioutil.WriteFile(TestFlowRulesFile, content, os.ModePerm)
-}
-
-func deleteFlowRulesTestFile() error {
-	return os.Remove(TestFlowRulesFile)
-}
+var (
+	TestSystemRulesDir  = "./"
+	TestSystemRulesFile = TestSystemRulesDir + "SystemRules.json"
+)
 
 func prepareSystemRulesTestFile() error {
 	content := []byte(TestSystemRules)
