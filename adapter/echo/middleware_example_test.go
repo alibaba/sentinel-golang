@@ -1,7 +1,6 @@
 package echo
 
 import (
-	"git.dz11.com/vega/minerva/server/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
