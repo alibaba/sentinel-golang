@@ -1,11 +1,11 @@
 package system
 
 import (
-	"encoding/json"
-	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/logging"
+
+	"github.com/pkg/errors"
 )
 
 type RuleMap map[MetricType][]*SystemRule
@@ -16,35 +16,9 @@ var (
 
 	ruleMap    = make(RuleMap, 0)
 	ruleMapMux = new(sync.RWMutex)
-
-	ruleChan     = make(chan []*SystemRule, 10)
-	propertyInit sync.Once
 )
 
-func init() {
-	propertyInit.Do(func() {
-		initRuleRecvTask()
-	})
-}
-
-func initRuleRecvTask() {
-	go util.RunWithRecover(func() {
-		for {
-			select {
-			case rules := <-ruleChan:
-				err := onRuleUpdate(rules)
-				if err != nil {
-					logger.Errorf("Failed to update system rules: %+v", err)
-				}
-			}
-		}
-	}, logger)
-}
-func ClearRules() error {
-	_, err := LoadRules(nil)
-	return err
-}
-
+// GetRules return all the rules
 func GetRules() []*SystemRule {
 	ruleMapMux.RLock()
 	defer ruleMapMux.RUnlock()
@@ -58,40 +32,43 @@ func GetRules() []*SystemRule {
 
 // LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
 func LoadRules(rules []*SystemRule) (bool, error) {
-	err := onRuleUpdate(rules)
-	return true, err
-}
-
-func onRuleUpdate(rules []*SystemRule) error {
 	m := buildRuleMap(rules)
 
+	if err := onRuleUpdate(m); err != nil {
+		logger.Errorf("Fail to load rules %+v, err: %+v", rules, err)
+		return false, err
+	}
+
+	return true, nil
+}
+
+// ClearRules clear all the previous rules
+func ClearRules() error {
+	_, err := LoadRules(nil)
+	return err
+}
+
+func onRuleUpdate(r RuleMap) error {
 	ruleMapMux.Lock()
 	defer ruleMapMux.Unlock()
 
-	ruleMap = m
-	logRuleUpdate(m)
+	ruleMap = r
+	if len(r) > 0 {
+		logger.Infof("[SystemRuleManager] System rules loaded: %v", r)
+	} else {
+		logger.Info("[SystemRuleManager] System rules were cleared")
+	}
 
 	return nil
 }
 
-func logRuleUpdate(m RuleMap) {
-	rules := make([]*SystemRule, 0)
-	for _, rs := range m {
-		rules = append(rules, rs...)
-	}
-	bs, err := json.Marshal(rules)
-	if err != nil {
-		logger.Info("[SystemRuleManager] System rules loaded")
-	} else {
-		logger.Infof("[SystemRuleManager] System rules loaded: %s", bs)
-	}
-}
-
 func buildRuleMap(rules []*SystemRule) RuleMap {
-	if len(rules) == 0 {
-		return make(RuleMap, 0)
-	}
 	m := make(RuleMap, 0)
+
+	if len(rules) == 0 {
+		return m
+	}
+
 	for _, rule := range rules {
 		if err := IsValidSystemRule(rule); err != nil {
 			logger.Warnf("Ignoring invalid system rule: %v, reason: %s", rule, err.Error())
@@ -107,6 +84,7 @@ func buildRuleMap(rules []*SystemRule) RuleMap {
 	return m
 }
 
+// IsValidSystemRule determine the system rule is valid or not
 func IsValidSystemRule(rule *SystemRule) error {
 	if rule == nil {
 		return errors.New("nil SystemRule")
