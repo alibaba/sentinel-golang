@@ -13,7 +13,7 @@ func SentinelConsumerInterceptor(opts ...Option) primitive.Interceptor {
 	options := evaluateOptions(opts)
 	return func(ctx context.Context, req, reply interface{}, next primitive.Invoker) error {
 		consumerCtx, _ := primitive.GetConsumerCtx(ctx)
-		resourceName := consumerCtx.MQ.Topic
+		resourceName := consumerCtx.ConsumerGroup + ":" + consumerCtx.MQ.Topic
 
 		if options.consumerResourceExtract != nil {
 			resourceName = options.consumerResourceExtract(consumerCtx)
@@ -23,13 +23,11 @@ func SentinelConsumerInterceptor(opts ...Option) primitive.Interceptor {
 			resourceName,
 			sentinel.WithResourceType(base.ResTypeMQ),
 			sentinel.WithTrafficType(base.Inbound),
-			sentinel.WithArgs("topic", consumerCtx.MQ.Topic),
-			sentinel.WithArgs("broker", consumerCtx.MQ.BrokerName),
 		)
 
 		if err != nil {
 			if options.blockFallback != nil {
-				return options.blockFallback(ctx, req, reply, next)
+				return options.blockFallback(ctx, req, reply, next, err)
 			} else {
 				return err
 			}

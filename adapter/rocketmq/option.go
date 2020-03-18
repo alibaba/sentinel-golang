@@ -1,15 +1,19 @@
 package rocketmq
 
 import (
+	"context"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
 type (
+	Fallback func(ctx context.Context, req, reply interface{}, next primitive.Invoker, blockError *base.BlockError) error
 	Option func(*options)
 	options struct {
 		consumerResourceExtract func(*primitive.ConsumeMessageContext) string
 		providerResourceExtract func(*primitive.ProducerCtx) string
-		blockFallback primitive.Interceptor
+		blockFallback Fallback
 	}
 )
 
@@ -28,7 +32,7 @@ func WithProviderResourceExtract(fn func(ctx *primitive.ProducerCtx) string) Opt
 }
 
 // WithBlockFallback set blockFallback
-func WithBlockFallback(fn primitive.Interceptor) Option {
+func WithBlockFallback(fn Fallback) Option {
 	return func(options *options) {
 		options.blockFallback = fn
 	}
