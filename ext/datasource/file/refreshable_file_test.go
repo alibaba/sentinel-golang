@@ -1,4 +1,4 @@
-package refreshable_file
+package file
 
 import (
 	"github.com/alibaba/sentinel-golang/ext/datasource"
@@ -174,36 +174,74 @@ func TestRefreshableFileDataSource_Close(t *testing.T) {
 }
 
 func TestNewFileDataSource_ALL_For_SystemRule(t *testing.T) {
-	err := prepareSystemRulesTestFile()
-	if err != nil {
-		t.Errorf("Fail to prepare test file, err: %+v", err)
-	}
+	t.Run("TestNewFileDataSource_ALL_For_SystemRule_Write_Event", func(t *testing.T) {
+		err := prepareSystemRulesTestFile()
+		if err != nil {
+			t.Errorf("Fail to prepare test file, err: %+v", err)
+		}
 
-	mh1 := &datasource.MockPropertyHandler{}
-	mh1.On("Handle", tmock.Anything).Return(nil)
-	mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
+		mh1 := &datasource.MockPropertyHandler{}
+		mh1.On("Handle", tmock.Anything).Return(nil)
+		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
 
-	ds, _ := NewFileDataSource(TestSystemRulesFile, mh1)
-	mh1.AssertNumberOfCalls(t, "Handle", 1)
+		ds := NewFileDataSource(TestSystemRulesFile, mh1)
+		err = ds.Initialize()
+		if err != nil {
+			t.Errorf("Fail to initialize the file data source, err: %+v", err)
+		}
+		mh1.AssertNumberOfCalls(t, "Handle", 1)
 
-	f, err := os.OpenFile(ds.sourceFilePath, os.O_RDWR|os.O_APPEND|os.O_SYNC, os.ModePerm)
-	if err != nil {
-		t.Errorf("Fail to open the property file, err: %+v.", err)
-	}
-	defer f.Close()
+		f, err := os.OpenFile(ds.sourceFilePath, os.O_RDWR|os.O_APPEND|os.O_SYNC, os.ModePerm)
+		if err != nil {
+			t.Errorf("Fail to open the property file, err: %+v.", err)
+		}
+		defer f.Close()
 
-	f.WriteString("\n" + TestSystemRules)
-	f.Sync()
-	time.Sleep(3 * time.Second)
-	mh1.AssertNumberOfCalls(t, "Handle", 2)
+		f.WriteString("\n" + TestSystemRules)
+		f.Sync()
+		time.Sleep(3 * time.Second)
+		mh1.AssertNumberOfCalls(t, "Handle", 2)
 
-	ds.Close()
-	time.Sleep(1 * time.Second)
-	e := ds.watcher.Add(TestSystemRulesFile)
-	assert.True(t, e != nil && strings.Contains(e.Error(), "closed"))
+		ds.Close()
+		time.Sleep(1 * time.Second)
+		e := ds.watcher.Add(TestSystemRulesFile)
+		assert.True(t, e != nil && strings.Contains(e.Error(), "closed"))
 
-	err = deleteSystemRulesTestFile()
-	if err != nil {
-		t.Errorf("Fail to delete test file, err: %+v", err)
-	}
+		err = deleteSystemRulesTestFile()
+		if err != nil {
+			t.Errorf("Fail to delete test file, err: %+v", err)
+		}
+	})
+
+	t.Run("TestNewFileDataSource_ALL_For_SystemRule_Remove_Event", func(t *testing.T) {
+		err := prepareSystemRulesTestFile()
+		if err != nil {
+			t.Errorf("Fail to prepare test file, err: %+v", err)
+		}
+
+		mh1 := &datasource.MockPropertyHandler{}
+		mh1.On("Handle", tmock.Anything).Return(nil)
+		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
+
+		ds := NewFileDataSource(TestSystemRulesFile, mh1)
+		err = ds.Initialize()
+		if err != nil {
+			t.Errorf("Fail to initialize the file data source, err: %+v", err)
+		}
+		mh1.AssertNumberOfCalls(t, "Handle", 1)
+
+		err = deleteSystemRulesTestFile()
+		if err != nil {
+			t.Errorf("Fail to delete test file, err: %+v", err)
+		}
+
+		time.Sleep(3 * time.Second)
+		mh1.AssertNumberOfCalls(t, "Handle", 2)
+
+		ds.Close()
+		time.Sleep(1 * time.Second)
+		e := ds.watcher.Add(TestSystemRulesFile)
+		assert.True(t, e != nil && strings.Contains(e.Error(), "closed"))
+	})
+
 }

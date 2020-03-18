@@ -1,4 +1,4 @@
-package refreshable_file
+package file
 
 import (
 	"github.com/alibaba/sentinel-golang/ext/datasource"
@@ -22,7 +22,7 @@ type RefreshableFileDataSource struct {
 	watcher        *fsnotify.Watcher
 }
 
-func NewFileDataSource(sourceFilePath string, handlers ...datasource.PropertyHandler) (*RefreshableFileDataSource, error) {
+func NewFileDataSource(sourceFilePath string, handlers ...datasource.PropertyHandler) *RefreshableFileDataSource {
 	var ds = &RefreshableFileDataSource{
 		sourceFilePath: sourceFilePath,
 		closeChan:      make(chan struct{}),
@@ -30,19 +30,19 @@ func NewFileDataSource(sourceFilePath string, handlers ...datasource.PropertyHan
 	for _, h := range handlers {
 		ds.AddPropertyHandler(h)
 	}
-	return ds, ds.Initialize()
+	return ds
 }
 
 func (s *RefreshableFileDataSource) ReadSource() ([]byte, error) {
 	f, err := os.Open(s.sourceFilePath)
 	if err != nil {
-		return nil, errors.Errorf("Fail to open the property file, err: %+v.", errors.WithStack(err))
+		return nil, errors.Errorf("RefreshableFileDataSource fail to open the property file, err: %+v.", err)
 	}
 	defer f.Close()
 
 	src, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, errors.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
+		return nil, errors.Errorf("RefreshableFileDataSource fail to read file, err: %+v.", err)
 	}
 	return src, nil
 }
@@ -63,7 +63,7 @@ func (s *RefreshableFileDataSource) Initialize() error {
 	}
 	err = w.Add(s.sourceFilePath)
 	if err != nil {
-		return errors.Errorf("Fail add a watcher on file(%s), err: %+v", s.sourceFilePath, err)
+		return errors.Errorf("Fail add a watcher on file[%s], err: %+v", s.sourceFilePath, err)
 	}
 	s.watcher = w
 
@@ -80,16 +80,16 @@ func (s *RefreshableFileDataSource) Initialize() error {
 				}
 
 				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
-					logger.Errorf("The file source(%s) was removed or renamed.", s.sourceFilePath)
+					logger.Errorf("The file source[%s] was removed or renamed.", s.sourceFilePath)
 					for _, h := range s.Handlers() {
 						err := h.Handle(nil)
 						if err != nil {
-							logger.Errorf("RefreshableFileDataSource fail to publish property, err: %+v.", errors.WithStack(err))
+							logger.Errorf("RefreshableFileDataSource fail to publish property, err: %+v.", err)
 						}
 					}
 				}
 			case err := <-s.watcher.Errors:
-				logger.Errorf("Watch err on file(%s), err: %+v", s.sourceFilePath, err)
+				logger.Errorf("Watch err on file[%s], err: %+v", s.sourceFilePath, err)
 			case <-s.closeChan:
 				return
 			}
