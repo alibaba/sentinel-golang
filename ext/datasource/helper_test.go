@@ -81,6 +81,22 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 func TestFlowRulesUpdater(t *testing.T) {
 	t.Run("TestFlowRulesUpdater_Nil", func(t *testing.T) {
 		flow.ClearRules()
+		flow.LoadRules([]*flow.FlowRule{
+			{
+				ID:                0,
+				Resource:          "abc",
+				LimitOrigin:       "default",
+				MetricType:        0,
+				Count:             0,
+				RelationStrategy:  0,
+				ControlBehavior:   0,
+				RefResource:       "",
+				WarmUpPeriodSec:   0,
+				MaxQueueingTimeMs: 0,
+				ClusterMode:       false,
+				ClusterConfig:     flow.ClusterRuleConfig{},
+			}})
+		assert.True(t, len(flow.GetRules()) == 1, "Fail to prepare test data.")
 		err := FlowRulesUpdater(nil)
 		assert.True(t, err == nil && len(flow.GetRules()) == 0, "Fail to test TestFlowRulesUpdater_Nil")
 	})
@@ -189,6 +205,15 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 func TestSystemRulesUpdater(t *testing.T) {
 	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
 		system.ClearRules()
+		system.LoadRules([]*system.SystemRule{
+			&system.SystemRule{
+				ID:           0,
+				MetricType:   0,
+				TriggerCount: 0,
+				Strategy:     0,
+			},
+		})
+		assert.True(t, len(system.GetRules()) == 1, "Fail to prepare data.")
 		err := SystemRulesUpdater(nil)
 		assert.True(t, err == nil && len(system.GetRules()) == 0, "Fail to test TestSystemRulesUpdater_Nil")
 	})
