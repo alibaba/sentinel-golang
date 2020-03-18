@@ -2,8 +2,8 @@ package datasource
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
