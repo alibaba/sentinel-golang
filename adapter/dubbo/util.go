@@ -16,8 +16,8 @@ const (
 	DefaultProviderPrefix = "dubbo:provider:"
 	DefaultConsumerPrefix = "dubbo:consumer:"
 
-	MethodEntryKey    = "dubboMethodEntry"
-	InterfaceEntryKey = "dubboInterfaceEntry"
+	MethodEntryKey    = "$$sentinelMethodEntry"
+	InterfaceEntryKey = "$$sentinelInterfaceEntry"
 )
 
 // Currently, a ConcurrentHashMap mechanism is missing.
