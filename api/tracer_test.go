@@ -2,12 +2,12 @@ package api
 
 import (
 	"errors"
-	"github.com/alibaba/sentinel-golang/core/stat"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -28,8 +28,8 @@ func TestTraceErrorToCtx(t *testing.T) {
 		{
 			name: "TestTraceErrorToCtx",
 			args: args{
-				ctx: nil,
-				err: nil,
+				ctx:   nil,
+				err:   nil,
 				count: WithCount(10),
 			},
 			want: 10,
@@ -47,7 +47,7 @@ func TestTraceErrorToCtx(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			TraceErrorToCtx(tt.args.ctx, tt.args.err, tt.args.count)
-			assert.True(t, tt.args.ctx.StatNode.GetSum(base.MetricEventError)==tt.want)
+			assert.True(t, tt.args.ctx.StatNode.GetSum(base.MetricEventError) == tt.want)
 		})
 	}
 }
@@ -87,8 +87,8 @@ func TestTraceErrorToEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			TraceErrorToEntry(tt.args.entry, tt.args.err, tt.args.count)
-			time.Sleep(time.Millisecond*10)
-			assert.True(t, ctx.StatNode.GetSum(base.MetricEventError)==tt.want)
+			time.Sleep(time.Millisecond * 10)
+			assert.True(t, ctx.StatNode.GetSum(base.MetricEventError) == tt.want)
 		})
 	}
 }
