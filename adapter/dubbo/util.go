@@ -3,8 +3,7 @@ package dubbo
 import (
 	"bytes"
 	"fmt"
-)
-import (
+
 	"github.com/apache/dubbo-go/common"
 	"github.com/apache/dubbo-go/common/constant"
 	"github.com/apache/dubbo-go/protocol"
@@ -17,8 +16,8 @@ const (
 	DefaultProviderPrefix = "dubbo:provider:"
 	DefaultConsumerPrefix = "dubbo:consumer:"
 
-	MethodEntryKey    = "dubboMethodEntry"
-	InterfaceEntryKey = "dubboInterfaceEntry"
+	MethodEntryKey    = "$$sentinelMethodEntry"
+	InterfaceEntryKey = "$$sentinelInterfaceEntry"
 )
 
 // Currently, a ConcurrentHashMap mechanism is missing.
@@ -50,21 +49,22 @@ func getResourceName(invoker protocol.Invoker, invocation protocol.Invocation, p
 	buf.WriteString(")")
 	return buf.String()
 }
+
 func getConsumerPrefix() string {
 	return DefaultConsumerPrefix
 }
+
 func getProviderPrefix() string {
 	return DefaultProviderPrefix
 }
+
 func getInterfaceGroupAndVersionEnabled() bool {
 	return true
 }
+
 func getColonSeparatedKey(url common.URL) string {
 	return fmt.Sprintf("%s:%s:%s",
 		url.Service(),
 		url.GetParam(constant.GROUP_KEY, ""),
 		url.GetParam(constant.VERSION_KEY, ""))
-}
-func isAsync(invocation protocol.Invocation) bool {
-	return invocation.Attachments()["async"] == "true"
 }

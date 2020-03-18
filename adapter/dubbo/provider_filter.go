@@ -2,11 +2,10 @@ package dubbo
 
 import (
 	"context"
-	"github.com/apache/dubbo-go/protocol"
-)
-import (
+
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/apache/dubbo-go/protocol"
 )
 
 type providerFilter struct{}
@@ -25,26 +24,31 @@ func (d *providerFilter) Invoke(ctx context.Context, invoker protocol.Invoker, i
 		b              *base.BlockError
 	)
 	interfaceEntry, b = sentinel.Entry(interfaceResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound))
-	if b != nil { // blocked
-		return providerDubboFallback(ctx, invoker, invocation, b)
-	}
-	methodEntry, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound), sentinel.WithArgs(invocation.Attachments()))
-	if b != nil { // blocked
+	if b != nil {
+		// interface blocked
 		return providerDubboFallback(ctx, invoker, invocation, b)
 	}
 	ctx = context.WithValue(ctx, InterfaceEntryKey, interfaceEntry)
+
+	methodEntry, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound), sentinel.WithArgs(invocation.Attachments()))
+	if b != nil {
+		// method blocked
+		return providerDubboFallback(ctx, invoker, invocation, b)
+	}
 	ctx = context.WithValue(ctx, MethodEntryKey, methodEntry)
 	return invoker.Invoke(ctx, invocation)
 }
 
 func (d *providerFilter) OnResponse(ctx context.Context, result protocol.Result, _ protocol.Invoker, _ protocol.Invocation) protocol.Result {
 	if methodEntry := ctx.Value(MethodEntryKey); methodEntry != nil {
-		// TODO traceEntry()
-		methodEntry.(*base.SentinelEntry).Exit()
+		e := methodEntry.(*base.SentinelEntry)
+		sentinel.TraceErrorToEntry(e, result.Error())
+		e.Exit()
 	}
 	if interfaceEntry := ctx.Value(InterfaceEntryKey); interfaceEntry != nil {
-		// TODO traceEntry()
-		interfaceEntry.(*base.SentinelEntry).Exit()
+		e := interfaceEntry.(*base.SentinelEntry)
+		sentinel.TraceErrorToEntry(e, result.Error())
+		e.Exit()
 	}
 	return result
 }
