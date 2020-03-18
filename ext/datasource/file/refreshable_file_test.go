@@ -58,7 +58,7 @@ func TestRefreshableFileDataSource_ReadSource(t *testing.T) {
 			sourceFilePath: TestSystemRulesFile + "NotExisted",
 		}
 		got, err := s.ReadSource()
-		assert.True(t, got == nil && err != nil && strings.Contains(err.Error(), "Fail to open the property file"))
+		assert.True(t, got == nil && err != nil && strings.Contains(err.Error(), "RefreshableFileDataSource fail to open the property file"))
 
 		err = deleteSystemRulesTestFile()
 		if err != nil {
