@@ -20,13 +20,13 @@ func initSentinel(t *testing.T) {
 
 	_, err = flow.LoadRules([]*flow.FlowRule{
 		{
-			Resource:        "GET_/ping",
+			Resource:        "GET:/ping",
 			MetricType:      flow.QPS,
 			Count:           1,
 			ControlBehavior: flow.Reject,
 		},
 		{
-			Resource:        "/ping",
+			Resource:        "/api/:uid",
 			MetricType:      flow.QPS,
 			Count:           0,
 			ControlBehavior: flow.Reject,
@@ -43,6 +43,7 @@ func TestSentinelMiddleware(t *testing.T) {
 		opts []Option
 		method string
 		path string
+		reqPath string
 		handler func(ctx echo.Context) error
 		body io.Reader
 	}
@@ -61,6 +62,7 @@ func TestSentinelMiddleware(t *testing.T) {
 					opts: []Option{},
 					method: http.MethodGet,
 					path: "/ping",
+					reqPath:"/ping",
 					handler: echo.HandlerFunc(func(ctx echo.Context) error {
 						return ctx.String(http.StatusOK, "ping")
 					}),
@@ -75,11 +77,12 @@ func TestSentinelMiddleware(t *testing.T) {
 				args: args{
 					opts: []Option{
 						WithResourceExtractor(func(ctx echo.Context) string {
-							return ctx.Request().URL.Path
+							return ctx.Path()
 						}),
 					},
 					method: http.MethodGet,
-					path: "/ping",
+					path: "/api/:uid",
+					reqPath:"/api/123",
 					handler: func(ctx echo.Context) error {
 						return ctx.JSON(http.StatusOK, "ping")
 					},
@@ -93,15 +96,13 @@ func TestSentinelMiddleware(t *testing.T) {
 				name: "customize block fallback",
 				args: args{
 					opts: []Option{
-						WithResourceExtractor(func(ctx echo.Context) string {
-							return ctx.Request().URL.Path
-						}),
 						WithBlockFallback(func(ctx echo.Context) error {
 							return ctx.JSON(http.StatusBadRequest, "block")
 						}),
 					},
 					method: http.MethodGet,
 					path: "/ping",
+					reqPath:"/ping",
 					handler: func(ctx echo.Context) error {
 						return ctx.JSON(http.StatusOK, "ping")
 					},
@@ -120,7 +121,7 @@ func TestSentinelMiddleware(t *testing.T) {
 			router := echo.New()
 			router.Use(SentinelMiddleware(tt.args.opts...))
 			router.Add(tt.args.method, tt.args.path, tt.args.handler)
-			r := httptest.NewRequest(tt.args.method, tt.args.path, nil)
+			r := httptest.NewRequest(tt.args.method, tt.args.reqPath, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, r)
 

@@ -14,7 +14,7 @@ func SentinelMiddleware(opts ...Option) echo.MiddlewareFunc {
 	options := evaluateOptions(opts)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			resourceName := c.Request().Method + ":" + c.Request().URL.Path
+			resourceName := c.Request().Method + ":" + c.Path()
 			if options.resourceExtract != nil {
 				resourceName = options.resourceExtract(c)
 			}
