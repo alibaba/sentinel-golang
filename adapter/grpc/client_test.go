@@ -13,16 +13,19 @@ import (
 
 func TestUnaryClientIntercept(t *testing.T) {
 	const errMsgFake = "fake error"
-	interceptor := SentinelUnaryClientIntercept()
+	interceptor := NewUnaryClientInterceptor(WithUnaryClientResourceExtractor(
+		func(ctx context.Context, method string, i interface{}, conn *grpc.ClientConn) string {
+			return "client:" + method
+		}))
 	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn,
-	opts ...grpc.CallOption) error {
+		opts ...grpc.CallOption) error {
 		return errors.New(errMsgFake)
 	}
 	method := "/grpc.testing.TestService/UnaryCall"
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.FlowRule{
 			{
-				Resource:        "/grpc.testing.TestService/UnaryCall",
+				Resource:        "client:" + method,
 				MetricType:      flow.QPS,
 				Count:           1,
 				ControlBehavior: flow.Reject,
@@ -40,7 +43,7 @@ func TestUnaryClientIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.FlowRule{
 			{
-				Resource:        "/grpc.testing.TestService/UnaryCall",
+				Resource:        "client:" + method,
 				MetricType:      flow.QPS,
 				Count:           0,
 				ControlBehavior: flow.Reject,
@@ -54,7 +57,10 @@ func TestUnaryClientIntercept(t *testing.T) {
 
 func TestStreamClientIntercept(t *testing.T) {
 	const errMsgFake = "fake error"
-	interceptor := SentinelStreamClientIntercept()
+	interceptor := NewStreamClientInterceptor(WithStreamClientResourceExtractor(
+		func(ctx context.Context, desc *grpc.StreamDesc, conn *grpc.ClientConn, method string) string {
+			return "client:" + method
+		}))
 	streamer := func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
 		opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		return nil, errors.New(errMsgFake)
@@ -63,7 +69,7 @@ func TestStreamClientIntercept(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.FlowRule{
 			{
-				Resource:        "/grpc.testing.TestService/StreamingOutputCall",
+				Resource:        "client:/grpc.testing.TestService/StreamingOutputCall",
 				MetricType:      flow.QPS,
 				Count:           1,
 				ControlBehavior: flow.Reject,
@@ -83,7 +89,7 @@ func TestStreamClientIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.FlowRule{
 			{
-				Resource:        "/grpc.testing.TestService/StreamingOutputCall",
+				Resource:        "client:/grpc.testing.TestService/StreamingOutputCall",
 				MetricType:      flow.QPS,
 				Count:           0,
 				ControlBehavior: flow.Reject,
