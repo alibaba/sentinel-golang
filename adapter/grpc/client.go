@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-// SentinelUnaryClientIntercept returns new grpc.UnaryClientInterceptor instance
-func SentinelUnaryClientIntercept(opts ...Option) grpc.UnaryClientInterceptor {
+// NewUnaryClientInterceptor creates the unary client interceptor wrapped with Sentinel entry.
+func NewUnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 	options := evaluateOptions(opts)
 	return func(
 		ctx context.Context,
@@ -25,25 +25,29 @@ func SentinelUnaryClientIntercept(opts ...Option) grpc.UnaryClientInterceptor {
 			resourceName = options.unaryClientResourceExtract(ctx, method, req, cc)
 		}
 
-		entry, err := sentinel.Entry(
+		entry, blockErr := sentinel.Entry(
 			resourceName,
 			sentinel.WithResourceType(base.ResTypeRPC),
 			sentinel.WithTrafficType(base.Outbound),
 		)
-		if err != nil {
+		if blockErr != nil {
 			if options.unaryClientBlockFallback != nil {
-				return options.unaryClientBlockFallback(ctx, method, req, cc, err)
+				return options.unaryClientBlockFallback(ctx, method, req, cc, blockErr)
 			}
-			return err
+			return blockErr
 		}
 		defer entry.Exit()
 
-		return invoker(ctx, method, req, reply, cc, opts...)
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		if err != nil {
+			sentinel.TraceErrorToEntry(entry, err)
+		}
+		return err
 	}
 }
 
-// SentinelStreamClientIntercept returns new grpc.StreamClientInterceptor instance
-func SentinelStreamClientIntercept(opts ...Option) grpc.StreamClientInterceptor {
+// NewStreamClientInterceptor creates the stream client interceptor wrapped with Sentinel entry.
+func NewStreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 	options := evaluateOptions(opts)
 	return func(
 		ctx context.Context,
@@ -59,20 +63,24 @@ func SentinelStreamClientIntercept(opts ...Option) grpc.StreamClientInterceptor 
 			resourceName = options.streamClientResourceExtract(ctx, desc, cc, method)
 		}
 
-		entry, err := sentinel.Entry(
+		entry, blockErr := sentinel.Entry(
 			resourceName,
 			sentinel.WithResourceType(base.ResTypeRPC),
 			sentinel.WithTrafficType(base.Outbound),
 		)
-		if err != nil { // blocked
+		if blockErr != nil { // blocked
 			if options.streamClientBlockFallback != nil {
-				return options.streamClientBlockFallback(ctx, desc, cc, method, err)
+				return options.streamClientBlockFallback(ctx, desc, cc, method, blockErr)
 			}
-			return nil, err
+			return nil, blockErr
 		}
-
 		defer entry.Exit()
 
-		return streamer(ctx, desc, cc, method, opts...)
+		cs, err := streamer(ctx, desc, cc, method, opts...)
+		if err != nil {
+			sentinel.TraceErrorToEntry(entry, err)
+		}
+
+		return cs, err
 	}
 }

@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"github.com/alibaba/sentinel-golang/core/stat"
 	"testing"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
@@ -19,7 +20,7 @@ func TestMain(m *testing.M) {
 
 func TestStreamServerIntercept(t *testing.T) {
 	const errMsgFake = "fake error"
-	interceptor := SentinelStreamServerIntercept()
+	interceptor := NewStreamServerInterceptor()
 	handler := func(srv interface{}, stream grpc.ServerStream) error {
 		return errors.New(errMsgFake)
 	}
@@ -62,7 +63,7 @@ func TestStreamServerIntercept(t *testing.T) {
 
 func TestUnaryServerIntercept(t *testing.T) {
 	const errMsgFake = "fake error"
-	interceptor := SentinelUnaryServerIntercept()
+	interceptor := NewUnaryServerInterceptor()
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return nil, errors.New(errMsgFake)
 	}
@@ -82,13 +83,21 @@ func TestUnaryServerIntercept(t *testing.T) {
 		rep, err := interceptor(nil, nil, info, handler)
 		assert.EqualError(t, err, errMsgFake)
 		assert.Nil(t, rep)
+		// Test for recording the biz error.
+		assert.EqualValues(t, 1, int(stat.GetResourceNode(info.FullMethod).GetQPS(base.MetricEventError)))
+
 		t.Run("second fail", func(t *testing.T) {
 			rep, err := interceptor(nil, nil, info, handler)
 			assert.IsType(t, &base.BlockError{}, err)
 			assert.Nil(t, rep)
+
+			assert.EqualValues(t, 1, int(stat.GetResourceNode(info.FullMethod).GetQPS(base.MetricEventError)))
 		})
 	})
 
+	successHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return "abc", nil
+	}
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.FlowRule{
 			{
@@ -99,9 +108,8 @@ func TestUnaryServerIntercept(t *testing.T) {
 			},
 		})
 		assert.Nil(t, err)
-		rep, err := interceptor(nil, nil, info, handler)
+		rep, err := interceptor(nil, nil, info, successHandler)
 		assert.IsType(t, &base.BlockError{}, err)
 		assert.Nil(t, rep)
 	})
 }
-
