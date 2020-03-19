@@ -8,7 +8,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// SentinelMiddleware
+// SentinelMiddleware returns new echo.HandlerFunc
+// Default resource name is {method}:{path}, such as "GET:/api/:id"
+// Default block fallback is returning 429 code
+// Define your own behavior by setting options
 func SentinelMiddleware(opts ...Option) echo.MiddlewareFunc {
 
 	options := evaluateOptions(opts)
@@ -28,7 +31,8 @@ func SentinelMiddleware(opts ...Option) echo.MiddlewareFunc {
 				if options.blockFallback != nil {
 					err = options.blockFallback(c)
 				} else {
-					err = c.JSON(http.StatusTooManyRequests, "error")
+					// default error response
+					err = c.JSON(http.StatusTooManyRequests, "Blocked by Sentinel")
 				}
 				return err
 			}

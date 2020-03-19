@@ -21,13 +21,6 @@ func evaluateOptions(opts []Option) *options {
 	return optCopy
 }
 
-// WithResourceExtractor set resourceExtract
-func With(handlerFunc echo.HandlerFunc) Option {
-	return func(opts *options) {
-		return
-	}
-}
-
 func WithResourceExtractor(fn func(ctx echo.Context) string) Option {
 	return func(opts *options) {
 		opts.resourceExtract = fn
