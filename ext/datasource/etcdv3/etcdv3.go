@@ -8,105 +8,102 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 	"time"
 )
 
 var logger = logging.GetDefaultLogger()
 
-type etcdv3DataSource struct{
-	handler []datasource.PropertyHandler
+type Etcdv3DataSource struct{
+	datasource.Base
 	client *clientv3.Client
-	ruleKey string
+	propertyKey string
+	watchIndex	int64
 }
 
-func (c *etcdv3DataSource)AddPropertyHandler(h datasource.PropertyHandler){
-	c.handler = append(c.handler, h)
-}
-
-func (c *etcdv3DataSource)RemovePropertyHandler(h datasource.PropertyHandler){
-	for index, value := range c.handler{
-		if value == h{
-			c.handler = append(c.handler[:index], c.handler[index+1:]...)
-			break
-		}
-	}
-}
-
-func (c *etcdv3DataSource)ReadSource() ([]byte, error){
+func (c *Etcdv3DataSource)ReadSource() ([]byte, error){
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	resp, err := c.client.Get(ctx, c.ruleKey)
+	resp, err := c.client.Get(ctx, c.propertyKey)
 	if err != nil{
-		return nil, err
+		return nil, errors.Errorf("The key[%s] is not existed in etcd.", c.propertyKey)
 	}
-	if resp.Count == 0{
-		return nil, errors.Errorf("No %v key in etcd", c.ruleKey)
-	}
+	c.watchIndex = resp.Header.Revision
 	return resp.Kvs[0].Value, nil
 }
 
-func (c *etcdv3DataSource)Initialize() error{
+func (c *Etcdv3DataSource)Initialize() error{
+	err := c.doReadAndUpdate()
+	if err != nil {
+		logger.Errorf("[Etcdv3DataSource]Fail to execute doReadAndUpdate, err: %+v", err)
+	}
 	go util.RunWithRecover(c.watch, logger)
-	newValue, err := c.ReadSource()
-	if err != nil{
-		logger.Warnf("[EtcdDataSource] Initial configuration is null, you may have to check your data source")
-	}else{
-		c.updateValue(newValue)
+	return err
+}
+
+func (c *Etcdv3DataSource) doReadAndUpdate() error {
+	src, err := c.ReadSource()
+	if err != nil {
+		err = errors.Errorf("[Etcdv3DataSource]Fail to read source, err: %+v", err)
+		return err
+	}
+	for _, h := range c.Handlers() {
+		e := h.Handle(src)
+		if e != nil {
+			err = multierr.Append(err, e)
+		}
 	}
 	return err
 }
 
-func (c *etcdv3DataSource)updateValue(newValue []byte){
-	for _, handler := range c.handler{
-		err := handler.Handle(newValue)
-		if err != nil{
-			logger.Warnf("Handler:%+v update property failed with error: %+v", handler, err)
-		}
-	}
-}
-
-func (c *etcdv3DataSource)watch(){
+func (c *Etcdv3DataSource)watch(){
 	for{
-		rch := c.client.Watch(context.Background(), c.ruleKey)
+		rch := c.client.Watch(context.Background(), c.propertyKey, clientv3.WithRev(int64(c.watchIndex)))
 		for wresp := range rch {
 			for _, ev := range wresp.Events {
 				if ev.Type == mvccpb.PUT{
-					newValue, err := c.ReadSource()
+					err := c.doReadAndUpdate()
 					if err != nil{
-						logger.Warnf("receive etcd put event, but fail to read configuration from etcd")
-						continue
+						logger.Errorf("Fail to execute doReadAndUpdate for PUT event, err: %+v", err)
 					}
-					c.updateValue(newValue)
 				}
 				if ev.Type == mvccpb.DELETE{
-					c.updateValue(nil)
+					var updateErr error
+					for _, h := range c.Handlers() {
+						e := h.Handle(nil)
+						if e != nil {
+							updateErr = multierr.Append(updateErr, e)
+						}
+					}
+					if updateErr != nil{
+						logger.Errorf("Fail to execute doReadAndUpdate for DELETE event, err: %+v", updateErr)
+					}
 				}
 			}
 		}
 	}
 }
-func (c *etcdv3DataSource)Close() error {
+
+func (c *Etcdv3DataSource)Close() error {
 	if c.client != nil{
 		err := c.client.Close()
 		return err
 	}
 	return nil
 }
-func NewEtcdDataSource(key string, handler ...datasource.PropertyHandler) (*etcdv3DataSource, error){
+func NewEtcdv3DataSource(key string, cfg clientv3.Config, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error){
 	var err error
-	ds := &etcdv3DataSource{
-		handler: handler,
+	ds := &Etcdv3DataSource{
 		client:  nil,
-		ruleKey: "",
+		propertyKey: "",
 	}
-	ds.ruleKey = key
-	if !isAuthEnable() {
-		ds.client, err = clientv3.New(clientv3.Config{Endpoints:getEndPoint()})
-	} else {
-		ds.client, err = clientv3.New(clientv3.Config{Endpoints:getEndPoint(), Username:getUser(),Password:getPassWord()})
+	for _, h := range handlers {
+		ds.AddPropertyHandler(h)
 	}
+	ds.propertyKey = key
+	ds.client, err = clientv3.New(cfg)
 	if err != nil{
-		logger.Errorf("Etcd client init failed with error: %+v", err)
+		logger.Errorf("Fail to create etcd client, err: %+v", err)
 		return nil, err
 	}
 	err = ds.Initialize()

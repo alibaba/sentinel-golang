@@ -10,7 +10,6 @@ import (
 	"fmt"
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/ext/datasource/etcdv3"
@@ -22,7 +21,7 @@ import (
 )
 
 func WriteDataToLocalEtcd(){
-	client, _ := clientv3.New(clientv3.Config{Endpoints:[]string{"127.0.0.1:2379",}})
+	client, err := clientv3.New(clientv3.Config{Endpoints:[]string{"127.0.0.1:2379",}, DialTimeout: time.Second})
 	data := []*flow.FlowRule{
 		{
 			Resource:        "some-test",
@@ -37,11 +36,16 @@ func WriteDataToLocalEtcd(){
 			ControlBehavior: flow.Reject,
 		},
 	}
+	log.Println(client, err)
+	if  err != nil{
+		log.Fatalf("Fail to create etcd client, err: %+v", err)
+		return
+	}
 	value, _ := json.Marshal(data)
 	ctx, _:= context.WithTimeout(context.Background(), time.Second)
-	_ ,err := client.Put(ctx,"flow",string(value))
+	_ ,err = client.Put(ctx,"flow",string(value))
 	if  err != nil{
-		log.Fatalf("Put data to etcd failed with %v, please check the etcd status", err)
+		log.Fatalf("Fail to put data into etcd, err: %+v", err)
 	}
 }
 
@@ -76,9 +80,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
-	config.SetConfig(etcdv3.EndPoints,"127.0.0.1:2379")
+
+	cfg := clientv3.Config{
+				Endpoints: []string{"127.0.0.1:2379"},
+				DialTimeout: time.Second,
+				}
 	handler := datasource.NewDefaultPropertyHandler(datasource.FlowRulesJsonConverter, datasource.FlowRulesUpdater)
-	dataSourceClient, err = etcdv3.NewEtcdDataSource("flow",handler)
+	dataSourceClient, err = etcdv3.NewEtcdv3DataSource("flow", cfg, handler)
 	if err != nil {
 		log.Fatalf("Create etcd data source client failed with error: %+v",err)
 		return
