@@ -33,18 +33,40 @@ func TestGetRules(t *testing.T) {
 func TestLoadRules(t *testing.T) {
 	t.Run("NilSystemRule", func(t *testing.T) {
 		isOK, err := LoadRules(nil)
-		assert.NoError(t, err)
 		assert.Equal(t, true, isOK)
+		assert.Nil(t, err)
+		assert.Equal(t, 0, len(ruleMap))
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
+		defer func() { ruleMap = make(RuleMap, 0) }()
 		sRule := []*SystemRule{
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: Concurrency, TriggerCount: 2},
 		}
 		isOK, err := LoadRules(sRule)
-		assert.NoError(t, err)
 		assert.Equal(t, true, isOK)
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(ruleMap))
+	})
+}
+
+func TestClearRules(t *testing.T) {
+	t.Run("EmptyOriginRuleMap", func(t *testing.T) {
+		err := ClearRules()
+		assert.Equal(t, 0, len(ruleMap))
+		assert.Nil(t, err)
+	})
+
+	t.Run("NoEmptyOriginRuleMap", func(t *testing.T) {
+		r := map[MetricType][]*SystemRule{
+			InboundQPS:  {&SystemRule{MetricType: InboundQPS, TriggerCount: 1}},
+			Concurrency: {&SystemRule{MetricType: Concurrency, TriggerCount: 2}},
+		}
+		ruleMap = r
+		err := ClearRules()
+		assert.Nil(t, err)
+		assert.Equal(t, 0, len(ruleMap))
 	})
 }
 
@@ -52,18 +74,22 @@ func TestOnRuleUpdate(t *testing.T) {
 	t.Run("NilSystemRule", func(t *testing.T) {
 		err := onRuleUpdate(nil)
 		assert.NoError(t, err)
+		assert.Equal(t, 0, len(ruleMap))
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
 		defer func() { ruleMap = make(RuleMap, 0) }()
-
-		sRule := []*SystemRule{
-			{MetricType: InboundQPS, TriggerCount: 1},
-			{MetricType: Concurrency, TriggerCount: 2},
+		rMap := RuleMap{
+			InboundQPS: []*SystemRule{
+				{MetricType: InboundQPS, TriggerCount: 1},
+			},
+			Concurrency: []*SystemRule{
+				{MetricType: Concurrency, TriggerCount: 2},
+			},
 		}
-		err := onRuleUpdate(sRule)
+		err := onRuleUpdate(rMap)
 		assert.NoError(t, err)
-		assert.Equal(t, len(sRule), len(ruleMap))
+		assert.Equal(t, len(rMap), len(ruleMap))
 	})
 }
 

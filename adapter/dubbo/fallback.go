@@ -2,10 +2,9 @@ package dubbo
 
 import (
 	"context"
-	"github.com/apache/dubbo-go/protocol"
-)
-import (
+
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/apache/dubbo-go/protocol"
 )
 
 var (
