@@ -15,7 +15,7 @@ func TestResourceNode_GetOrCreateSlidingWindowMetric(t *testing.T) {
 		intervalInMs uint32
 	}
 	tests := []struct {
-		name   string
+		name string
 	}{
 		{
 			name: "TestResourceNode_GetOrCreateSlidingWindowMetric",
@@ -25,7 +25,7 @@ func TestResourceNode_GetOrCreateSlidingWindowMetric(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			n := NewResourceNode("aa", base.ResTypeCommon)
 
-			argsList := []args {
+			argsList := []args{
 				{
 					sampleCount:  10,
 					intervalInMs: 10000,
@@ -70,7 +70,7 @@ func TestResourceNode_GetOrCreateSlidingWindowMetric(t *testing.T) {
 
 			wg := &sync.WaitGroup{}
 			wg.Add(100)
-			for i:=0; i<100; i++ {
+			for i := 0; i < 100; i++ {
 				go func(g *sync.WaitGroup) {
 					for _, as := range argsList {
 						n.GetOrCreateSlidingWindowMetric(as.sampleCount, as.intervalInMs)
