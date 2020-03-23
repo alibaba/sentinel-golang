@@ -79,7 +79,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 }
 
 func TestFlowRulesUpdater(t *testing.T) {
-  
 	t.Run("TestFlowRulesUpdater_Nil", func(t *testing.T) {
 		flow.ClearRules()
 		flow.LoadRules([]*flow.FlowRule{
@@ -204,7 +203,6 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 }
 
 func TestSystemRulesUpdater(t *testing.T) {
-  
 	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
 		system.ClearRules()
 		system.LoadRules([]*system.SystemRule{

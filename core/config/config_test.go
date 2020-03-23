@@ -5,9 +5,7 @@ import (
 	"testing"
 )
 
-const (
-	testDataBaseDir = "../../tests/testdata/config/"
-)
+const testDataBaseDir = "../../tests/testdata/config/"
 
 func TestLoadFromYamlFile(t *testing.T) {
 	type args struct {
