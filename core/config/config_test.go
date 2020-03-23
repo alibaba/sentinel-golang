@@ -8,11 +8,12 @@ import (
 
 const (
 	testDataBaseDir = "../../tests/testdata/config/"
-	EndPoints = "csp.sentinel.etcd.endpoint"
-	User = "csp.sentinel.etcd.user"
-	PassWord = "csp.sentinel.etcd.password"
-	AuthEnable = "csp.sentinel.etcd.auth.enable"
+	EndPoints       = "csp.sentinel.etcd.endpoint"
+	User            = "csp.sentinel.etcd.user"
+	PassWord        = "csp.sentinel.etcd.password"
+	AuthEnable      = "csp.sentinel.etcd.auth.enable"
 )
+
 func TestLoadFromYamlFile(t *testing.T) {
 	type args struct {
 		filePath string
@@ -44,10 +45,10 @@ func TestLoadFromYamlFile(t *testing.T) {
 			}
 		})
 	}
-	assert.Equal(t,GetConfig(EndPoints), "127.0.0.1:2379")
-	assert.Equal(t,GetConfig(AuthEnable), "false")
-	assert.Equal(t,GetConfig(User), "sentinel")
-	assert.Equal(t,GetConfig(PassWord), "123456")
+	assert.Equal(t, GetConfig(EndPoints), "127.0.0.1:2379")
+	assert.Equal(t, GetConfig(AuthEnable), "false")
+	assert.Equal(t, GetConfig(User), "sentinel")
+	assert.Equal(t, GetConfig(PassWord), "123456")
 }
 
 func TestOverrideFromSystemEnv(t *testing.T) {

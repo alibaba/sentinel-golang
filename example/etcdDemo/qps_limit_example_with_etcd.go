@@ -20,8 +20,8 @@ import (
 	"time"
 )
 
-func WriteDataToLocalEtcd(){
-	client, err := clientv3.New(clientv3.Config{Endpoints:[]string{"127.0.0.1:2379",}, DialTimeout: time.Second})
+func WriteDataToLocalEtcd() {
+	client, err := clientv3.New(clientv3.Config{Endpoints: []string{"127.0.0.1:2379"}, DialTimeout: time.Second})
 	data := []*flow.FlowRule{
 		{
 			Resource:        "some-test",
@@ -37,33 +37,33 @@ func WriteDataToLocalEtcd(){
 		},
 	}
 	log.Println(client, err)
-	if  err != nil{
+	if err != nil {
 		log.Fatalf("Fail to create etcd client, err: %+v", err)
 		return
 	}
 	value, _ := json.Marshal(data)
-	ctx, _:= context.WithTimeout(context.Background(), time.Second)
-	_ ,err = client.Put(ctx,"flow",string(value))
-	if  err != nil{
+	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+	_, err = client.Put(ctx, "flow", string(value))
+	if err != nil {
 		log.Fatalf("Fail to put data into etcd, err: %+v", err)
 	}
 }
 
-func Delete(client *clientv3.Client){
-	client.Delete(context.Background(),"flow")
+func Delete(client *clientv3.Client) {
+	client.Delete(context.Background(), "flow")
 }
 
 // The function will update etcd data every two second.
-func OperationEtcd(client *clientv3.Client){
+func OperationEtcd(client *clientv3.Client) {
 	t1 := time.NewTimer(2 * time.Second)
 	flag := 0
-	for{
+	for {
 		select {
 		case <-t1.C:
-			if flag == 0{
+			if flag == 0 {
 				Delete(client)
 				flag = 1
-			}else{
+			} else {
 				WriteDataToLocalEtcd()
 				flag = 0
 			}
@@ -81,18 +81,18 @@ func main() {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 
-	cfg := clientv3.Config{
-				Endpoints: []string{"127.0.0.1:2379"},
-				DialTimeout: time.Second,
-				}
+	cfg := &clientv3.Config{
+		Endpoints:   []string{"127.0.0.1:2379"},
+		DialTimeout: time.Second,
+	}
 	handler := datasource.NewDefaultPropertyHandler(datasource.FlowRulesJsonConverter, datasource.FlowRulesUpdater)
 	dataSourceClient, err = etcdv3.NewEtcdv3DataSource("flow", cfg, handler)
 	if err != nil {
-		log.Fatalf("Create etcd data source client failed with error: %+v",err)
+		log.Fatalf("Create etcd data source client failed with error: %+v", err)
 		return
 	}
 	defer dataSourceClient.Close()
-	client, _ := clientv3.New(clientv3.Config{Endpoints:[]string{"127.0.0.1:2379",}})
+	client, _ := clientv3.New(clientv3.Config{Endpoints: []string{"127.0.0.1:2379"}})
 	go OperationEtcd(client)
 	ch := make(chan struct{})
 

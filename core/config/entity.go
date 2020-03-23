@@ -10,7 +10,7 @@ type Entity struct {
 	Version string
 
 	Sentinel SentinelConfig
-	Props map[string]string
+	Props    map[string]string
 }
 
 // SentinelConfig represent the general configuration of Sentinel.
@@ -106,7 +106,7 @@ func checkValid(conf *SentinelConfig) error {
 	return nil
 }
 
-func SetConfig(key, value string){
+func SetConfig(key, value string) {
 	logger := logging.GetDefaultLogger()
 	if key == "" {
 		logger.Error("Can't set config with empty key")
@@ -115,9 +115,9 @@ func SetConfig(key, value string){
 	globalCfg.Props[key] = value
 }
 
-func GetConfig(key string)string{
+func GetConfig(key string) string {
 	logger := logging.GetDefaultLogger()
-	if key == ""{
+	if key == "" {
 		logger.Error("Can't get config with empty key")
 		return ""
 	}
