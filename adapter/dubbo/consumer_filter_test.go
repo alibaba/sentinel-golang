@@ -19,7 +19,7 @@ func TestConsumerFilter_Invoke(t *testing.T) {
 		"side=provider&timeout=3000&timestamp=1556509797245&bean.name=UserProvider")
 	assert.NoError(t, err)
 	mockInvoker := protocol.NewBaseInvoker(url)
-	mockInvocation := invocation.NewRPCInvocation("hello", []interface{}{"OK"}, make(map[string]string, 0))
+	mockInvocation := invocation.NewRPCInvocation("hello", []interface{}{"OK"}, make(map[string]string))
 	result := f.Invoke(context.TODO(), mockInvoker, mockInvocation)
 	assert.NoError(t, result.Error())
 	// todo more testing code

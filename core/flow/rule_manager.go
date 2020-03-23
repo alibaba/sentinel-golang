@@ -21,7 +21,7 @@ type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
-	tcMap        = make(TrafficControllerMap, 0)
+	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
 )
 
@@ -140,9 +140,9 @@ func getTrafficControllerListFor(name string) []*TrafficShapingController {
 // NotThreadSafe (should be guarded by the lock)
 func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 	if len(rules) == 0 {
-		return make(TrafficControllerMap, 0)
+		return make(TrafficControllerMap)
 	}
-	m := make(TrafficControllerMap, 0)
+	m := make(TrafficControllerMap)
 	for _, rule := range rules {
 		if err := IsValidFlowRule(rule); err != nil {
 			logger.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
