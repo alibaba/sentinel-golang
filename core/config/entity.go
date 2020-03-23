@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
@@ -10,7 +9,6 @@ type Entity struct {
 	Version string
 
 	Sentinel SentinelConfig
-	Props    map[string]string
 }
 
 // SentinelConfig represent the general configuration of Sentinel.
@@ -82,7 +80,6 @@ func NewDefaultConfig() *Entity {
 				},
 			},
 		},
-		Props: make(map[string]string),
 	}
 }
 
@@ -104,22 +101,4 @@ func checkValid(conf *SentinelConfig) error {
 		return errors.New("Bad system stat globalCfg: collectIntervalMs = 0")
 	}
 	return nil
-}
-
-func SetConfig(key, value string) {
-	logger := logging.GetDefaultLogger()
-	if key == "" {
-		logger.Error("Can't set config with empty key")
-		return
-	}
-	globalCfg.Props[key] = value
-}
-
-func GetConfig(key string) string {
-	logger := logging.GetDefaultLogger()
-	if key == "" {
-		logger.Error("Can't get config with empty key")
-		return ""
-	}
-	return globalCfg.Props[key]
 }

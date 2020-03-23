@@ -136,11 +136,6 @@ func TestFlowRulesUpdater(t *testing.T) {
 		err := FlowRulesUpdater(p)
 		assert.True(t, err == nil && len(flow.GetRules()) == 1)
 	})
-
-	t.Run("TestFlowRulesUpdater_Nil", func(t *testing.T) {
-		err := FlowRulesUpdater(nil)
-		assert.True(t, err == nil && len(flow.GetRules()) == 0, "Fail to test TestFlowRulesUpdater_Nil")
-	})
 }
 
 func TestSystemRulesJsonConvert(t *testing.T) {
@@ -250,10 +245,5 @@ func TestSystemRulesUpdater(t *testing.T) {
 		p = append(p, sr)
 		err := SystemRulesUpdater(p)
 		assert.True(t, err == nil && len(system.GetRules()) == 1)
-	})
-
-	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
-		err := SystemRulesUpdater(nil)
-		assert.True(t, err == nil && len(system.GetRules()) == 0, "Fail to test TestSystemRulesUpdater_Nil")
 	})
 }

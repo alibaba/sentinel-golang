@@ -9,14 +9,17 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
+	"sync"
 	"time"
 )
 
 var logger = logging.GetDefaultLogger()
 
+var etcdClient *clientv3.Client
+var lock *sync.Mutex = &sync.Mutex{}
+
 type Etcdv3DataSource struct {
 	datasource.Base
-	client      *clientv3.Client
 	propertyKey string
 	watchIndex  int64
 }
@@ -24,7 +27,7 @@ type Etcdv3DataSource struct {
 func (c *Etcdv3DataSource) ReadSource() ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	resp, err := c.client.Get(ctx, c.propertyKey)
+	resp, err := etcdClient.Get(ctx, c.propertyKey)
 	if err != nil {
 		return nil, errors.Errorf("The key[%s] is not existed in etcd.", c.propertyKey)
 	}
@@ -58,7 +61,7 @@ func (c *Etcdv3DataSource) doReadAndUpdate() error {
 
 func (c *Etcdv3DataSource) watch() {
 	for {
-		rch := c.client.Watch(context.Background(), c.propertyKey, clientv3.WithRev(int64(c.watchIndex)))
+		rch := etcdClient.Watch(context.Background(), c.propertyKey, clientv3.WithRev(int64(c.watchIndex)))
 		for wresp := range rch {
 			for _, ev := range wresp.Events {
 				if ev.Type == mvccpb.PUT {
@@ -84,26 +87,40 @@ func (c *Etcdv3DataSource) watch() {
 	}
 }
 
+func getClientInstance(cfg *clientv3.Config) error {
+	var err error
+	if etcdClient == nil {
+		lock.Lock()
+		defer lock.Unlock()
+		if etcdClient == nil {
+			etcdClient, err = clientv3.New(*cfg)
+			if err != nil {
+				return errors.Errorf("Create etcd client failed, err: %+v", err)
+			}
+		}
+	}
+	return nil
+}
+
 func (c *Etcdv3DataSource) Close() error {
-	if c.client != nil {
-		err := c.client.Close()
+	if etcdClient != nil {
+		err := etcdClient.Close()
 		return err
 	}
 	return nil
 }
+
 func NewEtcdv3DataSource(key string, cfg *clientv3.Config, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error) {
 	var err error
 	ds := &Etcdv3DataSource{
-		client:      nil,
 		propertyKey: "",
 	}
 	for _, h := range handlers {
 		ds.AddPropertyHandler(h)
 	}
 	ds.propertyKey = key
-	ds.client, err = clientv3.New(*cfg)
+	err = getClientInstance(cfg)
 	if err != nil {
-		logger.Errorf("Fail to create etcd client, err: %+v", err)
 		return nil, err
 	}
 	return ds, err

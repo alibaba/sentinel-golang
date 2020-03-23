@@ -88,7 +88,7 @@ func main() {
 	handler := datasource.NewDefaultPropertyHandler(datasource.FlowRulesJsonConverter, datasource.FlowRulesUpdater)
 	dataSourceClient, err = etcdv3.NewEtcdv3DataSource("flow", cfg, handler)
 	if err != nil {
-		log.Fatalf("Fail to create etcd client, err: %+v", err)
+		log.Fatalf("Fail to create etcdv3 datasource instance, err: %+v", err)
 		return
 	}
 	err = dataSourceClient.Initialize()
