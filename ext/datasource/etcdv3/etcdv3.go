@@ -106,6 +106,5 @@ func NewEtcdv3DataSource(key string, cfg *clientv3.Config, handlers ...datasourc
 		logger.Errorf("Fail to create etcd client, err: %+v", err)
 		return nil, err
 	}
-	err = ds.Initialize()
 	return ds, err
 }
