@@ -206,7 +206,7 @@ func TestSystemRulesUpdater(t *testing.T) {
 	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
 		system.ClearRules()
 		system.LoadRules([]*system.SystemRule{
-			&system.SystemRule{
+			{
 				ID:           0,
 				MetricType:   0,
 				TriggerCount: 0,

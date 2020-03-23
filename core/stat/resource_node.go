@@ -14,16 +14,16 @@ type ResourceNode struct {
 	resourceType base.ResourceType
 	// key is "sampleCount/intervalInMs"
 	readOnlyStats map[string]*sbase.SlidingWindowMetric
-	updateLock sync.RWMutex
+	updateLock    sync.RWMutex
 }
 
 // NewResourceNode creates a new resource node with given name and classification.
 func NewResourceNode(resourceName string, resourceType base.ResourceType) *ResourceNode {
 	return &ResourceNode{
 		// TODO: make this configurable
-		BaseStatNode: *NewBaseStatNode(base.DefaultSampleCount, base.DefaultIntervalMs),
-		resourceName: resourceName,
-		resourceType: resourceType,
+		BaseStatNode:  *NewBaseStatNode(base.DefaultSampleCount, base.DefaultIntervalMs),
+		resourceName:  resourceName,
+		resourceType:  resourceType,
 		readOnlyStats: make(map[string]*sbase.SlidingWindowMetric),
 	}
 }

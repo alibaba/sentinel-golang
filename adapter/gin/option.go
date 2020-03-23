@@ -5,10 +5,10 @@ import (
 )
 
 type (
-	Option func(*options)
+	Option  func(*options)
 	options struct {
 		resourceExtract func(*gin.Context) string
-		blockFallback func(*gin.Context)
+		blockFallback   func(*gin.Context)
 	}
 )
 

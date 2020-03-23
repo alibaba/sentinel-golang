@@ -11,6 +11,7 @@ env:
   - GO111MODULE=on
 
 script:
+  - diff -u <(echo -n) <(gofmt -d -s .)
   - go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
 
 after_success:
