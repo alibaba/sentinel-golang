@@ -22,7 +22,7 @@ const (
 	DefaultNamespace = "default"
 	// RecordLogFileName represents the default file name of the record log.
 	RecordLogFileName = "sentinel-record.log"
-	DefaultDirName   = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
+	DefaultDirName    = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
 )
 
 var (
@@ -44,7 +44,7 @@ func GetDefaultLogger() Logger {
 }
 
 func ResetDefaultLogger(log *log.Logger, namespace string) {
-	if log==nil {
+	if log == nil {
 		defaultLogger.Errorf("Fail to reset defaultLogger, log is nil.")
 		return
 	}

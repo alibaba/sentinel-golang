@@ -105,7 +105,7 @@ func Test_listMetricFiles(t *testing.T) {
 				baseDir:     "../../../tests/testdata/metric",
 				filePattern: "app1-metrics.log",
 			},
-			want:    []string{
+			want: []string{
 				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14",
 				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.12",
 				"../../../tests/testdata/metric/app1-metrics.log.2020-02-14.32",
