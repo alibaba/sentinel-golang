@@ -1,9 +1,9 @@
 package flow
 
 import (
-	"github.com/stretchr/testify/assert"
-
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
@@ -33,13 +33,19 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Contains(t, tcGenFuncMap, cb)
-	assert.NotZero(t, len(tcMap[resource]))
-	assert.Equal(t, tsc, tcMap[resource][0])
+
+	_, ok := tcGenFuncMap.Load(cb)
+	assert.True(t, ok)
+
+	v, _ := tcMap.Load(resource)
+	assert.NotZero(t, len(v))
+	assert.Equal(t, tsc, v[0])
 
 	err = RemoveTrafficShapingGenerator(cb)
 	assert.NoError(t, err)
-	assert.NotContains(t, tcGenFuncMap, cb)
+
+	_, ok = tcGenFuncMap.Load(cb)
+	assert.True(t, !ok)
 
 	_, _ = LoadRules([]*FlowRule{})
 }

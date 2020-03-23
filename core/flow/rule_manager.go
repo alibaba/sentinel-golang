@@ -3,42 +3,154 @@ package flow
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
-	"sync"
 )
 
-// const
 var (
 	logger = logging.GetDefaultLogger()
 )
 
+// SafeTrafficControllers represents the threadSafe map storage for TrafficShapingController.
+type SafeTrafficControllers struct {
+	controller map[string][]*TrafficShapingController
+	mux        sync.Mutex
+}
+
+// NewSafeTrafficControllers returns a new SafeTrafficControllers instance.
+func NewSafeTrafficControllers() *SafeTrafficControllers {
+	return &SafeTrafficControllers{
+		controller: make(map[string][]*TrafficShapingController),
+		mux:        sync.Mutex{},
+	}
+}
+
+// Store sets the value for a key.
+func (s *SafeTrafficControllers) Store(key string, value []*TrafficShapingController) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.controller[key] = value
+}
+
+// Delete deletes the value for a key
+func (s *SafeTrafficControllers) Delete(key string) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	delete(s.controller, key)
+}
+
+// Load returns the value stored in the map for a key.
+func (s *SafeTrafficControllers) Load(key string) ([]*TrafficShapingController, bool) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	v, ok := s.controller[key]
+	return v, ok
+}
+
+// Len returns the length of a map.
+func (s *SafeTrafficControllers) Len() int {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	return len(s.controller)
+}
+
+// GetRules returns flow rules from the TrafficController.
+func (s *SafeTrafficControllers) GetRules() []*FlowRule {
+	rules := make([]*FlowRule, 0)
+	if s.Len() == 0 {
+		return rules
+	}
+
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	for _, rs := range s.controller {
+		if len(rs) == 0 {
+			continue
+		}
+		for _, r := range rs {
+			if r != nil && r.Rule() != nil {
+				rules = append(rules, r.Rule())
+			}
+		}
+	}
+	return rules
+}
+
+// Reset reset the controller map.
+func (s *SafeTrafficControllers) Reset(m map[string][]*TrafficShapingController) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.controller = m
+}
+
 // TrafficControllerGenFunc represents the TrafficShapingController generator function of a specific control behavior.
 type TrafficControllerGenFunc func(*FlowRule) *TrafficShapingController
 
-// TrafficControllerMap represents the map storage for TrafficShapingController.
-type TrafficControllerMap map[string][]*TrafficShapingController
+// SafeTrafficGenFuncs represents the threadSafe map storage for TrafficControllerGenFunc.
+type SafeTrafficGenFuncs struct {
+	funcs map[ControlBehavior]TrafficControllerGenFunc
+	mux   sync.Mutex
+}
+
+// NewSafeTrafficGenFuncs returns a new SafeTrafficGenFuncs instance.
+func NewSafeTrafficGenFuncs() *SafeTrafficGenFuncs {
+	return &SafeTrafficGenFuncs{
+		funcs: make(map[ControlBehavior]TrafficControllerGenFunc),
+		mux:   sync.Mutex{},
+	}
+}
+
+// Store sets the value for a key.
+func (s *SafeTrafficGenFuncs) Store(key ControlBehavior, value TrafficControllerGenFunc) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.funcs[key] = value
+}
+
+// Delete deletes the value for a key
+func (s *SafeTrafficGenFuncs) Delete(key ControlBehavior) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	delete(s.funcs, key)
+}
+
+// Load returns the value stored in the map for a key
+func (s *SafeTrafficGenFuncs) Load(key ControlBehavior) (TrafficControllerGenFunc, bool) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	v, ok := s.funcs[key]
+	return v, ok
+}
 
 var (
-	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
-	tcMap        = make(TrafficControllerMap)
+	tcGenFuncMap = NewSafeTrafficGenFuncs()
+	tcMap        = NewSafeTrafficControllers()
 	tcMux        = new(sync.RWMutex)
 )
 
 func init() {
 	// Initialize the traffic shaping controller generator map for existing control behaviors.
-	tcGenFuncMap[Reject] = func(rule *FlowRule) *TrafficShapingController {
-		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule.MetricType), rule)
-	}
-	tcGenFuncMap[Throttling] = func(rule *FlowRule) *TrafficShapingController {
-		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
-	}
+	tcGenFuncMap.Store(Reject, func(rule *FlowRule) *TrafficShapingController {
+		return NewTrafficShapingController(
+			NewDefaultTrafficShapingCalculator(rule.Count),
+			NewDefaultTrafficShapingChecker(rule.MetricType), rule,
+		)
+	})
+
+	tcGenFuncMap.Store(Throttling, func(rule *FlowRule) *TrafficShapingController {
+		return NewTrafficShapingController(
+			NewDefaultTrafficShapingCalculator(rule.Count),
+			NewThrottlingChecker(rule.MaxQueueingTimeMs), rule,
+		)
+	})
 }
 
-func logRuleUpdate(m TrafficControllerMap) {
-	bs, err := json.Marshal(rulesFrom(m))
+func logRuleUpdate(m *SafeTrafficControllers) {
+	bs, err := json.Marshal(m.GetRules())
 	if err != nil {
-		logger.Info("[FlowRuleManager] Flow rules loaded")
+		logger.Warnf("[FlowRuleManager] Flow rules loaded error: %+v", err)
 	} else {
 		logger.Infof("[FlowRuleManager] Flow rules loaded: %s", bs)
 	}
@@ -55,12 +167,8 @@ func onRuleUpdate(rules []*FlowRule) (err error) {
 		}
 	}()
 
-	tcMux.Lock()
-	defer tcMux.Unlock()
-
 	m := buildFlowMap(rules)
-
-	tcMap = m
+	tcMap.Reset(m.controller)
 	logRuleUpdate(m)
 
 	return nil
@@ -73,34 +181,9 @@ func LoadRules(rules []*FlowRule) (bool, error) {
 	return true, err
 }
 
-func GetRules() []*FlowRule {
-	tcMux.RLock()
-	defer tcMux.RUnlock()
-
-	return rulesFrom(tcMap)
-}
-
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
-}
-
-func rulesFrom(m TrafficControllerMap) []*FlowRule {
-	rules := make([]*FlowRule, 0)
-	if len(m) == 0 {
-		return rules
-	}
-	for _, rs := range m {
-		if len(rs) == 0 {
-			continue
-		}
-		for _, r := range rs {
-			if r != nil && r.Rule() != nil {
-				rules = append(rules, r.Rule())
-			}
-		}
-	}
-	return rules
 }
 
 // SetTrafficShapingGenerator sets the traffic controller generator for the given control behavior.
@@ -112,10 +195,7 @@ func SetTrafficShapingGenerator(cb ControlBehavior, generator TrafficControllerG
 	if cb >= Reject && cb <= WarmUpThrottling {
 		return errors.New("not allowed to replace the generator for default control behaviors")
 	}
-	tcMux.Lock()
-	defer tcMux.Unlock()
-
-	tcGenFuncMap[cb] = generator
+	tcGenFuncMap.Store(cb, generator)
 	return nil
 }
 
@@ -123,26 +203,21 @@ func RemoveTrafficShapingGenerator(cb ControlBehavior) error {
 	if cb >= Reject && cb <= WarmUpThrottling {
 		return errors.New("not allowed to replace the generator for default control behaviors")
 	}
-	tcMux.Lock()
-	defer tcMux.Unlock()
-
-	delete(tcGenFuncMap, cb)
+	tcGenFuncMap.Delete(cb)
 	return nil
 }
 
 func getTrafficControllerListFor(name string) []*TrafficShapingController {
-	tcMux.RLock()
-	defer tcMux.RUnlock()
-
-	return tcMap[name]
+	v, _ := tcMap.Load(name)
+	return v
 }
 
-// NotThreadSafe (should be guarded by the lock)
-func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
+func buildFlowMap(rules []*FlowRule) *SafeTrafficControllers {
+	m := NewSafeTrafficControllers()
 	if len(rules) == 0 {
-		return make(TrafficControllerMap)
+		return m
 	}
-	m := make(TrafficControllerMap)
+
 	for _, rule := range rules {
 		if err := IsValidFlowRule(rule); err != nil {
 			logger.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
@@ -151,7 +226,7 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 		if rule.LimitOrigin == "" {
 			rule.LimitOrigin = LimitOriginDefault
 		}
-		generator, supported := tcGenFuncMap[rule.ControlBehavior]
+		generator, supported := tcGenFuncMap.Load(rule.ControlBehavior)
 		if !supported {
 			logger.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
 			continue
@@ -162,11 +237,11 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 			continue
 		}
 
-		rulesOfRes, exists := m[rule.Resource]
+		rulesOfRes, exists := m.Load(rule.Resource)
 		if !exists {
-			m[rule.Resource] = []*TrafficShapingController{tsc}
+			m.Store(rule.Resource, []*TrafficShapingController{tsc})
 		} else {
-			m[rule.Resource] = append(rulesOfRes, tsc)
+			m.Store(rule.Resource, append(rulesOfRes, tsc))
 		}
 	}
 	return m
@@ -196,18 +271,11 @@ func IsValidFlowRule(rule *FlowRule) error {
 	if rule.RelationStrategy == AssociatedResource && rule.RefResource == "" {
 		return errors.New("Bad flow rule: invalid control behavior")
 	}
-	if err := checkClusterField(rule); err != nil {
-		return err
-	}
-
-	return checkControlBehaviorField(rule)
-}
-
-func checkClusterField(rule *FlowRule) error {
 	if rule.ClusterMode && rule.ID <= 0 {
 		return errors.New("invalid cluster rule ID")
 	}
-	return nil
+
+	return checkControlBehaviorField(rule)
 }
 
 func checkControlBehaviorField(rule *FlowRule) error {
@@ -216,13 +284,10 @@ func checkControlBehaviorField(rule *FlowRule) error {
 		if rule.WarmUpPeriodSec <= 0 {
 			return errors.New("invalid warmUpPeriodSec")
 		}
-		return nil
 	case WarmUpThrottling:
 		if rule.WarmUpPeriodSec <= 0 {
 			return errors.New("invalid warmUpPeriodSec")
 		}
-		return nil
-	default:
 	}
 	return nil
 }
