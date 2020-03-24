@@ -86,15 +86,18 @@ func main() {
 		DialTimeout: time.Second,
 	}
 	handler := datasource.NewDefaultPropertyHandler(datasource.FlowRulesJsonConverter, datasource.FlowRulesUpdater)
-	dataSourceClient, err = etcdv3.NewEtcdv3DataSource("flow", cfg, handler)
+	g, err := etcdv3.NewEtcdv3DatasourceGenerator(cfg)
 	if err != nil {
-		log.Fatalf("Fail to create etcdv3 datasource instance, err: %+v", err)
-		return
+		log.Fatalf("Fail to create etcdv3 datasource generator, err: %+v", err)
+	}
+
+	dataSourceClient, err = g.Generate("flow", handler)
+	if err != nil {
+		log.Fatalf("Fail to instance etcd datasource client, err: %+v", err)
 	}
 	err = dataSourceClient.Initialize()
 	if err != nil {
 		log.Fatalf("Load initialization from etcd failed, err: %+v", err)
-		return
 	}
 	defer dataSourceClient.Close()
 	client, _ := clientv3.New(clientv3.Config{Endpoints: []string{"127.0.0.1:2379"}})

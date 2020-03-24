@@ -6,6 +6,7 @@ import (
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
@@ -14,24 +15,30 @@ import (
 )
 
 var logger = logging.GetDefaultLogger()
+var once sync.Once
 
-var etcdClient *clientv3.Client
-var lock *sync.Mutex = &sync.Mutex{}
+type DatasourceGenerator struct {
+	etcdv3Client *clientv3.Client
+}
 
 type Etcdv3DataSource struct {
 	datasource.Base
-	propertyKey string
-	watchIndex  int64
+	propertyKey         string
+	lastUpdatedRevision int64
+	client              *clientv3.Client
 }
 
 func (c *Etcdv3DataSource) ReadSource() ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	resp, err := etcdClient.Get(ctx, c.propertyKey)
+	resp, err := c.client.Get(ctx, c.propertyKey)
 	if err != nil {
+		return nil, err
+	}
+	if resp.Count == 0 {
 		return nil, errors.Errorf("The key[%s] is not existed in etcd.", c.propertyKey)
 	}
-	c.watchIndex = resp.Header.Revision
+	c.lastUpdatedRevision = resp.Header.Revision
 	return resp.Kvs[0].Value, nil
 }
 
@@ -61,8 +68,17 @@ func (c *Etcdv3DataSource) doReadAndUpdate() error {
 
 func (c *Etcdv3DataSource) watch() {
 	for {
-		rch := etcdClient.Watch(context.Background(), c.propertyKey, clientv3.WithRev(int64(c.watchIndex)))
+		rch := c.client.Watch(context.Background(), c.propertyKey, clientv3.WithRev(int64(c.lastUpdatedRevision)))
 		for wresp := range rch {
+			err := wresp.Err()
+			if err != nil {
+				logger.Errorf("Fail to watch key[%s], err: %+v", c.propertyKey, err)
+				if err == rpctypes.ErrCompacted {
+					logger.Infof("Update lastUpdatedRevision:%v to CompactRevision:%v", c.lastUpdatedRevision, wresp.CompactRevision)
+					c.lastUpdatedRevision = wresp.CompactRevision
+				}
+				continue
+			}
 			for _, ev := range wresp.Events {
 				if ev.Type == mvccpb.PUT {
 					err := c.doReadAndUpdate()
@@ -87,41 +103,41 @@ func (c *Etcdv3DataSource) watch() {
 	}
 }
 
-func getClientInstance(cfg *clientv3.Config) error {
-	var err error
-	if etcdClient == nil {
-		lock.Lock()
-		defer lock.Unlock()
-		if etcdClient == nil {
-			etcdClient, err = clientv3.New(*cfg)
-			if err != nil {
-				return errors.Errorf("Create etcd client failed, err: %+v", err)
-			}
-		}
-	}
-	return nil
-}
-
 func (c *Etcdv3DataSource) Close() error {
-	if etcdClient != nil {
-		err := etcdClient.Close()
+	if c.client != nil {
+		err := c.client.Close()
 		return err
 	}
 	return nil
 }
 
-func NewEtcdv3DataSource(key string, cfg *clientv3.Config, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error) {
+func NewEtcdv3DatasourceGenerator(config *clientv3.Config) (*DatasourceGenerator, error) {
+	var generator DatasourceGenerator
 	var err error
+	var client *clientv3.Client
+	once.Do(func() {
+		client, err = clientv3.New(*config)
+		if err != nil {
+			logger.Errorf("Fail to instance etcdv3 client, err: %+v", err)
+		} else {
+			generator.etcdv3Client = client
+		}
+	})
+	return &generator, err
+}
+
+func (g *DatasourceGenerator) Generate(key string, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error) {
+	var err error
+	if g.etcdv3Client == nil {
+		err = errors.New("The etcdv3 client is nil in DatasourceGenerator")
+		return nil, err
+	}
 	ds := &Etcdv3DataSource{
-		propertyKey: "",
+		propertyKey: key,
+		client:      g.etcdv3Client,
 	}
 	for _, h := range handlers {
 		ds.AddPropertyHandler(h)
-	}
-	ds.propertyKey = key
-	err = getClientInstance(cfg)
-	if err != nil {
-		return nil, err
 	}
 	return ds, err
 }
