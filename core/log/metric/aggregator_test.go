@@ -25,8 +25,8 @@ func Test_aggregateIntoMap(t *testing.T) {
 		{
 			name: "Test_aggregateIntoMap",
 			args: args{
-				mm:      make(metricTimeMap, 0),
-				metrics: make(map[uint64]*base.MetricItem, 0),
+				mm:      make(metricTimeMap),
+				metrics: make(map[uint64]*base.MetricItem),
 				node:    stat.NewResourceNode(defaultTestResourceName, base.ResTypeCommon),
 			},
 		},

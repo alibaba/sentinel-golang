@@ -14,7 +14,7 @@ type RuleMap map[MetricType][]*SystemRule
 var (
 	logger = logging.GetDefaultLogger()
 
-	ruleMap    = make(RuleMap, 0)
+	ruleMap    = make(RuleMap)
 	ruleMapMux = new(sync.RWMutex)
 )
 
@@ -63,7 +63,7 @@ func onRuleUpdate(r RuleMap) error {
 }
 
 func buildRuleMap(rules []*SystemRule) RuleMap {
-	m := make(RuleMap, 0)
+	m := make(RuleMap)
 
 	if len(rules) == 0 {
 		return m

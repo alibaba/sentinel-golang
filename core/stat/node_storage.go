@@ -13,7 +13,7 @@ var (
 
 	inboundNode = NewResourceNode(base.TotalInBoundResourceName, base.ResTypeCommon)
 
-	resNodeMap = make(ResourceNodeMap, 0)
+	resNodeMap = make(ResourceNodeMap)
 	rnsMux     = new(sync.RWMutex)
 )
 
@@ -65,5 +65,5 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 func ResetResourceNodeMap() {
 	rnsMux.Lock()
 	defer rnsMux.Unlock()
-	resNodeMap = make(ResourceNodeMap, 0)
+	resNodeMap = make(ResourceNodeMap)
 }
