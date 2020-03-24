@@ -13,7 +13,7 @@ func TestGetRules(t *testing.T) {
 	})
 
 	t.Run("GetUpdatedRules", func(t *testing.T) {
-		defer func() { ruleMap = make(RuleMap, 0) }()
+		defer func() { ruleMap = make(RuleMap) }()
 
 		r := map[MetricType][]*SystemRule{
 			InboundQPS:  {&SystemRule{MetricType: InboundQPS, TriggerCount: 1}},
@@ -39,7 +39,7 @@ func TestLoadRules(t *testing.T) {
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
-		defer func() { ruleMap = make(RuleMap, 0) }()
+		defer func() { ruleMap = make(RuleMap) }()
 		sRule := []*SystemRule{
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: Concurrency, TriggerCount: 2},
@@ -78,7 +78,7 @@ func TestOnRuleUpdate(t *testing.T) {
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
-		defer func() { ruleMap = make(RuleMap, 0) }()
+		defer func() { ruleMap = make(RuleMap) }()
 		rMap := RuleMap{
 			InboundQPS: []*SystemRule{
 				{MetricType: InboundQPS, TriggerCount: 1},

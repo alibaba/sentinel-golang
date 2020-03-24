@@ -89,7 +89,7 @@ func doAggregate() {
 	if int64(curTime) <= lastFetchTime {
 		return
 	}
-	maps := make(metricTimeMap, 0)
+	maps := make(metricTimeMap)
 	cns := stat.ResourceNodeList()
 	for _, node := range cns {
 		metrics := currentMetricItems(node, curTime)
