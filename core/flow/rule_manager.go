@@ -186,6 +186,10 @@ func ClearRules() error {
 	return err
 }
 
+func GetRules() []*FlowRule {
+	return tcMap.GetRules()
+}
+
 // SetTrafficShapingGenerator sets the traffic controller generator for the given control behavior.
 // Note that modifying the generator of default control behaviors is not allowed.
 func SetTrafficShapingGenerator(cb ControlBehavior, generator TrafficControllerGenFunc) error {
