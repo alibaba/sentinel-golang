@@ -117,3 +117,35 @@ func TestThrottlingChecker_DoCheckQueueingParallel(t *testing.T) {
 	// Non-strict mode may not be strictly accurate, so here we tolerate a delta.
 	assert.InEpsilon(t, threshold/(float64(intervalMs)/1000.0), waitCount, 1)
 }
+
+func TestThrottlingChecker_DoCheckParallelPass(t *testing.T) {
+	intervalMs := 10000
+	threshold := 50.0
+	timeoutMs := 0
+
+	tc := NewThrottlingChecker(nil, uint32(timeoutMs), uint32(intervalMs))
+
+	wg := &sync.WaitGroup{}
+	beginWg := &sync.WaitGroup{}
+	gc := 100000
+	wg.Add(gc)
+	beginWg.Add(gc)
+
+	var passCount int32 = 0
+	for i := 0; i < gc; i++ {
+		go func() {
+			// Preheating
+			beginWg.Done()
+			beginWg.Wait()
+
+			defer wg.Done()
+			res := tc.DoCheck(nil, 1, threshold)
+			if res == nil {
+				atomic.AddInt32(&passCount, 1)
+				return
+			}
+		}()
+	}
+	wg.Wait()
+	assert.Equal(t, int32(1), passCount)
+}
