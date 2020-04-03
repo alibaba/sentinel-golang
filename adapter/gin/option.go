@@ -21,14 +21,14 @@ func evaluateOptions(opts []Option) *options {
 	return optCopy
 }
 
-// WithResourceExtractor set resourceExtractor
+// WithResourceExtractor sets the resource extractor of the web requests.
 func WithResourceExtractor(fn func(*gin.Context) string) Option {
 	return func(opts *options) {
 		opts.resourceExtract = fn
 	}
 }
 
-// WithBlockFallback set blockFallback
+// WithBlockFallback sets the fallback handler when requests are blocked.
 func WithBlockFallback(fn func(ctx *gin.Context)) Option {
 	return func(opts *options) {
 		opts.blockFallback = fn

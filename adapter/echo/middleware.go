@@ -8,12 +8,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// SentinelMiddleware returns new echo.HandlerFunc
-// Default resource name is {method}:{path}, such as "GET:/api/:id"
-// Default block fallback is returning 429 code
-// Define your own behavior by setting options
+// SentinelMiddleware returns new echo.HandlerFunc.
+// Default resource name pattern is {httpMethod}:{apiPath}, such as "GET:/api/:id".
+// Default block fallback is to return 429 (Too Many Requests) response.
+//
+// You may customize your own resource extractor and block handler by setting options.
 func SentinelMiddleware(opts ...Option) echo.MiddlewareFunc {
-
 	options := evaluateOptions(opts)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -21,13 +21,12 @@ func SentinelMiddleware(opts ...Option) echo.MiddlewareFunc {
 			if options.resourceExtract != nil {
 				resourceName = options.resourceExtract(c)
 			}
-			entry, errEntry := sentinel.Entry(
+			entry, blockErr := sentinel.Entry(
 				resourceName,
 				sentinel.WithResourceType(base.ResTypeWeb),
 				sentinel.WithTrafficType(base.Inbound),
 			)
-
-			if errEntry != nil {
+			if blockErr != nil {
 				if options.blockFallback != nil {
 					err = options.blockFallback(c)
 				} else {
@@ -37,6 +36,7 @@ func SentinelMiddleware(opts ...Option) echo.MiddlewareFunc {
 				return err
 			}
 			defer entry.Exit()
+
 			err = next(c)
 			return err
 		}
