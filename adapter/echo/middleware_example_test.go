@@ -20,9 +20,9 @@ func Example() {
 			}),
 			// customize block fallback if required
 			// abort with status 429 by default
-			WithBlockFallback(func(ctx echo.Context) error{
+			WithBlockFallback(func(ctx echo.Context) error {
 				return ctx.JSON(400, map[string]interface{}{
-					"err": "too many request; the quota used up",
+					"err":  "too many requests; the quota used up",
 					"code": 10222,
 				})
 			}),

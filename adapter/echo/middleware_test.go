@@ -40,12 +40,12 @@ func initSentinel(t *testing.T) {
 
 func TestSentinelMiddleware(t *testing.T) {
 	type args struct {
-		opts []Option
-		method string
-		path string
+		opts    []Option
+		method  string
+		path    string
 		reqPath string
 		handler func(ctx echo.Context) error
-		body io.Reader
+		body    io.Reader
 	}
 	type want struct {
 		code int
@@ -59,17 +59,17 @@ func TestSentinelMiddleware(t *testing.T) {
 			{
 				name: "default get",
 				args: args{
-					opts: []Option{},
-					method: http.MethodGet,
-					path: "/ping",
-					reqPath:"/ping",
+					opts:    []Option{},
+					method:  http.MethodGet,
+					path:    "/ping",
+					reqPath: "/ping",
 					handler: echo.HandlerFunc(func(ctx echo.Context) error {
 						return ctx.String(http.StatusOK, "ping")
 					}),
 					body: nil,
 				},
 				want: want{
-					code:http.StatusOK,
+					code: http.StatusOK,
 				},
 			},
 			{
@@ -80,16 +80,16 @@ func TestSentinelMiddleware(t *testing.T) {
 							return ctx.Path()
 						}),
 					},
-					method: http.MethodGet,
-					path: "/api/:uid",
-					reqPath:"/api/123",
+					method:  http.MethodGet,
+					path:    "/api/:uid",
+					reqPath: "/api/123",
 					handler: func(ctx echo.Context) error {
 						return ctx.JSON(http.StatusOK, "ping")
 					},
 					body: nil,
 				},
 				want: want{
-					code:http.StatusTooManyRequests,
+					code: http.StatusTooManyRequests,
 				},
 			},
 			{
@@ -100,16 +100,16 @@ func TestSentinelMiddleware(t *testing.T) {
 							return ctx.JSON(http.StatusBadRequest, "block")
 						}),
 					},
-					method: http.MethodGet,
-					path: "/ping",
-					reqPath:"/ping",
+					method:  http.MethodGet,
+					path:    "/ping",
+					reqPath: "/ping",
 					handler: func(ctx echo.Context) error {
 						return ctx.JSON(http.StatusOK, "ping")
 					},
 					body: nil,
 				},
 				want: want{
-					code:http.StatusBadRequest,
+					code: http.StatusBadRequest,
 				},
 			},
 		}
