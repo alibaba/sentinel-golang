@@ -2,8 +2,7 @@ package dubbo
 
 import (
 	"testing"
-)
-import (
+
 	"github.com/apache/dubbo-go/common"
 	"github.com/apache/dubbo-go/protocol"
 	"github.com/apache/dubbo-go/protocol/invocation"
@@ -20,6 +19,6 @@ func TestGetResourceName(t *testing.T) {
 	assert.NoError(t, err)
 	mockInvoker := protocol.NewBaseInvoker(url)
 	methodResourceName := getResourceName(mockInvoker,
-		invocation.NewRPCInvocation("hello", []interface{}{"OK"}, make(map[string]string, 0)), "prefix_")
+		invocation.NewRPCInvocation("hello", []interface{}{"OK"}, make(map[string]string)), "prefix_")
 	assert.Equal(t, "prefix_com.ikurento.user.UserProvider:myGroup:1.0.0:hello()", methodResourceName)
 }

@@ -3,9 +3,8 @@ package flow
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 	"sync"
 )
 
@@ -22,18 +21,11 @@ type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
-	tcMap        = make(TrafficControllerMap, 0)
+	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
-
-	ruleChan     = make(chan []*FlowRule, 10)
-	propertyInit sync.Once
 )
 
 func init() {
-	propertyInit.Do(func() {
-		initRuleRecvTask()
-	})
-
 	// Initialize the traffic shaping controller generator map for existing control behaviors.
 	tcGenFuncMap[Reject] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule.MetricType), rule)
@@ -41,20 +33,6 @@ func init() {
 	tcGenFuncMap[Throttling] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
-}
-
-func initRuleRecvTask() {
-	go util.RunWithRecover(func() {
-		for {
-			select {
-			case rules := <-ruleChan:
-				err := onRuleUpdate(rules)
-				if err != nil {
-					logger.Errorf("Failed to update flow rules: %+v", err)
-				}
-			}
-		}
-	}, logger)
 }
 
 func logRuleUpdate(m TrafficControllerMap) {
@@ -100,6 +78,11 @@ func GetRules() []*FlowRule {
 	defer tcMux.RUnlock()
 
 	return rulesFrom(tcMap)
+}
+
+func ClearRules() error {
+	_, err := LoadRules(nil)
+	return err
 }
 
 func rulesFrom(m TrafficControllerMap) []*FlowRule {
@@ -157,9 +140,9 @@ func getTrafficControllerListFor(name string) []*TrafficShapingController {
 // NotThreadSafe (should be guarded by the lock)
 func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 	if len(rules) == 0 {
-		return make(TrafficControllerMap, 0)
+		return make(TrafficControllerMap)
 	}
-	m := make(TrafficControllerMap, 0)
+	m := make(TrafficControllerMap)
 	for _, rule := range rules {
 		if err := IsValidFlowRule(rule); err != nil {
 			logger.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())

@@ -1,0 +1,74 @@
+package datasource
+
+import (
+	"encoding/json"
+	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"testing"
+)
+
+func MockSystemRulesConverter(src []byte) (interface{}, error) {
+	ret := make([]system.SystemRule, 0)
+	_ = json.Unmarshal(src, &ret)
+	return ret, nil
+}
+func MockSystemRulesConverterReturnNil(src []byte) (interface{}, error) {
+	return nil, nil
+}
+func MockSystemRulesUpdaterReturnNil(data interface{}) error {
+	return nil
+}
+func MockSystemRulesUpdaterReturnError(data interface{}) error {
+	return errors.New("MockSystemRulesUpdaterReturnError")
+}
+
+func TestNewSinglePropertyHandler(t *testing.T) {
+	got := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
+	assert.Truef(t, got.lastUpdateProperty == nil, "lastUpdateProperty:%d, expect nil", got.lastUpdateProperty)
+}
+
+func TestSinglePropertyHandler_Handle(t *testing.T) {
+	h1 := NewDefaultPropertyHandler(MockSystemRulesConverterReturnNil, MockSystemRulesUpdaterReturnNil)
+	r1 := h1.Handle(nil)
+	assert.True(t, r1 == nil, "Fail to execute Handle func.")
+
+	h2 := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnError)
+	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
+	if err != nil {
+		t.Errorf("Fail to get source file, err:%+v", err)
+	}
+	r2 := h2.Handle(src)
+	assert.True(t, r2 != nil && r2.Error() == "MockSystemRulesUpdaterReturnError", "Fail to execute Handle func.")
+}
+
+func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
+	h := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
+	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
+	if err != nil {
+		t.Errorf("Fail to get source file, err:%+v", err)
+	}
+	ret1 := make([]system.SystemRule, 0)
+	_ = json.Unmarshal(src, &ret1)
+	isConsistent := h.isPropertyConsistent(ret1)
+	assert.True(t, isConsistent == false, "Fail to execute isPropertyConsistent.")
+
+	src2, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule2.json")
+	if err != nil {
+		t.Errorf("Fail to get source file, err:%+v", err)
+	}
+	ret2 := make([]system.SystemRule, 0)
+	_ = json.Unmarshal(src2, &ret2)
+	isConsistent = h.isPropertyConsistent(ret2)
+	assert.True(t, isConsistent == true, "Fail to execute isPropertyConsistent.")
+
+	src3, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule3.json")
+	if err != nil {
+		t.Errorf("Fail to get source file, err:%+v", err)
+	}
+	ret3 := make([]system.SystemRule, 0)
+	_ = json.Unmarshal(src3, &ret3)
+	isConsistent = h.isPropertyConsistent(ret3)
+	assert.True(t, isConsistent == false, "Fail to execute isPropertyConsistent.")
+}

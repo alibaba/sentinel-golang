@@ -2,8 +2,8 @@ package metric
 
 import (
 	"bufio"
-	"github.com/pkg/errors"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 )
@@ -115,7 +115,6 @@ func (r *defaultMetricLogReader) readMetricsInOneFile(filename string, offset ui
 		items = append(items, item)
 		lastSec = tsSec
 	}
-	return items, true, err
 }
 
 func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, offset uint64, beginMs uint64, endMs uint64, resource string, prevSize uint32) ([]*base.MetricItem, bool, error) {
@@ -157,7 +156,6 @@ func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, 
 			return items, false, nil
 		}
 	}
-	return items, true, nil
 }
 
 func readLine(bufReader *bufio.Reader) (string, error) {
