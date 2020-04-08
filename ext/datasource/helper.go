@@ -15,7 +15,7 @@ func FlowRulesJsonConverter(src []byte) (interface{}, error) {
 	ret := make([]*flow.FlowRule, 0)
 	err := json.Unmarshal(src, &ret)
 	if err != nil {
-		return nil, DSError{
+		return nil, Error{
 			code: ConvertSourceError,
 			desc: fmt.Sprintf("Fail to unmarshal source: %s to []flow.FlowRule, err: %+v", src, err),
 		}
@@ -37,7 +37,7 @@ func FlowRulesUpdater(data interface{}) error {
 	} else if val, ok := data.([]*flow.FlowRule); ok {
 		rules = val
 	} else {
-		return DSError{
+		return Error{
 			code: UpdatePropertyError,
 			desc: fmt.Sprintf("Fail to type assert data to []flow.FlowRule or []*flow.FlowRule, in fact, data: %+v", data),
 		}
@@ -46,7 +46,7 @@ func FlowRulesUpdater(data interface{}) error {
 	if succ && err == nil {
 		return nil
 	}
-	return DSError{
+	return Error{
 		code: UpdatePropertyError,
 		desc: fmt.Sprintf("%+v", err),
 	}
@@ -64,7 +64,7 @@ func SystemRulesJsonConverter(src []byte) (interface{}, error) {
 	ret := make([]*system.SystemRule, 0)
 	err := json.Unmarshal(src, &ret)
 	if err != nil {
-		return nil, DSError{
+		return nil, Error{
 			code: ConvertSourceError,
 			desc: fmt.Sprintf("Fail to unmarshal source: %s to []system.SystemRule, err: %+v", src, err),
 		}
@@ -86,7 +86,7 @@ func SystemRulesUpdater(data interface{}) error {
 	} else if val, ok := data.([]*system.SystemRule); ok {
 		rules = val
 	} else {
-		return DSError{
+		return Error{
 			code: UpdatePropertyError,
 			desc: fmt.Sprintf("Fail to type assert data to []system.SystemRule or []*system.SystemRule, in fact, data: %+v", data),
 		}
@@ -95,7 +95,7 @@ func SystemRulesUpdater(data interface{}) error {
 	if succ && err == nil {
 		return nil
 	}
-	return DSError{
+	return Error{
 		code: UpdatePropertyError,
 		desc: fmt.Sprintf("%+v", err),
 	}

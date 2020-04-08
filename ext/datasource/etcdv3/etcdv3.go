@@ -2,7 +2,6 @@ package etcdv3
 
 import (
 	"context"
-	"fmt"
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
@@ -57,10 +56,10 @@ func (s *Etcdv3DataSource) ReadSource() ([]byte, error) {
 	defer cancel()
 	resp, err := s.client.Get(ctx, s.propertyKey)
 	if err != nil {
-		return nil, datasource.NewDSError(datasource.EtcdGetValueError, fmt.Sprintf("%+v", err))
+		return nil, errors.Errorf("Fail to get value for property key[%s]", s.propertyKey)
 	}
 	if resp.Count == 0 {
-		return nil, datasource.NewDSError(datasource.EtcdKeyNotExistedError, fmt.Sprintf("The key[%s] is not existed in etcd server.", s.propertyKey))
+		return nil, errors.Errorf("The key[%s] is not existed in etcd server.", s.propertyKey)
 	}
 	s.lastUpdatedRevision = resp.Header.GetRevision()
 	logger.Infof("Get the newest data for key:%s, revision: %d, value: %s", s.propertyKey, resp.Header.GetRevision(), resp.Kvs[0].Value)

@@ -7,27 +7,24 @@ const (
 	ConvertSourceError  = 1
 	UpdatePropertyError = 2
 	HandleSourceError   = 3
-
-	EtcdKeyNotExistedError = 4
-	EtcdGetValueError      = 5
 )
 
-func NewDSError(code Code, desc string) DSError {
-	return DSError{
+func NewError(code Code, desc string) Error {
+	return Error{
 		code: code,
 		desc: desc,
 	}
 }
 
-type DSError struct {
+type Error struct {
 	code Code
 	desc string
 }
 
-func (e DSError) Code() Code {
+func (e Error) Code() Code {
 	return e.code
 }
 
-func (e DSError) Error() string {
+func (e Error) Error() string {
 	return e.desc
 }
