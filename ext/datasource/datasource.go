@@ -1,6 +1,8 @@
 package datasource
 
 import (
+	"fmt"
+	"go.uber.org/multierr"
 	"io"
 )
 
@@ -27,8 +29,17 @@ type Base struct {
 	handlers []PropertyHandler
 }
 
-func (b *Base) Handlers() []PropertyHandler {
-	return b.handlers
+func (b *Base) Handle(src []byte) (err error) {
+	for _, h := range b.handlers {
+		e := h.Handle(src)
+		if e != nil {
+			err = multierr.Append(err, e)
+		}
+	}
+	if err == nil {
+		return nil
+	}
+	return Error{code: HandleSourceError, desc: fmt.Sprintf("%+v", err)}
 }
 
 // return idx if existed, else return -1
