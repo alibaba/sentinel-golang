@@ -6,7 +6,6 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
-	"go.uber.org/multierr"
 	"io/ioutil"
 	"os"
 )
@@ -82,13 +81,7 @@ func (s *RefreshableFileDataSource) Initialize() error {
 
 				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
 					logger.Errorf("The file source[%s] was removed or renamed.", s.sourceFilePath)
-					var updateErr error
-					for _, h := range s.Handlers() {
-						e := h.Handle(nil)
-						if e != nil {
-							updateErr = multierr.Append(updateErr, e)
-						}
-					}
+					updateErr := s.Handle(nil)
 					if updateErr != nil {
 						logger.Errorf("Fail to update nil property, err: %+v.", updateErr)
 					}
@@ -109,13 +102,7 @@ func (s *RefreshableFileDataSource) doReadAndUpdate() (err error) {
 		err = errors.Errorf("Fail to read source, err: %+v", err)
 		return err
 	}
-	for _, h := range s.Handlers() {
-		e := h.Handle(src)
-		if e != nil {
-			err = multierr.Append(err, e)
-		}
-	}
-	return err
+	return s.Handle(src)
 }
 
 func (s *RefreshableFileDataSource) Close() error {
