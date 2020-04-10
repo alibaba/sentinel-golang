@@ -21,7 +21,7 @@ import (
 )
 
 func TestMetricItemFromFatStringLegal(t *testing.T) {
-	line1 := "1564382218000|2019-07-29 14:36:58|/foo/*|4|9|3|0|25|0|2|1"
+	line1 := "1564382218000|2019-07-29 14:36:58|/foo/*|4|9|3|0|25|0|2|1|10"
 	item1, err := MetricItemFromFatString(line1)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(1564382218000), item1.Timestamp)
@@ -32,6 +32,7 @@ func TestMetricItemFromFatStringLegal(t *testing.T) {
 	assert.Equal(t, uint64(25), item1.AvgRt)
 	assert.Equal(t, "/foo/*", item1.Resource)
 	assert.Equal(t, int32(1), item1.Classification)
+	assert.Equal(t, uint64(10), item1.MonitorBlockQps)
 }
 
 func TestMetricItemFromFatStringIllegal(t *testing.T) {

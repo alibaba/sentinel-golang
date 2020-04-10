@@ -27,7 +27,7 @@ func Test_metricBucket_MemSize(t *testing.T) {
 	mb := NewMetricBucket()
 	t.Log("mb:", mb)
 	size := unsafe.Sizeof(*mb)
-	if size != 48 {
+	if size != 64 {
 		t.Error("unexpect memory size of MetricBucket")
 	}
 }
@@ -134,4 +134,15 @@ func Test_Reset(t *testing.T) {
 	mb.reset()
 	rt := mb.MinRt()
 	assert.True(t, rt == base.DefaultStatisticMaxRt)
+}
+
+func TestMetricBucket_MaxConcurrency(t *testing.T) {
+	mb := NewMetricBucket()
+	mb.UpdateMaxConcurrency(10)
+	assert.Equal(t, int64(10), mb.maxConcurrency)
+	mb.UpdateMaxConcurrency(9)
+	assert.Equal(t, int64(10), mb.maxConcurrency)
+	mb.UpdateMaxConcurrency(11)
+	assert.Equal(t, int64(11), mb.maxConcurrency)
+
 }
