@@ -15,6 +15,7 @@
 package base
 
 import (
+	"fmt"
 	"reflect"
 	"sync/atomic"
 
@@ -109,6 +110,29 @@ func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent,
 		return
 	}
 	b.Add(event, count)
+}
+
+func (bla *BucketLeapArray) UpdateMaxConcurrency(count int64) {
+	curBucket, err := bla.data.CurrentBucket(bla)
+	if err != nil {
+		logging.Error(err, fmt.Sprintf("Failed to get current bucket, current ts=%d, err: %+v.", errors.WithStack(err)))
+		return
+	}
+	if curBucket == nil {
+		logging.Error(errors.New("Failed to add count: current bucket is nil"), "Failed to add count: current bucket is nil")
+		return
+	}
+	mb := curBucket.Value.Load()
+	if mb == nil {
+		logging.Error(errors.New("Failed to add count: current bucket atomic value is nil"), "Failed to add count: current bucket atomic value is nil")
+		return
+	}
+	b, ok := mb.(*MetricBucket)
+	if !ok {
+		logging.Error(errors.New("Failed to add count: bucket data type error"), "Failed to add count: bucket data type error")
+		return
+	}
+	b.UpdateMaxConcurrency(count)
 }
 
 // Read method, need to adapt upper application

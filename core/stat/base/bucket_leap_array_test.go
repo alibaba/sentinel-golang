@@ -173,3 +173,12 @@ func TestDataType(t *testing.T) {
 	dataType := bla.DataType()
 	assert.True(t, dataType == "MetricBucket")
 }
+
+func TestBucketLeapArray_UpdateMaxConcurrency(t *testing.T) {
+	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+	bla.UpdateMaxConcurrency(5)
+	bla.UpdateMaxConcurrency(2)
+	bla.UpdateMaxConcurrency(4)
+	swm := NewSlidingWindowMetric(SampleCount, IntervalInMs, bla)
+	assert.Equal(t, int64(5), swm.MaxConcurrency())
+}

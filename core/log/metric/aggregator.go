@@ -74,6 +74,11 @@ func InitTask() (err error) {
 	return err
 }
 
+// StopTask stops the task.
+func StopTask() {
+	stopChan <- struct{}{}
+}
+
 func writeTaskLoop() {
 	for {
 		select {

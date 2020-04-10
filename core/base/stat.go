@@ -35,6 +35,8 @@ const (
 	MetricEventError
 	// request execute rt, unit is millisecond
 	MetricEventRt
+	// Specific for verifying mode
+	MetricEventMonitorBlock
 	// hack for the number of event
 	MetricEventTotal
 )
