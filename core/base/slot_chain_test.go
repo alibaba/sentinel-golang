@@ -224,7 +224,7 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 		AcquireCount: 1,
 		Flag:         0,
 		Args:         nil,
-		data:         nil,
+		Attachments:  nil,
 	}
 
 	ps1 := &prepareSlotMock{}
@@ -266,7 +266,7 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 		AcquireCount: 1,
 		Flag:         0,
 		Args:         nil,
-		data:         nil,
+		Attachments:  nil,
 	}
 
 	rbs := &prepareSlotMock{}
@@ -324,7 +324,7 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 		AcquireCount: 1,
 		Flag:         0,
 		Args:         nil,
-		data:         nil,
+		Attachments:  nil,
 	}
 
 	rbs := &badPrepareSlotMock{}

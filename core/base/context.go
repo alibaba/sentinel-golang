@@ -36,7 +36,7 @@ type SentinelInput struct {
 	Args         []interface{}
 
 	// store some values in this context when calling context in slot.
-	data map[interface{}]interface{}
+	Attachments map[interface{}]interface{}
 }
 
 func newEmptyInput() *SentinelInput {
@@ -47,7 +47,7 @@ type SentinelOutput struct {
 	LastResult *TokenResult
 
 	// store output data.
-	data map[interface{}]interface{}
+	Attachments map[interface{}]interface{}
 }
 
 func newEmptyOutput() *SentinelOutput {
