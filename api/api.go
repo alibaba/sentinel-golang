@@ -12,6 +12,7 @@ type EntryOptions struct {
 	flag         int32
 	slotChain    *base.SlotChain
 	args         []interface{}
+	attachments  map[interface{}]interface{}
 }
 
 type EntryOption func(*EntryOptions)
@@ -51,6 +52,22 @@ func WithArgs(args ...interface{}) EntryOption {
 	}
 }
 
+// WithAttachment set the resource entry with the given k-v pair
+func WithAttachment(key interface{}, value interface{}) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.attachments[key] = value
+	}
+}
+
+// WithAttachment set the resource entry with the given k-v pairs
+func WithAttachments(data map[interface{}]interface{}) EntryOption {
+	return func(opts *EntryOptions) {
+		for key, value := range data {
+			opts.attachments[key] = value
+		}
+	}
+}
+
 // Entry is the basic API of Sentinel.
 func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.BlockError) {
 	var options = EntryOptions{
@@ -60,6 +77,7 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 		flag:         0,
 		slotChain:    globalSlotChain,
 		args:         []interface{}{},
+		attachments:  make(map[interface{}]interface{}),
 	}
 	for _, opt := range opts {
 		opt(&options)
@@ -82,6 +100,7 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 		AcquireCount: options.acquireCount,
 		Flag:         options.flag,
 		Args:         options.args,
+		Attachments:  options.attachments,
 	}
 
 	e := base.NewSentinelEntry(ctx, rw, sc)
