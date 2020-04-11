@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
@@ -9,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"time"
+	"fmt"
 )
 
 func main() {
