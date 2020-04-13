@@ -17,6 +17,8 @@ const (
 	MetricEventError
 	// request execute rt, unit is millisecond
 	MetricEventRt
+	// sentinel rules check block in monitor block
+	MetricEventMonitorBlock
 	// hack for the number of event
 	MetricEventTotal
 )
