@@ -2,9 +2,10 @@ package base
 
 import (
 	"fmt"
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
-	"sync/atomic"
 )
 
 // SlidingWindowMetric represents the sliding window metric wrapper.
@@ -215,6 +216,7 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*bucketWrap)
 		item.BlockQps += uint64(mb.Get(base.MetricEventBlock))
 		item.ErrorQps += uint64(mb.Get(base.MetricEventError))
 		item.CompleteQps += uint64(mb.Get(base.MetricEventComplete))
+		item.MonitorBlockQps += uint64(mb.Get(base.MetricEventMonitorBlock))
 		allRt += mb.Get(base.MetricEventRt)
 	}
 	if item.CompleteQps > 0 {
@@ -238,11 +240,12 @@ func (m *SlidingWindowMetric) metricItemFromBucket(w *bucketWrap) *base.MetricIt
 	}
 	completeQps := mb.Get(base.MetricEventComplete)
 	item := &base.MetricItem{
-		PassQps:     uint64(mb.Get(base.MetricEventPass)),
-		BlockQps:    uint64(mb.Get(base.MetricEventBlock)),
-		ErrorQps:    uint64(mb.Get(base.MetricEventError)),
-		CompleteQps: uint64(completeQps),
-		Timestamp:   w.bucketStart,
+		PassQps:         uint64(mb.Get(base.MetricEventPass)),
+		BlockQps:        uint64(mb.Get(base.MetricEventBlock)),
+		MonitorBlockQps: uint64(mb.Get(base.MetricEventMonitorBlock)),
+		ErrorQps:        uint64(mb.Get(base.MetricEventError)),
+		CompleteQps:     uint64(completeQps),
+		Timestamp:       w.bucketStart,
 	}
 	if completeQps > 0 {
 		item.AvgRt = uint64(mb.Get(base.MetricEventRt) / completeQps)

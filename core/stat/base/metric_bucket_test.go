@@ -1,17 +1,19 @@
 package base
 
 import (
-	"github.com/alibaba/sentinel-golang/core/base"
+	"fmt"
 	"sync"
 	"testing"
 	"unsafe"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 func Test_metricBucket_MemSize(t *testing.T) {
 	mb := NewMetricBucket()
 	size := unsafe.Sizeof(*mb)
-	if size != 48 {
-		t.Error("unexpect memory size of MetricBucket")
+	if size != 56 {
+		t.Error(fmt.Sprintf("unexpect memory size of MetricBucket: %d", size))
 	}
 }
 

@@ -13,12 +13,12 @@ const metricPartSeparator = "|"
 
 // MetricItem represents the data of metric log per line.
 type MetricItem struct {
-	Resource       string
-	Classification int32
-	Timestamp      uint64
-
+	Resource        string
+	Classification  int32
+	Timestamp       uint64
 	PassQps         uint64
 	BlockQps        uint64
+	MonitorBlockQps uint64
 	CompleteQps     uint64
 	ErrorQps        uint64
 	AvgRt           uint64
@@ -35,10 +35,10 @@ func (m *MetricItem) ToFatString() (string, error) {
 	timeStr := util.FormatTimeMillis(m.Timestamp)
 	// All "|" in the resource name will be replaced with "_"
 	finalName := strings.ReplaceAll(m.Resource, "|", "_")
-	_, err := fmt.Fprintf(&b, "%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d",
+	_, err := fmt.Fprintf(&b, "%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d",
 		m.Timestamp, timeStr, finalName, m.PassQps,
 		m.BlockQps, m.CompleteQps, m.ErrorQps, m.AvgRt,
-		m.OccupiedPassQps, m.Concurrency, m.Classification)
+		m.OccupiedPassQps, m.Concurrency, m.Classification, m.MonitorBlockQps)
 	if err != nil {
 		return "", err
 	}
@@ -48,10 +48,10 @@ func (m *MetricItem) ToFatString() (string, error) {
 func (m *MetricItem) ToThinString() (string, error) {
 	b := strings.Builder{}
 	finalName := strings.ReplaceAll(m.Resource, "|", "_")
-	_, err := fmt.Fprintf(&b, "%d|%s|%d|%d|%d|%d|%d|%d|%d|%d",
+	_, err := fmt.Fprintf(&b, "%d|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d",
 		m.Timestamp, finalName, m.PassQps,
 		m.BlockQps, m.CompleteQps, m.ErrorQps, m.AvgRt,
-		m.OccupiedPassQps, m.Concurrency, m.Classification)
+		m.OccupiedPassQps, m.Concurrency, m.Classification, m.MonitorBlockQps)
 	if err != nil {
 		return "", err
 	}
@@ -119,6 +119,13 @@ func MetricItemFromFatString(line string) (*MetricItem, error) {
 			return nil, err
 		}
 		item.Classification = int32(cl)
+	}
+	if len(arr) >= 12 {
+		mb, err := strconv.ParseUint(arr[11], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		item.MonitorBlockQps = mb
 	}
 	return item, nil
 }
