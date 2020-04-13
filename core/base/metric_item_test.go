@@ -19,10 +19,6 @@ func TestMetricItemFromFatStringLegal(t *testing.T) {
 	assert.Equal(t, "/foo/*", item1.Resource)
 	assert.Equal(t, int32(1), item1.Classification)
 	assert.Equal(t, uint64(10), item1.MonitorBlockQps)
-
-	str, err := item1.ToFatString()
-	assert.Nil(t, err)
-	assert.Equal(t, line1, str)
 }
 
 func TestMetricItemFromFatStringIllegal(t *testing.T) {
