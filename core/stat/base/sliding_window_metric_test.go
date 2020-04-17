@@ -163,15 +163,6 @@ func Test_NewSlidingWindowMetric(t *testing.T) {
 			},
 			want: "The interval(200000) of SlidingWindowMetric is greater than parent BucketLeapArray(10000).",
 		},
-		{
-			name: "Test_NewSlidingWindowMetric-6",
-			args: args{
-				intervalInMs: 1500,
-				sampleCount:  3,
-				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
-			},
-			want: "SlidingWindowMetric's intervalInMs(1500) is not divisible by real BucketLeapArray's intervalInMs(10000).",
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
