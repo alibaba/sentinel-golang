@@ -1,9 +1,10 @@
 package stat
 
 import (
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-	"sync/atomic"
 )
 
 type BaseStatNode struct {
@@ -58,6 +59,14 @@ func (n *BaseStatNode) AvgRT() float64 {
 
 func (n *BaseStatNode) MinRT() float64 {
 	return float64(n.metric.MinRT())
+}
+
+func (n *BaseStatNode) UpdateMaxConcurrency(count int64) {
+	n.arr.UpdateMaxConcurrency(count)
+}
+
+func (n *BaseStatNode) MaxConcurrency() int64 {
+	return n.metric.MaxConcurrency()
 }
 
 func (n *BaseStatNode) CurrentGoroutineNum() int32 {

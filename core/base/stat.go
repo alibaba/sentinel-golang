@@ -45,6 +45,7 @@ type StatNode interface {
 	CurrentGoroutineNum() int32
 	IncreaseGoroutineNum()
 	DecreaseGoroutineNum()
+	UpdateMaxConcurrency(count int64)
 
 	Reset()
 }

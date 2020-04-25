@@ -45,6 +45,7 @@ func (s *StatisticSlot) recordPassFor(sn base.StatNode, count uint32) {
 	}
 	sn.IncreaseGoroutineNum()
 	sn.AddMetric(base.MetricEventPass, uint64(count))
+	sn.UpdateMaxConcurrency(int64(sn.CurrentGoroutineNum()))
 }
 
 func (s *StatisticSlot) recordBlockFor(sn base.StatNode, count uint32) {
