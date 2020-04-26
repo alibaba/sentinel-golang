@@ -1,7 +1,6 @@
 package echo
 
 import (
-	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +8,7 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 

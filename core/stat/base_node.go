@@ -1,9 +1,10 @@
 package stat
 
 import (
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-	"sync/atomic"
 )
 
 type BaseStatNode struct {

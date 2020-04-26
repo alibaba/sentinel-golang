@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system"

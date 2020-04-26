@@ -2,10 +2,11 @@ package metric
 
 import (
 	"bufio"
-	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/pkg/errors"
 	"io"
 	"os"
+
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/pkg/errors"
 )
 
 const maxItemAmount = 100000

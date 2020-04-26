@@ -2,11 +2,12 @@ package base
 
 import (
 	"fmt"
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
 var logger = logging.GetDefaultLogger()

@@ -2,11 +2,12 @@ package etcdv3
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/stretchr/testify/mock"
-	"log"
-	"time"
 )
 
 // New one datasource based on etcv3 client

@@ -1,10 +1,11 @@
 package base
 
 import (
-	"github.com/alibaba/sentinel-golang/core/base"
 	"sync"
 	"testing"
 	"unsafe"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 func Test_metricBucket_MemSize(t *testing.T) {

@@ -1,7 +1,6 @@
 package metric
 
 import (
-	"github.com/alibaba/sentinel-golang/core/base"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -9,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 const (

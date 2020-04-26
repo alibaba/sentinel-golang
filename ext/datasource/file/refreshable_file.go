@@ -1,13 +1,14 @@
 package file
 
 import (
+	"io/ioutil"
+	"os"
+
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"os"
 )
 
 var (

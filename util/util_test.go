@@ -1,8 +1,9 @@
 package util
 
 import (
-	"github.com/alibaba/sentinel-golang/logging"
 	"testing"
+
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 func TestWithRecoverGo(t *testing.T) {

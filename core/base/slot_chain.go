@@ -1,9 +1,10 @@
 package base
 
 import (
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"sync"
 )
 
 var logger = logging.GetDefaultLogger()
