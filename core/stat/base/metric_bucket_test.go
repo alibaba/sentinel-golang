@@ -12,7 +12,7 @@ import (
 func Test_metricBucket_MemSize(t *testing.T) {
 	mb := NewMetricBucket()
 	size := unsafe.Sizeof(*mb)
-	if size != 56 {
+	if size != 64 {
 		t.Error(fmt.Sprintf("unexpect memory size of MetricBucket: %d", size))
 	}
 }
