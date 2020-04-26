@@ -1,8 +1,9 @@
 package base
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEntryContext_IsBlocked(t *testing.T) {

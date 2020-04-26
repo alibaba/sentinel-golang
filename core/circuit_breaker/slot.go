@@ -1,8 +1,9 @@
 package circuit_breaker
 
 import (
-	"github.com/alibaba/sentinel-golang/core/base"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 type CircuitBreakerSlot struct {

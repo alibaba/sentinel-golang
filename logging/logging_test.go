@@ -1,12 +1,13 @@
 package logging
 
 import (
-	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSimpleFileLogger(t *testing.T) {

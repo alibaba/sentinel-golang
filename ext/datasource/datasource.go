@@ -2,8 +2,9 @@ package datasource
 
 import (
 	"fmt"
-	"go.uber.org/multierr"
 	"io"
+
+	"go.uber.org/multierr"
 )
 
 // The generic interface to describe the datasource

@@ -1,9 +1,10 @@
 package datasource
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBase_AddPropertyHandler(t *testing.T) {

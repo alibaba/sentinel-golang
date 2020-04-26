@@ -1,9 +1,10 @@
 package stat
 
 import (
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
-	"sync"
 )
 
 type ResourceNodeMap map[string]*ResourceNode

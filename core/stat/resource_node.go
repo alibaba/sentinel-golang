@@ -2,9 +2,10 @@ package stat
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-	"sync"
 )
 
 type ResourceNode struct {

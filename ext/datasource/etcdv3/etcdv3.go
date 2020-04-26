@@ -2,13 +2,14 @@ package etcdv3
 
 import (
 	"context"
+	"time"
+
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/pkg/errors"
-	"time"
 )
 
 var (
