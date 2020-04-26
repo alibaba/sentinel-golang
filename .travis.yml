@@ -12,6 +12,7 @@ env:
 
 script:
   - diff -u <(echo -n) <(gofmt -d -s .)
+  - diff -u <(echo -n) <(goimports -d .)
   - go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
 
 after_success:

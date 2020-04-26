@@ -1,12 +1,13 @@
 package flow
 
 import (
-	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {

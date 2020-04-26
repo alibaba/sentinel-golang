@@ -1,9 +1,10 @@
 package datasource
 
 import (
+	"reflect"
+
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
-	"reflect"
 )
 
 var logger = logging.GetDefaultLogger()

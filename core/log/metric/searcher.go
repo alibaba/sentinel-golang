@@ -2,12 +2,13 @@ package metric
 
 import (
 	"encoding/binary"
-	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 const offsetNotFound = -1

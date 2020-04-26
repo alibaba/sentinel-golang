@@ -2,11 +2,12 @@ package datasource
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"testing"
+
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"testing"
 )
 
 func MockSystemRulesConverter(src []byte) (interface{}, error) {

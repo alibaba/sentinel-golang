@@ -1,13 +1,14 @@
 package base
 
 import (
-	"github.com/alibaba/sentinel-golang/util"
 	"math/rand"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 func Test_newAtomicBucketWrapArray_normal(t *testing.T) {

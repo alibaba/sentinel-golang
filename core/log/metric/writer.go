@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/config"
-	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 type DefaultMetricLogWriter struct {

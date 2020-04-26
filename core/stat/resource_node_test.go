@@ -2,11 +2,11 @@ package stat
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestResourceNode_GetOrCreateSlidingWindowMetric(t *testing.T) {

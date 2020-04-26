@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
-
 	"github.com/pkg/errors"
 )
 

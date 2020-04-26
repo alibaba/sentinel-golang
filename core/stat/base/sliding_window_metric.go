@@ -2,9 +2,10 @@ package base
 
 import (
 	"fmt"
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
-	"sync/atomic"
 )
 
 // SlidingWindowMetric represents the sliding window metric wrapper.

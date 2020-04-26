@@ -2,9 +2,10 @@ package circuit_breaker
 
 import (
 	"fmt"
-	"github.com/alibaba/sentinel-golang/logging"
 	"strings"
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 var (

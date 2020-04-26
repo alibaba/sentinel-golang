@@ -1,11 +1,12 @@
 package circuit_breaker
 
 import (
+	"sync/atomic"
+	"time"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/util"
-	"sync/atomic"
-	"time"
 )
 
 type CircuitBreaker interface {
