@@ -61,8 +61,14 @@ func (n *BaseStatNode) MinRT() float64 {
 	return float64(n.metric.MinRT())
 }
 
+// MaxConcurrency returns he max  concurrency count of whole sliding window.
 func (n *BaseStatNode) MaxConcurrency() int64 {
 	return n.metric.MaxConcurrency()
+}
+
+// SecondMaxConcurrency returns the max concurrency count of latest second.
+func (n *BaseStatNode) SecondMaxConcurrency() int64 {
+	return n.metric.SecondMaxConcurrency()
 }
 
 func (n *BaseStatNode) CurrentGoroutineNum() int32 {
