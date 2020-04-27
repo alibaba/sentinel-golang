@@ -7,12 +7,13 @@ import (
 	"unsafe"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_metricBucket_MemSize(t *testing.T) {
 	mb := NewMetricBucket()
 	size := unsafe.Sizeof(*mb)
-	if size != 56 {
+	if size != 64 {
 		t.Error(fmt.Sprintf("unexpect memory size of MetricBucket: %d", size))
 	}
 }
@@ -111,4 +112,15 @@ func Test_metricBucket_Concurrent(t *testing.T) {
 	if mb.Get(base.MetricEventRt) != int64(totalRt) {
 		t.Error("unexpect count MetricEventRt")
 	}
+}
+
+func TestMetricBucket_MaxConcurrency(t *testing.T) {
+	mb := NewMetricBucket()
+	mb.UpdateMaxConcurrency(10)
+	assert.Equal(t, int64(10), mb.maxConcurrency)
+	mb.UpdateMaxConcurrency(9)
+	assert.Equal(t, int64(10), mb.maxConcurrency)
+	mb.UpdateMaxConcurrency(11)
+	assert.Equal(t, int64(11), mb.maxConcurrency)
+
 }
