@@ -61,10 +61,6 @@ func (n *BaseStatNode) MinRT() float64 {
 	return float64(n.metric.MinRT())
 }
 
-func (n *BaseStatNode) UpdateMaxConcurrency(count int64) {
-	n.arr.UpdateMaxConcurrency(count)
-}
-
 func (n *BaseStatNode) MaxConcurrency() int64 {
 	return n.metric.MaxConcurrency()
 }
@@ -75,6 +71,7 @@ func (n *BaseStatNode) CurrentGoroutineNum() int32 {
 
 func (n *BaseStatNode) IncreaseGoroutineNum() {
 	atomic.AddInt32(&(n.goroutineNum), 1)
+	n.arr.UpdateMaxConcurrency(int64(n.CurrentGoroutineNum()))
 }
 
 func (n *BaseStatNode) DecreaseGoroutineNum() {

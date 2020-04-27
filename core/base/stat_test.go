@@ -59,5 +59,3 @@ func (m *StatNodeMock) Reset() {
 	m.Called()
 	return
 }
-
-func (m *StatNodeMock) UpdateMaxConcurrency(count int64) {}
