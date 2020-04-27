@@ -8,6 +8,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/stretchr/testify/assert"
 )
 
 //Test sliding windows create buckets
@@ -109,4 +110,13 @@ func TestBucketLeapArray_resetBucketTo(t *testing.T) {
 	if newRealBucket.Get(base.MetricEventBlock) != 0 {
 		t.Errorf("BucketLeapArray.resetBucketTo() execute fail.")
 	}
+}
+
+func TestBucketLeapArray_UpdateMaxConcurrency(t *testing.T) {
+	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+	bla.UpdateMaxConcurrency(5)
+	bla.UpdateMaxConcurrency(2)
+	bla.UpdateMaxConcurrency(4)
+	swm := NewSlidingWindowMetric(SampleCount, IntervalInMs, bla)
+	assert.Equal(t, int64(5), swm.MaxConcurrency())
 }
