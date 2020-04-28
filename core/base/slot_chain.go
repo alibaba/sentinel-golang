@@ -153,6 +153,9 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 			// This slot passed, continue.
 		}
 	}
+	if ruleCheckRet == nil {
+		ruleCheckRet = NewTokenResultPass()
+	}
 	ctx.Output.LastResult = ruleCheckRet
 
 	// execute statistic slot
