@@ -80,7 +80,7 @@ func (r *TokenResult) String() string {
 	return fmt.Sprintf("TokenResult{status=%d, blockErr=%s, waitMs=%d}", r.status, blockMsg, r.waitMs)
 }
 
-func NewTokenResultEmpty() * TokenResult{
+func NewTokenResultEmpty() *TokenResult {
 	return &TokenResult{
 		status:   ResultStatusPass,
 		blockErr: nil,
@@ -114,7 +114,7 @@ func NewTokenResultShouldWait(waitMs uint64) *TokenResult {
 }
 
 func RefurbishTokenResult(result *TokenResult) {
-	if result != nil{
+	if result != nil {
 		result.status = ResultStatusPass
 		result.blockErr = nil
 		result.waitMs = 0

@@ -89,7 +89,7 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.BlockError) {
 	var r *base.TokenResult
 	defer func() {
-		if r != nil{
+		if r != nil {
 			base.RefurbishTokenResult(r)
 		}
 	}()

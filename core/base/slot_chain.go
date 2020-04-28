@@ -136,10 +136,10 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 
 	// execute rule based checking slot
 	rcs := sc.ruleChecks
-	var ruleCheckRet * TokenResult
+	var ruleCheckRet *TokenResult
 	if len(rcs) > 0 {
 		for _, s := range rcs {
-			if ruleCheckRet != nil{
+			if ruleCheckRet != nil {
 				RefurbishTokenResult(ruleCheckRet)
 			}
 
