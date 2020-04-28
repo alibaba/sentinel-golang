@@ -87,6 +87,13 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 }
 
 func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.BlockError) {
+	var r *base.TokenResult
+	defer func() {
+		if r != nil{
+			base.RefurbishTokenResult(r)
+		}
+	}()
+
 	rw := base.NewResourceWrapper(resource, options.resourceType, options.entryType)
 	sc := options.slotChain
 
@@ -104,8 +111,7 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 	}
 
 	e := base.NewSentinelEntry(ctx, rw, sc)
-
-	r := sc.Entry(ctx)
+	r = sc.Entry(ctx)
 	if r == nil {
 		// This indicates internal error in some slots, so just pass
 		return e, nil
