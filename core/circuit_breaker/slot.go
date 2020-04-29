@@ -29,8 +29,10 @@ func checkPass(ctx *base.EntryContext) *base.TokenResult {
 				// Handle waiting action.
 				time.Sleep(time.Duration(waitMs) * time.Millisecond)
 			}
+			base.RefurbishTokenResult(r)
 			continue
 		}
+		base.RefurbishTokenResult(r)
 	}
 	return base.NewTokenResultPass()
 }
