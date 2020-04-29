@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"sync"
 )
 
 type BlockType int32
@@ -12,6 +13,12 @@ const (
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
 )
+
+var resultPool = sync.Pool{
+	New: func() interface{} {
+		return NewTokenResultEmpty()
+	},
+}
 
 func (t BlockType) String() string {
 	switch t {
@@ -73,26 +80,45 @@ func (r *TokenResult) String() string {
 	return fmt.Sprintf("TokenResult{status=%d, blockErr=%s, waitMs=%d}", r.status, blockMsg, r.waitMs)
 }
 
+func NewTokenResultEmpty() *TokenResult {
+	return &TokenResult{
+		status:   ResultStatusPass,
+		blockErr: nil,
+		waitMs:   0,
+	}
+}
+
 func NewTokenResultPass() *TokenResult {
-	return &TokenResult{status: ResultStatusPass, waitMs: 0}
+	return resultPool.Get().(*TokenResult)
 }
 
 func NewTokenResultBlocked(blockType BlockType, blockMsg string) *TokenResult {
-	return &TokenResult{
-		status:   ResultStatusBlocked,
-		blockErr: NewBlockError(blockType, blockMsg),
-		waitMs:   0,
-	}
+	result := resultPool.Get().(*TokenResult)
+	result.status = ResultStatusBlocked
+	result.blockErr = NewBlockError(blockType, blockMsg)
+	return result
 }
 
 func NewTokenResultBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) *TokenResult {
-	return &TokenResult{
-		status:   ResultStatusBlocked,
-		blockErr: NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot),
-		waitMs:   0,
-	}
+	result := resultPool.Get().(*TokenResult)
+	result.status = ResultStatusBlocked
+	result.blockErr = NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot)
+	return result
 }
 
 func NewTokenResultShouldWait(waitMs uint64) *TokenResult {
-	return &TokenResult{status: ResultStatusShouldWait, waitMs: waitMs}
+	result := resultPool.Get().(*TokenResult)
+	result.status = ResultStatusShouldWait
+	result.waitMs = waitMs
+	return result
+}
+
+func RefurbishTokenResult(result *TokenResult) {
+	if result != nil {
+		result.status = ResultStatusPass
+		result.blockErr = nil
+		result.waitMs = 0
+
+		resultPool.Put(result)
+	}
 }

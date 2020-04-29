@@ -136,19 +136,25 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 
 	// execute rule based checking slot
 	rcs := sc.ruleChecks
-	ruleCheckRet := NewTokenResultPass()
+	var ruleCheckRet *TokenResult
 	if len(rcs) > 0 {
 		for _, s := range rcs {
+			if ruleCheckRet != nil {
+				RefurbishTokenResult(ruleCheckRet)
+			}
+
 			sr := s.Check(ctx)
-			ctx.Output.LastResult = sr
+			ruleCheckRet = sr
 			// check slot result
 			if sr.status == ResultStatusBlocked {
-				ruleCheckRet = sr
 				break
 			}
 
 			// This slot passed, continue.
 		}
+	}
+	if ruleCheckRet == nil {
+		ruleCheckRet = NewTokenResultPass()
 	}
 	ctx.Output.LastResult = ruleCheckRet
 
