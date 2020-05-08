@@ -2,15 +2,16 @@ package config
 
 import (
 	"fmt"
-	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -178,4 +179,9 @@ func MetricLogMaxFileAmount() uint32 {
 
 func SystemStatCollectIntervalMs() uint32 {
 	return globalCfg.Sentinel.Stat.System.CollectIntervalMs
+}
+
+// UpdateMetricLogFlushIntervalSec updates the metric log flush interval(seconds), 0 means disable metric log flush.
+func UpdateMetricLogFlushIntervalSec(value uint32) {
+	globalCfg.Sentinel.Log.Metric.FlushIntervalSec = value
 }
