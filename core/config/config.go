@@ -180,8 +180,3 @@ func MetricLogMaxFileAmount() uint32 {
 func SystemStatCollectIntervalMs() uint32 {
 	return globalCfg.Sentinel.Stat.System.CollectIntervalMs
 }
-
-// UpdateMetricLogFlushIntervalSec updates the metric log flush interval(seconds), 0 means disable metric log flush.
-func UpdateMetricLogFlushIntervalSec(value uint32) {
-	globalCfg.Sentinel.Log.Metric.FlushIntervalSec = value
-}
