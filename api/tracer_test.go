@@ -40,7 +40,6 @@ func TestTraceErrorToCtx(t *testing.T) {
 		Resource: testRes,
 		StatNode: testStatNode,
 		Input:    nil,
-		Output:   nil,
 	}
 	tests[0].args.err = errors.New("biz error")
 
@@ -79,7 +78,6 @@ func TestTraceErrorToEntry(t *testing.T) {
 		Resource: testRes,
 		StatNode: testStatNode,
 		Input:    nil,
-		Output:   nil,
 	}
 	tests[0].args.entry = base.NewSentinelEntry(ctx, testRes, nil)
 	tests[0].args.err = errors.New("biz error")

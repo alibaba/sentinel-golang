@@ -12,17 +12,19 @@ type SystemAdaptiveSlot struct {
 
 func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if ctx == nil || ctx.Resource == nil || ctx.Resource.FlowType() != base.Inbound {
-		return base.NewTokenResultPass()
+		return nil
 	}
 	rules := GetRules()
+	result := ctx.RuleCheckResult
 	for _, rule := range rules {
 		passed, m := s.doCheckRule(rule)
 		if passed {
 			continue
 		}
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+		result.ResetToBlockedWithCauseFrom(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+		return result
 	}
-	return base.NewTokenResultPass()
+	return result
 }
 
 func (s *SystemAdaptiveSlot) doCheckRule(rule *SystemRule) (bool, float64) {

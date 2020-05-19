@@ -10,31 +10,32 @@ import (
 
 func TestCheckNilInput(t *testing.T) {
 	var sas *SystemAdaptiveSlot
-	e := base.NewTokenResultPass()
 
 	t.Run("NilInput", func(t *testing.T) {
 		r := sas.Check(nil)
-		assert.Equal(t, e, r)
+		assert.True(t, r == nil)
 	})
 
 	t.Run("NilResourceInput", func(t *testing.T) {
 		r := sas.Check(&base.EntryContext{})
-		assert.Equal(t, e, r)
+		assert.True(t, r == nil)
 	})
 
 	t.Run("UnsuitableFlowType", func(t *testing.T) {
 		rw := base.NewResourceWrapper("test", base.ResTypeCommon, base.Outbound)
 		r := sas.Check(&base.EntryContext{Resource: rw})
-		assert.Equal(t, e, r)
+		assert.True(t, r == nil)
 	})
 }
 
 func TestCheckEmptyRule(t *testing.T) {
 	var sas *SystemAdaptiveSlot
-	e := base.NewTokenResultPass()
 	rw := base.NewResourceWrapper("test", base.ResTypeCommon, base.Inbound)
-	r := sas.Check(&base.EntryContext{Resource: rw})
-	assert.Equal(t, e, r)
+	r := sas.Check(&base.EntryContext{
+		Resource:        rw,
+		RuleCheckResult: base.NewTokenResultPass(),
+	})
+	assert.True(t, r == nil || r.IsPass())
 }
 
 func TestDoCheckRuleConcurrency(t *testing.T) {

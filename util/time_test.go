@@ -83,12 +83,11 @@ func TestFormatDate(t *testing.T) {
 
 func TestCurrentTimeMillis(t *testing.T) {
 	got := CurrentTimeMillis()
-	t.Logf("CurrentTimeMillis() %d", got)
+	fmt.Printf("CurrentTimeMillis() %d", got)
 	fmt.Println(FormatTimeMillis(got))
 }
 
 func TestCurrentTimeNano(t *testing.T) {
 	got := CurrentTimeNano()
 	fmt.Println(got)
-	t.Logf("CurrentTimeNano() %d", got)
 }

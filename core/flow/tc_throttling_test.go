@@ -15,14 +15,15 @@ func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {
 	var qps float64 = 5
 
 	// The first request will pass.
-	assert.True(t, tc.DoCheck(nil, 1, qps).IsPass())
+	ret := tc.DoCheck(nil, 1, qps)
+	assert.True(t, ret == nil || ret.IsPass())
 
 	for i := 0; i < int(qps); i++ {
 		assert.True(t, tc.DoCheck(nil, 1, qps).IsBlocked())
 	}
 	time.Sleep(time.Duration(1000/int(qps)+10) * time.Millisecond)
 
-	assert.True(t, tc.DoCheck(nil, 1, qps).IsPass())
+	assert.True(t, tc.DoCheck(nil, 1, qps) == nil)
 	assert.True(t, tc.DoCheck(nil, 1, qps).IsBlocked())
 }
 
@@ -34,7 +35,7 @@ func TestThrottlingChecker_DoCheckSingleThread(t *testing.T) {
 		res := tc.DoCheck(nil, 1, qps)
 		resultList = append(resultList, res)
 	}
-	assert.True(t, resultList[0].IsPass())
+	assert.True(t, resultList[0] == nil)
 
 	for i := 1; i <= int(qps); i++ {
 		assert.True(t, resultList[i].Status() == base.ResultStatusShouldWait)
@@ -50,7 +51,7 @@ func TestThrottlingChecker_DoCheckQueueingParallel(t *testing.T) {
 	tc := NewThrottlingChecker(1000)
 	var qps float64 = 5
 
-	assert.True(t, tc.DoCheck(nil, 1, qps).IsPass())
+	assert.True(t, tc.DoCheck(nil, 1, qps) == nil)
 
 	wg := &sync.WaitGroup{}
 	gc := 24

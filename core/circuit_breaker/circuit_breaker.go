@@ -11,7 +11,7 @@ import (
 
 type CircuitBreaker interface {
 	getRule() Rule
-	Check(ctx *base.EntryContext) *base.TokenResult
+	TryPass(ctx *base.EntryContext) bool
 }
 
 // average rt circuit breaker will cut resource if the rt of resource exceed the threshold of rule.
@@ -49,14 +49,14 @@ func (b averageRtCircuitBreaker) getRule() Rule {
 	return b.rule
 }
 
-func (b *averageRtCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult {
+func (b *averageRtCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	// currently, the breaker is before auto recover, direct return blocked .
 	if b.cut.Get() {
-		return base.NewTokenResultBlocked(base.BlockTypeCircuitBreaking, "CircuitBreaking")
+		return false
 	}
 	rule := b.rule
 	if rule == nil {
-		return base.NewTokenResultPass()
+		return true
 	}
 
 	// TODO need to optimize here.
@@ -65,7 +65,7 @@ func (b *averageRtCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult 
 		resNode := stat.GetResourceNode(rule.Resource)
 		if resNode == nil {
 			logger.Errorf("Resource(%s)'s stat node is nil.", rule.Resource)
-			return base.NewTokenResultPass()
+			return true
 		}
 		b.metric = resNode.GetOrCreateSlidingWindowMetric(rule.SampleCount, rule.IntervalInMs)
 		logger.Errorf("Delayed to initialize the metric of averageRtCircuitBreaker.")
@@ -74,10 +74,10 @@ func (b *averageRtCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult 
 	avgRt := b.metric.AvgRT()
 	if avgRt < rule.Threshold {
 		atomic.StoreInt64(&b.passCount, 0)
-		return base.NewTokenResultPass()
+		return true
 	}
 	if util.IncrementAndGetInt64(&b.passCount) < rule.RtSlowRequestAmount {
-		return base.NewTokenResultPass()
+		return true
 	}
 	// trigger circuit breaker
 	if b.cut.CompareAndSet(false, true) {
@@ -88,7 +88,7 @@ func (b *averageRtCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult 
 			b.cut.Set(false)
 		}, logger)
 	}
-	return base.NewTokenResultBlocked(base.BlockTypeCircuitBreaking, "CircuitBreaking")
+	return false
 }
 
 // error ratio circuit breaker will cut resource if the error ratio of resource exceed the threshold of rule.
@@ -125,14 +125,14 @@ func (b *errorRatioCircuitBreaker) getRule() Rule {
 	return b.rule
 }
 
-func (b *errorRatioCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult {
+func (b *errorRatioCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	if b.cut.Get() {
-		return base.NewTokenResultBlocked(base.BlockTypeCircuitBreaking, "CircuitBreaking")
+		return false
 	}
 
 	rule := b.rule
 	if rule == nil {
-		return base.NewTokenResultPass()
+		return true
 	}
 
 	// TODO need to optimize here.
@@ -141,7 +141,7 @@ func (b *errorRatioCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult
 		resNode := stat.GetResourceNode(rule.Resource)
 		if resNode == nil {
 			logger.Errorf("Resource(%s)'s stat node is nil.", rule.Resource)
-			return base.NewTokenResultPass()
+			return true
 		}
 		b.metric = resNode.GetOrCreateSlidingWindowMetric(rule.SampleCount, rule.IntervalInMs)
 		logger.Errorf("Delayed to initialize the metric of errorRatioCircuitBreaker.")
@@ -156,19 +156,19 @@ func (b *errorRatioCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult
 
 	// If total amount is less than minRequestAmount, the request will pass.
 	if total < float64(rule.MinRequestAmount) {
-		return base.NewTokenResultPass()
+		return true
 	}
 
 	// "success" (aka. completed count) = error count + non-error count (realComplete)
 	realComplete := complete - err
 	// error count
 	if realComplete <= 0 && err < float64(rule.MinRequestAmount) {
-		return base.NewTokenResultPass()
+		return true
 	}
 
 	// err/complete is error ratio of the biz
 	if err/complete < rule.Threshold {
-		return base.NewTokenResultPass()
+		return true
 	}
 
 	if b.cut.CompareAndSet(false, true) {
@@ -178,7 +178,7 @@ func (b *errorRatioCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult
 			b.cut.Set(false)
 		}, logger)
 	}
-	return base.NewTokenResultBlocked(base.BlockTypeCircuitBreaking, "CircuitBreaking")
+	return false
 }
 
 // error count circuit breaker will cut resource if the error count of resource exceed the threshold of rule.
@@ -215,14 +215,14 @@ func (b *errorCountCircuitBreaker) getRule() Rule {
 	return b.rule
 }
 
-func (b *errorCountCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult {
+func (b *errorCountCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	if b.cut.Get() {
-		return base.NewTokenResultBlocked(base.BlockTypeCircuitBreaking, "CircuitBreaking")
+		return false
 	}
 
 	rule := b.rule
 	if rule == nil {
-		return base.NewTokenResultPass()
+		return true
 	}
 
 	// TODO need to optimize here.
@@ -231,7 +231,7 @@ func (b *errorCountCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult
 		resNode := stat.GetResourceNode(rule.Resource)
 		if resNode == nil {
 			logger.Errorf("Resource(%s)'s stat node is nil.", rule.Resource)
-			return base.NewTokenResultPass()
+			return true
 		}
 		b.metric = resNode.GetOrCreateSlidingWindowMetric(rule.SampleCount, rule.IntervalInMs)
 		logger.Errorf("Delayed to initialize the metric of errorCountCircuitBreaker.")
@@ -239,7 +239,7 @@ func (b *errorCountCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult
 
 	err := b.metric.GetQPS(base.MetricEventError)
 	if err < float64(rule.Threshold) {
-		return base.NewTokenResultPass()
+		return true
 	}
 
 	if b.cut.CompareAndSet(false, true) {
@@ -249,5 +249,5 @@ func (b *errorCountCircuitBreaker) Check(_ *base.EntryContext) *base.TokenResult
 			b.cut.Set(false)
 		}, logger)
 	}
-	return base.NewTokenResultBlocked(base.BlockTypeCircuitBreaking, "CircuitBreaking")
+	return false
 }
