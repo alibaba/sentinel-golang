@@ -21,7 +21,11 @@ func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 		if passed {
 			continue
 		}
-		result.ResetToBlockedWithCauseFrom(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+		if result == nil {
+			result = base.NewTokenResultBlockedWithCause(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+		} else {
+			result.ResetToBlockedWithCauseFrom(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+		}
 		return result
 	}
 	return result

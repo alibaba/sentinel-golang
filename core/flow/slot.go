@@ -31,8 +31,7 @@ func (s *FlowSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 			continue
 		}
 		if r.Status() == base.ResultStatusBlocked {
-			result.DeepCopyFrom(r)
-			return result
+			return r
 		}
 		if r.Status() == base.ResultStatusShouldWait {
 			if waitMs := r.WaitMs(); waitMs > 0 {
