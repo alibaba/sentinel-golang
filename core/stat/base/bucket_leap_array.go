@@ -16,8 +16,18 @@ var logger = logging.GetDefaultLogger()
 // and MetricBucket (as the data type). The MetricBucket is used to record statistic
 // metrics per minimum time unit (i.e. the bucket time span).
 type BucketLeapArray struct {
-	data     leapArray
+	data     LeapArray
 	dataType string
+}
+
+func (bla *BucketLeapArray) NewEmptyBucket() interface{} {
+	return NewMetricBucket()
+}
+
+func (bla *BucketLeapArray) ResetBucketTo(bw *BucketWrap, startTime uint64) *BucketWrap {
+	atomic.StoreUint64(&bw.BucketStart, startTime)
+	bw.Value.Store(NewMetricBucket())
+	return bw
 }
 
 // sampleCount is the number of slots
@@ -28,7 +38,7 @@ func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArra
 	}
 	bucketLengthInMs := intervalInMs / sampleCount
 	ret := &BucketLeapArray{
-		data: leapArray{
+		data: LeapArray{
 			bucketLengthInMs: bucketLengthInMs,
 			sampleCount:      sampleCount,
 			intervalInMs:     intervalInMs,
@@ -36,7 +46,7 @@ func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArra
 		},
 		dataType: "MetricBucket",
 	}
-	arr := newAtomicBucketWrapArray(int(sampleCount), bucketLengthInMs, ret)
+	arr := NewAtomicBucketWrapArray(int(sampleCount), bucketLengthInMs, ret)
 	ret.data.array = arr
 	return ret
 }
@@ -61,16 +71,6 @@ func (bla *BucketLeapArray) GetIntervalInSecond() float64 {
 	return float64(bla.IntervalInMs()) / 1000.0
 }
 
-func (bla *BucketLeapArray) newEmptyBucket() interface{} {
-	return NewMetricBucket()
-}
-
-func (bla *BucketLeapArray) resetBucketTo(ww *bucketWrap, startTime uint64) *bucketWrap {
-	atomic.StoreUint64(&ww.bucketStart, startTime)
-	ww.value.Store(NewMetricBucket())
-	return ww
-}
-
 // Write method
 // It might panic
 func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
@@ -80,16 +80,16 @@ func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
 func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent, count int64) {
 	curBucket, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", now, errors.WithStack(err))
+		logger.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", now, err)
 		return
 	}
 	if curBucket == nil {
 		logger.Error("Failed to add count: current bucket is nil")
 		return
 	}
-	mb := curBucket.value.Load()
+	mb := curBucket.Value.Load()
 	if mb == nil {
-		logger.Error("Failed to add count: current bucket atomic value is nil")
+		logger.Error("Failed to add count: current bucket atomic Value is nil")
 		return
 	}
 	b, ok := mb.(*MetricBucket)
@@ -113,9 +113,9 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 	}
 	count := int64(0)
 	for _, ww := range bla.data.valuesWithTime(now) {
-		mb := ww.value.Load()
+		mb := ww.Value.Load()
 		if mb == nil {
-			logger.Error("Current bucket's value is nil.")
+			logger.Error("Current bucket's Value is nil.")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)
@@ -128,35 +128,35 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 	return count
 }
 
-// Read method, get all bucketWrap.
-func (bla *BucketLeapArray) Values(now uint64) []*bucketWrap {
+// Read method, get all BucketWrap.
+func (bla *BucketLeapArray) Values(now uint64) []*BucketWrap {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, errors.WithStack(err))
+		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, err)
 	}
 	return bla.data.valuesWithTime(now)
 }
 
-func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*bucketWrap {
+func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*BucketWrap {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, errors.WithStack(err))
+		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, err)
 	}
 	return bla.data.ValuesConditional(now, predicate)
 }
 
 func (bla *BucketLeapArray) MinRt() int64 {
-	_, err := bla.data.currentBucket(bla)
+	_, err := bla.data.CurrentBucket(bla)
 	if err != nil {
-		logger.Errorf("Fail to get current bucket, err: %+v.", errors.WithStack(err))
+		logger.Errorf("Fail to get current bucket, err: %+v.", err)
 	}
 
 	ret := base.DefaultStatisticMaxRt
 
-	for _, v := range bla.data.values() {
-		mb := v.value.Load()
+	for _, v := range bla.data.Values() {
+		mb := v.Value.Load()
 		if mb == nil {
-			logger.Error("Current bucket's value is nil.")
+			logger.Error("Current bucket's Value is nil.")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)

@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/log"
 	"github.com/alibaba/sentinel-golang/core/stat"
@@ -28,7 +29,9 @@ func BuildDefaultSlotChain() *base.SlotChain {
 	sc.AddStatPrepareSlotLast(&stat.StatNodePrepareSlot{})
 	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
 	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
+	sc.AddRuleCheckSlotLast(&circuitbreaker.CircuitBreakerSlot{})
 	sc.AddStatSlotLast(&stat.StatisticSlot{})
 	sc.AddStatSlotLast(&log.LogSlot{})
+	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
 	return sc
 }

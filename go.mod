@@ -15,7 +15,7 @@ require (
 	github.com/shirou/gopsutil v2.19.12+incompatible
 	github.com/stretchr/testify v1.4.0
 	go.uber.org/multierr v1.5.0
-	golang.org/x/tools v0.0.0-20200428021058-7ae4988eb4d9 // indirect
+	golang.org/x/tools v0.0.0-20200426102838-f3a5411a4c3b // indirect
 	google.golang.org/grpc v1.22.1
 	gopkg.in/yaml.v2 v2.2.2
 )

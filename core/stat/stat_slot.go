@@ -33,9 +33,10 @@ func (s *StatisticSlot) OnCompleted(ctx *base.EntryContext) {
 		return
 	}
 	rt := util.CurrentTimeMillis() - ctx.StartTime()
-	s.recordCompleteFor(ctx.StatNode, ctx.Input.AcquireCount, rt)
+	ctx.PutRt(rt)
+	s.recordCompleteFor(ctx.StatNode, ctx.Input.AcquireCount, rt, ctx.Err())
 	if ctx.Resource.FlowType() == base.Inbound {
-		s.recordCompleteFor(InboundNode(), ctx.Input.AcquireCount, rt)
+		s.recordCompleteFor(InboundNode(), ctx.Input.AcquireCount, rt, ctx.Err())
 	}
 }
 
@@ -54,9 +55,12 @@ func (s *StatisticSlot) recordBlockFor(sn base.StatNode, count uint32) {
 	sn.AddMetric(base.MetricEventBlock, uint64(count))
 }
 
-func (s *StatisticSlot) recordCompleteFor(sn base.StatNode, count uint32, rt uint64) {
+func (s *StatisticSlot) recordCompleteFor(sn base.StatNode, count uint32, rt uint64, err error) {
 	if sn == nil {
 		return
+	}
+	if err != nil {
+		sn.AddMetric(base.MetricEventError, uint64(count))
 	}
 	sn.AddMetric(base.MetricEventRt, rt)
 	sn.AddMetric(base.MetricEventComplete, uint64(count))
