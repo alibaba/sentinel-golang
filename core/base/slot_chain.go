@@ -53,7 +53,7 @@ type SlotChain struct {
 	ruleChecks []RuleCheckSlot
 	stats      []StatSlot
 	// EntryContext Pool, used for reuse EntryContext object
-	pool sync.Pool
+	ctxPool sync.Pool
 }
 
 func NewSlotChain() *SlotChain {
@@ -61,17 +61,19 @@ func NewSlotChain() *SlotChain {
 		statPres:   make([]StatPrepareSlot, 0, 5),
 		ruleChecks: make([]RuleCheckSlot, 0, 5),
 		stats:      make([]StatSlot, 0, 5),
-		pool: sync.Pool{
+		ctxPool: sync.Pool{
 			New: func() interface{} {
-				return NewEmptyEntryContext()
+				ctx := NewEmptyEntryContext()
+				ctx.RuleCheckResult = NewTokenResultPass()
+				return ctx
 			},
 		},
 	}
 }
 
-// Get a EntryContext from EntryContext pool, if pool doesn't have enough EntryContext then new one.
+// Get a EntryContext from EntryContext ctxPool, if ctxPool doesn't have enough EntryContext then new one.
 func (sc *SlotChain) GetPooledContext() *EntryContext {
-	ctx := sc.pool.Get().(*EntryContext)
+	ctx := sc.ctxPool.Get().(*EntryContext)
 	ctx.startTime = util.CurrentTimeMillis()
 	return ctx
 }
@@ -79,7 +81,7 @@ func (sc *SlotChain) GetPooledContext() *EntryContext {
 func (sc *SlotChain) RefurbishContext(c *EntryContext) {
 	if c != nil {
 		c.Reset()
-		sc.pool.Put(c)
+		sc.ctxPool.Put(c)
 	}
 }
 
@@ -139,27 +141,27 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	var ruleCheckRet *TokenResult
 	if len(rcs) > 0 {
 		for _, s := range rcs {
-			if ruleCheckRet != nil {
-				RefurbishTokenResult(ruleCheckRet)
-			}
-
 			sr := s.Check(ctx)
-			ruleCheckRet = sr
+			if sr == nil {
+				// nil equals to check pass
+				continue
+			}
 			// check slot result
-			if sr.status == ResultStatusBlocked {
+			if sr.IsBlocked() {
+				ruleCheckRet = sr
 				break
 			}
-
-			// This slot passed, continue.
 		}
 	}
 	if ruleCheckRet == nil {
-		ruleCheckRet = NewTokenResultPass()
+		ctx.RuleCheckResult.ResetToPass()
+	} else {
+		ctx.RuleCheckResult = ruleCheckRet
 	}
-	ctx.Output.LastResult = ruleCheckRet
 
 	// execute statistic slot
 	ss := sc.stats
+	ruleCheckRet = ctx.RuleCheckResult
 	if len(ss) > 0 {
 		for _, s := range ss {
 			// indicate the result of rule based checking slot.

@@ -31,7 +31,7 @@ func NewThrottlingChecker(timeoutMs uint32) *ThrottlingChecker {
 func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
 	// Pass when acquire count is less or equal than 0.
 	if acquireCount <= 0 {
-		return base.NewTokenResultPass()
+		return nil
 	}
 	if threshold <= 0 {
 		return base.NewTokenResultBlocked(base.BlockTypeFlow, "Flow")
@@ -46,7 +46,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, thresh
 	if expectedTime <= curNano {
 		// Contention may exist here, but it's okay.
 		atomic.StoreUint64(&c.lastPassedTime, curNano)
-		return base.NewTokenResultPass()
+		return nil
 	}
 	estimatedQueueingDuration := atomic.LoadUint64(&c.lastPassedTime) + interval - util.CurrentTimeNano()
 	if estimatedQueueingDuration > c.maxQueueingTimeNs {
