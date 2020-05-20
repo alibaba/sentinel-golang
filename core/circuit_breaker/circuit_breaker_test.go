@@ -52,9 +52,9 @@ func (m *circuitBreakerMock) getRule() Rule {
 	return args.Get(0).(Rule)
 }
 
-func (m *circuitBreakerMock) Check(_ *base.EntryContext) *base.TokenResult {
+func (m *circuitBreakerMock) TryPass(_ *base.EntryContext) bool {
 	args := m.Called()
-	return args.Get(0).(*base.TokenResult)
+	return args.Bool(0)
 }
 
 func Test_AverageRtCircuitBreaker_Check(t *testing.T) {
@@ -92,23 +92,23 @@ func Test_AverageRtCircuitBreaker_Check(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 4; i++ {
-				if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != true {
-					t.Errorf("averageRtCircuitBreaker.Check() = %v, want %v", got, true)
+				if got := tt.breaker.TryPass(tt.args.ctx); got != true {
+					t.Errorf("averageRtCircuitBreaker.TryPass() = %v, want %v", got, true)
 				}
 			}
 
-			if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != false {
-				t.Errorf("averageRtCircuitBreaker.Check() = %v, want %v", got, false)
+			if got := tt.breaker.TryPass(tt.args.ctx); got != false {
+				t.Errorf("averageRtCircuitBreaker.TryPass() = %v, want %v", got, false)
 			}
 
 			// before auto recover
-			if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != false {
-				t.Errorf("averageRtCircuitBreaker.Check() = %v, want %v", got, false)
+			if got := tt.breaker.TryPass(tt.args.ctx); got != false {
+				t.Errorf("averageRtCircuitBreaker.TryPass() = %v, want %v", got, false)
 			}
 
 			time.Sleep(2 * time.Second)
-			if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != true {
-				t.Errorf("averageRtCircuitBreaker.Check() = %v, want %v", got, true)
+			if got := tt.breaker.TryPass(tt.args.ctx); got != true {
+				t.Errorf("averageRtCircuitBreaker.TryPass() = %v, want %v", got, true)
 			}
 		})
 	}
@@ -154,8 +154,8 @@ func Test_ErrorRatioCircuitBreaker_Check(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 4; i++ {
-				if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != true {
-					t.Errorf("ErrorRatioCircuitBreaker.Check() = %v, want %v", got, true)
+				if got := tt.breaker.TryPass(tt.args.ctx); got != true {
+					t.Errorf("ErrorRatioCircuitBreaker.TryPass() = %v, want %v", got, true)
 				}
 			}
 
@@ -166,8 +166,8 @@ func Test_ErrorRatioCircuitBreaker_Check(t *testing.T) {
 			m2.On("GetQPS", base.MetricEventPass).Return(800)
 			m2.On("GetQPS", base.MetricEventBlock).Return(200)
 
-			if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != false {
-				t.Errorf("ErrorRatioCircuitBreaker.Check() = %v, want %v", got, false)
+			if got := tt.breaker.TryPass(tt.args.ctx); got != false {
+				t.Errorf("ErrorRatioCircuitBreaker.TryPass() = %v, want %v", got, false)
 			}
 			time.Sleep(2 * time.Second)
 
@@ -180,8 +180,8 @@ func Test_ErrorRatioCircuitBreaker_Check(t *testing.T) {
 			m3.On("GetQPS", base.MetricEventBlock).Return(0)
 			m3.On("GetQPS", base.MetricEventPass).Return(0)
 			m3.On("GetQPS", base.MetricEventBlock).Return(0)
-			if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != true {
-				t.Errorf("ErrorRatioCircuitBreaker.Check() = %v, want %v", got, true)
+			if got := tt.breaker.TryPass(tt.args.ctx); got != true {
+				t.Errorf("ErrorRatioCircuitBreaker.TryPass() = %v, want %v", got, true)
 			}
 		})
 	}
@@ -221,8 +221,8 @@ func Test_ErrorCountCircuitBreaker_Check(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 4; i++ {
-				if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != true {
-					t.Errorf("ErrorCountCircuitBreaker.Check() = %v, want %v", got, true)
+				if got := tt.breaker.TryPass(tt.args.ctx); got != true {
+					t.Errorf("ErrorCountCircuitBreaker.TryPass() = %v, want %v", got, true)
 				}
 			}
 
@@ -230,8 +230,8 @@ func Test_ErrorCountCircuitBreaker_Check(t *testing.T) {
 			tt.breaker.metric = m2
 			m2.On("GetQPS", base.MetricEventError).Return(11)
 			for i := 0; i < 10; i++ {
-				if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != false {
-					t.Errorf("ErrorCountCircuitBreaker.Check() = %v, want %v", got, true)
+				if got := tt.breaker.TryPass(tt.args.ctx); got != false {
+					t.Errorf("ErrorCountCircuitBreaker.TryPass() = %v, want %v", got, true)
 				}
 			}
 			time.Sleep(2 * time.Second)
@@ -239,8 +239,8 @@ func Test_ErrorCountCircuitBreaker_Check(t *testing.T) {
 			m3 := &ReadStatMock{}
 			tt.breaker.metric = m3
 			m3.On("GetQPS", base.MetricEventError).Return(1)
-			if got := tt.breaker.Check(tt.args.ctx); got.IsPass() != true {
-				t.Errorf("ErrorCountCircuitBreaker.Check() = %v, want %v", got, true)
+			if got := tt.breaker.TryPass(tt.args.ctx); got != true {
+				t.Errorf("ErrorCountCircuitBreaker.TryPass() = %v, want %v", got, true)
 			}
 		})
 	}

@@ -29,7 +29,7 @@ func (s *StatisticSlot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.
 }
 
 func (s *StatisticSlot) OnCompleted(ctx *base.EntryContext) {
-	if ctx.Output.LastResult == nil || ctx.Output.LastResult.IsBlocked() {
+	if ctx.RuleCheckResult == nil || ctx.RuleCheckResult.IsBlocked() {
 		return
 	}
 	rt := util.CurrentTimeMillis() - ctx.StartTime()

@@ -26,7 +26,7 @@ func NewDefaultTrafficShapingChecker(metricType MetricType) *DefaultTrafficShapi
 
 func (d *DefaultTrafficShapingChecker) DoCheck(node base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
 	if node == nil {
-		return base.NewTokenResultPass()
+		return nil
 	}
 	var curCount float64
 	if d.metricType == Concurrency {
@@ -37,5 +37,5 @@ func (d *DefaultTrafficShapingChecker) DoCheck(node base.StatNode, acquireCount 
 	if curCount+float64(acquireCount) > threshold {
 		return base.NewTokenResultBlocked(base.BlockTypeFlow, "Flow")
 	}
-	return base.NewTokenResultPass()
+	return nil
 }
