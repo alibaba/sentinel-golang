@@ -5,6 +5,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 var logger = logging.GetDefaultLogger()
@@ -124,6 +125,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Panicf("Sentinel internal panic in SlotChain, err: %+v", err)
+			ctx.SetError(errors.Errorf("%+v", err))
 			return
 		}
 	}()
