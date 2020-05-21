@@ -77,7 +77,7 @@ type CircuitBreaker interface {
 	TryPass(ctx *base.EntryContext) bool
 
 	CurrentState() State
-	// HandleCompleted handle the entry completed
+	// HandleCompleted handle the entry completed, Will not call HandleCompleted if request is blocked.
 	// rt: the response time this entry cost.
 	HandleCompleted(rt uint64, err error)
 }
@@ -221,6 +221,15 @@ func (b *slowRtCircuitBreaker) HandleCompleted(rt uint64, err error) {
 	}
 	atomic.AddUint64(&counter.totalCount, 1)
 
+	slowCount := uint64(0)
+	totalCount := uint64(0)
+	counters := metricStat.allCounter()
+	for _, c := range counters {
+		slowCount += atomic.LoadUint64(&c.slowCount)
+		totalCount += atomic.LoadUint64(&c.totalCount)
+	}
+	slowRatio := float64(slowCount) / float64(totalCount)
+
 	// handleStateChange
 	curStatus := b.CurrentState()
 	if curStatus == Open {
@@ -228,7 +237,7 @@ func (b *slowRtCircuitBreaker) HandleCompleted(rt uint64, err error) {
 	} else if curStatus == HalfOpen {
 		if rt > b.maxAllowedRt {
 			// fail to probe
-			b.fromHalfOpenToOpen(rt)
+			b.fromHalfOpenToOpen(slowRatio)
 		} else {
 			// succeed to probe
 			b.fromHalfOpenToClosed()
@@ -237,17 +246,11 @@ func (b *slowRtCircuitBreaker) HandleCompleted(rt uint64, err error) {
 		return
 	}
 
-	slowCount := uint64(0)
-	totalCount := uint64(0)
-	counters := metricStat.allCounter()
-	for _, c := range counters {
-		slowCount += atomic.LoadUint64(&c.slowCount)
-		totalCount += atomic.LoadUint64(&c.totalCount)
-	}
+	// current state is CLOSED
 	if totalCount < b.minRequestAmount {
 		return
 	}
-	slowRatio := float64(slowCount) / float64(totalCount)
+
 	if slowRatio > b.maxSlowRequestRatio {
 		curStatus = b.CurrentState()
 		switch curStatus {
@@ -398,6 +401,15 @@ func (b *errorRatioCircuitBreaker) HandleCompleted(rt uint64, err error) {
 	}
 	atomic.AddUint64(&counter.totalCount, 1)
 
+	errorCount := uint64(0)
+	totalCount := uint64(0)
+	counters := metricStat.allCounter()
+	for _, c := range counters {
+		errorCount += atomic.LoadUint64(&c.errorCount)
+		totalCount += atomic.LoadUint64(&c.totalCount)
+	}
+	errorRatio := float64(errorCount) / float64(totalCount)
+
 	// handleStateChangeWhenThresholdExceeded
 	curStatus := b.CurrentState()
 	if curStatus == Open {
@@ -408,24 +420,15 @@ func (b *errorRatioCircuitBreaker) HandleCompleted(rt uint64, err error) {
 			b.fromHalfOpenToClosed()
 			b.resetMetric()
 		} else {
-			b.fromHalfOpenToOpen(err)
+			b.fromHalfOpenToOpen(errorRatio)
 		}
 		return
 	}
 
-	errorCount := uint64(0)
-	totalCount := uint64(0)
-	counters := metricStat.allCounter()
-	for _, c := range counters {
-		errorCount += atomic.LoadUint64(&c.errorCount)
-		totalCount += atomic.LoadUint64(&c.totalCount)
-	}
-
+	// current state is CLOSED
 	if totalCount < b.minRequestAmount {
 		return
 	}
-
-	errorRatio := float64(errorCount) / float64(totalCount)
 	if errorRatio > b.errorRatioThreshold {
 		curStatus = b.CurrentState()
 		switch curStatus {
@@ -575,6 +578,13 @@ func (b *errorCountCircuitBreaker) HandleCompleted(rt uint64, err error) {
 	}
 	atomic.AddUint64(&counter.totalCount, 1)
 
+	errorCount := uint64(0)
+	totalCount := uint64(0)
+	counters := metricStat.allCounter()
+	for _, c := range counters {
+		errorCount += atomic.LoadUint64(&c.errorCount)
+		totalCount += atomic.LoadUint64(&c.totalCount)
+	}
 	// handleStateChangeWhenThresholdExceeded
 	curStatus := b.CurrentState()
 	if curStatus == Open {
@@ -585,19 +595,11 @@ func (b *errorCountCircuitBreaker) HandleCompleted(rt uint64, err error) {
 			b.fromHalfOpenToClosed()
 			b.resetMetric()
 		} else {
-			b.fromHalfOpenToOpen(err)
+			b.fromHalfOpenToOpen(errorCount)
 		}
 		return
 	}
-
-	errorCount := uint64(0)
-	totalCount := uint64(0)
-	counters := metricStat.allCounter()
-	for _, c := range counters {
-		errorCount += atomic.LoadUint64(&c.errorCount)
-		totalCount += atomic.LoadUint64(&c.totalCount)
-	}
-
+	// current state is CLOSED
 	if totalCount < b.minRequestAmount {
 		return
 	}

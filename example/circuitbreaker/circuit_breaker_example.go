@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -15,15 +16,15 @@ type stateChangeTestListener struct {
 }
 
 func (s *stateChangeTestListener) OnChangeToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
-	fmt.Printf("From %s to Closed, time: %d\n", prev.String(), util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
 }
 
 func (s *stateChangeTestListener) OnChangeToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
-	fmt.Printf("From %s to Open, snapshot: %.2f, time: %d\n", prev.String(), snapshot, util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.BreakerStrategy(), prev.String(), snapshot, util.CurrentTimeMillis())
 }
 
 func (s *stateChangeTestListener) OnChangeToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
-	fmt.Printf("From %s to Half-Open, time: %d\n", prev.String(), util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
 }
 
 func main() {
@@ -35,8 +36,8 @@ func main() {
 	circuitbreaker.RegisterStatusSwitchListeners(&stateChangeTestListener{})
 
 	_, err = circuitbreaker.LoadRules([]circuitbreaker.Rule{
-		circuitbreaker.NewSlowRtRule("abc", 20000, 5000, 50, 20, 0.5),
-		circuitbreaker.NewErrorRatioRule("abc", 20000, 5000, 20, 0.5),
+		circuitbreaker.NewSlowRtRule("abc", 10000, 3000, 50, 10, 0.5),
+		circuitbreaker.NewErrorRatioRule("abc", 10000, 3000, 10, 0.5),
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -46,10 +47,13 @@ func main() {
 		for {
 			e, b := api.Entry("abc")
 			if b != nil {
-				fmt.Println("blocked")
+				fmt.Println("g1blocked")
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
-				fmt.Println("passed")
+				if rand.Uint64()%20 > 9 {
+					e.SetError(errors.New("biz error"))
+				}
+				fmt.Println("g1passed")
 				time.Sleep(time.Duration(rand.Uint64()%80) * time.Millisecond)
 				e.Exit()
 			}
@@ -59,10 +63,10 @@ func main() {
 		for {
 			e, b := api.Entry("abc")
 			if b != nil {
-				fmt.Println("blocked")
+				fmt.Println("g2blocked")
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
-				fmt.Println("passed")
+				fmt.Println("g2passed")
 				time.Sleep(time.Duration(rand.Uint64()%80) * time.Millisecond)
 				e.Exit()
 			}

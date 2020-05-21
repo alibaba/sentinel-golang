@@ -20,6 +20,9 @@ func (c *MetricStatSlot) OnEntryBlocked(_ *base.EntryContext, _ *base.BlockError
 }
 
 func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
+	if ctx.RuleCheckResult == nil || ctx.RuleCheckResult.IsBlocked() {
+		return
+	}
 	res := ctx.Resource.Name()
 	err := ctx.Err()
 	rt := ctx.Rt()

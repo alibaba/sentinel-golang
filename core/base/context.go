@@ -47,7 +47,6 @@ func (ctx *EntryContext) PutRt(rt uint64) {
 func (ctx *EntryContext) Rt() uint64 {
 	if ctx.rt == 0 {
 		rt := util.CurrentTimeMillis() - ctx.StartTime()
-		ctx.rt = rt
 		return rt
 	}
 	return ctx.rt
