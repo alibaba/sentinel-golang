@@ -29,7 +29,7 @@ func (m *CircuitBreakerMock) CurrentState() State {
 	return args.Get(0).(State)
 }
 
-// HandleCompleted handle the entry completed
+// OnRequestComplete handle the entry completed
 // rt: the response time this entry cost.
 func (m *CircuitBreakerMock) HandleCompleted(rt uint64, err error) {
 	m.Called(rt, err)

@@ -15,15 +15,15 @@ import (
 type stateChangeTestListener struct {
 }
 
-func (s *stateChangeTestListener) OnChangeToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
+func (s *stateChangeTestListener) OnTransformToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
 }
 
-func (s *stateChangeTestListener) OnChangeToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
+func (s *stateChangeTestListener) OnTransformToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
 	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.BreakerStrategy(), prev.String(), snapshot, util.CurrentTimeMillis())
 }
 
-func (s *stateChangeTestListener) OnChangeToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
+func (s *stateChangeTestListener) OnTransformToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
 }
 
@@ -33,7 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 	ch := make(chan struct{})
-	circuitbreaker.RegisterStatusSwitchListeners(&stateChangeTestListener{})
+	circuitbreaker.RegisterStateChangeListeners(&stateChangeTestListener{})
 
 	_, err = circuitbreaker.LoadRules([]circuitbreaker.Rule{
 		circuitbreaker.NewSlowRtRule("abc", 10000, 3000, 50, 10, 0.5),

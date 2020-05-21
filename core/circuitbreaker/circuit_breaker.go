@@ -49,11 +49,13 @@ func (s *State) get() State {
 	statePtr := (*int32)(unsafe.Pointer(s))
 	return State(atomic.LoadInt32(statePtr))
 }
+
 func (s *State) set(update State) {
 	statePtr := (*int32)(unsafe.Pointer(s))
 	newState := int32(update)
 	atomic.StoreInt32(statePtr, newState)
 }
+
 func (s *State) casState(expect State, update State) bool {
 	statePtr := (*int32)(unsafe.Pointer(s))
 	oldState := int32(expect)
@@ -62,24 +64,29 @@ func (s *State) casState(expect State, update State) bool {
 }
 
 type StateChangeListener interface {
-	OnChangeToClosed(prev State, rule Rule)
+	// OnTransformToClosed is triggered when when circuit breaker state transformed to Closed.
+	OnTransformToClosed(prev State, rule Rule)
 
-	OnChangeToOpen(prev State, rule Rule, snapshot interface{})
+	// OnTransformToOpen is triggered when when circuit breaker state transformed to Open.
+	// The "snapshot" indicates the triggered value when the transformation occurs.
+	OnTransformToOpen(prev State, rule Rule, snapshot interface{})
 
-	OnChangeToHalfOpen(prev State, rule Rule)
+	// OnTransformToOpen is triggered when when circuit breaker state transformed to HalfOpen.
+	OnTransformToHalfOpen(prev State, rule Rule)
 }
 
 type CircuitBreaker interface {
+	// BoundRule returns the associated circuit breaking rule.
 	BoundRule() Rule
-
+	// BoundStat returns the associated statistic data structure.
 	BoundStat() interface{}
-
+	// TryPass acquires permission of an invocation only if it is available at the time of invocation.
 	TryPass(ctx *base.EntryContext) bool
-
+	// CurrentState returns current state of the circuit breaker.
 	CurrentState() State
-	// HandleCompleted handle the entry completed, Will not call HandleCompleted if request is blocked.
-	// rt: the response time this entry cost.
-	HandleCompleted(rt uint64, err error)
+	// OnRequestComplete record a completed request with the given response time as well as error (if present),
+	// and handle state transformation of the circuit breaker.
+	OnRequestComplete(rtt uint64, err error)
 }
 
 //================================= circuitBreakerBase ====================================
@@ -106,54 +113,53 @@ func (b *circuitBreakerBase) updateNextRetryTimestamp() {
 	atomic.StoreUint64(&b.nextRetryTimestamp, util.CurrentTimeMillis()+uint64(b.retryTimeoutMs))
 }
 
-// fromClosedToOpen update circuit breaker status machine from closed to open
+// fromClosedToOpen update circuit breaker state machine from closed to open
 // Used for opening circuit breaker from closed when checking circuit breaker
 // return true if succeed to update
 func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
 	if b.status.casState(Closed, Open) {
 		b.updateNextRetryTimestamp()
-		for _, listener := range statusSwitchListeners {
-			listener.OnChangeToOpen(Closed, b.rule, snapshot)
+		for _, listener := range stateChangeListeners {
+			listener.OnTransformToOpen(Closed, b.rule, snapshot)
 		}
 		return true
 	}
 	return false
 }
 
-// fromOpenToHalfOpen update circuit breaker status machine from open to half-open
+// fromOpenToHalfOpen update circuit breaker state machine from open to half-open
 // Used for probing
 // return true if succeed to update
 func (b *circuitBreakerBase) fromOpenToHalfOpen() bool {
 	if b.status.casState(Open, HalfOpen) {
-		for _, listener := range statusSwitchListeners {
-			listener.OnChangeToHalfOpen(Open, b.rule)
+		for _, listener := range stateChangeListeners {
+			listener.OnTransformToHalfOpen(Open, b.rule)
 		}
 		return true
 	}
 	return false
 }
 
-// fromHalfOpenToOpen update circuit breaker status machine from half-open to open
+// fromHalfOpenToOpen update circuit breaker state machine from half-open to open
 // Used for failing to probe
 // return true if succeed to update
 func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 	if b.status.casState(HalfOpen, Open) {
 		b.updateNextRetryTimestamp()
-		for _, listener := range statusSwitchListeners {
-			listener.OnChangeToOpen(HalfOpen, b.rule, snapshot)
+		for _, listener := range stateChangeListeners {
+			listener.OnTransformToOpen(HalfOpen, b.rule, snapshot)
 		}
 		return true
 	}
 	return false
 }
 
-// fromHalfOpenToOpen update circuit breaker status machine from half-open to closed
-// Used for succeeding to probe
-// return true if succeed to update
+// fromHalfOpenToOpen update circuit breaker state machine from half-open to closed
+// Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromHalfOpenToClosed() bool {
 	if b.status.casState(HalfOpen, Closed) {
-		for _, listener := range statusSwitchListeners {
-			listener.OnChangeToClosed(HalfOpen, b.rule)
+		for _, listener := range stateChangeListeners {
+			listener.OnTransformToClosed(HalfOpen, b.rule)
 		}
 		return true
 	}
@@ -198,7 +204,7 @@ func (b *slowRtCircuitBreaker) BoundStat() interface{} {
 	return b.stat
 }
 
-// TryPass check circuit breaker based on status machine of circuit breaker.
+// TryPass check circuit breaker based on state machine of circuit breaker.
 func (b *slowRtCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	curStatus := b.CurrentState()
 	if curStatus == Closed {
@@ -212,7 +218,7 @@ func (b *slowRtCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	return false
 }
 
-func (b *slowRtCircuitBreaker) HandleCompleted(rt uint64, err error) {
+func (b *slowRtCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	// add slow and add total
 	metricStat := b.stat
 	counter := metricStat.currentCounter()
@@ -393,7 +399,7 @@ func (b *errorRatioCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	return false
 }
 
-func (b *errorRatioCircuitBreaker) HandleCompleted(rt uint64, err error) {
+func (b *errorRatioCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	metricStat := b.stat
 	counter := metricStat.currentCounter()
 	if err != nil {
@@ -570,7 +576,7 @@ func (b *errorCountCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	return false
 }
 
-func (b *errorCountCircuitBreaker) HandleCompleted(rt uint64, err error) {
+func (b *errorCountCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	metricStat := b.stat
 	counter := metricStat.currentCounter()
 	if err != nil {
