@@ -237,7 +237,7 @@ func (b *slowRtCircuitBreaker) HandleCompleted(rt uint64, err error) {
 	} else if curStatus == HalfOpen {
 		if rt > b.maxAllowedRt {
 			// fail to probe
-			b.fromHalfOpenToOpen(slowRatio)
+			b.fromHalfOpenToOpen(1.0)
 		} else {
 			// succeed to probe
 			b.fromHalfOpenToClosed()
@@ -420,7 +420,7 @@ func (b *errorRatioCircuitBreaker) HandleCompleted(rt uint64, err error) {
 			b.fromHalfOpenToClosed()
 			b.resetMetric()
 		} else {
-			b.fromHalfOpenToOpen(errorRatio)
+			b.fromHalfOpenToOpen(1.0)
 		}
 		return
 	}
@@ -595,7 +595,7 @@ func (b *errorCountCircuitBreaker) HandleCompleted(rt uint64, err error) {
 			b.fromHalfOpenToClosed()
 			b.resetMetric()
 		} else {
-			b.fromHalfOpenToOpen(errorCount)
+			b.fromHalfOpenToOpen(1)
 		}
 		return
 	}
