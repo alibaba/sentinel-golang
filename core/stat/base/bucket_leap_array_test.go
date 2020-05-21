@@ -16,21 +16,21 @@ func Test_NewBucketLeapArray(t *testing.T) {
 	now := util.CurrentTimeMillis()
 
 	br, err := slidingWindow.data.currentBucketOfTime(now, slidingWindow)
-	if br == nil || br.value.Load() == nil {
+	if br == nil || br.Value.Load() == nil {
 		t.Errorf("Unexcepted error")
 		return
 	}
 	if err != nil {
 		t.Errorf("Unexcepted error")
 	}
-	if br.bucketStart != (now - now%uint64(BucketLengthInMs)) {
+	if br.BucketStart != (now - now%uint64(BucketLengthInMs)) {
 		t.Errorf("Unexcepted error, bucket length is not same")
 	}
-	if br.value.Load() == nil {
-		t.Errorf("Unexcepted error, value is nil")
+	if br.Value.Load() == nil {
+		t.Errorf("Unexcepted error, Value is nil")
 	}
 	if slidingWindow.Count(base.MetricEventPass) != 0 {
-		t.Errorf("Unexcepted error, pass value is invalid")
+		t.Errorf("Unexcepted error, pass Value is invalid")
 	}
 }
 
@@ -82,7 +82,7 @@ func TestBucketLeapArray_resetBucketTo(t *testing.T) {
 	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
 	idx := 6
 	oldBucketWrap := bla.data.array.get(idx)
-	oldBucket := oldBucketWrap.value.Load()
+	oldBucket := oldBucketWrap.Value.Load()
 	if oldBucket == nil {
 		t.Errorf("BucketLeapArray init error.")
 	}
@@ -94,8 +94,8 @@ func TestBucketLeapArray_resetBucketTo(t *testing.T) {
 	bucket.Add(base.MetricEventBlock, 100)
 
 	wantStartTime := util.CurrentTimeMillis() + 1000
-	got := bla.resetBucketTo(oldBucketWrap, wantStartTime)
-	newBucket := got.value.Load()
+	got := bla.ResetBucketTo(oldBucketWrap, wantStartTime)
+	newBucket := got.Value.Load()
 	if newBucket == nil {
 		t.Errorf("got bucket is nil.")
 	}
@@ -104,9 +104,9 @@ func TestBucketLeapArray_resetBucketTo(t *testing.T) {
 		t.Errorf("Fail to assert bucket to MetricBucket.")
 	}
 	if newRealBucket.Get(base.MetricEventPass) != 0 {
-		t.Errorf("BucketLeapArray.resetBucketTo() execute fail.")
+		t.Errorf("BucketLeapArray.ResetBucketTo() execute fail.")
 	}
 	if newRealBucket.Get(base.MetricEventBlock) != 0 {
-		t.Errorf("BucketLeapArray.resetBucketTo() execute fail.")
+		t.Errorf("BucketLeapArray.ResetBucketTo() execute fail.")
 	}
 }

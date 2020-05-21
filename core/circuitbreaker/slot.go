@@ -1,4 +1,4 @@
-package circuit_breaker
+package circuitbreaker
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"

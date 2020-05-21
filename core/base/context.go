@@ -1,8 +1,15 @@
 package base
 
+import "github.com/alibaba/sentinel-golang/util"
+
 type EntryContext struct {
+	// internal error when sentinel entry or
+	// biz error of downstream
+	err error
 	// Use to calculate RT
 	startTime uint64
+	// the rt of this transaction
+	rt uint64
 
 	Resource *ResourceWrapper
 	StatNode StatNode
@@ -14,6 +21,14 @@ type EntryContext struct {
 	Data map[interface{}]interface{}
 }
 
+func (ctx *EntryContext) Err() error {
+	return ctx.err
+}
+
+func (ctx *EntryContext) SetError(err error) {
+	ctx.err = err
+}
+
 func (ctx *EntryContext) StartTime() uint64 {
 	return ctx.startTime
 }
@@ -23,6 +38,18 @@ func (ctx *EntryContext) IsBlocked() bool {
 		return false
 	}
 	return ctx.RuleCheckResult.IsBlocked()
+}
+
+func (ctx *EntryContext) PutRt(rt uint64) {
+	ctx.rt = rt
+}
+
+func (ctx *EntryContext) Rt() uint64 {
+	if ctx.rt == 0 {
+		rt := util.CurrentTimeMillis() - ctx.StartTime()
+		return rt
+	}
+	return ctx.rt
 }
 
 func NewEmptyEntryContext() *EntryContext {
@@ -50,7 +77,9 @@ func newEmptyInput() *SentinelInput {
 // Reset init EntryContext,
 func (ctx *EntryContext) Reset() {
 	// reset all fields of ctx
+	ctx.err = nil
 	ctx.startTime = 0
+	ctx.rt = 0
 	ctx.Resource = nil
 	ctx.StatNode = nil
 	ctx.Input = nil

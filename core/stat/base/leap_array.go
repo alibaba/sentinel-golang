@@ -15,71 +15,71 @@ const (
 	PtrSize = int(8)
 )
 
-// bucketWrap represent a slot to record metrics
-// In order to reduce the usage of memory, bucketWrap don't hold length of bucketWrap
-// The length of bucketWrap could be seen in leapArray.
+// BucketWrap represent a slot to record metrics
+// In order to reduce the usage of memory, BucketWrap don't hold length of BucketWrap
+// The length of BucketWrap could be seen in LeapArray.
 // The scope of time is [startTime, startTime+bucketLength)
-// The size of bucketWrap is 24(8+16) bytes
-type bucketWrap struct {
+// The size of BucketWrap is 24(8+16) bytes
+type BucketWrap struct {
 	// The start timestamp of this statistic bucket wrapper.
-	bucketStart uint64
+	BucketStart uint64
 	// The actual data structure to record the metrics (e.g. MetricBucket).
-	value atomic.Value
+	Value atomic.Value
 }
 
-func (ww *bucketWrap) resetTo(startTime uint64) {
-	ww.bucketStart = startTime
+func (ww *BucketWrap) resetTo(startTime uint64) {
+	ww.BucketStart = startTime
 }
 
-func (ww *bucketWrap) isTimeInBucket(now uint64, bucketLengthInMs uint32) bool {
-	return ww.bucketStart <= now && now < ww.bucketStart+uint64(bucketLengthInMs)
+func (ww *BucketWrap) isTimeInBucket(now uint64, bucketLengthInMs uint32) bool {
+	return ww.BucketStart <= now && now < ww.BucketStart+uint64(bucketLengthInMs)
 }
 
 func calculateStartTime(now uint64, bucketLengthInMs uint32) uint64 {
 	return now - (now % uint64(bucketLengthInMs))
 }
 
-// atomic bucketWrap array to resolve race condition
-// atomicBucketWrapArray can not append or delete element after initializing
-type atomicBucketWrapArray struct {
+// atomic BucketWrap array to resolve race condition
+// AtomicBucketWrapArray can not append or delete element after initializing
+type AtomicBucketWrapArray struct {
 	// The base address for real data array
 	base unsafe.Pointer
 	// The length of slice(array), it can not be modified.
 	length int
-	data   []*bucketWrap
+	data   []*BucketWrap
 }
 
-// New atomicBucketWrapArray with initializing field data
-// Default, automatically initialize each bucketWrap
+// New AtomicBucketWrapArray with initializing field data
+// Default, automatically initialize each BucketWrap
 // len: length of array
-// bucketLengthInMs: bucket length of bucketWrap
+// bucketLengthInMs: bucket length of BucketWrap
 // generator: generator to generate bucket
-func newAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator bucketGenerator) *atomicBucketWrapArray {
-	ret := &atomicBucketWrapArray{
+func NewAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator BucketGenerator) *AtomicBucketWrapArray {
+	ret := &AtomicBucketWrapArray{
 		length: len,
-		data:   make([]*bucketWrap, len),
+		data:   make([]*BucketWrap, len),
 	}
 
-	// automatically initialize each bucketWrap
-	// tail bucketWrap of data is initialized with current time
+	// automatically initialize each BucketWrap
+	// tail BucketWrap of data is initialized with current time
 	startTime := calculateStartTime(util.CurrentTimeMillis(), bucketLengthInMs)
 	for i := len - 1; i >= 0; i-- {
-		ww := &bucketWrap{
-			bucketStart: startTime,
-			value:       atomic.Value{},
+		ww := &BucketWrap{
+			BucketStart: startTime,
+			Value:       atomic.Value{},
 		}
-		ww.value.Store(generator.newEmptyBucket())
+		ww.Value.Store(generator.NewEmptyBucket())
 		ret.data[i] = ww
 		startTime -= uint64(bucketLengthInMs)
 	}
 
 	// calculate base address for real data array
 	sliHeader := (*util.SliceHeader)(unsafe.Pointer(&ret.data))
-	ret.base = unsafe.Pointer((**bucketWrap)(unsafe.Pointer(sliHeader.Data)))
+	ret.base = unsafe.Pointer((**BucketWrap)(unsafe.Pointer(sliHeader.Data)))
 	return ret
 }
 
-func (aa *atomicBucketWrapArray) elementOffset(idx int) unsafe.Pointer {
+func (aa *AtomicBucketWrapArray) elementOffset(idx int) unsafe.Pointer {
 	if idx >= aa.length && idx < 0 {
 		panic(fmt.Sprintf("The index (%d) is out of bounds, length is %d.", idx, aa.length))
 	}
@@ -87,37 +87,53 @@ func (aa *atomicBucketWrapArray) elementOffset(idx int) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(basePtr) + uintptr(idx*PtrSize))
 }
 
-func (aa *atomicBucketWrapArray) get(idx int) *bucketWrap {
-	// aa.elementOffset(idx) return the secondary pointer of bucketWrap, which is the pointer to the aa.data[idx]
+func (aa *AtomicBucketWrapArray) get(idx int) *BucketWrap {
+	// aa.elementOffset(idx) return the secondary pointer of BucketWrap, which is the pointer to the aa.data[idx]
 	// then convert to (*unsafe.Pointer)
-	return (*bucketWrap)(atomic.LoadPointer((*unsafe.Pointer)(aa.elementOffset(idx))))
+	return (*BucketWrap)(atomic.LoadPointer((*unsafe.Pointer)(aa.elementOffset(idx))))
 }
 
-func (aa *atomicBucketWrapArray) compareAndSet(idx int, except, update *bucketWrap) bool {
-	// aa.elementOffset(idx) return the secondary pointer of bucketWrap, which is the pointer to the aa.data[idx]
+func (aa *AtomicBucketWrapArray) compareAndSet(idx int, except, update *BucketWrap) bool {
+	// aa.elementOffset(idx) return the secondary pointer of BucketWrap, which is the pointer to the aa.data[idx]
 	// then convert to (*unsafe.Pointer)
 	// update secondary pointer
 	return atomic.CompareAndSwapPointer((*unsafe.Pointer)(aa.elementOffset(idx)), unsafe.Pointer(except), unsafe.Pointer(update))
 }
 
-// The bucketWrap leap array,
-// sampleCount represent the number of bucketWrap
-// intervalInMs represent the interval of leapArray.
+// The BucketWrap leap array,
+// sampleCount represent the number of BucketWrap
+// intervalInMs represent the interval of LeapArray.
 // For example, bucketLengthInMs is 500ms, intervalInMs is 1min, so sampleCount is 120.
-type leapArray struct {
+type LeapArray struct {
 	bucketLengthInMs uint32
 	sampleCount      uint32
 	intervalInMs     uint32
-	array            *atomicBucketWrapArray
+	array            *AtomicBucketWrapArray
 	// update lock
 	updateLock mutex
 }
 
-func (la *leapArray) currentBucket(bg bucketGenerator) (*bucketWrap, error) {
+func NewLeapArray(sampleCount uint32, intervalInMs uint32, generator BucketGenerator) *LeapArray {
+	if intervalInMs%sampleCount != 0 {
+		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
+	}
+	if generator == nil {
+		panic("Invalid parameters, generator is nil.")
+	}
+	bucketLengthInMs := intervalInMs / sampleCount
+	return &LeapArray{
+		bucketLengthInMs: bucketLengthInMs,
+		sampleCount:      sampleCount,
+		intervalInMs:     intervalInMs,
+		array:            NewAtomicBucketWrapArray(int(sampleCount), intervalInMs, generator),
+	}
+}
+
+func (la *LeapArray) CurrentBucket(bg BucketGenerator) (*BucketWrap, error) {
 	return la.currentBucketOfTime(util.CurrentTimeMillis(), bg)
 }
 
-func (la *leapArray) currentBucketOfTime(now uint64, bg bucketGenerator) (*bucketWrap, error) {
+func (la *LeapArray) currentBucketOfTime(now uint64, bg BucketGenerator) (*BucketWrap, error) {
 	if now < 0 {
 		return nil, errors.New("Current time is less than 0.")
 	}
@@ -125,55 +141,55 @@ func (la *leapArray) currentBucketOfTime(now uint64, bg bucketGenerator) (*bucke
 	idx := la.calculateTimeIdx(now)
 	bucketStart := calculateStartTime(now, la.bucketLengthInMs)
 
-	for { //spin to get the current bucketWrap
+	for { //spin to get the current BucketWrap
 		old := la.array.get(idx)
 		if old == nil {
 			// because la.array.data had initiated when new la.array
 			// theoretically, here is not reachable
-			newWrap := &bucketWrap{
-				bucketStart: bucketStart,
-				value:       atomic.Value{},
+			newWrap := &BucketWrap{
+				BucketStart: bucketStart,
+				Value:       atomic.Value{},
 			}
-			newWrap.value.Store(bg.newEmptyBucket())
+			newWrap.Value.Store(bg.NewEmptyBucket())
 			if la.array.compareAndSet(idx, nil, newWrap) {
 				return newWrap, nil
 			} else {
 				runtime.Gosched()
 			}
-		} else if bucketStart == atomic.LoadUint64(&old.bucketStart) {
+		} else if bucketStart == atomic.LoadUint64(&old.BucketStart) {
 			return old, nil
-		} else if bucketStart > atomic.LoadUint64(&old.bucketStart) {
-			// current time has been next cycle of leapArray and leapArray dont't count in last cycle.
-			// reset bucketWrap
+		} else if bucketStart > atomic.LoadUint64(&old.BucketStart) {
+			// current time has been next cycle of LeapArray and LeapArray dont't count in last cycle.
+			// reset BucketWrap
 			if la.updateLock.TryLock() {
-				old = bg.resetBucketTo(old, bucketStart)
+				old = bg.ResetBucketTo(old, bucketStart)
 				la.updateLock.Unlock()
 				return old, nil
 			} else {
 				runtime.Gosched()
 			}
-		} else if bucketStart < old.bucketStart {
+		} else if bucketStart < old.BucketStart {
 			// TODO: reserve for some special case (e.g. when occupying "future" buckets).
-			return nil, errors.New(fmt.Sprintf("Provided time timeMillis=%d is already behind old.bucketStart=%d.", bucketStart, old.bucketStart))
+			return nil, errors.New(fmt.Sprintf("Provided time timeMillis=%d is already behind old.BucketStart=%d.", bucketStart, old.BucketStart))
 		}
 	}
 }
 
-func (la *leapArray) calculateTimeIdx(now uint64) int {
+func (la *LeapArray) calculateTimeIdx(now uint64) int {
 	timeId := now / uint64(la.bucketLengthInMs)
 	return int(timeId) % la.array.length
 }
 
-//  Get all bucketWrap between [current time -1000ms, current time]
-func (la *leapArray) values() []*bucketWrap {
+//  Get all BucketWrap between [current time -1000ms, current time]
+func (la *LeapArray) Values() []*BucketWrap {
 	return la.valuesWithTime(util.CurrentTimeMillis())
 }
 
-func (la *leapArray) valuesWithTime(now uint64) []*bucketWrap {
+func (la *LeapArray) valuesWithTime(now uint64) []*BucketWrap {
 	if now <= 0 {
-		return make([]*bucketWrap, 0)
+		return make([]*BucketWrap, 0)
 	}
-	ret := make([]*bucketWrap, 0)
+	ret := make([]*BucketWrap, 0)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
 		if ww == nil || la.isBucketDeprecated(now, ww) {
@@ -184,14 +200,14 @@ func (la *leapArray) valuesWithTime(now uint64) []*bucketWrap {
 	return ret
 }
 
-func (la *leapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*bucketWrap {
+func (la *LeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*BucketWrap {
 	if now <= 0 {
-		return make([]*bucketWrap, 0)
+		return make([]*BucketWrap, 0)
 	}
-	ret := make([]*bucketWrap, 0)
+	ret := make([]*BucketWrap, 0)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
-		if ww == nil || la.isBucketDeprecated(now, ww) || !predicate(atomic.LoadUint64(&ww.bucketStart)) {
+		if ww == nil || la.isBucketDeprecated(now, ww) || !predicate(atomic.LoadUint64(&ww.BucketStart)) {
 			continue
 		}
 		ret = append(ret, ww)
@@ -199,17 +215,17 @@ func (la *leapArray) ValuesConditional(now uint64, predicate base.TimePredicate)
 	return ret
 }
 
-// Judge whether the bucketWrap is expired
-func (la *leapArray) isBucketDeprecated(now uint64, ww *bucketWrap) bool {
-	ws := atomic.LoadUint64(&ww.bucketStart)
+// Judge whether the BucketWrap is expired
+func (la *LeapArray) isBucketDeprecated(now uint64, ww *BucketWrap) bool {
+	ws := atomic.LoadUint64(&ww.BucketStart)
 	return (now - ws) > uint64(la.intervalInMs)
 }
 
 // Generic interface to generate bucket
-type bucketGenerator interface {
+type BucketGenerator interface {
 	// called when timestamp entry a new slot interval
-	newEmptyBucket() interface{}
+	NewEmptyBucket() interface{}
 
-	// reset the bucketWrap, clear all data of bucketWrap
-	resetBucketTo(ww *bucketWrap, startTime uint64) *bucketWrap
+	// reset the BucketWrap, clear all data of BucketWrap
+	ResetBucketTo(bw *BucketWrap, startTime uint64) *BucketWrap
 }
