@@ -64,14 +64,14 @@ func (s *State) casState(expect State, update State) bool {
 }
 
 type StateChangeListener interface {
-	// OnTransformToClosed is triggered when when circuit breaker state transformed to Closed.
+	// OnTransformToClosed is triggered when circuit breaker state transformed to Closed.
 	OnTransformToClosed(prev State, rule Rule)
 
-	// OnTransformToOpen is triggered when when circuit breaker state transformed to Open.
+	// OnTransformToOpen is triggered when circuit breaker state transformed to Open.
 	// The "snapshot" indicates the triggered value when the transformation occurs.
 	OnTransformToOpen(prev State, rule Rule, snapshot interface{})
 
-	// OnTransformToOpen is triggered when when circuit breaker state transformed to HalfOpen.
+	// OnTransformToHalfOpen is triggered when circuit breaker state transformed to HalfOpen.
 	OnTransformToHalfOpen(prev State, rule Rule)
 }
 
@@ -113,9 +113,8 @@ func (b *circuitBreakerBase) updateNextRetryTimestamp() {
 	atomic.StoreUint64(&b.nextRetryTimestamp, util.CurrentTimeMillis()+uint64(b.retryTimeoutMs))
 }
 
-// fromClosedToOpen update circuit breaker state machine from closed to open
-// Used for opening circuit breaker from closed when checking circuit breaker
-// return true if succeed to update
+// fromClosedToOpen updates circuit breaker state machine from closed to open.
+// Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
 	if b.status.casState(Closed, Open) {
 		b.updateNextRetryTimestamp()
@@ -127,9 +126,8 @@ func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
 	return false
 }
 
-// fromOpenToHalfOpen update circuit breaker state machine from open to half-open
-// Used for probing
-// return true if succeed to update
+// fromOpenToHalfOpen updates circuit breaker state machine from open to half-open.
+// Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromOpenToHalfOpen() bool {
 	if b.status.casState(Open, HalfOpen) {
 		for _, listener := range stateChangeListeners {
@@ -140,9 +138,8 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen() bool {
 	return false
 }
 
-// fromHalfOpenToOpen update circuit breaker state machine from half-open to open
-// Used for failing to probe
-// return true if succeed to update
+// fromHalfOpenToOpen updates circuit breaker state machine from half-open to open.
+// Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 	if b.status.casState(HalfOpen, Open) {
 		b.updateNextRetryTimestamp()
@@ -154,7 +151,7 @@ func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 	return false
 }
 
-// fromHalfOpenToOpen update circuit breaker state machine from half-open to closed
+// fromHalfOpenToOpen updates circuit breaker state machine from half-open to closed
 // Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromHalfOpenToClosed() bool {
 	if b.status.casState(HalfOpen, Closed) {

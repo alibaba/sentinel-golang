@@ -3,11 +3,10 @@ package circuitbreaker
 import (
 	"fmt"
 
-	"go.uber.org/multierr"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 )
 
 // The strategy of circuit breaker.
