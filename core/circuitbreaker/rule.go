@@ -3,27 +3,26 @@ package circuitbreaker
 import (
 	"fmt"
 
-	"go.uber.org/multierr"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 )
 
-// The strategy of circuit breaker
-// Each strategy represent one rule type
+// The strategy of circuit breaker.
+// Each strategy represents one rule type.
 type Strategy int8
 
 const (
-	SlowRt Strategy = iota
+	SlowRequestRatio Strategy = iota
 	ErrorRatio
 	ErrorCount
 )
 
 func (s Strategy) String() string {
 	switch s {
-	case SlowRt:
-		return "SlowRt"
+	case SlowRequestRatio:
+		return "SlowRequestRatio"
 	case ErrorRatio:
 		return "ErrorRatio"
 	case ErrorCount:
@@ -33,32 +32,36 @@ func (s Strategy) String() string {
 	}
 }
 
-// The base interface of circuit breaker rule
+// Rule represents the base interface of the circuit breaker rule.
 type Rule interface {
 	base.SentinelRule
-	// return the strategy type
+	// BreakerStrategy returns the strategy.
 	BreakerStrategy() Strategy
-	// check whether the rule is valid and could be converted to corresponding circuit breaker
+	// IsApplicable checks whether the rule is valid and could be converted to a corresponding circuit breaker.
 	IsApplicable() error
-	// return circuit breaker stat interval
+	// BreakerStatIntervalMs returns the statistic interval of circuit breaker (in milliseconds).
 	BreakerStatIntervalMs() uint32
-	// check whether is consistent with new rule
+	// IsEqualsTo checks whether current rule is consistent with the given rule.
 	IsEqualsTo(r Rule) bool
-	// check whether the statistic of old circuit breaker is reuseable for new circuit breaker
+	// IsStatReusable checks whether current rule is "statistically" equal to the given rule.
 	IsStatReusable(r Rule) bool
 }
 
-// The common fields of circuit breaker rule
+// RuleBase encompasses common fields of circuit breaking rule.
 type RuleBase struct {
 	// unique id
 	Id string
 	// resource name
 	Resource string
 	Strategy Strategy
-	// auto recover timeout in ms, all requests would be broken before auto recover
-	RetryTimeoutMs   uint32
+	// RetryTimeoutMs represents recovery timeout (in seconds) before the circuit breaker opens.
+	// During the open period, no requests are permitted until the timeout has elapsed.
+	// After that, the circuit breaker will transform to half-open state for trying a few "trial" requests.
+	RetryTimeoutMs uint32
+	// MinRequestAmount represents the minimum number of requests (in an active statistic time span)
+	// that can trigger circuit breaking.
 	MinRequestAmount uint64
-
+	// StatIntervalMs represents statistic time interval of the internal circuit breaker (in ms).
 	StatIntervalMs uint32
 }
 
@@ -92,11 +95,13 @@ func (b *RuleBase) ResourceName() string {
 	return b.Resource
 }
 
-// SlowRt circuit breaker rule
+// SlowRequestRatio circuit breaker rule
 type slowRtRule struct {
 	RuleBase
-	// max allowed rt in ms
-	MaxAllowedRt        uint64
+	// MaxAllowedRt indicates that any invocation whose response time exceeds this value
+	// will be recorded as a slow request.
+	MaxAllowedRt uint64
+	// MaxSlowRequestRatio represents the threshold of slow request ratio.
 	MaxSlowRequestRatio float64
 }
 
@@ -105,7 +110,7 @@ func NewSlowRtRule(resource string, intervalMs uint32, retryTimeoutMs uint32, ma
 		RuleBase: RuleBase{
 			Id:               util.NewUuid(),
 			Resource:         resource,
-			Strategy:         SlowRt,
+			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   retryTimeoutMs,
 			MinRequestAmount: minRequestAmount,
 			StatIntervalMs:   intervalMs,

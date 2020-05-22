@@ -4,8 +4,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
-// MetricStatSlot add statistic metric for circuit breaker
-// statistic is based on completed.
+// MetricStatSlot records metrics for circuit breaker on invocation completed.
 type MetricStatSlot struct {
 }
 
@@ -20,6 +19,7 @@ func (c *MetricStatSlot) OnEntryBlocked(_ *base.EntryContext, _ *base.BlockError
 }
 
 func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
+	// The slot will ignore blocked requests.
 	if ctx.RuleCheckResult == nil || ctx.RuleCheckResult.IsBlocked() {
 		return
 	}
@@ -27,6 +27,6 @@ func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
 	err := ctx.Err()
 	rt := ctx.Rt()
 	for _, cb := range getResBreakers(res) {
-		cb.HandleCompleted(rt, err)
+		cb.OnRequestComplete(rt, err)
 	}
 }

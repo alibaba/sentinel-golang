@@ -4,10 +4,8 @@ import (
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-
-	"github.com/stretchr/testify/mock"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 type CircuitBreakerMock struct {
@@ -17,6 +15,11 @@ type CircuitBreakerMock struct {
 func (m *CircuitBreakerMock) BoundRule() Rule {
 	args := m.Called()
 	return args.Get(0).(Rule)
+}
+
+func (m *CircuitBreakerMock) BoundStat() interface{} {
+	args := m.Called()
+	return args.Get(0)
 }
 
 func (m *CircuitBreakerMock) TryPass(ctx *base.EntryContext) bool {
@@ -29,9 +32,7 @@ func (m *CircuitBreakerMock) CurrentState() State {
 	return args.Get(0).(State)
 }
 
-// HandleCompleted handle the entry completed
-// rt: the response time this entry cost.
-func (m *CircuitBreakerMock) HandleCompleted(rt uint64, err error) {
+func (m *CircuitBreakerMock) OnRequestComplete(rt uint64, err error) {
 	m.Called(rt, err)
 	return
 }
