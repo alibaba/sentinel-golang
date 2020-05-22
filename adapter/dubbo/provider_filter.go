@@ -42,12 +42,12 @@ func (d *providerFilter) Invoke(ctx context.Context, invoker protocol.Invoker, i
 func (d *providerFilter) OnResponse(ctx context.Context, result protocol.Result, _ protocol.Invoker, _ protocol.Invocation) protocol.Result {
 	if methodEntry := ctx.Value(MethodEntryKey); methodEntry != nil {
 		e := methodEntry.(*base.SentinelEntry)
-		sentinel.TraceErrorToEntry(e, result.Error())
+		sentinel.TraceError(e, result.Error())
 		e.Exit()
 	}
 	if interfaceEntry := ctx.Value(InterfaceEntryKey); interfaceEntry != nil {
 		e := interfaceEntry.(*base.SentinelEntry)
-		sentinel.TraceErrorToEntry(e, result.Error())
+		sentinel.TraceError(e, result.Error())
 		e.Exit()
 	}
 	return result
