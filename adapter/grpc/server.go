@@ -37,7 +37,7 @@ func NewUnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 
 		res, err := handler(ctx, req)
 		if err != nil {
-			sentinel.TraceErrorToEntry(entry, err)
+			sentinel.TraceError(entry, err)
 		}
 		return res, err
 	}
@@ -72,7 +72,7 @@ func NewStreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 
 		err := handler(srv, ss)
 		if err != nil {
-			sentinel.TraceErrorToEntry(entry, err)
+			sentinel.TraceError(entry, err)
 		}
 		return err
 	}
