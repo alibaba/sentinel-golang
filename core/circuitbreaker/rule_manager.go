@@ -1,8 +1,8 @@
 package circuitbreaker
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -19,11 +19,11 @@ var (
 	breakers     = make(map[string][]CircuitBreaker)
 	updateMux    = &sync.RWMutex{}
 
-	statusSwitchListeners = make([]StateChangeListener, 0)
+	stateChangeListeners = make([]StateChangeListener, 0)
 )
 
 func init() {
-	cbGenFuncMap[SlowRt] = func(r Rule, reuseStat interface{}) CircuitBreaker {
+	cbGenFuncMap[SlowRequestRatio] = func(r Rule, reuseStat interface{}) CircuitBreaker {
 		rtRule, ok := r.(*slowRtRule)
 		if !ok || rtRule == nil {
 			return nil
@@ -82,9 +82,10 @@ func GetResRules(resource string) []Rule {
 	return ret
 }
 
-// Load the newer rules to manager.
-// rules: the newer rules, if len of rules is 0, will clear all rules of manager.
+// LoadRules replaces old rules with the given circuit breaking rules.
+//
 // return value:
+//
 // bool: was designed to indicate whether the internal map has been changed
 // error: was designed to indicate whether occurs the error.
 func LoadRules(rules []Rule) (bool, error) {
@@ -123,7 +124,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 			continue
 		}
 		if err := rule.IsApplicable(); err != nil {
-			logger.Warnf("Ignoring invalid breaker rule when loading new rules,rule: %+v, err: %+v.", rule, err)
+			logger.Warnf("Ignoring invalid circuit breaking rule when loading new rules, rule: %+v, err: %+v", rule, err)
 			continue
 		}
 
@@ -144,6 +145,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 	for res, resRules := range newBreakerRules {
 		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
 		for _, r := range resRules {
+			// TODO: rearrange the code here.
 			oldResCbs := breakers[res]
 			if oldResCbs == nil {
 				oldResCbs = emptyCircuitBreakerList
@@ -239,33 +241,32 @@ func rulesFrom(rm map[string][]Rule) []Rule {
 }
 
 func logRuleUpdate(rules map[string][]Rule) {
-	sb := strings.Builder{}
-	sb.WriteString("[CircuitBreakerRuleManager] succeed to load circuit breakers:\n")
-	for _, rule := range rulesFrom(rules) {
-		sb.WriteString(rule.String())
-		sb.WriteString("\n")
+	s, err := json.Marshal(rules)
+	if err != nil {
+		logger.Info("Circuit breaking rules loaded")
+	} else {
+		logger.Infof("Circuit breaking rules loaded: %s", s)
 	}
-	logger.Info(sb.String())
 }
 
-func RegisterStatusSwitchListeners(listeners ...StateChangeListener) {
+func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	if len(listeners) == 0 {
 		return
 	}
 	updateMux.Lock()
 	defer updateMux.Unlock()
 
-	statusSwitchListeners = append(statusSwitchListeners, listeners...)
+	stateChangeListeners = append(stateChangeListeners, listeners...)
 }
 
-// SetTrafficShapingGenerator sets the traffic controller generator for the given control behavior.
-// Note that modifying the generator of default control behaviors is not allowed.
-func SetTrafficShapingGenerator(s Strategy, generator CircuitBreakerGenFunc) error {
+// SetCircuitBreakerGenerator sets the circuit breaker generator for the given strategy.
+// Note that modifying the generator of default strategies is not allowed.
+func SetCircuitBreakerGenerator(s Strategy, generator CircuitBreakerGenFunc) error {
 	if generator == nil {
 		return errors.New("nil generator")
 	}
-	if s >= SlowRt && s <= ErrorCount {
-		return errors.New("not allowed to replace the generator for default control behaviors")
+	if s >= SlowRequestRatio && s <= ErrorCount {
+		return errors.New("not allowed to replace the generator for default circuit breaking strategies")
 	}
 	updateMux.Lock()
 	defer updateMux.Unlock()
@@ -274,9 +275,9 @@ func SetTrafficShapingGenerator(s Strategy, generator CircuitBreakerGenFunc) err
 	return nil
 }
 
-func RemoveTrafficShapingGenerator(s Strategy) error {
-	if s >= SlowRt && s <= ErrorCount {
-		return errors.New("not allowed to replace the generator for default control behaviors")
+func RemoveCircuitBreakerGenerator(s Strategy) error {
+	if s >= SlowRequestRatio && s <= ErrorCount {
+		return errors.New("not allowed to replace the generator for default circuit breaking strategies")
 	}
 	updateMux.Lock()
 	defer updateMux.Unlock()
