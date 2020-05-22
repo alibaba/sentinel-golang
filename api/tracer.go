@@ -19,13 +19,3 @@ func TraceError(entry *base.SentinelEntry, err error) {
 
 	entry.SetError(err)
 }
-
-func traceErrorToNode(node base.StatNode, err error, cnt uint64) {
-	if node == nil {
-		return
-	}
-	if cnt <= 0 {
-		return
-	}
-	node.AddMetric(base.MetricEventError, cnt)
-}
