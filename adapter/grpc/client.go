@@ -40,7 +40,7 @@ func NewUnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		if err != nil {
-			sentinel.TraceErrorToEntry(entry, err)
+			sentinel.TraceError(entry, err)
 		}
 		return err
 	}
@@ -78,7 +78,7 @@ func NewStreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 
 		cs, err := streamer(ctx, desc, cc, method, opts...)
 		if err != nil {
-			sentinel.TraceErrorToEntry(entry, err)
+			sentinel.TraceError(entry, err)
 		}
 
 		return cs, err
