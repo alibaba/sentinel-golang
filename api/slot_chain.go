@@ -4,6 +4,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/core/freq_params_traffic"
 	"github.com/alibaba/sentinel-golang/core/log"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system"
@@ -30,8 +31,10 @@ func BuildDefaultSlotChain() *base.SlotChain {
 	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
 	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
 	sc.AddRuleCheckSlotLast(&circuitbreaker.CircuitBreakerSlot{})
+	sc.AddRuleCheckSlotLast(&freq_params_traffic.FreqPramsTrafficSlot{})
 	sc.AddStatSlotLast(&stat.StatisticSlot{})
 	sc.AddStatSlotLast(&log.LogSlot{})
 	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
+	sc.AddStatSlotLast(&freq_params_traffic.ConcurrencyStatSlot{})
 	return sc
 }

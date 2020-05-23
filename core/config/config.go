@@ -134,7 +134,7 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 	}
 
 	// Note: not thread-safe!
-	logging.ResetDefaultLogger(log.New(logFile, "", log.LstdFlags), logging.DefaultNamespace)
+	logging.ResetDefaultLogger(log.New(logFile, "", log.LstdFlags|log.Lshortfile), logging.DefaultNamespace)
 	fmt.Println("INFO: log base directory is: " + logDir)
 
 	return nil

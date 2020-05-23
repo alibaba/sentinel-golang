@@ -3,6 +3,9 @@ package util
 import "sync/atomic"
 
 func IncrementAndGetInt64(v *int64) int64 {
+	if v == nil {
+		panic("Nil reference in util.IncrementAndGetInt64")
+	}
 	old := int64(0)
 	for {
 		old = atomic.LoadInt64(v)
@@ -11,6 +14,20 @@ func IncrementAndGetInt64(v *int64) int64 {
 		}
 	}
 	return old + 1
+}
+
+func DecrementAndGetInt64(v *int64) int64 {
+	if v == nil {
+		panic("Nil reference in util.DecrementAndGetInt64")
+	}
+	old := int64(0)
+	for {
+		old = atomic.LoadInt64(v)
+		if atomic.CompareAndSwapInt64(v, old, old-1) {
+			break
+		}
+	}
+	return old - 1
 }
 
 type AtomicBool struct {

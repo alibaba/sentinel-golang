@@ -16,7 +16,7 @@ func TestNewSimpleFileLogger(t *testing.T) {
 	if !strings.HasSuffix(tmpDir, string(os.PathSeparator)) {
 		tmpDir = tmpDir + string(os.PathSeparator)
 	}
-	logger, err := NewSimpleFileLogger(tmpDir+fileName, "test-log", log.LstdFlags)
+	logger, err := NewSimpleFileLogger(tmpDir+fileName, "test-log", log.LstdFlags|log.LstdFlags)
 	assert.NoError(t, err)
 
 	logger.Debug("debug info test.")
