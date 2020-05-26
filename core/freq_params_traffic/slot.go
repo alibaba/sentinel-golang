@@ -103,6 +103,9 @@ func (s *FreqPramsTrafficSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 			continue
 		}
 		r := canPassCheck(tc, arg, acquire)
+		if r == nil {
+			continue
+		}
 		if r.Status() == base.ResultStatusBlocked {
 			return r
 		}

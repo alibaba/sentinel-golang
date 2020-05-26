@@ -87,19 +87,19 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 	concurrencyPtr := c.metric.ConcurrencyCounter.AddIfAbsent(arg, initConcurrency)
 	if concurrencyPtr == nil {
 		// First to access this arg
-		return base.NewTokenResultPass()
+		return nil
 	}
 	concurrency := atomic.LoadInt64(concurrencyPtr)
 	concurrency++
 	if specificConcurrency, existed := specificItem[arg]; existed {
 		if concurrency <= specificConcurrency {
-			return base.NewTokenResultPass()
+			return nil
 		}
 		return base.NewTokenResultBlocked(base.BlockTypeFreqParamsFlow, fmt.Sprintf("Frequency params traffic shaping controller, current concurrency: %d, specific concurrency: %d", concurrency, specificConcurrency))
 	}
 	threshold := int64(c.threshold)
 	if concurrency <= threshold {
-		return base.NewTokenResultPass()
+		return nil
 	}
 	return base.NewTokenResultBlocked(base.BlockTypeFreqParamsFlow, fmt.Sprintf("Frequency params traffic shaping controller, current concurrency: %d, threshold: %d", concurrency, threshold))
 }
@@ -127,19 +127,19 @@ func (c *baseTrafficShapingController) BoundParamIndex() int {
 func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquireCount int64) *base.TokenResult {
 	metric := c.metric
 	if metric == nil {
-		return base.NewTokenResultPass()
+		return nil
 	}
 
 	if c.metricType == Concurrency {
 		return c.performCheckingForConcurrencyMetric(arg)
 	} else if c.metricType > QPS {
-		return base.NewTokenResultPass()
+		return nil
 	}
 
 	timeCounter := metric.RuleTimeCounter
 	tokenCounter := metric.RuleTokenCounter
 	if timeCounter == nil || tokenCounter == nil {
-		return base.NewTokenResultPass()
+		return nil
 	}
 
 	// calculate available token
@@ -164,7 +164,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 			// First to fill token, and consume token immediately
 			leftCount := maxCount - acquireCount
 			tokenCounter.AddIfAbsent(arg, &leftCount)
-			return base.NewTokenResultPass()
+			return nil
 		}
 
 		// Calculate the time duration since last token was added.
@@ -176,7 +176,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 			if oldQpsPtr == nil {
 				// Might not be accurate here.
 				atomic.StoreInt64(lastAddTokenTimePtr, currentTimeInMs)
-				return base.NewTokenResultPass()
+				return nil
 			} else {
 				// refill token
 				restQps := atomic.LoadInt64(oldQpsPtr)
@@ -192,7 +192,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 				}
 				if atomic.CompareAndSwapInt64(oldQpsPtr, restQps, newQps) {
 					atomic.StoreInt64(lastAddTokenTimePtr, currentTimeInMs)
-					return base.NewTokenResultPass()
+					return nil
 				}
 				runtime.Gosched()
 			}
@@ -204,7 +204,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 				if oldRestToken-acquireCount >= 0 {
 					//update
 					if atomic.CompareAndSwapInt64(oldQpsPtr, oldRestToken, oldRestToken-acquireCount) {
-						return base.NewTokenResultPass()
+						return nil
 					}
 				} else {
 					return base.NewTokenResultBlocked(base.BlockTypeFreqParamsFlow, fmt.Sprintf("rejectTrafficShapingController, the rest token is not enough, oldRestToken: %d, acquire: %d", oldRestToken, acquireCount))
@@ -218,19 +218,19 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, acquireCount int64) *base.TokenResult {
 	metric := c.metric
 	if metric == nil {
-		return base.NewTokenResultPass()
+		return nil
 	}
 
 	if c.metricType == Concurrency {
 		return c.performCheckingForConcurrencyMetric(arg)
 	} else if c.metricType > QPS {
-		return base.NewTokenResultPass()
+		return nil
 	}
 
 	timeCounter := metric.RuleTimeCounter
 	tokenCounter := metric.RuleTokenCounter
 	if timeCounter == nil || tokenCounter == nil {
-		return base.NewTokenResultPass()
+		return nil
 	}
 
 	// calculate available token
@@ -248,7 +248,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ac
 		lastPassTimePtr := timeCounter.AddIfAbsent(arg, &currentTimeInMs)
 		if lastPassTimePtr == nil {
 			// first access arg
-			return base.NewTokenResultPass()
+			return nil
 		}
 		// load the last pass time
 		lastPassTime := atomic.LoadInt64(lastPassTimePtr)
@@ -262,7 +262,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ac
 					atomic.StoreInt64(lastPassTimePtr, expectedTime)
 					return base.NewTokenResultShouldWait(uint64(awaitTime))
 				}
-				return base.NewTokenResultPass()
+				return nil
 			} else {
 				runtime.Gosched()
 			}
