@@ -132,6 +132,42 @@ func rulesFrom(m trafficControllerMap) []*Rule {
 	return rules
 }
 
+func calculateReuseIndexFor(r *Rule, oldResTcs []TrafficShapingController) (equalIdx, reuseStatIdx int) {
+	// the index of equivalent rule in old traffic shaping controller slice
+	equalIdx = -1
+	// the index of statistic reusable rule in old traffic shaping controller slice
+	reuseStatIdx = -1
+
+	for idx, oldTc := range oldResTcs {
+		oldRule := oldTc.BoundRule()
+		if oldRule.Equals(r) {
+			// break if there is equivalent rule
+			equalIdx = idx
+			break
+		}
+		// find the index of first StatReusable rule
+		if !oldRule.IsStatReusable(r) {
+			continue
+		}
+		if reuseStatIdx >= 0 {
+			// had find reuse rule.
+			continue
+		}
+		reuseStatIdx = idx
+	}
+	return equalIdx, reuseStatIdx
+}
+
+func insertTcToTcMap(tc TrafficShapingController, res string, m trafficControllerMap) {
+	tcsOfRes, exists := m[res]
+	if !exists {
+		tcsOfRes = make([]TrafficShapingController, 0, 1)
+		m[res] = append(tcsOfRes, tc)
+	} else {
+		m[res] = append(tcsOfRes, tc)
+	}
+}
+
 // buildTcMap be called on the condition that the mutex is locked
 func buildTcMap(rules []*Rule) trafficControllerMap {
 	m := make(trafficControllerMap)
@@ -147,42 +183,14 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 
 		res := r.Resource
 		oldResTcs := tcMap[res]
-
-		// the index of statistic reusable rule in old traffic shaping controller slice
-		reuseStatIdx := -1
-		// the index of equivalent rule in old traffic shaping controller slice
-		equalIdx := -1
-		for idx, oldTc := range oldResTcs {
-			oldRule := oldTc.BoundRule()
-			if oldRule.Equals(r) {
-				// break if there is equivalent rule
-				equalIdx = idx
-				break
-			}
-			// find the index of first StatReusable rule
-			if !oldRule.IsStatReusable(r) {
-				continue
-			}
-			if reuseStatIdx >= 0 {
-				// had find reuse rule.
-				continue
-			}
-			reuseStatIdx = idx
-		}
+		equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResTcs)
 
 		// there is equivalent rule in old traffic shaping controller slice
 		if equalIdx >= 0 {
 			equalOldTC := oldResTcs[equalIdx]
-			tcsOfRes, exists := m[res]
-			if !exists {
-				tcsOfRes = make([]TrafficShapingController, 0, 1)
-				m[r.Resource] = append(tcsOfRes, equalOldTC)
-			} else {
-				m[r.Resource] = append(tcsOfRes, equalOldTC)
-			}
+			insertTcToTcMap(equalOldTC, res, m)
 			// remove old tc from old resTcs
-			oldResTcs = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
-			tcMap[res] = oldResTcs
+			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
 
@@ -208,13 +216,7 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 		if reuseStatIdx >= 0 {
 			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
-		tcsOfRes, exists := m[r.Resource]
-		if !exists {
-			tcsOfRes = make([]TrafficShapingController, 0, 1)
-			m[r.Resource] = append(tcsOfRes, tc)
-		} else {
-			m[r.Resource] = append(tcsOfRes, tc)
-		}
+		insertTcToTcMap(tc, res, m)
 	}
 	return m
 }

@@ -97,12 +97,13 @@ type Rule struct {
 	MaxQueueingTimeMs int64
 	BurstCount        int64
 	DurationInSec     int64
+	ParamsMaxCapacity int64
 	SpecificItems     map[SpecificValue]int64
 }
 
 func (r *Rule) String() string {
-	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, Behavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, SpecificItems:%+v},",
-		r.Id, r.Resource, r.MetricType, r.Behavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.SpecificItems)
+	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, Behavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v},",
+		r.Id, r.Resource, r.MetricType, r.Behavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
 }
 func (r *Rule) ResourceName() string {
 	return r.Resource
@@ -110,12 +111,12 @@ func (r *Rule) ResourceName() string {
 
 // IsStatReusable checks whether current rule is "statistically" equal to the given rule.
 func (r *Rule) IsStatReusable(newRule *Rule) bool {
-	return r.Resource == newRule.Resource && r.Behavior == newRule.Behavior && r.DurationInSec == newRule.DurationInSec
+	return r.Resource == newRule.Resource && r.Behavior == newRule.Behavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.DurationInSec == newRule.DurationInSec
 }
 
 // IsEqualsTo checks whether current rule is consistent with the given rule.
 func (r *Rule) Equals(newRule *Rule) bool {
-	baseCheck := r.Resource == newRule.Resource && r.MetricType == newRule.MetricType && r.Behavior == newRule.Behavior && r.ParamIndex == newRule.ParamIndex && r.Threshold == newRule.Threshold && r.DurationInSec == newRule.DurationInSec && reflect.DeepEqual(r.SpecificItems, newRule.SpecificItems)
+	baseCheck := r.Resource == newRule.Resource && r.MetricType == newRule.MetricType && r.Behavior == newRule.Behavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.ParamIndex == newRule.ParamIndex && r.Threshold == newRule.Threshold && r.DurationInSec == newRule.DurationInSec && reflect.DeepEqual(r.SpecificItems, newRule.SpecificItems)
 	if !baseCheck {
 		return false
 	}

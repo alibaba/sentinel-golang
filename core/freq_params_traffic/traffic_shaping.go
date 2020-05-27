@@ -35,11 +35,6 @@ type baseTrafficShapingController struct {
 }
 
 func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *baseTrafficShapingController {
-	size := int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
-	if size <= 0 {
-		logger.Warnf("The size of cache is not more than 0, ParamsMaxCapacity: %d, ParamsCapacityBase: %d", ParamsMaxCapacity, ParamsCapacityBase)
-		size = ParamsMaxCapacity
-	}
 	specificItems := parseSpecificItems(r.SpecificItems)
 	return &baseTrafficShapingController{
 		r:             r,
@@ -54,26 +49,22 @@ func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *b
 }
 
 func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
-	size := int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
+	var size = 0
+	if r.ParamsMaxCapacity > 0 {
+		size = int(r.ParamsMaxCapacity)
+	} else {
+		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
+	}
 	if size <= 0 {
 		logger.Warnf("The size of cache is not more than 0, ParamsMaxCapacity: %d, ParamsCapacityBase: %d", ParamsMaxCapacity, ParamsCapacityBase)
 		size = ParamsMaxCapacity
 	}
-	specificItems := parseSpecificItems(r.SpecificItems)
-	return &baseTrafficShapingController{
-		r:             r,
-		res:           r.Resource,
-		metricType:    r.MetricType,
-		paramIndex:    r.ParamIndex,
-		threshold:     r.Threshold,
-		specificItems: specificItems,
-		durationInSec: r.DurationInSec,
-		metric: &ParamsMetric{
-			RuleTimeCounter:    cache.NewLRUCacheMap(size),
-			RuleTokenCounter:   cache.NewLRUCacheMap(size),
-			ConcurrencyCounter: cache.NewLRUCacheMap(ConcurrencyMaxCount),
-		},
+	metric := &ParamsMetric{
+		RuleTimeCounter:    cache.NewLRUCacheMap(size),
+		RuleTokenCounter:   cache.NewLRUCacheMap(size),
+		ConcurrencyCounter: cache.NewLRUCacheMap(ConcurrencyMaxCount),
 	}
+	return newBaseTrafficShapingControllerWithMetric(r, metric)
 }
 
 func (c *baseTrafficShapingController) BoundMetric() *ParamsMetric {

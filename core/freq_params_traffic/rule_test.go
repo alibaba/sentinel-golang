@@ -80,10 +80,11 @@ func Test_Rule_String(t *testing.T) {
 			MaxQueueingTimeMs: 5,
 			BurstCount:        10,
 			DurationInSec:     1,
+			ParamsMaxCapacity: 10000,
 			SpecificItems:     m,
 		}
 		fmt.Println(fmt.Sprintf("%+v", []*Rule{r}))
-		assert.True(t, fmt.Sprintf("%+v", []*Rule{r}) == "[{Id:abc, Resource:abc, MetricType:Concurrency, Behavior:Reject, ParamIndex:0, Threshold:110.000000, MaxQueueingTimeMs:5, BurstCount:10, DurationInSec:1, SpecificItems:map[{ValKind:kindString ValStr:sss}:1 {ValKind:KindFloat64 ValStr:1.123}:3]},]")
+		assert.True(t, fmt.Sprintf("%+v", []*Rule{r}) == "[{Id:abc, Resource:abc, MetricType:Concurrency, Behavior:Reject, ParamIndex:0, Threshold:110.000000, MaxQueueingTimeMs:5, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[{ValKind:kindString ValStr:sss}:1 {ValKind:KindFloat64 ValStr:1.123}:3]},]")
 	})
 }
 
@@ -108,6 +109,7 @@ func Test_Rule_Equals(t *testing.T) {
 			MaxQueueingTimeMs: 5,
 			BurstCount:        10,
 			DurationInSec:     1,
+			ParamsMaxCapacity: 10000,
 			SpecificItems:     m,
 		}
 
@@ -130,6 +132,7 @@ func Test_Rule_Equals(t *testing.T) {
 			MaxQueueingTimeMs: 5,
 			BurstCount:        10,
 			DurationInSec:     1,
+			ParamsMaxCapacity: 10000,
 			SpecificItems:     m2,
 		}
 		assert.True(t, r1.Equals(r2))
