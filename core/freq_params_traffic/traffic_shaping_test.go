@@ -84,7 +84,7 @@ func Test_baseTrafficShapingController_performCheckingForConcurrencyMetric(t *te
 
 		goCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(initConcurrency)
 		result := c.performCheckingForConcurrencyMetric(666688)
-		assert.True(t, result.IsPass())
+		assert.True(t, result == nil)
 
 		*initConcurrency = 101
 		result = c.performCheckingForConcurrencyMetric(666688)
@@ -127,7 +127,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 		timeCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Times(1).Return(nil)
 		tokenCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Times(1).Return(nil)
 		result = c.PerformChecking(arg, 20)
-		assert.True(t, result.IsPass())
+		assert.True(t, result == nil)
 	})
 
 	t.Run("Test_defaultTrafficShapingController_performChecking_Sub_Token", func(t *testing.T) {
@@ -159,7 +159,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 		*oldQps = 50
 		tokenCounter.On("Get", mock.Anything).Return(oldQps, true).Times(1)
 		result := c.PerformChecking(arg, 20)
-		assert.True(t, result.IsPass())
+		assert.True(t, result == nil)
 		assert.True(t, atomic.LoadInt64(oldQps) == 30)
 	})
 
@@ -192,7 +192,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 		tokenCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(nil).Times(1)
 		time.Sleep(time.Duration(10) * time.Millisecond)
 		result := c.PerformChecking(arg, 20)
-		assert.True(t, result.IsPass())
+		assert.True(t, result == nil)
 		assert.True(t, *lastAddTokenTime > currentTimeInMs)
 	})
 
@@ -227,7 +227,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 		tokenCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(oldQps).Times(1)
 		time.Sleep(time.Duration(10) * time.Millisecond)
 		result := c.PerformChecking(arg, 20)
-		assert.True(t, result.IsPass())
+		assert.True(t, result == nil)
 		assert.True(t, atomic.LoadInt64(lastAddTokenTime) > currentTimeInMs)
 		assert.True(t, atomic.LoadInt64(oldQps) > 30)
 	})
@@ -261,6 +261,6 @@ func Test_throttlingTrafficShapingController_performChecking(t *testing.T) {
 		*lastAddTokenTime = currentTimeInMs - 201
 		timeCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(lastAddTokenTime).Times(1)
 		result := c.PerformChecking(arg, 20)
-		assert.True(t, result.IsPass())
+		assert.True(t, result == nil)
 	})
 }
