@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 
+	"github.com/alibaba/sentinel-golang/util"
+
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system"
@@ -43,5 +45,8 @@ func initCoreComponents() (err error) {
 	}
 
 	system.InitCollector(config.SystemStatCollectIntervalMs())
+	if config.UseTimeTicker() {
+		util.StartTimeTicker()
+	}
 	return err
 }

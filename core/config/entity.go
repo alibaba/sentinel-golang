@@ -23,6 +23,8 @@ type SentinelConfig struct {
 	Log LogConfig
 	// Stat represents configuration items related to statistics.
 	Stat StatConfig
+	// UseTimeTicker indicates whether use time ticker to cache now time(ms)
+	UseTimeTicker bool
 }
 
 // LogConfig represent the configuration of logging in Sentinel.
@@ -79,6 +81,7 @@ func NewDefaultConfig() *Entity {
 					CollectIntervalMs: DefaultSystemStatCollectIntervalMs,
 				},
 			},
+			UseTimeTicker: true,
 		},
 	}
 }
