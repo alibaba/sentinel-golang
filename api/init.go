@@ -6,6 +6,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 // InitDefault initializes Sentinel using the configuration from system
@@ -43,5 +44,8 @@ func initCoreComponents() (err error) {
 	}
 
 	system.InitCollector(config.SystemStatCollectIntervalMs())
+	if config.UseCacheTime() {
+		util.StartTimeTicker()
+	}
 	return err
 }

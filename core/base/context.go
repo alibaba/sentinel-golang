@@ -65,12 +65,14 @@ type SentinelInput struct {
 	Attachments map[interface{}]interface{}
 }
 
-func newEmptyInput() *SentinelInput {
-	return &SentinelInput{
-		AcquireCount: 1,
-		Flag:         0,
-		Args:         make([]interface{}, 0, 0),
-		Attachments:  make(map[interface{}]interface{}),
+func (i *SentinelInput) reset() {
+	i.AcquireCount = 1
+	i.Flag = 0
+	if len(i.Args) != 0 {
+		i.Args = make([]interface{}, 0)
+	}
+	if len(i.Attachments) != 0 {
+		i.Attachments = make(map[interface{}]interface{})
 	}
 }
 
@@ -82,11 +84,13 @@ func (ctx *EntryContext) Reset() {
 	ctx.rt = 0
 	ctx.Resource = nil
 	ctx.StatNode = nil
-	ctx.Input = nil
+	ctx.Input.reset()
 	if ctx.RuleCheckResult == nil {
 		ctx.RuleCheckResult = NewTokenResultPass()
 	} else {
 		ctx.RuleCheckResult.ResetToPass()
 	}
-	ctx.Data = nil
+	if len(ctx.Data) != 0 {
+		ctx.Data = make(map[interface{}]interface{})
+	}
 }
