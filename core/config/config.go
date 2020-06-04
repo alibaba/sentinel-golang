@@ -180,3 +180,7 @@ func MetricLogMaxFileAmount() uint32 {
 func SystemStatCollectIntervalMs() uint32 {
 	return globalCfg.Sentinel.Stat.System.CollectIntervalMs
 }
+
+func UseCacheTime() bool {
+	return globalCfg.Sentinel.UseCacheTime
+}

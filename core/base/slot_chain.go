@@ -66,6 +66,13 @@ func NewSlotChain() *SlotChain {
 			New: func() interface{} {
 				ctx := NewEmptyEntryContext()
 				ctx.RuleCheckResult = NewTokenResultPass()
+				ctx.Data = make(map[interface{}]interface{})
+				ctx.Input = &SentinelInput{
+					AcquireCount: 1,
+					Flag:         0,
+					Args:         make([]interface{}, 0),
+					Attachments:  make(map[interface{}]interface{}),
+				}
 				return ctx
 			},
 		},
