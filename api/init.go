@@ -44,7 +44,7 @@ func initCoreComponents() (err error) {
 	}
 
 	system.InitCollector(config.SystemStatCollectIntervalMs())
-	if config.UseTimeTicker() {
+	if config.UseCacheTime() {
 		util.StartTimeTicker()
 	}
 	return err
