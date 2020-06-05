@@ -54,7 +54,7 @@ func ResetDefaultLogger(log *log.Logger, namespace string) {
 
 func NewConsoleLogger(namespace string) *SentinelLogger {
 	return &SentinelLogger{
-		log:       log.New(os.Stdout, "", log.LstdFlags),
+		log:       log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
 		namespace: namespace,
 	}
 }

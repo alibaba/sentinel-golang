@@ -78,6 +78,13 @@ func WithArgs(args ...interface{}) EntryOption {
 	}
 }
 
+// WithSlotChain sets the slot chain.
+func WithSlotChain(chain *base.SlotChain) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.slotChain = chain
+	}
+}
+
 // WithAttachment set the resource entry with the given k-v pair
 func WithAttachment(key interface{}, value interface{}) EntryOption {
 	return func(opts *EntryOptions) {
