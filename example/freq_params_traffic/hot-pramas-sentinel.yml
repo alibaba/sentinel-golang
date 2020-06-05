@@ -1,0 +1,8 @@
+version: "v1"
+sentinel:
+  app:
+    name: sentinel-go-demo
+  log:
+    dir: ./example/
+    metric:
+      maxFileCount: 7

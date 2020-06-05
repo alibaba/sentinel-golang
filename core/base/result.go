@@ -11,6 +11,7 @@ const (
 	BlockTypeFlow
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
+	BlockTypeFreqParamsFlow
 )
 
 func (t BlockType) String() string {
