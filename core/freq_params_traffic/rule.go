@@ -50,8 +50,8 @@ func (t MetricType) String() string {
 type ParamKind int
 
 const (
-	kindInt ParamKind = iota
-	kindString
+	KindInt ParamKind = iota
+	KindString
 	KindBool
 	KindFloat64
 	KindSum
@@ -59,10 +59,10 @@ const (
 
 func (t ParamKind) String() string {
 	switch t {
-	case kindInt:
-		return "kindInt"
-	case kindString:
-		return "kindString"
+	case KindInt:
+		return "KindInt"
+	case KindString:
+		return "KindString"
 	case KindBool:
 		return "KindBool"
 	case KindFloat64:
@@ -102,7 +102,7 @@ type Rule struct {
 }
 
 func (r *Rule) String() string {
-	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, Behavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v},",
+	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, Behavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v}",
 		r.Id, r.Resource, r.MetricType, r.Behavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
 }
 func (r *Rule) ResourceName() string {
@@ -137,7 +137,7 @@ func parseSpecificItems(source map[SpecificValue]int64) map[interface{}]int64 {
 	}
 	for k, v := range source {
 		switch k.ValKind {
-		case kindInt:
+		case KindInt:
 			realVal, err := strconv.Atoi(k.ValStr)
 			if err != nil {
 				logger.Errorf("Fail to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", k.ValKind, k.ValStr, err)
@@ -145,7 +145,7 @@ func parseSpecificItems(source map[SpecificValue]int64) map[interface{}]int64 {
 			}
 			ret[realVal] = v
 
-		case kindString:
+		case KindString:
 			ret[k.ValStr] = v
 
 		case KindBool:

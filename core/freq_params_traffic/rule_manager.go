@@ -1,8 +1,8 @@
 package freq_params_traffic
 
 import (
-	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -70,12 +70,16 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
-// GetRules return the whole of rules
-func GetRules() []*Rule {
+// GetRules return the res's rules
+func GetRules(res string) []*Rule {
 	tcMux.RLock()
 	defer tcMux.RUnlock()
-
-	return rulesFrom(tcMap)
+	resTcs := tcMap[res]
+	ret := make([]*Rule, 0, len(resTcs))
+	for _, tc := range resTcs {
+		ret = append(ret, tc.BoundRule())
+	}
+	return ret
 }
 
 // ClearRules clears all rules in frequency parameters flow control components
@@ -106,12 +110,14 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 func logRuleUpdate(m trafficControllerMap) {
-	s, err := json.Marshal(m)
-	if err != nil {
-		logger.Info("Frequency parameters flow control rules loaded")
-	} else {
-		logger.Infof("Frequency parameters flow control rules loaded: %s", s)
+	sb := strings.Builder{}
+	sb.WriteString("Frequency parameters flow control rules loaded:[")
+
+	for _, r := range rulesFrom(m) {
+		sb.WriteString(r.String() + ",")
 	}
+	sb.WriteString("]")
+	logger.Info(sb.String())
 }
 
 func rulesFrom(m trafficControllerMap) []*Rule {
