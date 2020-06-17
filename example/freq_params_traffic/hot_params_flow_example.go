@@ -9,7 +9,7 @@ import (
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
-	"github.com/alibaba/sentinel-golang/core/freq_params_traffic"
+	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/alibaba/sentinel-golang/util"
@@ -25,54 +25,54 @@ func main() {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 
-	_, err = freq_params_traffic.LoadRules([]*freq_params_traffic.Rule{
+	_, err = hotspot.LoadRules([]*hotspot.Rule{
 		{
 			Id:                "a1",
 			Resource:          Resource,
-			MetricType:        freq_params_traffic.Concurrency,
-			Behavior:          freq_params_traffic.Reject,
+			MetricType:        hotspot.Concurrency,
+			Behavior:          hotspot.Reject,
 			ParamIndex:        0,
 			Threshold:         100,
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     make(map[freq_params_traffic.SpecificValue]int64),
+			SpecificItems:     make(map[hotspot.SpecificValue]int64),
 		},
 		{
 			Id:                "a2",
 			Resource:          Resource,
-			MetricType:        freq_params_traffic.Concurrency,
-			Behavior:          freq_params_traffic.Reject,
+			MetricType:        hotspot.Concurrency,
+			Behavior:          hotspot.Reject,
 			ParamIndex:        1,
 			Threshold:         100,
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     make(map[freq_params_traffic.SpecificValue]int64),
+			SpecificItems:     make(map[hotspot.SpecificValue]int64),
 		},
 		{
 			Id:                "a3",
 			Resource:          Resource,
-			MetricType:        freq_params_traffic.Concurrency,
-			Behavior:          freq_params_traffic.Reject,
+			MetricType:        hotspot.Concurrency,
+			Behavior:          hotspot.Reject,
 			ParamIndex:        2,
 			Threshold:         100,
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     make(map[freq_params_traffic.SpecificValue]int64),
+			SpecificItems:     make(map[hotspot.SpecificValue]int64),
 		},
 		{
 			Id:                "a4",
 			Resource:          Resource,
-			MetricType:        freq_params_traffic.Concurrency,
-			Behavior:          freq_params_traffic.Reject,
+			MetricType:        hotspot.Concurrency,
+			Behavior:          hotspot.Reject,
 			ParamIndex:        3,
 			Threshold:         100,
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     make(map[freq_params_traffic.SpecificValue]int64),
+			SpecificItems:     make(map[hotspot.SpecificValue]int64),
 		},
 	})
 	if err != nil {
@@ -84,9 +84,9 @@ func main() {
 	sc.AddStatPrepareSlotLast(&stat.StatNodePrepareSlot{})
 	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
 	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
-	sc.AddRuleCheckSlotLast(&freq_params_traffic.FreqPramsTrafficSlot{})
+	sc.AddRuleCheckSlotLast(&hotspot.FreqPramsTrafficSlot{})
 	sc.AddStatSlotLast(&stat.StatisticSlot{})
-	sc.AddStatSlotLast(&freq_params_traffic.ConcurrencyStatSlot{})
+	sc.AddStatSlotLast(&hotspot.ConcurrencyStatSlot{})
 
 	for i := 0; i < 100; i++ {
 		go func() {

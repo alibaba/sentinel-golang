@@ -83,7 +83,7 @@ func (b *RuleBase) IsStatReusable(r Rule) bool {
 
 func (b *RuleBase) String() string {
 	// fallback string
-	return fmt.Sprintf("RuleBase{id=%s,resource=%s, strategy=%+v, RetryTimeoutMs=%d, MinRequestAmount=%d}",
+	return fmt.Sprintf("{id=%s,resource=%s, strategy=%+v, RetryTimeoutMs=%d, MinRequestAmount=%d}",
 		b.Id, b.Resource, b.Strategy, b.RetryTimeoutMs, b.MinRequestAmount)
 }
 
@@ -140,7 +140,7 @@ func (r *slowRtRule) IsApplicable() error {
 }
 
 func (r *slowRtRule) String() string {
-	return fmt.Sprintf("slowRtRule{RuleBase:%s, MaxAllowedRt=%d, MaxSlowRequestRatio=%f}", r.RuleBase.String(), r.MaxAllowedRt, r.MaxSlowRequestRatio)
+	return fmt.Sprintf("{slowRtRule{RuleBase:%s, MaxAllowedRt=%d, MaxSlowRequestRatio=%f}", r.RuleBase.String(), r.MaxAllowedRt, r.MaxSlowRequestRatio)
 }
 
 // Error ratio circuit breaker rule
@@ -164,7 +164,7 @@ func NewErrorRatioRule(resource string, intervalMs uint32, retryTimeoutMs uint32
 }
 
 func (r *errorRatioRule) String() string {
-	return fmt.Sprintf("errorRatioRule{RuleBase:%s, Threshold=%f}", r.RuleBase.String(), r.Threshold)
+	return fmt.Sprintf("{errorRatioRule{RuleBase:%s, Threshold=%f}", r.RuleBase.String(), r.Threshold)
 }
 
 func (r *errorRatioRule) IsEqualsTo(newRule Rule) bool {
@@ -207,7 +207,7 @@ func NewErrorCountRule(resource string, intervalMs uint32, retryTimeoutMs uint32
 }
 
 func (r *errorCountRule) String() string {
-	return fmt.Sprintf("errorCountRule{RuleBase:%s, Threshold=%d}", r.RuleBase.String(), r.Threshold)
+	return fmt.Sprintf("{errorCountRule{RuleBase:%s, Threshold=%d}", r.RuleBase.String(), r.Threshold)
 }
 
 func (r *errorCountRule) IsEqualsTo(newRule Rule) bool {

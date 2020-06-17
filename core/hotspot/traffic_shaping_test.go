@@ -1,4 +1,4 @@
-package freq_params_traffic
+package hotspot
 
 import (
 	"sync/atomic"

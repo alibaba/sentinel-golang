@@ -18,4 +18,5 @@ require (
 	golang.org/x/tools v0.0.0-20200426102838-f3a5411a4c3b // indirect
 	google.golang.org/grpc v1.22.1
 	gopkg.in/yaml.v2 v2.2.2
+	github.com/tidwall/gjson v1.6.0
 )
