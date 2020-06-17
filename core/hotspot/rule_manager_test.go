@@ -1,11 +1,11 @@
-package freq_params_traffic
+package hotspot
 
 import (
 	"fmt"
 	"math"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/core/freq_params_traffic/cache"
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 	"github.com/stretchr/testify/assert"
 )
 

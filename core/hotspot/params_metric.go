@@ -1,6 +1,6 @@
-package freq_params_traffic
+package hotspot
 
-import "github.com/alibaba/sentinel-golang/core/freq_params_traffic/cache"
+import "github.com/alibaba/sentinel-golang/core/hotspot/cache"
 
 const (
 	ConcurrencyMaxCount = 4000

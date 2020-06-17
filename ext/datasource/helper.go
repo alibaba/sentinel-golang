@@ -5,7 +5,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
-	"github.com/alibaba/sentinel-golang/core/freq_params_traffic"
+	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/tidwall/gjson"
 )
@@ -197,19 +197,19 @@ func NewCircuitBreakerRulesHandler(converter PropertyConverter) *DefaultProperty
 	return NewDefaultPropertyHandler(converter, CircuitBreakerRulesUpdater)
 }
 
-// FrequencyParamsRulesJsonConverter provide JSON  as the default serialization for list of freq_params_traffic.Rule
+// FrequencyParamsRulesJsonConverter provide JSON  as the default serialization for list of hotspot.Rule
 func FrequencyParamsRulesJsonConverter(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
 
-	rules := make([]*freq_params_traffic.Rule, 0)
+	rules := make([]*hotspot.Rule, 0)
 	result := gjson.ParseBytes(src)
 	for _, r := range result.Array() {
-		freqRule := &freq_params_traffic.Rule{
+		freqRule := &hotspot.Rule{
 			Resource:          r.Get("resource").String(),
-			MetricType:        freq_params_traffic.MetricType(r.Get("metricType").Int()),
-			Behavior:          freq_params_traffic.ControlBehavior(r.Get("behavior").Int()),
+			MetricType:        hotspot.MetricType(r.Get("metricType").Int()),
+			Behavior:          hotspot.ControlBehavior(r.Get("behavior").Int()),
 			ParamIndex:        int(r.Get("paramIndex").Int()),
 			Threshold:         r.Get("threshold").Float(),
 			MaxQueueingTimeMs: r.Get("maxQueueingTimeMs").Int(),
@@ -219,12 +219,12 @@ func FrequencyParamsRulesJsonConverter(src []byte) (interface{}, error) {
 			SpecificItems:     nil,
 		}
 		for _, spItem := range r.Get("specificItems").Array() {
-			sp := freq_params_traffic.SpecificValue{
-				ValKind: freq_params_traffic.ParamKind(spItem.Get("valKind").Int()),
+			sp := hotspot.SpecificValue{
+				ValKind: hotspot.ParamKind(spItem.Get("valKind").Int()),
 				ValStr:  spItem.Get("valStr").String(),
 			}
 			if freqRule.SpecificItems == nil {
-				freqRule.SpecificItems = make(map[freq_params_traffic.SpecificValue]int64)
+				freqRule.SpecificItems = make(map[hotspot.SpecificValue]int64)
 			}
 			freqRule.SpecificItems[sp] = spItem.Get("threshold").Int()
 		}
@@ -233,26 +233,26 @@ func FrequencyParamsRulesJsonConverter(src []byte) (interface{}, error) {
 	return rules, nil
 }
 
-// FrequencyParamsRulesUpdater load the newest []freq_params_traffic.Rule to downstream freq_params_traffic component.
+// FrequencyParamsRulesUpdater load the newest []hotspot.Rule to downstream hotspot component.
 func FrequencyParamsRulesUpdater(data interface{}) error {
 	if data == nil {
-		return freq_params_traffic.ClearRules()
+		return hotspot.ClearRules()
 	}
 
-	rules := make([]*freq_params_traffic.Rule, 0)
-	if val, ok := data.([]freq_params_traffic.Rule); ok {
+	rules := make([]*hotspot.Rule, 0)
+	if val, ok := data.([]hotspot.Rule); ok {
 		for _, v := range val {
 			rules = append(rules, &v)
 		}
-	} else if val, ok := data.([]*freq_params_traffic.Rule); ok {
+	} else if val, ok := data.([]*hotspot.Rule); ok {
 		rules = val
 	} else {
 		return Error{
 			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []freq_params_traffic.Rule or []*freq_params_traffic.Rule, in fact, data: %+v", data),
+			desc: fmt.Sprintf("Fail to type assert data to []hotspot.Rule or []*hotspot.Rule, in fact, data: %+v", data),
 		}
 	}
-	succ, err := freq_params_traffic.LoadRules(rules)
+	succ, err := hotspot.LoadRules(rules)
 	if succ && err == nil {
 		return nil
 	}

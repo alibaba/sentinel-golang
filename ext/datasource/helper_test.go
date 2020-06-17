@@ -10,7 +10,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
-	"github.com/alibaba/sentinel-golang/core/freq_params_traffic"
+	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -311,7 +311,7 @@ func TestFrequencyParamsRulesJsonConverter(t *testing.T) {
 		}
 
 		properties, err := FrequencyParamsRulesJsonConverter(src)
-		rules := properties.([]*freq_params_traffic.Rule)
+		rules := properties.([]*hotspot.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 4)
 		for _, r := range rules {
@@ -326,20 +326,20 @@ func TestFrequencyParamsRulesJsonConverter(t *testing.T) {
 
 func TestFrequencyParamsRulesUpdater(t *testing.T) {
 	// Prepare test data
-	m := make(map[freq_params_traffic.SpecificValue]int64)
-	m[freq_params_traffic.SpecificValue{
-		ValKind: freq_params_traffic.KindString,
+	m := make(map[hotspot.SpecificValue]int64)
+	m[hotspot.SpecificValue{
+		ValKind: hotspot.KindString,
 		ValStr:  "sss",
 	}] = 1
-	m[freq_params_traffic.SpecificValue{
-		ValKind: freq_params_traffic.KindFloat64,
+	m[hotspot.SpecificValue{
+		ValKind: hotspot.KindFloat64,
 		ValStr:  "1.123",
 	}] = 3
-	r1 := &freq_params_traffic.Rule{
+	r1 := &hotspot.Rule{
 		Id:                "1",
 		Resource:          "abc",
-		MetricType:        freq_params_traffic.Concurrency,
-		Behavior:          freq_params_traffic.Reject,
+		MetricType:        hotspot.Concurrency,
+		Behavior:          hotspot.Reject,
 		ParamIndex:        0,
 		Threshold:         100,
 		MaxQueueingTimeMs: 0,
@@ -348,20 +348,20 @@ func TestFrequencyParamsRulesUpdater(t *testing.T) {
 		SpecificItems:     m,
 	}
 
-	m2 := make(map[freq_params_traffic.SpecificValue]int64)
-	m2[freq_params_traffic.SpecificValue{
-		ValKind: freq_params_traffic.KindString,
+	m2 := make(map[hotspot.SpecificValue]int64)
+	m2[hotspot.SpecificValue{
+		ValKind: hotspot.KindString,
 		ValStr:  "sss",
 	}] = 1
-	m2[freq_params_traffic.SpecificValue{
-		ValKind: freq_params_traffic.KindFloat64,
+	m2[hotspot.SpecificValue{
+		ValKind: hotspot.KindFloat64,
 		ValStr:  "1.123",
 	}] = 3
-	r2 := &freq_params_traffic.Rule{
+	r2 := &hotspot.Rule{
 		Id:                "2",
 		Resource:          "abc",
-		MetricType:        freq_params_traffic.QPS,
-		Behavior:          freq_params_traffic.Throttling,
+		MetricType:        hotspot.QPS,
+		Behavior:          hotspot.Throttling,
 		ParamIndex:        1,
 		Threshold:         100,
 		MaxQueueingTimeMs: 20,
@@ -370,20 +370,20 @@ func TestFrequencyParamsRulesUpdater(t *testing.T) {
 		SpecificItems:     m2,
 	}
 
-	m3 := make(map[freq_params_traffic.SpecificValue]int64)
-	m3[freq_params_traffic.SpecificValue{
-		ValKind: freq_params_traffic.KindString,
+	m3 := make(map[hotspot.SpecificValue]int64)
+	m3[hotspot.SpecificValue{
+		ValKind: hotspot.KindString,
 		ValStr:  "sss",
 	}] = 1
-	m3[freq_params_traffic.SpecificValue{
-		ValKind: freq_params_traffic.KindFloat64,
+	m3[hotspot.SpecificValue{
+		ValKind: hotspot.KindFloat64,
 		ValStr:  "1.123",
 	}] = 3
-	r3 := &freq_params_traffic.Rule{
+	r3 := &hotspot.Rule{
 		Id:                "3",
 		Resource:          "abc",
-		MetricType:        freq_params_traffic.Concurrency,
-		Behavior:          freq_params_traffic.Throttling,
+		MetricType:        hotspot.Concurrency,
+		Behavior:          hotspot.Throttling,
 		ParamIndex:        2,
 		Threshold:         100,
 		MaxQueueingTimeMs: 20,
@@ -392,11 +392,11 @@ func TestFrequencyParamsRulesUpdater(t *testing.T) {
 		SpecificItems:     m3,
 	}
 
-	r4 := &freq_params_traffic.Rule{
+	r4 := &hotspot.Rule{
 		Id:                "4",
 		Resource:          "abc",
-		MetricType:        freq_params_traffic.Concurrency,
-		Behavior:          freq_params_traffic.Throttling,
+		MetricType:        hotspot.Concurrency,
+		Behavior:          hotspot.Throttling,
 		ParamIndex:        2,
 		Threshold:         100,
 		MaxQueueingTimeMs: 20,
@@ -405,10 +405,10 @@ func TestFrequencyParamsRulesUpdater(t *testing.T) {
 		SpecificItems:     m3,
 	}
 
-	err := FrequencyParamsRulesUpdater([]*freq_params_traffic.Rule{r1, r2, r3, r4})
+	err := FrequencyParamsRulesUpdater([]*hotspot.Rule{r1, r2, r3, r4})
 	assert.True(t, err == nil)
 
-	rules := freq_params_traffic.GetRules("abc")
+	rules := hotspot.GetRules("abc")
 	assert.True(t, rules[0].Equals(r1))
 	assert.True(t, rules[1].Equals(r2))
 	assert.True(t, rules[2].Equals(r3))
