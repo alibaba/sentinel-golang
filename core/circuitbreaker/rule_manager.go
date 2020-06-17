@@ -1,8 +1,8 @@
 package circuitbreaker
 
 import (
-	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -82,6 +82,12 @@ func GetResRules(resource string) []Rule {
 	return ret
 }
 
+// ClearRules clear all the previous rules
+func ClearRules() error {
+	_, err := LoadRules(nil)
+	return err
+}
+
 // LoadRules replaces old rules with the given circuit breaking rules.
 //
 // return value:
@@ -104,6 +110,42 @@ func getResBreakers(resource string) []CircuitBreaker {
 	}
 	ret = append(ret, resCBs...)
 	return ret
+}
+
+func calculateReuseIndexFor(r Rule, oldResCbs []CircuitBreaker) (equalIdx, reuseStatIdx int) {
+	// the index of equivalent rule in old circuit breaker slice
+	equalIdx = -1
+	// the index of statistic reusable rule in old circuit breaker slice
+	reuseStatIdx = -1
+
+	for idx, oldTc := range oldResCbs {
+		oldRule := oldTc.BoundRule()
+		if oldRule.IsEqualsTo(r) {
+			// break if there is equivalent rule
+			equalIdx = idx
+			break
+		}
+		// find the index of first StatReusable rule
+		if !oldRule.IsStatReusable(r) {
+			continue
+		}
+		if reuseStatIdx >= 0 {
+			// had find reuse rule.
+			continue
+		}
+		reuseStatIdx = idx
+	}
+	return equalIdx, reuseStatIdx
+}
+
+func insertCbToCbMap(cb CircuitBreaker, res string, m map[string][]CircuitBreaker) {
+	cbsOfRes, exists := m[res]
+	if !exists {
+		cbsOfRes = make([]CircuitBreaker, 0, 1)
+		m[res] = append(cbsOfRes, cb)
+	} else {
+		m[res] = append(cbsOfRes, cb)
+	}
 }
 
 // Concurrent safe to update rules
@@ -145,43 +187,19 @@ func onRuleUpdate(rules []Rule) (err error) {
 	for res, resRules := range newBreakerRules {
 		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
 		for _, r := range resRules {
-			// TODO: rearrange the code here.
 			oldResCbs := breakers[res]
 			if oldResCbs == nil {
 				oldResCbs = emptyCircuitBreakerList
 			}
-			equalsIdx := -1
-			reuseStatIdx := -1
-			for idx, cb := range oldResCbs {
-				oldRule := cb.BoundRule()
-				if oldRule.IsEqualsTo(r) {
-					equalsIdx = idx
-					break
-				}
-				if !oldRule.IsStatReusable(r) {
-					continue
-				}
-				if reuseStatIdx >= 0 {
-					// had find reuse rule.
-					continue
-				}
-				reuseStatIdx = idx
-			}
+			equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResCbs)
 
 			// First check equals scenario
-			if equalsIdx >= 0 {
+			if equalIdx >= 0 {
 				// reuse the old cb
-				reuseOldCb := oldResCbs[equalsIdx]
-				cbsOfRes, ok := newBreakers[res]
-				if !ok {
-					cbsOfRes = make([]CircuitBreaker, 0, 1)
-					newBreakers[res] = append(cbsOfRes, reuseOldCb)
-				} else {
-					newBreakers[res] = append(cbsOfRes, reuseOldCb)
-				}
+				equalOldCb := oldResCbs[equalIdx]
+				insertCbToCbMap(equalOldCb, res, newBreakers)
 				// remove old cb from oldResCbs
-				oldResCbs = append(oldResCbs[:equalsIdx], oldResCbs[equalsIdx+1:]...)
-				breakers[res] = oldResCbs
+				breakers[res] = append(oldResCbs[:equalIdx], oldResCbs[equalIdx+1:]...)
 				continue
 			}
 
@@ -205,13 +223,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 			if reuseStatIdx >= 0 {
 				breakers[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
 			}
-			cbsOfRes, ok := newBreakers[res]
-			if !ok {
-				cbsOfRes = make([]CircuitBreaker, 0, 1)
-				newBreakers[res] = append(cbsOfRes, cb)
-			} else {
-				newBreakers[res] = append(cbsOfRes, cb)
-			}
+			insertCbToCbMap(cb, res, newBreakers)
 		}
 	}
 
@@ -241,12 +253,14 @@ func rulesFrom(rm map[string][]Rule) []Rule {
 }
 
 func logRuleUpdate(rules map[string][]Rule) {
-	s, err := json.Marshal(rules)
-	if err != nil {
-		logger.Info("Circuit breaking rules loaded")
-	} else {
-		logger.Infof("Circuit breaking rules loaded: %s", s)
+	sb := strings.Builder{}
+	sb.WriteString("Circuit breaking rules loaded:[")
+
+	for _, r := range rulesFrom(rules) {
+		sb.WriteString(r.String() + ",")
 	}
+	sb.WriteString("]")
+	logger.Info(sb.String())
 }
 
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {

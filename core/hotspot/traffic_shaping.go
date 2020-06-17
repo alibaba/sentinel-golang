@@ -1,4 +1,4 @@
-package freq_params_traffic
+package hotspot
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/freq_params_traffic/cache"
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 	"github.com/alibaba/sentinel-golang/util"
 )
 

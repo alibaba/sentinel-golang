@@ -1,11 +1,11 @@
-package freq_params_traffic
+package hotspot
 
 import (
 	"fmt"
 	"math"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/core/freq_params_traffic/cache"
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +13,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 	t.Run("Test_tcGenFuncMap_withoutMetric", func(t *testing.T) {
 		m := make(map[SpecificValue]int64)
 		m[SpecificValue{
-			ValKind: kindInt,
+			ValKind: KindInt,
 			ValStr:  "100",
 		}] = 100
 
@@ -44,7 +44,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 	t.Run("Test_tcGenFuncMap_withMetric", func(t *testing.T) {
 		m := make(map[SpecificValue]int64)
 		m[SpecificValue{
-			ValKind: kindInt,
+			ValKind: KindInt,
 			ValStr:  "100",
 		}] = 100
 
@@ -90,7 +90,7 @@ func Test_IsValidRule(t *testing.T) {
 	t.Run("Test_IsValidRule", func(t *testing.T) {
 		m := make(map[SpecificValue]int64)
 		m[SpecificValue{
-			ValKind: kindInt,
+			ValKind: KindInt,
 			ValStr:  "100",
 		}] = 100
 
@@ -114,7 +114,7 @@ func Test_IsValidRule(t *testing.T) {
 	t.Run("Test_InValidRule", func(t *testing.T) {
 		m := make(map[SpecificValue]int64)
 		m[SpecificValue{
-			ValKind: kindInt,
+			ValKind: KindInt,
 			ValStr:  "100",
 		}] = 100
 
@@ -139,7 +139,7 @@ func Test_IsValidRule(t *testing.T) {
 func Test_buildTcMap(t *testing.T) {
 	m := make(map[SpecificValue]int64)
 	m[SpecificValue{
-		ValKind: kindString,
+		ValKind: KindString,
 		ValStr:  "sss",
 	}] = 1
 	m[SpecificValue{
@@ -161,7 +161,7 @@ func Test_buildTcMap(t *testing.T) {
 
 	m2 := make(map[SpecificValue]int64)
 	m2[SpecificValue{
-		ValKind: kindString,
+		ValKind: KindString,
 		ValStr:  "sss",
 	}] = 1
 	m2[SpecificValue{
@@ -183,7 +183,7 @@ func Test_buildTcMap(t *testing.T) {
 
 	m3 := make(map[SpecificValue]int64)
 	m3[SpecificValue{
-		ValKind: kindString,
+		ValKind: KindString,
 		ValStr:  "sss",
 	}] = 1
 	m3[SpecificValue{

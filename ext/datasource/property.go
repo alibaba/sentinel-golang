@@ -9,7 +9,7 @@ import (
 
 var logger = logging.GetDefaultLogger()
 
-// PropertyConverter func is to converter source message bytes to the specific property.
+// PropertyConverter func is to convert source message bytes to the specific property.
 // the first  return value: is the real property;
 // the second return value: return nil if succeed to convert src, if not return the detailed error when convert src.
 // if src is nil or len(src)==0, the return value is (nil,nil)

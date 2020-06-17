@@ -41,7 +41,8 @@ type AdaptiveStrategy int32
 
 const (
 	NoAdaptive AdaptiveStrategy = -1
-	BBR        AdaptiveStrategy = iota
+	// 1
+	BBR AdaptiveStrategy = iota
 )
 
 func (t AdaptiveStrategy) String() string {
@@ -56,11 +57,11 @@ func (t AdaptiveStrategy) String() string {
 }
 
 type SystemRule struct {
-	ID uint64 `json:"id,omitempty"`
+	ID uint64
 
-	MetricType   MetricType       `json:"metricType"`
-	TriggerCount float64          `json:"count"`
-	Strategy     AdaptiveStrategy `json:"adaptiveStrategy"`
+	MetricType   MetricType
+	TriggerCount float64
+	Strategy     AdaptiveStrategy
 }
 
 func (r *SystemRule) String() string {

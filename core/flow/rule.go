@@ -58,24 +58,24 @@ type ClusterRuleConfig struct {
 // FlowRule describes the strategy of flow control.
 type FlowRule struct {
 	// ID represents the unique ID of the rule (optional).
-	ID uint64 `json:"id,omitempty"`
+	ID uint64
 
 	// Resource represents the resource name.
-	Resource string `json:"resource"`
+	Resource string
 	// LimitOrigin represents the target origin (reserved field).
-	LimitOrigin string     `json:"limitApp"`
-	MetricType  MetricType `json:"grade"`
+	LimitOrigin string
+	MetricType  MetricType
 	// Count represents the threshold.
-	Count            float64          `json:"count"`
-	RelationStrategy RelationStrategy `json:"strategy"`
-	ControlBehavior  ControlBehavior  `json:"controlBehavior"`
+	Count            float64
+	RelationStrategy RelationStrategy
+	ControlBehavior  ControlBehavior
 
-	RefResource       string `json:"refResource,omitempty"`
-	WarmUpPeriodSec   uint32 `json:"warmUpPeriodSec"`
-	MaxQueueingTimeMs uint32 `json:"maxQueueingTimeMs"`
+	RefResource       string
+	WarmUpPeriodSec   uint32
+	MaxQueueingTimeMs uint32
 	// ClusterMode indicates whether the rule is for cluster flow control or local.
-	ClusterMode   bool              `json:"clusterMode"`
-	ClusterConfig ClusterRuleConfig `json:"clusterConfig"`
+	ClusterMode   bool
+	ClusterConfig ClusterRuleConfig
 }
 
 func (f *FlowRule) String() string {

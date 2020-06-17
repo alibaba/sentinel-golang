@@ -1,4 +1,4 @@
-package freq_params_traffic
+package hotspot
 
 import (
 	"fmt"
@@ -11,15 +11,15 @@ func Test_parseSpecificItems(t *testing.T) {
 	t.Run("Test_parseSpecificItems", func(t *testing.T) {
 		source := make(map[SpecificValue]int64)
 		s1 := SpecificValue{
-			ValKind: kindInt,
+			ValKind: KindInt,
 			ValStr:  "10010",
 		}
 		s2 := SpecificValue{
-			ValKind: kindInt,
+			ValKind: KindInt,
 			ValStr:  "10010aaa",
 		}
 		s3 := SpecificValue{
-			ValKind: kindString,
+			ValKind: KindString,
 			ValStr:  "test-string",
 		}
 		s4 := SpecificValue{
@@ -63,7 +63,7 @@ func Test_Rule_String(t *testing.T) {
 	t.Run("Test_Rule_String_Normal", func(t *testing.T) {
 		m := make(map[SpecificValue]int64)
 		m[SpecificValue{
-			ValKind: kindString,
+			ValKind: KindString,
 			ValStr:  "sss",
 		}] = 1
 		m[SpecificValue{
@@ -84,7 +84,7 @@ func Test_Rule_String(t *testing.T) {
 			SpecificItems:     m,
 		}
 		fmt.Println(fmt.Sprintf("%+v", []*Rule{r}))
-		assert.True(t, fmt.Sprintf("%+v", []*Rule{r}) == "[{Id:abc, Resource:abc, MetricType:Concurrency, Behavior:Reject, ParamIndex:0, Threshold:110.000000, MaxQueueingTimeMs:5, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[{ValKind:kindString ValStr:sss}:1 {ValKind:KindFloat64 ValStr:1.123}:3]},]")
+		assert.True(t, fmt.Sprintf("%+v", []*Rule{r}) == "[{Id:abc, Resource:abc, MetricType:Concurrency, Behavior:Reject, ParamIndex:0, Threshold:110.000000, MaxQueueingTimeMs:5, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[{ValKind:KindString ValStr:sss}:1 {ValKind:KindFloat64 ValStr:1.123}:3]}]")
 	})
 }
 
@@ -92,7 +92,7 @@ func Test_Rule_Equals(t *testing.T) {
 	t.Run("Test_Rule_Equals", func(t *testing.T) {
 		m := make(map[SpecificValue]int64)
 		m[SpecificValue{
-			ValKind: kindString,
+			ValKind: KindString,
 			ValStr:  "sss",
 		}] = 1
 		m[SpecificValue{
@@ -115,7 +115,7 @@ func Test_Rule_Equals(t *testing.T) {
 
 		m2 := make(map[SpecificValue]int64)
 		m2[SpecificValue{
-			ValKind: kindString,
+			ValKind: KindString,
 			ValStr:  "sss",
 		}] = 1
 		m2[SpecificValue{
