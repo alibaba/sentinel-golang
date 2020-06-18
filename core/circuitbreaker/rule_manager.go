@@ -82,7 +82,7 @@ func GetResRules(resource string) []Rule {
 	return ret
 }
 
-// ClearRules clear all the previous rules
+// ClearRules clear all the previous rules.
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
@@ -166,7 +166,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 			continue
 		}
 		if err := rule.IsApplicable(); err != nil {
-			logger.Warnf("Ignoring invalid circuit breaking rule when loading new rules, rule: %+v, err: %+v", rule, err)
+			logger.Warnf("Ignoring invalid circuit breaking rule when loading new rules, rule: %+v, reason: %s", rule, err.Error())
 			continue
 		}
 
@@ -205,7 +205,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 
 			generator := cbGenFuncMap[r.BreakerStrategy()]
 			if generator == nil {
-				logger.Warnf("Circuit Breaker Generator for %+resRules is not existed.", r.BreakerStrategy())
+				logger.Warnf("Ignoring the rule due to unsupported circuit breaking strategy: %v", r)
 				continue
 			}
 
@@ -216,7 +216,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 				cb = generator(r, nil)
 			}
 			if cb == nil {
-				logger.Warnf("Fail to generate Circuit Breaker for rule: %+resRules.", r)
+				logger.Warnf("Ignoring the rule due to bad generated circuit breaker: %v", r)
 				continue
 			}
 
@@ -254,7 +254,7 @@ func rulesFrom(rm map[string][]Rule) []Rule {
 
 func logRuleUpdate(rules map[string][]Rule) {
 	sb := strings.Builder{}
-	sb.WriteString("Circuit breaking rules loaded:[")
+	sb.WriteString("Circuit breaking rules loaded: [")
 
 	for _, r := range rulesFrom(rules) {
 		sb.WriteString(r.String() + ",")
