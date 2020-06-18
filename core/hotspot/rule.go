@@ -87,9 +87,9 @@ type Rule struct {
 	// Id is the unique id
 	Id string
 	// Resource is the resource name
-	Resource   string
-	MetricType MetricType
-	Behavior   ControlBehavior
+	Resource        string
+	MetricType      MetricType
+	ControlBehavior ControlBehavior
 	// ParamIndex is the index in context arguments slice.
 	ParamIndex int
 	Threshold  float64
@@ -102,8 +102,8 @@ type Rule struct {
 }
 
 func (r *Rule) String() string {
-	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, Behavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v}",
-		r.Id, r.Resource, r.MetricType, r.Behavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
+	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, ControlBehavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v}",
+		r.Id, r.Resource, r.MetricType, r.ControlBehavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
 }
 func (r *Rule) ResourceName() string {
 	return r.Resource
@@ -111,18 +111,18 @@ func (r *Rule) ResourceName() string {
 
 // IsStatReusable checks whether current rule is "statistically" equal to the given rule.
 func (r *Rule) IsStatReusable(newRule *Rule) bool {
-	return r.Resource == newRule.Resource && r.Behavior == newRule.Behavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.DurationInSec == newRule.DurationInSec
+	return r.Resource == newRule.Resource && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.DurationInSec == newRule.DurationInSec
 }
 
 // IsEqualsTo checks whether current rule is consistent with the given rule.
 func (r *Rule) Equals(newRule *Rule) bool {
-	baseCheck := r.Resource == newRule.Resource && r.MetricType == newRule.MetricType && r.Behavior == newRule.Behavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.ParamIndex == newRule.ParamIndex && r.Threshold == newRule.Threshold && r.DurationInSec == newRule.DurationInSec && reflect.DeepEqual(r.SpecificItems, newRule.SpecificItems)
+	baseCheck := r.Resource == newRule.Resource && r.MetricType == newRule.MetricType && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.ParamIndex == newRule.ParamIndex && r.Threshold == newRule.Threshold && r.DurationInSec == newRule.DurationInSec && reflect.DeepEqual(r.SpecificItems, newRule.SpecificItems)
 	if !baseCheck {
 		return false
 	}
-	if r.Behavior == Reject {
+	if r.ControlBehavior == Reject {
 		return r.BurstCount == newRule.BurstCount
-	} else if r.Behavior == Throttling {
+	} else if r.ControlBehavior == Throttling {
 		return r.MaxQueueingTimeMs == newRule.MaxQueueingTimeMs
 	} else {
 		return false
@@ -140,7 +140,7 @@ func parseSpecificItems(source map[SpecificValue]int64) map[interface{}]int64 {
 		case KindInt:
 			realVal, err := strconv.Atoi(k.ValStr)
 			if err != nil {
-				logger.Errorf("Fail to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", k.ValKind, k.ValStr, err)
+				logger.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", k.ValKind, k.ValStr, err)
 				continue
 			}
 			ret[realVal] = v
@@ -151,7 +151,7 @@ func parseSpecificItems(source map[SpecificValue]int64) map[interface{}]int64 {
 		case KindBool:
 			realVal, err := strconv.ParseBool(k.ValStr)
 			if err != nil {
-				logger.Errorf("Fail to parse value for int specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", k.ValStr, err)
 				continue
 			}
 			ret[realVal] = v
@@ -159,18 +159,17 @@ func parseSpecificItems(source map[SpecificValue]int64) map[interface{}]int64 {
 		case KindFloat64:
 			realVal, err := strconv.ParseFloat(k.ValStr, 64)
 			if err != nil {
-				logger.Errorf("Fail to parse value for int specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", k.ValStr, err)
 				continue
 			}
 			realVal, err = strconv.ParseFloat(fmt.Sprintf("%.5f", realVal), 64)
 			if err != nil {
-				logger.Errorf("Fail to parse value for int specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", k.ValStr, err)
 				continue
 			}
 			ret[realVal] = v
-
 		default:
-			logger.Errorf("Unsupported kind(%d) for specific item.", k.ValKind)
+			logger.Errorf("Unsupported kind for specific item: %d", k.ValKind)
 		}
 	}
 	return ret

@@ -8,15 +8,14 @@ const (
 	ParamsMaxCapacity   = 20000
 )
 
-// ParamsMetric cache the frequent(hot spot) parameters for each value.
-// ParamsMetric is used for pair <resource, TrafficShapingController>.
+// ParamsMetric carries real-time counters for frequent ("hot spot") parameters.
+//
+// For each cache map, the key is the parameter value, while the value is the counter.
 type ParamsMetric struct {
-	// cache's key is the hot value
-	// cache's value is the counter
-	// RuleTimeCounter record the last add token time
+	// RuleTimeCounter records the last added token timestamp.
 	RuleTimeCounter cache.ConcurrentCounterCache
-	// RuleTokenCounter record the number of token
+	// RuleTokenCounter records the number of tokens.
 	RuleTokenCounter cache.ConcurrentCounterCache
-	// ConcurrencyCounter record the number of goroutine
+	// ConcurrencyCounter records the real-time concurrency.
 	ConcurrencyCounter cache.ConcurrentCounterCache
 }

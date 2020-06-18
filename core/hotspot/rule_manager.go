@@ -60,17 +60,16 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 	return tcMap[res]
 }
 
-// LoadRules replaces old rules with the given frequency parameters flow control rules.
-// return value:
+// LoadRules replaces old rules with the given frequent parameter flow control rules. Return value:
 //
-// bool: was designed to indicate whether the internal map has been changed
-// error: was designed to indicate whether occurs the error.
+// bool: indicates whether the internal map has been changed;
+// error: indicates whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	err := onRuleUpdate(rules)
 	return true, err
 }
 
-// GetRules return the res's rules
+// GetRules returns existing rules of the given resource.
 func GetRules(res string) []*Rule {
 	tcMux.RLock()
 	defer tcMux.RUnlock()
@@ -82,7 +81,7 @@ func GetRules(res string) []*Rule {
 	return ret
 }
 
-// ClearRules clears all rules in frequency parameters flow control components
+// ClearRules clears all parameter flow rules.
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
@@ -111,7 +110,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 func logRuleUpdate(m trafficControllerMap) {
 	sb := strings.Builder{}
-	sb.WriteString("Frequency parameters flow control rules loaded:[")
+	sb.WriteString("Frequent parameter flow control rules loaded: [")
 
 	for _, r := range rulesFrom(m) {
 		sb.WriteString(r.String() + ",")
@@ -183,7 +182,7 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logger.Warnf("Ignoring invalid frequency params Rule: %+v, reason: %s", r, err.Error())
+			logger.Warnf("Ignoring invalid frequent param flow rule: %v, reason: %s", r.String(), err.Error())
 			continue
 		}
 
@@ -201,9 +200,9 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 		}
 
 		// generate new traffic shaping controller
-		generator, supported := tcGenFuncMap[r.Behavior]
+		generator, supported := tcGenFuncMap[r.ControlBehavior]
 		if !supported {
-			logger.Warnf("Ignoring the frequency params Rule due to unsupported control strategy: %+v", r)
+			logger.Warnf("Ignoring the frequent param flow rule due to unsupported control behavior: %v", r)
 			continue
 		}
 		var tc TrafficShapingController
@@ -214,7 +213,7 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 			tc = generator(r, nil)
 		}
 		if tc == nil {
-			logger.Debugf("Ignoring the frequency params Rule due to bad generated traffic controller: %+v", r)
+			logger.Debugf("Ignoring the frequent param flow rule due to bad generated traffic controller: %v", r)
 			continue
 		}
 
@@ -240,7 +239,7 @@ func IsValidRule(rule *Rule) error {
 	if rule.MetricType < 0 {
 		return errors.New("invalid metric type")
 	}
-	if rule.Behavior < 0 {
+	if rule.ControlBehavior < 0 {
 		return errors.New("invalid control strategy")
 	}
 	if rule.ParamIndex < 0 {
@@ -253,7 +252,7 @@ func IsValidRule(rule *Rule) error {
 }
 
 func checkControlBehaviorField(rule *Rule) error {
-	switch rule.Behavior {
+	switch rule.ControlBehavior {
 	case Reject:
 		if rule.BurstCount < 0 {
 			return errors.New("invalid BurstCount")

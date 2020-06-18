@@ -11,7 +11,7 @@ const (
 	BlockTypeFlow
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
-	BlockTypeFreqParamsFlow
+	BlockTypeHotSpotParamFlow
 )
 
 func (t BlockType) String() string {
@@ -24,6 +24,8 @@ func (t BlockType) String() string {
 		return "CircuitBreaking"
 	case BlockTypeSystemFlow:
 		return "System"
+	case BlockTypeHotSpotParamFlow:
+		return "HotSpotParamFlow"
 	default:
 		return fmt.Sprintf("%d", t)
 	}
