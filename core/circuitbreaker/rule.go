@@ -6,7 +6,6 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
-	"go.uber.org/multierr"
 )
 
 // The strategy of circuit breaker.
@@ -70,9 +69,17 @@ func (b *RuleBase) BreakerStatIntervalMs() uint32 {
 }
 
 func (b *RuleBase) IsApplicable() error {
-	if !(len(b.Resource) > 0 && b.RetryTimeoutMs >= 0 && b.MinRequestAmount >= 0 && b.StatIntervalMs >= 0) {
-		return errors.Errorf("Illegal parameters, Id=%s, Resource=%s, Strategy=%d, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d.",
-			b.Id, b.Resource, b.Strategy, b.RetryTimeoutMs, b.MinRequestAmount, b.StatIntervalMs)
+	if len(b.Resource) == 0 {
+		return errors.New("empty resource name")
+	}
+	if b.RetryTimeoutMs <= 0 {
+		return errors.New("invalid RetryTimeoutMs")
+	}
+	if b.MinRequestAmount <= 0 {
+		return errors.New("invalid MinRequestAmount")
+	}
+	if b.StatIntervalMs <= 0 {
+		return errors.New("invalid StatIntervalMs")
 	}
 	return nil
 }
@@ -98,7 +105,7 @@ func (b *RuleBase) ResourceName() string {
 // SlowRequestRatio circuit breaker rule
 type slowRtRule struct {
 	RuleBase
-	// MaxAllowedRt indicates that any invocation whose response time exceeds this value
+	// MaxAllowedRt indicates that any invocation whose response time exceeds this value (in ms)
 	// will be recorded as a slow request.
 	MaxAllowedRt uint64
 	// MaxSlowRequestRatio represents the threshold of slow request ratio.
@@ -131,12 +138,14 @@ func (r *slowRtRule) IsEqualsTo(newRule Rule) bool {
 }
 
 func (r *slowRtRule) IsApplicable() error {
-	baseApplicableError := r.RuleBase.IsApplicable()
-	var slowRtError error
-	if !(r.MaxSlowRequestRatio >= 0.0 && r.MaxAllowedRt >= 0) {
-		slowRtError = errors.Errorf("Illegal parameters in slowRtRule, MaxSlowRequestRatio: %f, MaxAllowedRt: %d", r.MaxSlowRequestRatio, r.MaxAllowedRt)
+	baseCheckErr := r.RuleBase.IsApplicable()
+	if baseCheckErr != nil {
+		return baseCheckErr
 	}
-	return multierr.Append(baseApplicableError, slowRtError)
+	if r.MaxSlowRequestRatio < 0 || r.MaxSlowRequestRatio > 1 {
+		return errors.New("invalid slow request ratio threshold (valid range: [0.0, 1.0])")
+	}
+	return nil
 }
 
 func (r *slowRtRule) String() string {
@@ -178,12 +187,14 @@ func (r *errorRatioRule) IsEqualsTo(newRule Rule) bool {
 }
 
 func (r *errorRatioRule) IsApplicable() error {
-	baseApplicableError := r.RuleBase.IsApplicable()
-	var errorRatioRuleError error
-	if !(r.Threshold >= 0.0) {
-		errorRatioRuleError = errors.Errorf("Illegal parameters in errorRatioRule, Threshold: %f.", r.Threshold)
+	baseCheckErr := r.RuleBase.IsApplicable()
+	if baseCheckErr != nil {
+		return baseCheckErr
 	}
-	return multierr.Append(baseApplicableError, errorRatioRuleError)
+	if r.Threshold < 0 || r.Threshold > 1 {
+		return errors.New("invalid error ratio threshold (valid range: [0.0, 1.0])")
+	}
+	return nil
 }
 
 // Error count circuit breaker rule
@@ -221,10 +232,12 @@ func (r *errorCountRule) IsEqualsTo(newRule Rule) bool {
 }
 
 func (r *errorCountRule) IsApplicable() error {
-	baseApplicableError := r.RuleBase.IsApplicable()
-	var errorCountRuleError error
-	if !(r.Threshold >= 0) {
-		errorCountRuleError = errors.Errorf("Illegal parameters in errorCountRule, Threshold: %d.", r.Threshold)
+	baseCheckErr := r.RuleBase.IsApplicable()
+	if baseCheckErr != nil {
+		return baseCheckErr
 	}
-	return multierr.Append(baseApplicableError, errorCountRuleError)
+	if r.Threshold < 0 {
+		return errors.New("negative error count threshold")
+	}
+	return nil
 }
