@@ -3,6 +3,7 @@ package consul
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/alibaba/sentinel-golang/ext/datasource"
@@ -33,9 +34,9 @@ const (
 
 var (
 	SystemRules = []*system.SystemRule{
-		{ID: 0, MetricType: 0, Strategy: 0},
-		{ID: 1, MetricType: 0, Strategy: 0},
-		{ID: 2, MetricType: 0, Strategy: 0},
+		{MetricType: 0, Strategy: 0},
+		{MetricType: 0, Strategy: 0},
+		{MetricType: 0, Strategy: 0},
 	}
 )
 
@@ -92,9 +93,8 @@ func TestConsulDatasource(t *testing.T) {
 	ds.AddPropertyHandler(datasource.NewDefaultPropertyHandler(
 		datasource.SystemRulesJsonConverter,
 		func(rule interface{}) error {
-			t.Logf("rule: %+v\n", rule)
 			assert.NotNil(t, rule)
-			assert.Equal(t, SystemRules, rule)
+			assert.EqualValues(t, SystemRules, rule)
 			return nil
 		},
 	))
@@ -113,4 +113,5 @@ func TestConsulDatasource(t *testing.T) {
 			Session:     "",
 		})
 	})
+	time.Sleep(time.Second)
 }
