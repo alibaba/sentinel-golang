@@ -2,7 +2,7 @@
     {
         "resource": "abc",
         "metricType": 0,
-        "behavior": 0,
+        "controlBehavior": 0,
         "paramIndex": 0,
         "threshold": 1000,
         "maxQueueingTimeMs": 1,
@@ -30,7 +30,7 @@
     {
         "resource": "abc",
         "metricType": 0,
-        "behavior": 1,
+        "controlBehavior": 1,
         "paramIndex": 1,
         "threshold": 2000,
         "maxQueueingTimeMs": 2,
@@ -58,7 +58,7 @@
     {
         "resource": "abc",
         "metricType": 1,
-        "behavior": 0,
+        "controlBehavior": 0,
         "paramIndex": 2,
         "threshold": 3000,
         "maxQueueingTimeMs": 3,
@@ -84,10 +84,9 @@
         ]
     },
     {
-        "id": 0,
         "resource": "abc",
         "metricType": 1,
-        "behavior": 1,
+        "controlBehavior": 1,
         "paramIndex": 3,
         "threshold": 4000,
         "maxQueueingTimeMs": 4,

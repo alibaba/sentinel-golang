@@ -23,7 +23,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			Id:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
-			Behavior:          Reject,
+			ControlBehavior:   Reject,
 			ParamIndex:        0,
 			Threshold:         110,
 			MaxQueueingTimeMs: 0,
@@ -31,7 +31,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			DurationInSec:     1,
 			SpecificItems:     m,
 		}
-		generator, supported := tcGenFuncMap[r1.Behavior]
+		generator, supported := tcGenFuncMap[r1.ControlBehavior]
 		assert.True(t, supported && generator != nil)
 		tc := generator(r1, nil)
 		assert.True(t, tc.BoundMetric() != nil && tc.BoundRule() == r1 && tc.BoundParamIndex() == 0)
@@ -54,7 +54,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			Id:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
-			Behavior:          Reject,
+			ControlBehavior:   Reject,
 			ParamIndex:        0,
 			Threshold:         110,
 			MaxQueueingTimeMs: 0,
@@ -62,7 +62,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			DurationInSec:     1,
 			SpecificItems:     m,
 		}
-		generator, supported := tcGenFuncMap[r1.Behavior]
+		generator, supported := tcGenFuncMap[r1.ControlBehavior]
 		assert.True(t, supported && generator != nil)
 
 		size := int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r1.DurationInSec)))
@@ -100,7 +100,7 @@ func Test_IsValidRule(t *testing.T) {
 			Id:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
-			Behavior:          Reject,
+			ControlBehavior:   Reject,
 			ParamIndex:        0,
 			Threshold:         110,
 			MaxQueueingTimeMs: 0,
@@ -124,7 +124,7 @@ func Test_IsValidRule(t *testing.T) {
 			Id:                "",
 			Resource:          "",
 			MetricType:        Concurrency,
-			Behavior:          Reject,
+			ControlBehavior:   Reject,
 			ParamIndex:        0,
 			Threshold:         110,
 			MaxQueueingTimeMs: 0,
@@ -150,7 +150,7 @@ func Test_buildTcMap(t *testing.T) {
 		Id:                "1",
 		Resource:          "abc",
 		MetricType:        Concurrency,
-		Behavior:          Reject,
+		ControlBehavior:   Reject,
 		ParamIndex:        0,
 		Threshold:         100,
 		MaxQueueingTimeMs: 0,
@@ -172,7 +172,7 @@ func Test_buildTcMap(t *testing.T) {
 		Id:                "2",
 		Resource:          "abc",
 		MetricType:        QPS,
-		Behavior:          Throttling,
+		ControlBehavior:   Throttling,
 		ParamIndex:        1,
 		Threshold:         100,
 		MaxQueueingTimeMs: 20,
@@ -194,7 +194,7 @@ func Test_buildTcMap(t *testing.T) {
 		Id:                "3",
 		Resource:          "abc",
 		MetricType:        Concurrency,
-		Behavior:          Throttling,
+		ControlBehavior:   Throttling,
 		ParamIndex:        2,
 		Threshold:         100,
 		MaxQueueingTimeMs: 20,
@@ -207,7 +207,7 @@ func Test_buildTcMap(t *testing.T) {
 		Id:                "4",
 		Resource:          "abc",
 		MetricType:        Concurrency,
-		Behavior:          Throttling,
+		ControlBehavior:   Throttling,
 		ParamIndex:        2,
 		Threshold:         100,
 		MaxQueueingTimeMs: 20,
@@ -226,7 +226,7 @@ func Test_buildTcMap(t *testing.T) {
 		Id:                "21",
 		Resource:          "abc",
 		MetricType:        Concurrency,
-		Behavior:          Reject,
+		ControlBehavior:   Reject,
 		ParamIndex:        0,
 		Threshold:         100,
 		MaxQueueingTimeMs: 0,
@@ -238,7 +238,7 @@ func Test_buildTcMap(t *testing.T) {
 		Id:                "22",
 		Resource:          "abc",
 		MetricType:        QPS,
-		Behavior:          Throttling,
+		ControlBehavior:   Throttling,
 		ParamIndex:        1,
 		Threshold:         101,
 		MaxQueueingTimeMs: 20,
@@ -250,7 +250,7 @@ func Test_buildTcMap(t *testing.T) {
 		Id:                "23",
 		Resource:          "abc",
 		MetricType:        Concurrency,
-		Behavior:          Throttling,
+		ControlBehavior:   Throttling,
 		ParamIndex:        2,
 		Threshold:         100,
 		MaxQueueingTimeMs: 20,

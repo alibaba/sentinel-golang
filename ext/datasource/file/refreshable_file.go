@@ -81,10 +81,10 @@ func (s *RefreshableFileDataSource) Initialize() error {
 				}
 
 				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
-					logger.Errorf("The file source[%s] was removed or renamed.", s.sourceFilePath)
+					logger.Warnf("The file source [%s] was removed or renamed.", s.sourceFilePath)
 					updateErr := s.Handle(nil)
 					if updateErr != nil {
-						logger.Errorf("Fail to update nil property, err: %+v.", updateErr)
+						logger.Errorf("Fail to update nil property, err: %+v", updateErr)
 					}
 				}
 			case err := <-s.watcher.Errors:
