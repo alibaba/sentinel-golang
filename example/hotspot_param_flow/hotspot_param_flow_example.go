@@ -62,7 +62,7 @@ func main() {
 	sc.AddStatPrepareSlotLast(&stat.StatNodePrepareSlot{})
 	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
 	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
-	sc.AddRuleCheckSlotLast(&hotspot.FreqPramsTrafficSlot{})
+	sc.AddRuleCheckSlotLast(&hotspot.Slot{})
 	sc.AddStatSlotLast(&stat.StatisticSlot{})
 	sc.AddStatSlotLast(&hotspot.ConcurrencyStatSlot{})
 

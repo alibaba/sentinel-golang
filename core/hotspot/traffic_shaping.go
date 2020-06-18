@@ -86,13 +86,13 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 		if concurrency <= specificConcurrency {
 			return nil
 		}
-		return base.NewTokenResultBlocked(base.BlockTypeHotSpotParamFlow, fmt.Sprintf("Frequency params traffic shaping controller, current concurrency: %d, specific concurrency: %d", concurrency, specificConcurrency))
+		return base.NewTokenResultBlocked(base.BlockTypeHotSpotParamFlow, fmt.Sprintf("Hotspot parameters traffic shaping controller, current concurrency: %d, specific concurrency: %d", concurrency, specificConcurrency))
 	}
 	threshold := int64(c.threshold)
 	if concurrency <= threshold {
 		return nil
 	}
-	return base.NewTokenResultBlocked(base.BlockTypeHotSpotParamFlow, fmt.Sprintf("Frequency params traffic shaping controller, current concurrency: %d, threshold: %d", concurrency, threshold))
+	return base.NewTokenResultBlocked(base.BlockTypeHotSpotParamFlow, fmt.Sprintf("Hotspot parameters traffic shaping controller, current concurrency: %d, threshold: %d", concurrency, threshold))
 }
 
 // rejectTrafficShapingController use Reject strategy
