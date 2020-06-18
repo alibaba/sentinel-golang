@@ -197,8 +197,8 @@ func NewCircuitBreakerRulesHandler(converter PropertyConverter) *DefaultProperty
 	return NewDefaultPropertyHandler(converter, CircuitBreakerRulesUpdater)
 }
 
-// FrequencyParamsRulesJsonConverter provide JSON  as the default serialization for list of hotspot.Rule
-func FrequencyParamsRulesJsonConverter(src []byte) (interface{}, error) {
+// HotSpotParamRulesJsonConverter decodes list of param flow rules from JSON bytes.
+func HotSpotParamRulesJsonConverter(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
@@ -206,10 +206,10 @@ func FrequencyParamsRulesJsonConverter(src []byte) (interface{}, error) {
 	rules := make([]*hotspot.Rule, 0)
 	result := gjson.ParseBytes(src)
 	for _, r := range result.Array() {
-		freqRule := &hotspot.Rule{
+		rule := &hotspot.Rule{
 			Resource:          r.Get("resource").String(),
 			MetricType:        hotspot.MetricType(r.Get("metricType").Int()),
-			Behavior:          hotspot.ControlBehavior(r.Get("behavior").Int()),
+			ControlBehavior:   hotspot.ControlBehavior(r.Get("controlBehavior").Int()),
 			ParamIndex:        int(r.Get("paramIndex").Int()),
 			Threshold:         r.Get("threshold").Float(),
 			MaxQueueingTimeMs: r.Get("maxQueueingTimeMs").Int(),
@@ -223,18 +223,18 @@ func FrequencyParamsRulesJsonConverter(src []byte) (interface{}, error) {
 				ValKind: hotspot.ParamKind(spItem.Get("valKind").Int()),
 				ValStr:  spItem.Get("valStr").String(),
 			}
-			if freqRule.SpecificItems == nil {
-				freqRule.SpecificItems = make(map[hotspot.SpecificValue]int64)
+			if rule.SpecificItems == nil {
+				rule.SpecificItems = make(map[hotspot.SpecificValue]int64)
 			}
-			freqRule.SpecificItems[sp] = spItem.Get("threshold").Int()
+			rule.SpecificItems[sp] = spItem.Get("threshold").Int()
 		}
-		rules = append(rules, freqRule)
+		rules = append(rules, rule)
 	}
 	return rules, nil
 }
 
-// FrequencyParamsRulesUpdater load the newest []hotspot.Rule to downstream hotspot component.
-func FrequencyParamsRulesUpdater(data interface{}) error {
+// HotSpotParamRulesUpdater loads the provided hot-spot param rules to downstream rule manager.
+func HotSpotParamRulesUpdater(data interface{}) error {
 	if data == nil {
 		return hotspot.ClearRules()
 	}
@@ -262,6 +262,6 @@ func FrequencyParamsRulesUpdater(data interface{}) error {
 	}
 }
 
-func NewFrequencyParamsRulesHandler(converter PropertyConverter) PropertyHandler {
-	return NewDefaultPropertyHandler(converter, FrequencyParamsRulesUpdater)
+func NewHotSpotParamRulesHandler(converter PropertyConverter) PropertyHandler {
+	return NewDefaultPropertyHandler(converter, HotSpotParamRulesUpdater)
 }
