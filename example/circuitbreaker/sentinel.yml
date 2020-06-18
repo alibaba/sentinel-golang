@@ -1,0 +1,4 @@
+version: "v1"
+sentinel:
+  app:
+    name: sentinel-go-circuit-breaking-demo
