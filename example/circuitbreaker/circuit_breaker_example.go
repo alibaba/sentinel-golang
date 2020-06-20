@@ -38,9 +38,14 @@ func main() {
 
 	_, err = circuitbreaker.LoadRules([]circuitbreaker.Rule{
 		// Statistic time span=10s, recoveryTimeout=3s, slowRtUpperBound=50ms, maxSlowRequestRatio=50%
-		circuitbreaker.NewSlowRtRule("abc", 10000, 3000, 50, 10, 0.5),
+		circuitbreaker.NewRule("abc", circuitbreaker.SlowRequestRatio,
+			circuitbreaker.WithStatIntervalMs(10000), circuitbreaker.WithRetryTimeoutMs(3000),
+			circuitbreaker.WithMinRequestAmount(10), circuitbreaker.WithMaxAllowedRtMs(50),
+			circuitbreaker.WithMaxSlowRequestRatio(0.5)),
 		// Statistic time span=10s, recoveryTimeout=3s, maxErrorRatio=50%
-		circuitbreaker.NewErrorRatioRule("abc", 10000, 3000, 10, 0.5),
+		circuitbreaker.NewRule("abc", circuitbreaker.ErrorRatio,
+			circuitbreaker.WithStatIntervalMs(10000), circuitbreaker.WithRetryTimeoutMs(3000),
+			circuitbreaker.WithMinRequestAmount(10), circuitbreaker.WithErrorRatioThreshold(0.5)),
 	})
 	if err != nil {
 		log.Fatal(err)

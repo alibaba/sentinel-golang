@@ -3,7 +3,7 @@ package datasource
 import (
 	"fmt"
 
-	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/system"
@@ -142,25 +142,32 @@ func CircuitBreakerRulesJsonConverter(src []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	rules := make([]circuitbreaker.Rule, 0)
+	rules := make([]cb.Rule, 0)
 	result := gjson.ParseBytes(src)
 	for _, r := range result.Array() {
-		if uint64(circuitbreaker.SlowRequestRatio) == r.Get("strategy").Uint() {
-			rules = append(rules, circuitbreaker.NewSlowRtRule(r.Get("resource").String(),
-				uint32(r.Get("statIntervalMs").Uint()), uint32(r.Get("retryTimeoutMs").Uint()),
-				r.Get("maxAllowedRt").Uint(), r.Get("minRequestAmount").Uint(), r.Get("maxSlowRequestRatio").Float()))
+		if uint64(cb.SlowRequestRatio) == r.Get("strategy").Uint() {
+			rules = append(rules, cb.NewRule(r.Get("resource").String(), cb.SlowRequestRatio,
+				cb.WithStatIntervalMs(uint32(r.Get("statIntervalMs").Uint())),
+				cb.WithRetryTimeoutMs(uint32(r.Get("retryTimeoutMs").Uint())),
+				cb.WithMinRequestAmount(r.Get("minRequestAmount").Uint()),
+				cb.WithMaxAllowedRtMs(r.Get("maxAllowedRt").Uint()),
+				cb.WithMaxSlowRequestRatio(r.Get("maxSlowRequestRatio").Float())))
 			continue
 		}
-		if uint64(circuitbreaker.ErrorRatio) == r.Get("strategy").Uint() {
-			rules = append(rules, circuitbreaker.NewErrorRatioRule(r.Get("resource").String(),
-				uint32(r.Get("statIntervalMs").Uint()), uint32(r.Get("retryTimeoutMs").Uint()),
-				r.Get("minRequestAmount").Uint(), r.Get("threshold").Float()))
+		if uint64(cb.ErrorRatio) == r.Get("strategy").Uint() {
+			rules = append(rules, cb.NewRule(r.Get("resource").String(), cb.ErrorRatio,
+				cb.WithStatIntervalMs(uint32(r.Get("statIntervalMs").Uint())),
+				cb.WithRetryTimeoutMs(uint32(r.Get("retryTimeoutMs").Uint())),
+				cb.WithMinRequestAmount(r.Get("minRequestAmount").Uint()),
+				cb.WithErrorRatioThreshold(r.Get("threshold").Float())))
 			continue
 		}
-		if uint64(circuitbreaker.ErrorCount) == r.Get("strategy").Uint() {
-			rules = append(rules, circuitbreaker.NewErrorCountRule(r.Get("resource").String(),
-				uint32(r.Get("statIntervalMs").Uint()), uint32(r.Get("retryTimeoutMs").Uint()),
-				r.Get("minRequestAmount").Uint(), r.Get("threshold").Uint()))
+		if uint64(cb.ErrorCount) == r.Get("strategy").Uint() {
+			rules = append(rules, cb.NewRule(r.Get("resource").String(), cb.ErrorCount,
+				cb.WithStatIntervalMs(uint32(r.Get("statIntervalMs").Uint())),
+				cb.WithRetryTimeoutMs(uint32(r.Get("retryTimeoutMs").Uint())),
+				cb.WithMinRequestAmount(r.Get("minRequestAmount").Uint()),
+				cb.WithErrorCountThreshold(r.Get("threshold").Uint())))
 			continue
 		}
 		logger.Errorf("Unknown rule message: %s", r.Str)
@@ -168,22 +175,22 @@ func CircuitBreakerRulesJsonConverter(src []byte) (interface{}, error) {
 	return rules, nil
 }
 
-// CircuitBreakerRulesUpdater load the newest []circuitbreaker.Rule to downstream circuit breaker component.
+// CircuitBreakerRulesUpdater load the newest []cb.Rule to downstream circuit breaker component.
 func CircuitBreakerRulesUpdater(data interface{}) error {
 	if data == nil {
-		return circuitbreaker.ClearRules()
+		return cb.ClearRules()
 	}
 
-	var rules []circuitbreaker.Rule
-	if val, ok := data.([]circuitbreaker.Rule); ok {
+	var rules []cb.Rule
+	if val, ok := data.([]cb.Rule); ok {
 		rules = val
 	} else {
 		return Error{
 			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []circuitbreaker.Rule, in fact, data: %+v", data),
+			desc: fmt.Sprintf("Fail to type assert data to []cb.Rule, in fact, data: %+v", data),
 		}
 	}
-	succ, err := circuitbreaker.LoadRules(rules)
+	succ, err := cb.LoadRules(rules)
 	if succ && err == nil {
 		return nil
 	}
