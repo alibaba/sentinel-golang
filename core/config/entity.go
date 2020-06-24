@@ -105,3 +105,40 @@ func checkValid(conf *SentinelConfig) error {
 	}
 	return nil
 }
+
+func (entity *Entity) AppName() string {
+	return entity.Sentinel.App.Name
+}
+
+func (entity *Entity) AppType() int32 {
+	return entity.Sentinel.App.Type
+}
+
+func (entity *Entity) LogBaseDir() string {
+	return entity.Sentinel.Log.Dir
+}
+
+// LogUsePid returns whether the log file name contains the PID suffix.
+func (entity *Entity) LogUsePid() bool {
+	return entity.Sentinel.Log.UsePid
+}
+
+func (entity *Entity) MetricLogFlushIntervalSec() uint32 {
+	return entity.Sentinel.Log.Metric.FlushIntervalSec
+}
+
+func (entity *Entity) MetricLogSingleFileMaxSize() uint64 {
+	return entity.Sentinel.Log.Metric.SingleFileMaxSize
+}
+
+func (entity *Entity) MetricLogMaxFileAmount() uint32 {
+	return entity.Sentinel.Log.Metric.MaxFileCount
+}
+
+func (entity *Entity) SystemStatCollectIntervalMs() uint32 {
+	return entity.Sentinel.Stat.System.CollectIntervalMs
+}
+
+func (entity *Entity) UseCacheTime() bool {
+	return entity.Sentinel.UseCacheTime
+}
