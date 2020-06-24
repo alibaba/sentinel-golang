@@ -19,6 +19,10 @@ var (
 	initLogOnce sync.Once
 )
 
+func SetDefaultConfig(config *Entity) {
+	globalCfg = config
+}
+
 // InitConfig loads general configuration from the given file.
 func InitConfig(configPath string) error {
 	// Priority: system environment > YAML file > default config
@@ -149,38 +153,38 @@ func GetDefaultLogDir() string {
 }
 
 func AppName() string {
-	return globalCfg.Sentinel.App.Name
+	return globalCfg.AppName()
 }
 
 func AppType() int32 {
-	return globalCfg.Sentinel.App.Type
+	return globalCfg.AppType()
 }
 
 func LogBaseDir() string {
-	return globalCfg.Sentinel.Log.Dir
+	return globalCfg.LogBaseDir()
 }
 
 // LogUsePid returns whether the log file name contains the PID suffix.
 func LogUsePid() bool {
-	return globalCfg.Sentinel.Log.UsePid
+	return globalCfg.LogUsePid()
 }
 
 func MetricLogFlushIntervalSec() uint32 {
-	return globalCfg.Sentinel.Log.Metric.FlushIntervalSec
+	return globalCfg.MetricLogFlushIntervalSec()
 }
 
 func MetricLogSingleFileMaxSize() uint64 {
-	return globalCfg.Sentinel.Log.Metric.SingleFileMaxSize
+	return globalCfg.MetricLogSingleFileMaxSize()
 }
 
 func MetricLogMaxFileAmount() uint32 {
-	return globalCfg.Sentinel.Log.Metric.MaxFileCount
+	return globalCfg.MetricLogMaxFileAmount()
 }
 
 func SystemStatCollectIntervalMs() uint32 {
-	return globalCfg.Sentinel.Stat.System.CollectIntervalMs
+	return globalCfg.SystemStatCollectIntervalMs()
 }
 
 func UseCacheTime() bool {
-	return globalCfg.Sentinel.UseCacheTime
+	return globalCfg.UseCacheTime()
 }
