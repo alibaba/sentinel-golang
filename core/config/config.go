@@ -35,27 +35,30 @@ func InitConfig(configPath string) error {
 	}
 	// First Sentinel will try to load config from the given file.
 	// If the path is empty (not set), Sentinel will use the default config.
-	err := LoadFromYamlFile(configPath)
+	err := loadFromYamlFile(configPath)
 	if err != nil {
 		return err
 	}
+
+	return OverrideConfigFromEnvAndInitLog()
+}
+
+func OverrideConfigFromEnvAndInitLog() error {
 	// Then Sentinel will try to get fundamental config items from system environment.
 	// If present, the value in system env will override the value in config file.
-	err = overrideItemsFromSystemEnv()
+	err := overrideItemsFromSystemEnv()
 	if err != nil {
 		return err
 	}
-	err = InitializeLogConfig(LogBaseDir(), LogUsePid())
+	err = initializeLogConfig(LogBaseDir(), LogUsePid())
 	if err != nil {
 		return err
 	}
-
 	logging.GetDefaultLogger().Infof("App name resolved: %s", AppName())
-
 	return nil
 }
 
-func LoadFromYamlFile(filePath string) error {
+func loadFromYamlFile(filePath string) error {
 	if filePath == DefaultConfigFilename {
 		if _, err := os.Stat(DefaultConfigFilename); err != nil {
 			//use default globalCfg.
@@ -75,7 +78,7 @@ func LoadFromYamlFile(filePath string) error {
 		return err
 	}
 	logging.GetDefaultLogger().Infof("Resolving Sentinel config from file: %s", filePath)
-	return checkValid(&(globalCfg.Sentinel))
+	return checkConfValid(&(globalCfg.Sentinel))
 }
 
 func overrideItemsFromSystemEnv() error {
@@ -104,10 +107,10 @@ func overrideItemsFromSystemEnv() error {
 	if logDir := os.Getenv(LogDirEnvKey); !util.IsBlank(logDir) {
 		globalCfg.Sentinel.Log.Dir = logDir
 	}
-	return checkValid(&(globalCfg.Sentinel))
+	return checkConfValid(&(globalCfg.Sentinel))
 }
 
-func InitializeLogConfig(logDir string, usePid bool) (err error) {
+func initializeLogConfig(logDir string, usePid bool) (err error) {
 	if logDir == "" {
 		return errors.New("Invalid empty log path")
 	}
@@ -187,4 +190,8 @@ func SystemStatCollectIntervalMs() uint32 {
 
 func UseCacheTime() bool {
 	return globalCfg.UseCacheTime()
+}
+
+func EnableMetricLog() bool {
+	return globalCfg.EnableMetricLog()
 }
