@@ -16,8 +16,18 @@ func InitDefault() error {
 }
 
 // InitWithConfig initializes Sentinel using given config.
-func InitWithConfig(confEntity *config.Entity) error {
-	err := config.CheckValid(confEntity)
+func InitWithConfig(confEntity *config.Entity) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+
+	err = config.CheckValid(confEntity)
 	if err != nil {
 		return err
 	}
@@ -36,7 +46,7 @@ func InitWithConfigFile(configPath string) error {
 
 // initCoreComponents init core components with default config
 // it's better SetDefaultConfig before initCoreComponents
-func initCoreComponents() (err error) {
+func initCoreComponents() error {
 	if config.EnableMetricLog() {
 		err := metric.InitTask()
 		if err != nil {
@@ -49,7 +59,7 @@ func initCoreComponents() (err error) {
 		util.StartTimeTicker()
 	}
 
-	return err
+	return nil
 }
 
 func initSentinel(configPath string) (err error) {
