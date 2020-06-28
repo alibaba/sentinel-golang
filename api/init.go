@@ -47,11 +47,8 @@ func InitWithConfigFile(configPath string) error {
 // initCoreComponents init core components with default config
 // it's better SetDefaultConfig before initCoreComponents
 func initCoreComponents() error {
-	if config.EnableMetricLog() {
-		err := metric.InitTask()
-		if err != nil {
-			return err
-		}
+	if err := metric.InitTask(); err != nil {
+		return err
 	}
 
 	system.InitCollector(config.SystemStatCollectIntervalMs())

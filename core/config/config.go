@@ -191,7 +191,3 @@ func SystemStatCollectIntervalMs() uint32 {
 func UseCacheTime() bool {
 	return globalCfg.UseCacheTime()
 }
-
-func EnableMetricLog() bool {
-	return globalCfg.EnableMetricLog()
-}

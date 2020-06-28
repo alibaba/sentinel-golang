@@ -19,8 +19,6 @@ type SentinelConfig struct {
 		// Type indicates the classification of the service (e.g. web service, API gateway).
 		Type int32
 	}
-	// EnableMetricLog represents whether to enable metric monitor log
-	EnableMetricLog bool `yaml:"enableMetricLog"`
 	// Log represents configuration items related to logging.
 	Log LogConfig
 	// Stat represents configuration items related to statistics.
@@ -83,8 +81,7 @@ func NewDefaultConfig() *Entity {
 					CollectIntervalMs: DefaultSystemStatCollectIntervalMs,
 				},
 			},
-			EnableMetricLog: true,
-			UseCacheTime:    true,
+			UseCacheTime: true,
 		},
 	}
 }
@@ -154,8 +151,4 @@ func (entity *Entity) SystemStatCollectIntervalMs() uint32 {
 
 func (entity *Entity) UseCacheTime() bool {
 	return entity.Sentinel.UseCacheTime
-}
-
-func (entity *Entity) EnableMetricLog() bool {
-	return entity.Sentinel.EnableMetricLog
 }
