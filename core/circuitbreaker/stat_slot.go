@@ -5,7 +5,7 @@ import (
 )
 
 // MetricStatSlot records metrics for circuit breaker on invocation completed.
-// MetricStatSlot must be filled into slot chain is circuit breaker is alive.
+// MetricStatSlot must be filled into slot chain if circuit breaker is alive.
 type MetricStatSlot struct {
 }
 

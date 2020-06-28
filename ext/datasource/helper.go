@@ -187,7 +187,7 @@ func CircuitBreakerRulesUpdater(data interface{}) error {
 	} else {
 		return Error{
 			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []cb.Rule, in fact, data: %+v", data),
+			desc: fmt.Sprintf("Fail to type assert data to []circuitbreaker.Rule, in fact, data: %+v", data),
 		}
 	}
 	succ, err := cb.LoadRules(rules)
