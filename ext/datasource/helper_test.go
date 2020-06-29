@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/system"
@@ -267,25 +267,31 @@ func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 		}
 
 		properties, err := CircuitBreakerRulesJsonConverter(src)
-		rules := properties.([]circuitbreaker.Rule)
+		rules := properties.([]cb.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 3)
-		assert.True(t, strings.Contains(rules[0].String(), "resource=abc, strategy=SlowRequestRatio, RetryTimeoutMs=10, MinRequestAmount=10}, MaxAllowedRt=100, MaxSlowRequestRatio=0.100000"))
-		assert.True(t, strings.Contains(rules[1].String(), "resource=abc, strategy=ErrorRatio, RetryTimeoutMs=20, MinRequestAmount=20}, Threshold=0.200000"))
-		assert.True(t, strings.Contains(rules[2].String(), "resource=abc, strategy=ErrorCount, RetryTimeoutMs=30, MinRequestAmount=30}, Threshold=30"))
+		assert.True(t, strings.Contains(rules[0].String(), "resource=abc, strategy=SlowRequestRatio, RetryTimeoutMs=10, MinRequestAmount=10, StatIntervalMs=1000}, MaxAllowedRtMs=100, MaxSlowRequestRatio=0.100000"))
+		assert.True(t, strings.Contains(rules[1].String(), "resource=abc, strategy=ErrorRatio, RetryTimeoutMs=20, MinRequestAmount=20, StatIntervalMs=2000}, Threshold=0.200000"))
+		assert.True(t, strings.Contains(rules[2].String(), "resource=abc, strategy=ErrorCount, RetryTimeoutMs=30, MinRequestAmount=30, StatIntervalMs=3000}, Threshold=30"))
 	})
 }
 
 func TestCircuitBreakerRulesUpdater(t *testing.T) {
 	// Prepare test data
-	r1 := circuitbreaker.NewSlowRtRule("abc", 1000, 1, 20, 5, 0.1)
-	r2 := circuitbreaker.NewErrorRatioRule("abc", 1000, 1, 5, 0.3)
-	r3 := circuitbreaker.NewErrorCountRule("abc", 1000, 1, 5, 10)
+	r1 := cb.NewRule("abc", cb.SlowRequestRatio, cb.WithStatIntervalMs(1000),
+		cb.WithRetryTimeoutMs(1000), cb.WithMaxAllowedRtMs(20),
+		cb.WithMinRequestAmount(5), cb.WithMaxSlowRequestRatio(0.1))
+	r2 := cb.NewRule("abc", cb.ErrorRatio, cb.WithStatIntervalMs(1000),
+		cb.WithRetryTimeoutMs(1000), cb.WithMinRequestAmount(5),
+		cb.WithMaxSlowRequestRatio(0.3))
+	r3 := cb.NewRule("abc", cb.ErrorCount, cb.WithStatIntervalMs(1000),
+		cb.WithRetryTimeoutMs(1000), cb.WithMinRequestAmount(5),
+		cb.WithMaxSlowRequestRatio(10))
 
-	err := CircuitBreakerRulesUpdater([]circuitbreaker.Rule{r1, r2, r3})
+	err := CircuitBreakerRulesUpdater([]cb.Rule{r1, r2, r3})
 	assert.True(t, err == nil)
 
-	rules := circuitbreaker.GetResRules("abc")
+	rules := cb.GetResRules("abc")
 	assert.True(t, rules[0].IsEqualsTo(r1))
 	assert.True(t, rules[1].IsEqualsTo(r2))
 	assert.True(t, rules[2].IsEqualsTo(r3))
