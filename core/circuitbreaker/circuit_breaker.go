@@ -9,8 +9,6 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 )
 
-type State int32
-
 /**
   Circuit Breaker State Machine:
 
@@ -26,6 +24,8 @@ type State int32
 |                |                   |                +---------------->|                |
 +----------------+                   +----------------+                 +----------------+
 */
+type State int32
+
 const (
 	Closed State = iota
 	HalfOpen
@@ -63,6 +63,7 @@ func (s *State) casState(expect State, update State) bool {
 	return atomic.CompareAndSwapInt32(statePtr, oldState, newState)
 }
 
+// StateChangeListener listens on the circuit breaker state change event
 type StateChangeListener interface {
 	// OnTransformToClosed is triggered when circuit breaker state transformed to Closed.
 	OnTransformToClosed(prev State, rule Rule)
@@ -75,6 +76,7 @@ type StateChangeListener interface {
 	OnTransformToHalfOpen(prev State, rule Rule)
 }
 
+// CircuitBreaker is the basic interface of circuit breaker
 type CircuitBreaker interface {
 	// BoundRule returns the associated circuit breaking rule.
 	BoundRule() Rule
@@ -90,11 +92,17 @@ type CircuitBreaker interface {
 }
 
 //================================= circuitBreakerBase ====================================
+// circuitBreakerBase encompasses the common fields of circuit breaker.
 type circuitBreakerBase struct {
-	rule               Rule
-	retryTimeoutMs     uint32
-	nextRetryTimestamp uint64
-	status             *State
+	rule Rule
+	// retryTimeoutMs represents recovery timeout (in milliseconds) before the circuit breaker opens.
+	// During the open period, no requests are permitted until the timeout has elapsed.
+	// After that, the circuit breaker will transform to half-open state for trying a few "trial" requests.
+	retryTimeoutMs uint32
+	// nextRetryTimestampMs is the time circuit breaker could probe
+	nextRetryTimestampMs uint64
+	// state is the state machine of circuit breaker
+	state *State
 }
 
 func (b *circuitBreakerBase) BoundRule() Rule {
@@ -102,21 +110,21 @@ func (b *circuitBreakerBase) BoundRule() Rule {
 }
 
 func (b *circuitBreakerBase) CurrentState() State {
-	return b.status.get()
+	return b.state.get()
 }
 
 func (b *circuitBreakerBase) retryTimeoutArrived() bool {
-	return util.CurrentTimeMillis() >= atomic.LoadUint64(&b.nextRetryTimestamp)
+	return util.CurrentTimeMillis() >= atomic.LoadUint64(&b.nextRetryTimestampMs)
 }
 
 func (b *circuitBreakerBase) updateNextRetryTimestamp() {
-	atomic.StoreUint64(&b.nextRetryTimestamp, util.CurrentTimeMillis()+uint64(b.retryTimeoutMs))
+	atomic.StoreUint64(&b.nextRetryTimestampMs, util.CurrentTimeMillis()+uint64(b.retryTimeoutMs))
 }
 
 // fromClosedToOpen updates circuit breaker state machine from closed to open.
 // Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
-	if b.status.casState(Closed, Open) {
+	if b.state.casState(Closed, Open) {
 		b.updateNextRetryTimestamp()
 		for _, listener := range stateChangeListeners {
 			listener.OnTransformToOpen(Closed, b.rule, snapshot)
@@ -129,7 +137,7 @@ func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
 // fromOpenToHalfOpen updates circuit breaker state machine from open to half-open.
 // Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromOpenToHalfOpen() bool {
-	if b.status.casState(Open, HalfOpen) {
+	if b.state.casState(Open, HalfOpen) {
 		for _, listener := range stateChangeListeners {
 			listener.OnTransformToHalfOpen(Open, b.rule)
 		}
@@ -141,7 +149,7 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen() bool {
 // fromHalfOpenToOpen updates circuit breaker state machine from half-open to open.
 // Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
-	if b.status.casState(HalfOpen, Open) {
+	if b.state.casState(HalfOpen, Open) {
 		b.updateNextRetryTimestamp()
 		for _, listener := range stateChangeListeners {
 			listener.OnTransformToOpen(HalfOpen, b.rule, snapshot)
@@ -154,7 +162,7 @@ func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 // fromHalfOpenToOpen updates circuit breaker state machine from half-open to closed
 // Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromHalfOpenToClosed() bool {
-	if b.status.casState(HalfOpen, Closed) {
+	if b.state.casState(HalfOpen, Closed) {
 		for _, listener := range stateChangeListeners {
 			listener.OnTransformToClosed(HalfOpen, b.rule)
 		}
@@ -177,13 +185,13 @@ func newSlowRtCircuitBreakerWithStat(r *slowRtRule, stat *slowRequestLeapArray) 
 	status.set(Closed)
 	return &slowRtCircuitBreaker{
 		circuitBreakerBase: circuitBreakerBase{
-			rule:               r,
-			retryTimeoutMs:     r.RetryTimeoutMs,
-			nextRetryTimestamp: 0,
-			status:             status,
+			rule:                 r,
+			retryTimeoutMs:       r.RetryTimeoutMs,
+			nextRetryTimestampMs: 0,
+			state:                status,
 		},
 		stat:                stat,
-		maxAllowedRt:        r.MaxAllowedRt,
+		maxAllowedRt:        r.MaxAllowedRtMs,
 		maxSlowRequestRatio: r.MaxSlowRequestRatio,
 		minRequestAmount:    r.MinRequestAmount,
 	}
@@ -201,13 +209,13 @@ func (b *slowRtCircuitBreaker) BoundStat() interface{} {
 	return b.stat
 }
 
-// TryPass check circuit breaker based on state machine of circuit breaker.
+// TryPass checks circuit breaker based on state machine of circuit breaker.
 func (b *slowRtCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	curStatus := b.CurrentState()
 	if curStatus == Closed {
 		return true
 	} else if curStatus == Open {
-		// switch status to half-open to probe if retry timeout
+		// switch state to half-open to probe if retry timeout
 		if b.retryTimeoutArrived() && b.fromOpenToHalfOpen() {
 			return true
 		}
@@ -360,10 +368,10 @@ func newErrorRatioCircuitBreakerWithStat(r *errorRatioRule, stat *errorCounterLe
 
 	return &errorRatioCircuitBreaker{
 		circuitBreakerBase: circuitBreakerBase{
-			rule:               r,
-			retryTimeoutMs:     r.RetryTimeoutMs,
-			nextRetryTimestamp: 0,
-			status:             status,
+			rule:                 r,
+			retryTimeoutMs:       r.RetryTimeoutMs,
+			nextRetryTimestampMs: 0,
+			state:                status,
 		},
 		minRequestAmount:    r.MinRequestAmount,
 		errorRatioThreshold: r.Threshold,
@@ -388,7 +396,7 @@ func (b *errorRatioCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	if curStatus == Closed {
 		return true
 	} else if curStatus == Open {
-		// switch status to half-open to probe if retry timeout
+		// switch state to half-open to probe if retry timeout
 		if b.retryTimeoutArrived() && b.fromOpenToHalfOpen() {
 			return true
 		}
@@ -537,10 +545,10 @@ func newErrorCountCircuitBreakerWithStat(r *errorCountRule, stat *errorCounterLe
 
 	return &errorCountCircuitBreaker{
 		circuitBreakerBase: circuitBreakerBase{
-			rule:               r,
-			retryTimeoutMs:     r.RetryTimeoutMs,
-			nextRetryTimestamp: 0,
-			status:             status,
+			rule:                 r,
+			retryTimeoutMs:       r.RetryTimeoutMs,
+			nextRetryTimestampMs: 0,
+			state:                status,
 		},
 		minRequestAmount:    r.MinRequestAmount,
 		errorCountThreshold: r.Threshold,
@@ -565,7 +573,7 @@ func (b *errorCountCircuitBreaker) TryPass(_ *base.EntryContext) bool {
 	if curStatus == Closed {
 		return true
 	} else if curStatus == Open {
-		// switch status to half-open to probe if retry timeout
+		// switch state to half-open to probe if retry timeout
 		if b.retryTimeoutArrived() && b.fromOpenToHalfOpen() {
 			return true
 		}

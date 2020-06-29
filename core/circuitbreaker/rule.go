@@ -8,13 +8,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-// The strategy of circuit breaker.
-// Each strategy represents one rule type.
+// Strategy represents the strategy of circuit breaker.
+// Each strategy is associated with one rule type.
 type Strategy int8
 
 const (
+	// SlowRequestRatio strategy changes the circuit breaker state based on slow request ratio
 	SlowRequestRatio Strategy = iota
+	// ErrorRatio strategy changes the circuit breaker state based on error request ratio
 	ErrorRatio
+	// ErrorCount strategy changes the circuit breaker state based on error amount
 	ErrorCount
 )
 
@@ -31,29 +34,29 @@ func (s Strategy) String() string {
 	}
 }
 
-// Rule represents the base interface of the circuit breaker rule.
+// Rule is the base interface of the circuit breaker rule.
 type Rule interface {
 	base.SentinelRule
-	// BreakerStrategy returns the strategy.
+	// BreakerStrategy returns the circuit breaker strategy.
 	BreakerStrategy() Strategy
 	// IsApplicable checks whether the rule is valid and could be converted to a corresponding circuit breaker.
 	IsApplicable() error
 	// BreakerStatIntervalMs returns the statistic interval of circuit breaker (in milliseconds).
 	BreakerStatIntervalMs() uint32
-	// IsEqualsTo checks whether current rule is consistent with the given rule.
+	// IsEqualsTo checks whether current rule is equal to the given rule.
 	IsEqualsTo(r Rule) bool
 	// IsStatReusable checks whether current rule is "statistically" equal to the given rule.
 	IsStatReusable(r Rule) bool
 }
 
-// RuleBase encompasses common fields of circuit breaking rule.
+// RuleBase encompasses the common fields of circuit breaking rule.
 type RuleBase struct {
 	// unique id
 	Id string
 	// resource name
 	Resource string
 	Strategy Strategy
-	// RetryTimeoutMs represents recovery timeout (in seconds) before the circuit breaker opens.
+	// RetryTimeoutMs represents recovery timeout (in milliseconds) before the circuit breaker opens.
 	// During the open period, no requests are permitted until the timeout has elapsed.
 	// After that, the circuit breaker will transform to half-open state for trying a few "trial" requests.
 	RetryTimeoutMs uint32
@@ -90,8 +93,8 @@ func (b *RuleBase) IsStatReusable(r Rule) bool {
 
 func (b *RuleBase) String() string {
 	// fallback string
-	return fmt.Sprintf("{id=%s,resource=%s, strategy=%+v, RetryTimeoutMs=%d, MinRequestAmount=%d}",
-		b.Id, b.Resource, b.Strategy, b.RetryTimeoutMs, b.MinRequestAmount)
+	return fmt.Sprintf("{id=%s,resource=%s, strategy=%+v, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d}",
+		b.Id, b.Resource, b.Strategy, b.RetryTimeoutMs, b.MinRequestAmount, b.StatIntervalMs)
 }
 
 func (b *RuleBase) BreakerStrategy() Strategy {
@@ -102,28 +105,150 @@ func (b *RuleBase) ResourceName() string {
 	return b.Resource
 }
 
+type RuleOptions struct {
+	retryTimeoutMs   uint32
+	minRequestAmount uint64
+	statIntervalMs   uint32
+
+	//The following two fields apply only to slowRtRule
+	maxAllowedRtMs      uint64
+	maxSlowRequestRatio float64
+
+	//The following one field apply only to errorRatioRule
+	errorRatioThreshold float64
+
+	//The following one field apply only to errorCountRule
+	errorCountThreshold uint64
+}
+
+// TODO: make default option configurable?
+func newDefaultRuleOptions() *RuleOptions {
+	return &RuleOptions{
+		retryTimeoutMs:      0,
+		minRequestAmount:    0,
+		statIntervalMs:      0,
+		maxAllowedRtMs:      0,
+		maxSlowRequestRatio: 0,
+		errorRatioThreshold: 0,
+		errorCountThreshold: 0,
+	}
+}
+
+type RuleOption func(opts *RuleOptions)
+
+// WithRetryTimeoutMs sets the retryTimeoutMs
+// This function takes effect for all circuit breaker rule
+func WithRetryTimeoutMs(retryTimeoutMs uint32) RuleOption {
+	return func(opts *RuleOptions) {
+		opts.retryTimeoutMs = retryTimeoutMs
+	}
+}
+
+// WithMinRequestAmount sets the minRequestAmount
+// This function takes effect for all circuit breaker rule
+func WithMinRequestAmount(minRequestAmount uint64) RuleOption {
+	return func(opts *RuleOptions) {
+		opts.minRequestAmount = minRequestAmount
+	}
+}
+
+// WithStatIntervalMs sets the statIntervalMs
+// This function takes effect for all circuit breaker rule
+func WithStatIntervalMs(statIntervalMs uint32) RuleOption {
+	return func(opts *RuleOptions) {
+		opts.statIntervalMs = statIntervalMs
+	}
+}
+
+// WithMaxAllowedRtMs sets the maxAllowedRtMs
+// This function only takes effect for slowRtRule
+func WithMaxAllowedRtMs(maxAllowedRtMs uint64) RuleOption {
+	return func(opts *RuleOptions) {
+		opts.maxAllowedRtMs = maxAllowedRtMs
+	}
+}
+
+// WithMaxSlowRequestRatio sets the maxSlowRequestRatio
+// This function only takes effect for slowRtRule
+func WithMaxSlowRequestRatio(maxSlowRequestRatio float64) RuleOption {
+	return func(opts *RuleOptions) {
+		opts.maxSlowRequestRatio = maxSlowRequestRatio
+	}
+}
+
+// WithErrorRatioThreshold sets the errorRatioThreshold
+// This function only takes effect for errorRatioRule
+func WithErrorRatioThreshold(errorRatioThreshold float64) RuleOption {
+	return func(opts *RuleOptions) {
+		opts.errorRatioThreshold = errorRatioThreshold
+	}
+}
+
+// WithErrorCountThreshold sets the errorCountThreshold
+// This function only takes effect for errorCountRule
+func WithErrorCountThreshold(errorCountThreshold uint64) RuleOption {
+	return func(opts *RuleOptions) {
+		opts.errorCountThreshold = errorCountThreshold
+	}
+}
+
 // SlowRequestRatio circuit breaker rule
 type slowRtRule struct {
 	RuleBase
-	// MaxAllowedRt indicates that any invocation whose response time exceeds this value (in ms)
+	// MaxAllowedRtMs indicates that any invocation whose response time exceeds this value (in ms)
 	// will be recorded as a slow request.
-	MaxAllowedRt uint64
-	// MaxSlowRequestRatio represents the threshold of slow request ratio.
+	MaxAllowedRtMs uint64
+	// MaxSlowRequestRatio represents the threshold of slow rt ratio circuit breaker.
 	MaxSlowRequestRatio float64
 }
 
-func NewSlowRtRule(resource string, intervalMs uint32, retryTimeoutMs uint32, maxAllowedRt, minRequestAmount uint64, maxSlowRequestRatio float64) *slowRtRule {
-	return &slowRtRule{
-		RuleBase: RuleBase{
-			Id:               util.NewUuid(),
-			Resource:         resource,
-			Strategy:         SlowRequestRatio,
-			RetryTimeoutMs:   retryTimeoutMs,
-			MinRequestAmount: minRequestAmount,
-			StatIntervalMs:   intervalMs,
-		},
-		MaxAllowedRt:        maxAllowedRt,
-		MaxSlowRequestRatio: maxSlowRequestRatio,
+func NewRule(resource string, strategy Strategy, opts ...RuleOption) Rule {
+	ruleOpts := newDefaultRuleOptions()
+	for _, opt := range opts {
+		opt(ruleOpts)
+	}
+
+	switch strategy {
+	case SlowRequestRatio:
+		return &slowRtRule{
+			RuleBase: RuleBase{
+				Id:               util.NewUuid(),
+				Resource:         resource,
+				Strategy:         SlowRequestRatio,
+				RetryTimeoutMs:   ruleOpts.retryTimeoutMs,
+				MinRequestAmount: ruleOpts.minRequestAmount,
+				StatIntervalMs:   ruleOpts.statIntervalMs,
+			},
+			MaxAllowedRtMs:      ruleOpts.maxAllowedRtMs,
+			MaxSlowRequestRatio: ruleOpts.maxSlowRequestRatio,
+		}
+	case ErrorRatio:
+		return &errorRatioRule{
+			RuleBase: RuleBase{
+				Id:               util.NewUuid(),
+				Resource:         resource,
+				Strategy:         ErrorRatio,
+				RetryTimeoutMs:   ruleOpts.retryTimeoutMs,
+				MinRequestAmount: ruleOpts.minRequestAmount,
+				StatIntervalMs:   ruleOpts.statIntervalMs,
+			},
+			Threshold: ruleOpts.errorRatioThreshold,
+		}
+	case ErrorCount:
+		return &errorCountRule{
+			RuleBase: RuleBase{
+				Id:               util.NewUuid(),
+				Resource:         resource,
+				Strategy:         ErrorCount,
+				RetryTimeoutMs:   ruleOpts.retryTimeoutMs,
+				MinRequestAmount: ruleOpts.minRequestAmount,
+				StatIntervalMs:   ruleOpts.statIntervalMs,
+			},
+			Threshold: ruleOpts.errorCountThreshold,
+		}
+	default:
+		logger.Errorf("unsupported circuit breaker rule, strategy: %d", strategy)
+		return nil
 	}
 }
 
@@ -134,7 +259,7 @@ func (r *slowRtRule) IsEqualsTo(newRule Rule) bool {
 	}
 	return r.Resource == newSlowRtRule.Resource && r.Strategy == newSlowRtRule.Strategy && r.RetryTimeoutMs == newSlowRtRule.RetryTimeoutMs &&
 		r.MinRequestAmount == newSlowRtRule.MinRequestAmount && r.StatIntervalMs == newSlowRtRule.StatIntervalMs &&
-		r.MaxAllowedRt == newSlowRtRule.MaxAllowedRt && r.MaxSlowRequestRatio == newSlowRtRule.MaxSlowRequestRatio
+		r.MaxAllowedRtMs == newSlowRtRule.MaxAllowedRtMs && r.MaxSlowRequestRatio == newSlowRtRule.MaxSlowRequestRatio
 }
 
 func (r *slowRtRule) IsApplicable() error {
@@ -149,27 +274,13 @@ func (r *slowRtRule) IsApplicable() error {
 }
 
 func (r *slowRtRule) String() string {
-	return fmt.Sprintf("{slowRtRule{RuleBase:%s, MaxAllowedRt=%d, MaxSlowRequestRatio=%f}", r.RuleBase.String(), r.MaxAllowedRt, r.MaxSlowRequestRatio)
+	return fmt.Sprintf("{slowRtRule{RuleBase:%s, MaxAllowedRtMs=%d, MaxSlowRequestRatio=%f}", r.RuleBase.String(), r.MaxAllowedRtMs, r.MaxSlowRequestRatio)
 }
 
 // Error ratio circuit breaker rule
 type errorRatioRule struct {
 	RuleBase
 	Threshold float64
-}
-
-func NewErrorRatioRule(resource string, intervalMs uint32, retryTimeoutMs uint32, minRequestAmount uint64, maxErrorRatio float64) *errorRatioRule {
-	return &errorRatioRule{
-		RuleBase: RuleBase{
-			Id:               util.NewUuid(),
-			Resource:         resource,
-			Strategy:         ErrorRatio,
-			RetryTimeoutMs:   retryTimeoutMs,
-			MinRequestAmount: minRequestAmount,
-			StatIntervalMs:   intervalMs,
-		},
-		Threshold: maxErrorRatio,
-	}
 }
 
 func (r *errorRatioRule) String() string {
@@ -201,20 +312,6 @@ func (r *errorRatioRule) IsApplicable() error {
 type errorCountRule struct {
 	RuleBase
 	Threshold uint64
-}
-
-func NewErrorCountRule(resource string, intervalMs uint32, retryTimeoutMs uint32, minRequestAmount, maxErrorCount uint64) *errorCountRule {
-	return &errorCountRule{
-		RuleBase: RuleBase{
-			Id:               util.NewUuid(),
-			Resource:         resource,
-			Strategy:         ErrorCount,
-			RetryTimeoutMs:   retryTimeoutMs,
-			MinRequestAmount: minRequestAmount,
-			StatIntervalMs:   intervalMs,
-		},
-		Threshold: maxErrorCount,
-	}
 }
 
 func (r *errorCountRule) String() string {

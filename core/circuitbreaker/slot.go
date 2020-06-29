@@ -4,10 +4,10 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
-type CircuitBreakerSlot struct {
+type Slot struct {
 }
 
-func (b *CircuitBreakerSlot) Check(ctx *base.EntryContext) *base.TokenResult {
+func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	resource := ctx.Resource.Name()
 	result := ctx.RuleCheckResult
 	if len(resource) == 0 {

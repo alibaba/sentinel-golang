@@ -30,7 +30,7 @@ func BuildDefaultSlotChain() *base.SlotChain {
 	sc.AddStatPrepareSlotLast(&stat.StatNodePrepareSlot{})
 	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
 	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
-	sc.AddRuleCheckSlotLast(&circuitbreaker.CircuitBreakerSlot{})
+	sc.AddRuleCheckSlotLast(&circuitbreaker.Slot{})
 	sc.AddRuleCheckSlotLast(&hotspot.FreqPramsTrafficSlot{})
 	sc.AddStatSlotLast(&stat.StatisticSlot{})
 	sc.AddStatSlotLast(&log.LogSlot{})
