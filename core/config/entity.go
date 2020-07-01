@@ -86,7 +86,17 @@ func NewDefaultConfig() *Entity {
 	}
 }
 
-func checkValid(conf *SentinelConfig) error {
+func CheckValid(entity *Entity) error {
+	if entity == nil {
+		return errors.New("Nil entity")
+	}
+	if len(entity.Version) == 0 {
+		return errors.New("Empty version")
+	}
+	return checkConfValid(&entity.Sentinel)
+}
+
+func checkConfValid(conf *SentinelConfig) error {
 	if conf == nil {
 		return errors.New("Nil globalCfg")
 	}
