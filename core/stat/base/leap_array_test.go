@@ -20,25 +20,15 @@ const (
 )
 
 func Test_bucketWrapper_Size(t *testing.T) {
-	type Obj struct {
-		a1 int32 // 4bytes
-		a2 int32
-		a3 int32
-		a4 int32
-		a5 int32
-		a6 int32
-		a7 int32
-		a8 int32
-	}
 	ww := &BucketWrap{
 		BucketStart: util.CurrentTimeMillis(),
 		Value:       atomic.Value{},
 	}
 	if unsafe.Sizeof(*ww) != 24 {
-		t.Errorf("the size of BucketWrap is not equal 20.\n")
+		t.Errorf("the size of BucketWrap is not equal 24.\n")
 	}
 	if unsafe.Sizeof(ww) != 8 {
-		t.Errorf("the size of BucketWrap is not equal 20.\n")
+		t.Errorf("the size of BucketWrap is not equal 24.\n")
 	}
 }
 
