@@ -93,8 +93,7 @@ type Rule struct {
 	// ParamIndex is the index in context arguments slice.
 	ParamIndex int
 	Threshold  float64
-	// MaxQueueingTimeMs is the max queueing time
-	// Only take effect in both Throttling ControlBehavior and QPS MetricType
+	// MaxQueueingTimeMs only take effect in both Throttling ControlBehavior and QPS MetricType
 	MaxQueueingTimeMs int64
 	// BurstCount is the silent count
 	// Only take effect in both Reject ControlBehavior and QPS MetricType
