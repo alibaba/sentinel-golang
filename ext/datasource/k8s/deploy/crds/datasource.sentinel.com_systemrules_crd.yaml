@@ -1,0 +1,72 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: systemrules.datasource.sentinel.com
+  namespace: default
+  labels:
+    sentinel-datasource: k8s
+spec:
+  group: datasource.sentinel.com
+  names:
+    kind: SystemRules
+    listKind: SystemRulesList
+    plural: systemrules
+    singular: systemrule
+    shortNames:
+    - srs
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: SystemRules is the Schema for the systemrules API
+      properties:
+        apiVersion:
+          description: 'Kind is a string value representing the REST resource this object represents.'
+          type: string
+        kind:
+          description: 'APIVersion defines the versioned schema of this representation of an object.'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: SystemRulesSpec defines the desired state of SystemRules
+          properties:
+            rules:
+              description: 'rules is the system rule list'
+              items:
+                properties:
+                  metricType:
+                    type: integer
+                    format: int32
+                    enum:
+                    - 0
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                  strategy:
+                    type: integer
+                    format: int32
+                    enum:
+                    - -1
+                    - 1
+                  triggerCount:
+                    type: number
+                    format: float
+                required:
+                - metricType
+                - strategy
+                - triggerCount
+                type: object
+              type: array
+          required:
+          - rules
+          type: object
+        status:
+          description: SystemRulesStatus defines the observed state of SystemRules
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true

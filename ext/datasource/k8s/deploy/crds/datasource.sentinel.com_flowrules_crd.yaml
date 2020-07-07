@@ -1,0 +1,103 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: flowrules.datasource.sentinel.com
+  namespace: default
+  labels:
+    sentinel-datasource: k8s
+spec:
+  group: datasource.sentinel.com
+  names:
+    kind: FlowRules
+    listKind: FlowRulesList
+    plural: flowrules
+    singular: flowrule
+    shortNames:
+    - frs
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: FlowRules is the Schema for the flowrules API
+      properties:
+        apiVersion:
+          description: 'Kind is a string value representing the REST resource this object represents.'
+          type: string
+        kind:
+          description: 'APIVersion defines the versioned schema of this representation of an object.'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: FlowRulesSpec defines the desired state of FlowRules
+          properties:
+            rules:
+              description: 'rules is the flow rule list'
+              items:
+                properties:
+                  resource:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  limitOrigin:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  metricType:
+                    type: integer
+                    format: int32
+                    enum:
+                    - 0
+                    - 1
+                  count:
+                    type: number
+                    format: float
+                  relationStrategy:
+                    type: integer
+                    format: int32
+                    enum:
+                    - 0
+                    - 1
+                  controlBehavior:
+                    type: integer
+                    format: int32
+                    enum:
+                    - 0
+                    - 1
+                    - 2
+                    - 3
+                  refResource:
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                  warmUpPeriodSec:
+                    format: int32
+                    type: integer
+                    minimum: 0
+                  maxQueueingTimeMs:
+                    format: int32
+                    type: integer
+                    minimum: 0
+                required:
+                - resource
+                - limitOrigin
+                - metricType
+                - count
+                - relationStrategy
+                - controlBehavior
+                - refResource
+                - warmUpPeriodSec
+                - maxQueueingTimeMs
+                type: object
+              type: array
+          required:
+          - rules
+          type: object
+        status:
+          description: FlowRulesStatus defines the observed state of FlowRules
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
