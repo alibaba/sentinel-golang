@@ -43,28 +43,25 @@ spec:
                     minLength: 1
                     maxLength: 100
                   metricType:
-                    type: integer
-                    format: int32
+                    type: string
                     enum:
-                    - 0
-                    - 1
+                    - Concurrency
+                    - QPS
                   count:
                     type: number
                     format: float
                   relationStrategy:
-                    type: integer
-                    format: int32
+                    type: string
                     enum:
-                    - 0
-                    - 1
+                    - Direct
+                    - AssociatedResource
                   controlBehavior:
-                    type: integer
-                    format: int32
+                    type: string
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    - 3
+                    - Reject
+                    - WarmUp
+                    - Throttling
+                    - WarmUpThrottling
                   refResource:
                     type: string
                     minLength: 1

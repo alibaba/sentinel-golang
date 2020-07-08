@@ -39,12 +39,11 @@ spec:
                     minLength: 1
                     maxLength: 100
                   strategy:
-                    format: int32
-                    type: integer
+                    type: string
                     enum:
-                    - 0
-                    - 1
-                    - 2
+                    - SlowRequestRatio
+                    - ErrorRatio
+                    - ErrorCount
                   retryTimeoutMs:
                     format: int32
                     type: integer

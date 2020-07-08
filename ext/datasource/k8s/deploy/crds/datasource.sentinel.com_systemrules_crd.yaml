@@ -35,20 +35,18 @@ spec:
               items:
                 properties:
                   metricType:
-                    type: integer
-                    format: int32
+                    type: string
                     enum:
-                    - 0
-                    - 1
-                    - 2
-                    - 3
-                    - 4
+                    - Load
+                    - AvgRT
+                    - Concurrency
+                    - InboundQPS
+                    - CpuUsage
                   strategy:
-                    type: integer
-                    format: int32
+                    type: string
                     enum:
-                    - -1
-                    - 1
+                    - NoAdaptive
+                    - BBR
                   triggerCount:
                     type: number
                     format: float

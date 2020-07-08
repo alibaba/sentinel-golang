@@ -39,17 +39,15 @@ spec:
                     minLength: 1
                     maxLength: 100
                   metricType:
-                    type: integer
-                    format: int32
+                    type: string
                     enum:
-                    - 0
-                    - 1
+                    - Concurrency
+                    - QPS
                   controlBehavior:
-                    type: integer
-                    format: int32
+                    type: string
                     enum:
-                    - 0
-                    - 1
+                    - Reject
+                    - Throttling
                   paramIndex:
                     description: ParamIndex is the index in context arguments list.
                     type: integer
@@ -80,13 +78,12 @@ spec:
                       description: 'specific item'
                       properties:
                         valKind:
-                          format: int32
-                          type: integer
+                          format: string
                           enum:
-                          - 0
-                          - 1
-                          - 2
-                          - 3
+                          - Int
+                          - String
+                          - Bool
+                          - Float64
                         valStr:
                           type: string
                           minLength: 1
