@@ -9,6 +9,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -56,8 +57,11 @@ func (s *NacosDataSource) Initialize() error {
 	}
 	nc, err := buildNacosClient(s)
 	client, err := config_client.NewConfigClient(nc)
+	if err != nil {
+		return errors.Errorf("Nacosclient failed to build, err: %+v", err)
+	}
 	s.configClient = &client
-	s.listen(s.configClient)
+	err = s.listen(s.configClient)
 	return err
 }
 
@@ -80,6 +84,9 @@ func (s *NacosDataSource) ReadSource() ([]byte, error) {
 		DataId: s.configServerInfo.DataId,
 		Group:  s.configServerInfo.Group,
 	})
+	if err != nil {
+		return nil, errors.Errorf("Failed to read the nacos data source, err: %+v", err)
+	}
 	return []byte(content), err
 }
 
@@ -88,15 +95,18 @@ func (s *NacosDataSource) listen(client *config_client.ConfigClient) (err error)
 		DataId: s.configServerInfo.DataId,
 		Group:  s.configServerInfo.Group,
 		OnChange: func(namespace, group, dataId, data string) {
+			logger.Infof("Configuration update, data content:[%s]", data)
 			s.Handle([]byte(data))
 		},
 	}
 	err = client.ListenConfig(*s.configParam)
+	if err != nil {
+		return errors.Errorf("Failed to listen to the nacos data source, err: %+v", err)
+	}
 	return
 }
 
 func (s *NacosDataSource) Close() error {
-	s.closeChan <- struct{}{}
 	logger.Infof("The RefreshableFileDataSource   had been closed. DataId:[%s],Group:[%s]",
 		s.configServerInfo.DataId, s.configServerInfo.Group)
 	return nil
