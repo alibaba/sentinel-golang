@@ -1,12 +1,12 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: flowrules.datasource.sentinel.com
+  name: flowrules.datasource.sentinel.io
   namespace: default
   labels:
     sentinel-datasource: k8s
 spec:
-  group: datasource.sentinel.com
+  group: datasource.sentinel.io
   names:
     kind: FlowRules
     listKind: FlowRulesList
@@ -52,6 +52,7 @@ spec:
                     format: float
                   relationStrategy:
                     type: string
+                    default: Direct
                     enum:
                     - Direct
                     - AssociatedResource
@@ -69,21 +70,18 @@ spec:
                   warmUpPeriodSec:
                     format: int32
                     type: integer
+                    default: 1
                     minimum: 0
                   maxQueueingTimeMs:
                     format: int32
                     type: integer
+                    default: 10
                     minimum: 0
                 required:
                 - resource
-                - limitOrigin
                 - metricType
                 - count
-                - relationStrategy
                 - controlBehavior
-                - refResource
-                - warmUpPeriodSec
-                - maxQueueingTimeMs
                 type: object
               type: array
           required:

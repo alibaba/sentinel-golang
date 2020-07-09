@@ -1,17 +1,17 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: cbrules.datasource.sentinel.com
+  name: circuitbreakerrules.datasource.sentinel.io
   namespace: default
   labels:
     sentinel-datasource: k8s
 spec:
-  group: datasource.sentinel.com
+  group: datasource.sentinel.io
   names:
     kind: CircuitBreakerRules
     listKind: CircuitBreakerRulesList
-    plural: cbrules
-    singular: cbrule
+    plural: circuitbreakerrules
+    singular: circuitbreakerrule
     shortNames:
     - cbrs
   scope: Namespaced
@@ -47,14 +47,17 @@ spec:
                   retryTimeoutMs:
                     format: int32
                     type: integer
+                    default: 1000
                     minimum: 1
                   minRequestAmount:
                     format: int64
                     type: integer
+                    default: 10
                     minimum: 1
                   statIntervalMs:
                     format: int32
                     type: integer
+                    default: 10000
                     minimum: 1
                   maxAllowedRtMs:
                     format: int64
@@ -73,9 +76,6 @@ spec:
                 required:
                 - resource
                 - strategy
-                - retryTimeoutMs
-                - minRequestAmount
-                - statIntervalMs
                 type: object
               type: array
           required:

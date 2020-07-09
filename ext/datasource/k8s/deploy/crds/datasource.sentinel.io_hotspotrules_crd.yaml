@@ -1,12 +1,12 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: hotspotrules.datasource.sentinel.com
+  name: hotspotrules.datasource.sentinel.io
   namespace: default
   labels:
     sentinel-datasource: k8s
 spec:
-  group: datasource.sentinel.com
+  group: datasource.sentinel.io
   names:
     kind: HotspotRules
     listKind: HotspotRulesList
@@ -59,18 +59,22 @@ spec:
                     description: MaxQueueingTimeMs is the max queueing time in Throttling ControlBehavior
                     format: int64
                     type: integer
+                    default: 10
                     minimum: 0
                   burstCount:
                     format: int64
                     type: integer
+                    default: 10
                     minimum: 0
                   durationInSec:
                     format: int64
                     type: integer
+                    default: 10
                     minimum: 0
                   paramsMaxCapacity:
                     format: int64
                     type: integer
+                    default: 20000
                     minimum: 1
                   specificItems:
                     description: specific item list
@@ -104,11 +108,6 @@ spec:
                 - controlBehavior
                 - paramIndex
                 - threshold
-                - maxQueueingTimeMs
-                - burstCount
-                - durationInSec
-                - paramsMaxCapacity
-                - specificItems
                 type: object
               type: array
           required:
