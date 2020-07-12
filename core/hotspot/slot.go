@@ -8,7 +8,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
-type FreqPramsTrafficSlot struct {
+type Slot struct {
 }
 
 // matchArg matches the arg from args based on TrafficShapingController
@@ -86,7 +86,7 @@ func matchArg(tc TrafficShapingController, args []interface{}) interface{} {
 	return arg
 }
 
-func (s *FreqPramsTrafficSlot) Check(ctx *base.EntryContext) *base.TokenResult {
+func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	res := ctx.Resource.Name()
 	args := ctx.Input.Args
 	acquire := int64(ctx.Input.AcquireCount)

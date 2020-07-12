@@ -60,7 +60,7 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 	return tcMap[res]
 }
 
-// LoadRules replaces old rules with the given frequent parameter flow control rules. Return value:
+// LoadRules replaces old rules with the given hotspot parameter flow control rules. Return value:
 //
 // bool: indicates whether the internal map has been changed;
 // error: indicates whether occurs the error.
@@ -110,7 +110,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 func logRuleUpdate(m trafficControllerMap) {
 	sb := strings.Builder{}
-	sb.WriteString("Frequent parameter flow control rules loaded: [")
+	sb.WriteString("Hotspot parameter flow control rules loaded: [")
 
 	for _, r := range rulesFrom(m) {
 		sb.WriteString(r.String() + ",")
@@ -182,7 +182,7 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logger.Warnf("Ignoring invalid frequent param flow rule: %v, reason: %s", r.String(), err.Error())
+			logger.Warnf("Ignoring invalid hotspot param flow rule: %v, reason: %s", r.String(), err.Error())
 			continue
 		}
 
@@ -202,7 +202,7 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 		// generate new traffic shaping controller
 		generator, supported := tcGenFuncMap[r.ControlBehavior]
 		if !supported {
-			logger.Warnf("Ignoring the frequent param flow rule due to unsupported control behavior: %v", r)
+			logger.Warnf("Ignoring the hotspot param flow rule due to unsupported control behavior: %v", r)
 			continue
 		}
 		var tc TrafficShapingController
@@ -213,7 +213,7 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 			tc = generator(r, nil)
 		}
 		if tc == nil {
-			logger.Debugf("Ignoring the frequent param flow rule due to bad generated traffic controller: %v", r)
+			logger.Debugf("Ignoring the hotspot param flow rule due to bad generated traffic controller: %v", r)
 			continue
 		}
 
@@ -228,7 +228,7 @@ func buildTcMap(rules []*Rule) trafficControllerMap {
 
 func IsValidRule(rule *Rule) error {
 	if rule == nil {
-		return errors.New("nil freq params Rule")
+		return errors.New("nil hotspot Rule")
 	}
 	if len(rule.Resource) == 0 {
 		return errors.New("empty resource name")
