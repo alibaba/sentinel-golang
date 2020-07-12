@@ -1,5 +1,7 @@
 package base
 
+import "fmt"
+
 // BlockError indicates the request was blocked by Sentinel.
 type BlockError struct {
 	blockType BlockType
@@ -43,5 +45,6 @@ func NewBlockErrorWithCause(blockType BlockType, blockMsg string, rule SentinelR
 }
 
 func (e *BlockError) Error() string {
-	return "SentinelBlockException: " + e.blockMsg
+	return fmt.Sprintf("Sentinel block error: blockType:%s, message: %s, rule: %+v, snapshotValue: %+v",
+		e.blockType, e.blockMsg, e.rule, e.snapshotValue)
 }
