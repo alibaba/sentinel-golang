@@ -67,7 +67,7 @@ func (s *NacosDataSource) Initialize() error {
 
 func buildNacosClient(s *NacosDataSource) (nacos_client.INacosClient, error) {
 	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{constant.ServerConfig{
+	nc.SetServerConfig([]constant.ServerConfig{{
 		IpAddr:      s.configServerInfo.Ip,
 		Port:        s.configServerInfo.Port,
 		ContextPath: "/nacos",
@@ -98,7 +98,7 @@ func (s *NacosDataSource) listen(client *config_client.ConfigClient) (err error)
 			logger.Infof("Configuration update, data content:[%s]", data)
 			s.Handle([]byte(data))
 		},
-		ListenCloseChan: make(chan struct{},1),
+		ListenCloseChan: make(chan struct{}, 1),
 	}
 	err = client.ListenConfig(*s.configParam)
 	if err != nil {
