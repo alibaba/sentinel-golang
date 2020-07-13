@@ -32,23 +32,6 @@ const (
         "adaptiveStrategy": 0
     }
 ]`
-	TestSystemRulesListen = `[
-    {
-        "id": 0,
-        "metricType": 0,
-        "adaptiveStrategy": 0
-    },
-    {
-        "id": 1,
-        "metricType": 0,
-        "adaptiveStrategy": 0
-    },
-    {
-        "id": 2,
-        "metricType": 0,
-        "adaptiveStrategy": 0
-    }
-]`
 )
 
 var serverConfig = constant.ServerConfig{
