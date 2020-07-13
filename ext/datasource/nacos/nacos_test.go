@@ -32,6 +32,23 @@ const (
         "adaptiveStrategy": 0
     }
 ]`
+	TestSystemRulesListen = `[
+    {
+        "id": 0,
+        "metricType": 0,
+        "adaptiveStrategy": 0
+    },
+    {
+        "id": 1,
+        "metricType": 0,
+        "adaptiveStrategy": 0
+    },
+    {
+        "id": 2,
+        "metricType": 0,
+        "adaptiveStrategy": 0
+    }
+]`
 )
 
 var serverConfig = constant.ServerConfig{
@@ -87,9 +104,6 @@ func TestNacosDataSource_Initialize(t *testing.T) {
 	t.Run("NacosDataSource_Initialize_BuildNacosClient", func(t *testing.T) {
 		published, err := prePushSystemRules(TestSystemRules)
 		assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
-		mh1 := &datasource.MockPropertyHandler{}
-		mh1.On("Handle", tmock.Anything).Return(nil)
-		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
 		nds := getNacosDataSource()
 		err = nds.Initialize()
 		assert.True(t, err == nil, "NacosDataSource initialize.")
@@ -97,9 +111,6 @@ func TestNacosDataSource_Initialize(t *testing.T) {
 	t.Run("NacosDataSource_Initialize_listen", func(t *testing.T) {
 		published, err := prePushSystemRules(TestSystemRules)
 		assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
-		mh1 := &datasource.MockPropertyHandler{}
-		mh1.On("Handle", tmock.Anything).Return(nil)
-		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
 		nds := getNacosDataSource()
 		err = nds.Initialize()
 		assert.True(t, err == nil, "NacosDataSource initialize.")
@@ -117,9 +128,6 @@ func TestNacosDataSource_ReadSource(t *testing.T) {
 	t.Run("NacosDataSource_ReadSource", func(t *testing.T) {
 		published, err := prePushSystemRules(TestSystemRules)
 		assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
-		mh1 := &datasource.MockPropertyHandler{}
-		mh1.On("Handle", tmock.Anything).Return(nil)
-		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
 		nds := getNacosDataSource()
 		err = nds.Initialize()
 		assert.True(t, err == nil, "NacosDataSource initialize.")
@@ -133,11 +141,20 @@ func TestNacosDataSource_ReadSource(t *testing.T) {
 		mh1 := &datasource.MockPropertyHandler{}
 		mh1.On("Handle", tmock.Anything).Return(nil)
 		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
-		nds := getNacosDataSource()
+		nds := NewNacosDataSource(serverConfigErrTest, mh1)
 		err = nds.Initialize()
 		assert.True(t, err == nil, "NacosDataSource initialize.")
 		data, err := nds.ReadSource()
 		fmt.Println(string(data))
 		assert.True(t, data == nil && err != nil, "NacosDataSource read source failed.")
 	})
+}
+
+func TestNacosDataSource_Close(t *testing.T) {
+	published, err := prePushSystemRules(TestSystemRules)
+	assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
+	nds := getNacosDataSource()
+	err = nds.Initialize()
+	assert.True(t, err == nil, "NacosDataSource initialize.")
+	assert.Nil(t,nds.Close())
 }

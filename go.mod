@@ -11,7 +11,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/labstack/echo/v4 v4.1.15
-	github.com/nacos-group/nacos-sdk-go v0.3.2
+	github.com/nacos-group/nacos-sdk-go v0.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v2.19.12+incompatible
 	github.com/stretchr/testify v1.5.1

@@ -98,6 +98,7 @@ func (s *NacosDataSource) listen(client *config_client.ConfigClient) (err error)
 			logger.Infof("Configuration update, data content:[%s]", data)
 			s.Handle([]byte(data))
 		},
+		ListenCloseChan: make(chan struct{},1),
 	}
 	err = client.ListenConfig(*s.configParam)
 	if err != nil {
@@ -107,6 +108,7 @@ func (s *NacosDataSource) listen(client *config_client.ConfigClient) (err error)
 }
 
 func (s *NacosDataSource) Close() error {
+	s.configParam.ListenCloseChan <- struct{}{}
 	logger.Infof("The RefreshableFileDataSource   had been closed. DataId:[%s],Group:[%s]",
 		s.configServerInfo.DataId, s.configServerInfo.Group)
 	return nil
