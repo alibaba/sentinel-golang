@@ -1,7 +1,6 @@
 package nacos
 
 import (
-	"fmt"
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -130,9 +129,8 @@ func TestNacosDataSource_ReadSource(t *testing.T) {
 		assert.True(t, err == nil, "NacosDataSource initialize.")
 
 		data, err := nds.ReadSource()
-		fmt.Println(string(data))
 
-		assert.True(t, err == nil, "NacosDataSource read source success.")
+		assert.True(t, data != nil && err == nil, "NacosDataSource read source success.")
 	})
 	t.Run("NacosDataSource_ReadSource_Err", func(t *testing.T) {
 		published, err := prePushSystemRules(TestSystemRules)
@@ -148,7 +146,6 @@ func TestNacosDataSource_ReadSource(t *testing.T) {
 		assert.True(t, err == nil, "NacosDataSource initialize.")
 
 		data, err := nds.ReadSource()
-		fmt.Println(string(data))
 
 		assert.True(t, data == nil && err != nil, "NacosDataSource read source failed.")
 	})
@@ -163,5 +160,5 @@ func TestNacosDataSource_Close(t *testing.T) {
 	assert.True(t, err == nil, "NacosDataSource initialize.")
 
 	err = nds.Close()
-	assert.Nil(t,err)
+	assert.Nil(t, err)
 }
