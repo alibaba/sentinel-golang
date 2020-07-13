@@ -156,12 +156,12 @@ func TestNacosDataSource_ReadSource(t *testing.T) {
 
 func TestNacosDataSource_Close(t *testing.T) {
 	published, err := prePushSystemRules(TestSystemRules)
-
 	assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
 
 	nds := getNacosDataSource()
 	err = nds.Initialize()
-
 	assert.True(t, err == nil, "NacosDataSource initialize.")
-	assert.Nil(t,nds.Close())
+
+	err = nds.Close()
+	assert.Nil(t,err)
 }
