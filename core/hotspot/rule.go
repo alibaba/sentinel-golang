@@ -79,10 +79,10 @@ type SpecificValue struct {
 }
 
 func (s *SpecificValue) String() string {
-	return fmt.Sprintf("SpecificValue:[ValKind: %+v, ValStr: %s]", s.ValKind, s.ValStr)
+	return fmt.Sprintf("SpecificValue: [ValKind: %+v, ValStr: %s]", s.ValKind, s.ValStr)
 }
 
-// Rule represents the frequency parameter flow control rule
+// Rule represents the hotspot(frequent) parameter flow control rule
 type Rule struct {
 	// Id is the unique id
 	Id string
@@ -93,12 +93,18 @@ type Rule struct {
 	// ParamIndex is the index in context arguments slice.
 	ParamIndex int
 	Threshold  float64
-	// MaxQueueingTimeMs is the max queueing time in Throttling ControlBehavior
+	// MaxQueueingTimeMs only take effect in both Throttling ControlBehavior and QPS MetricType
 	MaxQueueingTimeMs int64
-	BurstCount        int64
-	DurationInSec     int64
+	// BurstCount is the silent count
+	// Only take effect in both Reject ControlBehavior and QPS MetricType
+	BurstCount int64
+	// DurationInSec is the time interval in statistic
+	// Only take effect in QPS MetricType
+	DurationInSec int64
+	// ParamsMaxCapacity is the max capacity of cache statistic
 	ParamsMaxCapacity int64
-	SpecificItems     map[SpecificValue]int64
+	// SpecificItems indicates the special threshold for specific value
+	SpecificItems map[SpecificValue]int64
 }
 
 func (r *Rule) String() string {
