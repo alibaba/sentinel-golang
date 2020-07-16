@@ -16,39 +16,42 @@ var (
 	logger = logging.GetDefaultLogger()
 )
 
-type ConfigServerInfo struct {
-	Ip          string
-	Port        uint64
-	Username    string
-	Password    string
-	DataId      string
-	Group       string
-	NamespaceId string
+type ConfigParam struct {
+	DataId string
+	Group  string
 }
 
 var clientConfig = constant.ClientConfig{
-	TimeoutMs:           10 * 1000,
-	BeatInterval:        5 * 1000,
-	ListenInterval:      300 * 1000,
-	NotLoadCacheAtStart: true,
+	TimeoutMs:      10 * 1000,
+	ListenInterval: 30 * 1000,
+	BeatInterval:   5 * 1000,
+	LogDir:         "/nacos/logs",
+	CacheDir:       "/nacos/cache",
 }
 
 type NacosDataSource struct {
 	datasource.Base
-	configServerInfo ConfigServerInfo
-	configClient     *config_client.ConfigClient
-	isInitialized    util.AtomicBool
-	configParam      *vo.ConfigParam
+	serverConfig  constant.ServerConfig
+	clientConfig  constant.ClientConfig
+	configClient  *config_client.ConfigClient
+	isInitialized util.AtomicBool
+	configParam   ConfigParam
+	listener      *vo.ConfigParam
 }
 
-func NewNacosDataSource(configServerInfo ConfigServerInfo, handlers ...datasource.PropertyHandler) *NacosDataSource {
+func NewNacosDataSource(clientConfig constant.ClientConfig, serverConfig constant.ServerConfig, configParam ConfigParam, handlers ...datasource.PropertyHandler) (*NacosDataSource, error) {
+	if len(serverConfig.IpAddr) <= 0 || serverConfig.Port <= 0 {
+		return nil, errors.New("The nacos serverConfig is incorrect.")
+	}
 	var ds = &NacosDataSource{
-		configServerInfo: configServerInfo,
+		clientConfig: clientConfig,
+		serverConfig: serverConfig,
+		configParam:  configParam,
 	}
 	for _, h := range handlers {
 		ds.AddPropertyHandler(h)
 	}
-	return ds
+	return ds, nil
 }
 
 func (s *NacosDataSource) Initialize() error {
@@ -67,22 +70,15 @@ func (s *NacosDataSource) Initialize() error {
 
 func buildNacosClient(s *NacosDataSource) (nacos_client.INacosClient, error) {
 	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{{
-		IpAddr:      s.configServerInfo.Ip,
-		Port:        s.configServerInfo.Port,
-		ContextPath: "/nacos",
-	}})
-	clientConfig.Password = s.configServerInfo.Password
-	clientConfig.Username = s.configServerInfo.Username
-	clientConfig.NamespaceId = s.configServerInfo.NamespaceId
-	err := nc.SetClientConfig(clientConfig)
+	nc.SetServerConfig([]constant.ServerConfig{s.serverConfig})
+	err := nc.SetClientConfig(s.clientConfig)
 	err = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	return &nc, err
 }
 func (s *NacosDataSource) ReadSource() ([]byte, error) {
 	content, err := s.configClient.GetConfig(vo.ConfigParam{
-		DataId: s.configServerInfo.DataId,
-		Group:  s.configServerInfo.Group,
+		DataId: s.configParam.DataId,
+		Group:  s.configParam.Group,
 	})
 	if err != nil {
 		return nil, errors.Errorf("Failed to read the nacos data source, err: %+v", err)
@@ -91,16 +87,19 @@ func (s *NacosDataSource) ReadSource() ([]byte, error) {
 }
 
 func (s *NacosDataSource) listen(client *config_client.ConfigClient) (err error) {
-	s.configParam = &vo.ConfigParam{
-		DataId: s.configServerInfo.DataId,
-		Group:  s.configServerInfo.Group,
+	s.listener = &vo.ConfigParam{
+		DataId: s.configParam.DataId,
+		Group:  s.configParam.Group,
 		OnChange: func(namespace, group, dataId, data string) {
-			logger.Infof("Configuration update, data content:[%s]", data)
-			s.Handle([]byte(data))
+			if err := s.Handle([]byte(data)); err != nil {
+				logger.Errorf("Fail to update data for dataId:[%s] group:[%s] namespaceId:[%s]  when execute "+
+					"listen function, err: %+v", data, group, namespace, err)
+			}
+
 		},
 		ListenCloseChan: make(chan struct{}, 1),
 	}
-	err = client.ListenConfig(*s.configParam)
+	err = client.ListenConfig(*s.listener)
 	if err != nil {
 		return errors.Errorf("Failed to listen to the nacos data source, err: %+v", err)
 	}
@@ -108,9 +107,9 @@ func (s *NacosDataSource) listen(client *config_client.ConfigClient) (err error)
 }
 
 func (s *NacosDataSource) Close() error {
-	s.configParam.ListenCloseChan <- struct{}{}
+	s.listener.ListenCloseChan <- struct{}{}
 
 	logger.Infof("The RefreshableFileDataSource   had been closed. DataId:[%s],Group:[%s]",
-		s.configServerInfo.DataId, s.configServerInfo.Group)
+		s.configParam.DataId, s.configParam.Group)
 	return nil
 }
