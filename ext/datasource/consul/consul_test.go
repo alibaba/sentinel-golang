@@ -100,7 +100,7 @@ func TestConsulDatasource(t *testing.T) {
 	))
 
 	assert.Nil(t, ds.Initialize())
-	assert.EqualError(t, ds.Initialize(), "duplicate initialize consul datasource")
+	assert.EqualError(t, ds.Initialize(), "consul datasource had been initialized")
 
 	t.Run("WatchSourceChange", func(t *testing.T) {
 		mock.resetPair(&api.KVPair{

@@ -17,7 +17,7 @@ func checkSrcComplianceJson(src []byte) (bool, error) {
 	if !gjson.ValidBytes(src) {
 		return false, Error{
 			code: ConvertSourceError,
-			desc: fmt.Sprintf("The source is invalid json(%s).", src),
+			desc: fmt.Sprintf("The source is invalid json:\n%s\n", src),
 		}
 	}
 	return true, nil
