@@ -33,7 +33,7 @@ type NacosDataSource struct {
 	datasource.Base
 	serverConfig  constant.ServerConfig
 	clientConfig  constant.ClientConfig
-	configClient  *config_client.ConfigClient
+	client        *config_client.ConfigClient
 	isInitialized util.AtomicBool
 	configParam   ConfigParam
 	listener      *vo.ConfigParam
@@ -63,8 +63,8 @@ func (s *NacosDataSource) Initialize() error {
 	if err != nil {
 		return errors.Errorf("Nacosclient failed to build, err: %+v", err)
 	}
-	s.configClient = &client
-	err = s.listen(s.configClient)
+	s.client = &client
+	err = s.listen(s.client)
 	return err
 }
 
@@ -76,7 +76,7 @@ func buildNacosClient(s *NacosDataSource) (nacos_client.INacosClient, error) {
 	return &nc, err
 }
 func (s *NacosDataSource) ReadSource() ([]byte, error) {
-	content, err := s.configClient.GetConfig(vo.ConfigParam{
+	content, err := s.client.GetConfig(vo.ConfigParam{
 		DataId: s.configParam.DataId,
 		Group:  s.configParam.Group,
 	})

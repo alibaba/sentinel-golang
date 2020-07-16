@@ -53,22 +53,22 @@ var configParam = ConfigParam{
 	DataId: "system-rules",
 	Group:  "sentinel-go",
 }
-var configParamErr = ConfigParam{
-	Group: "sentinel-go",
-}
 
-func cretateConfigClientTest() config_client.ConfigClient {
+func cretateConfigClientTest() (*config_client.ConfigClient, error) {
 	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfig})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := config_client.NewConfigClient(&nc)
+	err := nc.SetServerConfig([]constant.ServerConfig{serverConfig})
+	err = nc.SetClientConfig(constant.ClientConfig{
+		TimeoutMs:      10000,
+		ListenInterval: 20000,
+		BeatInterval:   10000,
+	})
+	err = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, err := config_client.NewConfigClient(&nc)
 
-	return client
+	return &client, err
 }
 
-func prePushSystemRules(content string) (bool, error) {
-	client := cretateConfigClientTest()
+func prePushSystemRules(client *config_client.ConfigClient, content string) (bool, error) {
 	success, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  configParam.DataId,
 		Group:   configParam.Group,
@@ -100,7 +100,9 @@ func TestNewNacosDataSource(t *testing.T) {
 func TestNacosDataSource_Initialize(t *testing.T) {
 
 	t.Run("NacosDataSource_Initialize_BuildNacosClient", func(t *testing.T) {
-		published, err := prePushSystemRules(TestSystemRules)
+		client, err := cretateConfigClientTest()
+		assert.Nil(t, err)
+		published, err := prePushSystemRules(client, TestSystemRules)
 		assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
 
 		nds, err := getNacosDataSource(clientConfigTest, serverConfig, configParam)
@@ -110,7 +112,9 @@ func TestNacosDataSource_Initialize(t *testing.T) {
 	})
 
 	t.Run("NacosDataSource_Initialize_BuildNacosClientErr", func(t *testing.T) {
-		published, err := prePushSystemRules(TestSystemRules)
+		client, err := cretateConfigClientTest()
+		assert.Nil(t, err)
+		published, err := prePushSystemRules(client, TestSystemRules)
 		assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
 
 		clientConfigTest.TimeoutMs = 0
@@ -123,10 +127,16 @@ func TestNacosDataSource_Initialize(t *testing.T) {
 
 func TestNacosDataSource_ReadSource(t *testing.T) {
 	t.Run("NacosDataSource_ReadSource", func(t *testing.T) {
-		published, err := prePushSystemRules(TestSystemRules)
+		client, err := cretateConfigClientTest()
+		assert.Nil(t, err)
+		published, err := prePushSystemRules(client, TestSystemRules)
 		assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
 
-		nds, err := getNacosDataSource(clientConfigTest, serverConfig, configParam)
+		nds, err := getNacosDataSource(constant.ClientConfig{
+			TimeoutMs:      10000,
+			ListenInterval: 20000,
+			BeatInterval:   10000,
+		}, serverConfig, configParam)
 		assert.True(t, err == nil, "New NacosDataSource success.")
 		err = nds.Initialize()
 		assert.True(t, err == nil, "NacosDataSource initialize.")
@@ -137,10 +147,16 @@ func TestNacosDataSource_ReadSource(t *testing.T) {
 }
 
 func TestNacosDataSource_Close(t *testing.T) {
-	published, err := prePushSystemRules(TestSystemRules)
+	client, err := cretateConfigClientTest()
+	assert.Nil(t, err)
+	published, err := prePushSystemRules(client, TestSystemRules)
 	assert.True(t, err == nil && published, "Push systemRules configuration is successful.")
 
-	nds, err := getNacosDataSource(clientConfigTest, serverConfig, configParam)
+	nds, err := getNacosDataSource(constant.ClientConfig{
+		TimeoutMs:      10000,
+		ListenInterval: 20000,
+		BeatInterval:   10000,
+	}, serverConfig, configParam)
 	assert.True(t, err == nil, "New NacosDataSource success.")
 	err = nds.Initialize()
 	assert.True(t, err == nil, "NacosDataSource initialize.")
