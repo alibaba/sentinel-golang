@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
 
@@ -48,16 +49,18 @@ func ClearRules() error {
 }
 
 func onRuleUpdate(r RuleMap) error {
+	start := util.CurrentTimeNano()
 	ruleMapMux.Lock()
-	defer ruleMapMux.Unlock()
-
+	defer func() {
+		ruleMapMux.Unlock()
+		logger.Debugf("Updating system rule spends %d ns.", util.CurrentTimeNano()-start)
+		if len(r) > 0 {
+			logger.Infof("[SystemRuleManager] System rules loaded: %v", r)
+		} else {
+			logger.Info("[SystemRuleManager] System rules were cleared")
+		}
+	}()
 	ruleMap = r
-	if len(r) > 0 {
-		logger.Infof("[SystemRuleManager] System rules loaded: %v", r)
-	} else {
-		logger.Info("[SystemRuleManager] System rules were cleared")
-	}
-
 	return nil
 }
 

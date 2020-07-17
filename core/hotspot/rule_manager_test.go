@@ -136,7 +136,9 @@ func Test_IsValidRule(t *testing.T) {
 	})
 }
 
-func Test_buildTcMap(t *testing.T) {
+func Test_onRuleUpdate(t *testing.T) {
+	tcMap = make(trafficControllerMap)
+
 	m := make(map[SpecificValue]int64)
 	m[SpecificValue{
 		ValKind: KindString,
@@ -274,9 +276,10 @@ func Test_buildTcMap(t *testing.T) {
 	oldTc2MetricPtrAddr := fmt.Sprintf("%p", tcMap["abc"][1].BoundMetric())
 	fmt.Println("oldTc2MetricPtr:", oldTc2MetricPtrAddr)
 
-	newTcMap := buildTcMap([]*Rule{r21, r22, r23})
-	assert.True(t, len(newTcMap) == 1)
-	abcTcs := newTcMap["abc"]
+	err = onRuleUpdate([]*Rule{r21, r22, r23})
+	assert.True(t, err == nil)
+	assert.True(t, len(tcMap) == 1)
+	abcTcs := tcMap["abc"]
 	assert.True(t, len(abcTcs) == 3)
 	newTc1Ptr := abcTcs[0]
 	newTc2Ptr := abcTcs[1]
