@@ -36,8 +36,8 @@ const (
 
 var serverConfig = constant.ServerConfig{
 	ContextPath: "/nacos",
-	Port:        80,
-	IpAddr:      "console.nacos.io",
+	Port:        8848,
+	IpAddr:      "127.0.0.1",
 }
 var serverConfigErr = constant.ServerConfig{
 	ContextPath: "/nacos",
