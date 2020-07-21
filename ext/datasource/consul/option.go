@@ -12,8 +12,8 @@ type (
 		consulConfig     *api.Config
 		consulClient     *api.Client
 		propertyHandlers []datasource.PropertyHandler
-		queryOptions     *api.QueryOptions
-		disableWatch     bool
+		// queryOptions is the options for KVQuerier
+		queryOptions *api.QueryOptions
 	}
 
 	Option func(*options)
@@ -24,28 +24,28 @@ type (
 	}
 )
 
-// WithQueryOptions set options for consulClient.Get method
+// WithQueryOptions sets options for consulClient.Get method
 func WithQueryOptions(queryOptions *api.QueryOptions) Option {
 	return func(opts *options) {
 		opts.queryOptions = queryOptions
 	}
 }
 
-// WithConsulConfig inject consul client config
+// WithConsulConfig injects consul client config
 func WithConsulConfig(config *api.Config) Option {
 	return func(opts *options) {
 		opts.consulConfig = config
 	}
 }
 
-// WithConsulClient inject consul client instance
+// WithConsulClient injects consul client instance
 func WithConsulClient(client *api.Client) Option {
 	return func(opts *options) {
 		opts.consulClient = client
 	}
 }
 
-// WithPropertyHandlers inject property handlers
+// WithPropertyHandlers injects property handlers
 func WithPropertyHandlers(handlers ...datasource.PropertyHandler) Option {
 	return func(opts *options) {
 		if opts.propertyHandlers == nil {
@@ -55,20 +55,11 @@ func WithPropertyHandlers(handlers ...datasource.PropertyHandler) Option {
 	}
 }
 
-// WithDisableWatch disable watch
-func WithDisableWatch(disableWatch bool) Option {
-	return func(opts *options) {
-		opts.disableWatch = disableWatch
-	}
-}
-
 func evaluateOptions(opts []Option) *options {
 	var optCopy = &options{
 		propertyHandlers: make([]datasource.PropertyHandler, 0),
 		// default query options
 		queryOptions: defaultQueryOptions(),
-		// enable watch be default
-		disableWatch: false,
 	}
 	for _, o := range opts {
 		o(optCopy)

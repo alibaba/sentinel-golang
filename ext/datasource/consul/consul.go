@@ -13,8 +13,6 @@ import (
 
 type consulDataSource struct {
 	datasource.Base
-	*options
-
 	propertyKey   string
 	kvQuerier     KVQuerier
 	isInitialized util.AtomicBool
@@ -25,14 +23,14 @@ type consulDataSource struct {
 var (
 	ErrNilConsulClient     = errors.New("nil consul client")
 	ErrInvalidConsulConfig = errors.New("invalid consul config")
+	ErrKeyDoesNotExist     = errors.New("key does not exist")
 
 	logger = logging.GetDefaultLogger()
 )
 
-// NewDatasource returns new consul datasource instance
 func NewDatasource(propertyKey string, opts ...Option) (datasource.DataSource, error) {
 	var options = evaluateOptions(opts)
-	// if not consul client is specified, initialize from the configuration
+	// if user don't specify the consul client, sentinel should initialize from the configuration
 	if options.consulClient == nil {
 		if options.consulConfig == nil {
 			return nil, ErrInvalidConsulConfig
@@ -44,7 +42,7 @@ func NewDatasource(propertyKey string, opts ...Option) (datasource.DataSource, e
 		options.consulClient = client
 	}
 
-	// still no consul client, throw error
+	// consul is still nil.
 	if options.consulClient == nil {
 		return nil, ErrNilConsulClient
 	}
@@ -55,7 +53,6 @@ func newConsulDataSource(propertyKey string, options *options) *consulDataSource
 	ctx, cancel := context.WithCancel(options.queryOptions.Context())
 	ds := &consulDataSource{
 		propertyKey:  propertyKey,
-		options:      options,
 		kvQuerier:    options.consulClient.KV(),
 		cancel:       cancel,
 		queryOptions: *options.queryOptions.WithContext(ctx),
@@ -67,7 +64,6 @@ func newConsulDataSource(propertyKey string, options *options) *consulDataSource
 	return ds
 }
 
-// ReadSource implement datasource.DataSource interface
 func (c *consulDataSource) ReadSource() ([]byte, error) {
 	pair, meta, err := c.kvQuerier.Get(c.propertyKey, &c.queryOptions)
 
@@ -77,7 +73,7 @@ func (c *consulDataSource) ReadSource() ([]byte, error) {
 
 	c.queryOptions.WaitIndex = meta.LastIndex
 	if pair == nil {
-		return []byte{}, nil
+		return nil, ErrKeyDoesNotExist
 	}
 	return pair.Value, nil
 }
@@ -85,33 +81,36 @@ func (c *consulDataSource) ReadSource() ([]byte, error) {
 // Initialize implement datasource.DataSource interface
 func (c *consulDataSource) Initialize() error {
 	if !c.isInitialized.CompareAndSet(false, true) {
-		return errors.New("duplicate initialize consul datasource")
+		return errors.New("consul datasource had been initialized")
 	}
 	if err := c.doReadAndUpdate(); err != nil {
-		logger.Errorf("[consul] doReadAndUpdate failed: %s", err.Error())
-		return err
+		// Failed to read default should't block initialization
+		logger.Errorf("[Consul] Failed to read initial data for key: %s, err: %s", c.propertyKey, err.Error())
 	}
 
-	if !c.disableWatch {
-		go util.RunWithRecover(c.watch, logger)
-	}
+	go util.RunWithRecover(c.watch, logger)
+
 	return nil
 }
 
 func (c *consulDataSource) watch() {
+	logger.Infof("[Consul] Consul data source is watching property: %s", c.propertyKey)
 	for {
 		if err := c.doReadAndUpdate(); err != nil {
 			if errors.Is(err, context.Canceled) {
 				return
 			}
+			if errors.Is(err, ErrKeyDoesNotExist) {
+				continue
+			}
 
 			if api.IsRetryableError(err) {
-				logger.Warnf("[consul] doUpdate failed with retryable error: %s", err.Error())
+				logger.Warnf("[Consul] Update failed with retryable error: %s", err.Error())
 				time.Sleep(time.Second)
 				continue
 			}
 
-			logger.Errorf("[consul] doUpdate failed: %s", err.Error())
+			logger.Errorf("[Consul] Failed to update data, key: %s, err: %s", c.propertyKey, err.Error())
 		}
 	}
 }
@@ -135,6 +134,6 @@ func (c *consulDataSource) Close() error {
 	if c.cancel != nil {
 		c.cancel()
 	}
-	logger.Info("[consul] close consul datasource")
+	logger.Infof("[Consul] Consul data source has been closed, key: %s", c.propertyKey)
 	return nil
 }
