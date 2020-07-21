@@ -43,22 +43,27 @@ type nacosClientMock struct {
 }
 
 func (n *nacosClientMock) GetConfig(param vo.ConfigParam) (string, error) {
-	return TestSystemRules, nil
+	ret := n.Called(param)
+	return ret.String(0), ret.Error(1)
 }
 
 func (n *nacosClientMock) PublishConfig(param vo.ConfigParam) (bool, error) {
-	panic("implement me")
+	ret := n.Called(param)
+	return ret.Bool(0), ret.Error(1)
 }
 
 func (n *nacosClientMock) DeleteConfig(param vo.ConfigParam) (bool, error) {
-	panic("implement me")
+	ret := n.Called(param)
+	return ret.Bool(0), ret.Error(1)
 }
 
 func (n *nacosClientMock) ListenConfig(params vo.ConfigParam) (err error) {
-	return nil
+	ret := n.Called(params)
+	return ret.Error(0)
 }
 func (n *nacosClientMock) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
-	panic("implement me")
+	ret := n.Called(param)
+	return ret.Get(0).(*model.ConfigPage), ret.Error(1)
 }
 
 func getNacosDataSource(client config_client.IConfigClient, getConfig vo.ConfigParam) (*NacosDataSource, error) {
@@ -73,10 +78,10 @@ func getNacosDataSource(client config_client.IConfigClient, getConfig vo.ConfigP
 func TestNacosDataSource(t *testing.T) {
 
 	t.Run("NewNacosDataSource", func(t *testing.T) {
-		client, err := cretateConfigClientTest()
+		client, err := createConfigClientTest()
 		assert.Nil(t, err)
 		nds, err := getNacosDataSource(client, configParam)
-		assert.True(t, nds != nil && err == nil, "New NacosDataSource success.")
+		assert.True(t, nds != nil && err == nil)
 	})
 
 	t.Run("NacosDataSource_Initialize", func(t *testing.T) {
@@ -84,31 +89,11 @@ func TestNacosDataSource(t *testing.T) {
 		mh1.On("Handle", mock.Anything).Return(nil)
 		mh1.On("isPropertyConsistent", mock.Anything).Return(false)
 		nacosClientMock := new(nacosClientMock)
+		nacosClientMock.On("GetConfig", mock.Anything).Return(TestSystemRules, nil)
+		nacosClientMock.On("ListenConfig", mock.Anything).Return(nil)
 		nds, err := getNacosDataSource(nacosClientMock, configParam)
-		assert.True(t, nds != nil && err == nil, "New NacosDataSource success.")
-
+		assert.True(t, nds != nil && err == nil)
 		err = nds.Initialize()
-		assert.True(t, err == nil, "NacosDataSource initialize.")
-	})
-
-	t.Run("NacosDataSource_ReadSource", func(t *testing.T) {
-		nacosClientMock := new(nacosClientMock)
-		nds, err := getNacosDataSource(nacosClientMock, configParam)
-		assert.True(t, err == nil, "New NacosDataSource success.")
-		err = nds.Initialize()
-		assert.True(t, err == nil, "NacosDataSource initialize.")
-
-		data, err := nds.ReadSource()
-		assert.True(t, string(data) == TestSystemRules && err == nil, "NacosDataSource read source success.")
-	})
-
-	t.Run("NacosDataSource_Close", func(t *testing.T) {
-		nacosClientMock := new(nacosClientMock)
-		nds, err := getNacosDataSource(nacosClientMock, configParam)
-		assert.True(t, err == nil, "New NacosDataSource success.")
-		err = nds.Initialize()
-		assert.True(t, err == nil, "NacosDataSource initialize.")
-		err = nds.Close()
-		assert.Nil(t, err)
+		assert.True(t, err == nil)
 	})
 }

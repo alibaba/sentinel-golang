@@ -1,12 +1,16 @@
 package nacos
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/stretchr/testify/mock"
 )
 
 var serverConfig = constant.ServerConfig{
@@ -21,7 +25,7 @@ var clientConfigTest = constant.ClientConfig{
 	ListenInterval: 20000,
 }
 
-func cretateConfigClientTest() (*config_client.ConfigClient, error) {
+func createConfigClientTest() (*config_client.ConfigClient, error) {
 	nc := nacos_client.NacosClient{}
 	err := nc.SetServerConfig([]constant.ServerConfig{serverConfig})
 	err = nc.SetClientConfig(clientConfigTest)
@@ -32,19 +36,29 @@ func cretateConfigClientTest() (*config_client.ConfigClient, error) {
 }
 
 func Example_NacosDatasource_CustomizeClient() {
-	client, err := cretateConfigClientTest()
+	client, err := createConfigClientTest()
 	if err != nil {
-		// todo something
+		fmt.Printf("Fail to create client, err: %+v", err)
+		return
 	}
+	h := &datasource.MockPropertyHandler{}
+	h.On("isPropertyConsistent", mock.Anything).Return(true)
+	h.On("Handle", mock.Anything).Return(nil)
 	nds, err := NewNacosDataSource(client, vo.ConfigParam{
 		DataId: "system-rules",
 		Group:  "sentinel-go",
-	}, &datasource.MockPropertyHandler{})
+	}, h)
 	if err != nil {
-		// todo something
+		fmt.Printf("Fail to create nacos data source client, err: %+v", err)
+		return
 	}
 	err = nds.Initialize()
 	if err != nil {
-		// todo something
+		fmt.Printf("Fail to initialize nacos data source client, err: %+v", err)
+		return
 	}
+
+	time.Sleep(time.Second * 10)
+	nds.Close()
+	fmt.Println("Nacos datasource is Closed")
 }
