@@ -80,8 +80,6 @@ func matchArg(tc TrafficShapingController, args []interface{}) interface{} {
 		arg = int(n)
 	case string:
 	default:
-		// unsupported param kind, direct return pass
-		return nil
 	}
 	return arg
 }
