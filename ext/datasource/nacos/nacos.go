@@ -15,13 +15,13 @@ var (
 
 type NacosDataSource struct {
 	datasource.Base
-	client        *config_client.ConfigClient
+	client        config_client.IConfigClient
 	isInitialized util.AtomicBool
 	getConfig     vo.ConfigParam
 	closeChan     chan struct{}
 }
 
-func NewNacosDataSource(client *config_client.ConfigClient, getConfig vo.ConfigParam, handlers ...datasource.PropertyHandler) (*NacosDataSource, error) {
+func NewNacosDataSource(client config_client.IConfigClient, getConfig vo.ConfigParam, handlers ...datasource.PropertyHandler) (*NacosDataSource, error) {
 	var ds = &NacosDataSource{
 		Base:      datasource.Base{},
 		client:    client,
@@ -60,7 +60,7 @@ func (s *NacosDataSource) doUpdate(data []byte) error {
 	return s.Handle(data)
 }
 
-func (s *NacosDataSource) listen(client *config_client.ConfigClient) (err error) {
+func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error) {
 	listener := vo.ConfigParam{
 		DataId: s.getConfig.DataId,
 		Group:  s.getConfig.Group,
