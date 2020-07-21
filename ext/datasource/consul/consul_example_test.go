@@ -1,6 +1,8 @@
 package consul
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/hashicorp/consul/api"
@@ -11,13 +13,12 @@ func Example_consulDatasource_CustomizeClient() {
 		Address: "127.0.0.1:8500",
 	})
 	if err != nil {
-		// todo something
+		fmt.Println("Failed to instance consul client")
+		os.Exit(1)
 	}
 	ds, err := NewDatasource("property_key",
 		// customize consul client
 		WithConsulClient(client),
-		// disable dynamic datasource watch
-		WithDisableWatch(true),
 		// preset property handlers
 		WithPropertyHandlers(),
 		// reset queryOptions, defaultQueryOptions as default
@@ -25,11 +26,13 @@ func Example_consulDatasource_CustomizeClient() {
 	)
 
 	if err != nil {
-		// todo something
+		fmt.Println("Failed to instance consul datasource")
+		os.Exit(1)
 	}
 
 	if err := ds.Initialize(); err != nil {
-		// todo something
+		fmt.Println("Failed to initialize consul datasource")
+		os.Exit(1)
 	}
 }
 
@@ -39,8 +42,6 @@ func Example_consulDatasource_CustomizeConfig() {
 		WithConsulConfig(&api.Config{
 			Address: "127.0.0.1:8500",
 		}),
-		// disable dynamic datasource watch
-		WithDisableWatch(true),
 		// preset property handlers
 		WithPropertyHandlers(),
 		// reset queryOptions, defaultQueryOptions as default
@@ -52,10 +53,12 @@ func Example_consulDatasource_CustomizeConfig() {
 	)
 
 	if err != nil {
-		// todo something
+		fmt.Println("Failed to instance consul datasource")
+		os.Exit(1)
 	}
 
 	if err := ds.Initialize(); err != nil {
-		// todo something
+		fmt.Println("Failed to initialize consul datasource")
+		os.Exit(1)
 	}
 }
