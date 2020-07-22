@@ -80,7 +80,7 @@ func NewAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator Bucket
 }
 
 func (aa *AtomicBucketWrapArray) elementOffset(idx int) unsafe.Pointer {
-	if idx >= aa.length && idx < 0 {
+	if idx >= aa.length || idx < 0 {
 		panic(fmt.Sprintf("The index (%d) is out of bounds, length is %d.", idx, aa.length))
 	}
 	basePtr := aa.base
