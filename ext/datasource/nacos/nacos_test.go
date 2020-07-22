@@ -33,10 +33,10 @@ const (
 ]`
 )
 
-var configParam = vo.ConfigParam{
-	DataId: "system-rules",
-	Group:  "sentinel-go",
-}
+var (
+	Group  = "sentinel-go"
+	DataId = "system-rules"
+)
 
 type nacosClientMock struct {
 	mock.Mock
@@ -66,11 +66,11 @@ func (n *nacosClientMock) SearchConfig(param vo.SearchConfigParm) (*model.Config
 	return ret.Get(0).(*model.ConfigPage), ret.Error(1)
 }
 
-func getNacosDataSource(client config_client.IConfigClient, getConfig vo.ConfigParam) (*NacosDataSource, error) {
+func getNacosDataSource(client config_client.IConfigClient) (*NacosDataSource, error) {
 	mh1 := &datasource.MockPropertyHandler{}
 	mh1.On("Handle", mock.Anything).Return(nil)
 	mh1.On("isPropertyConsistent", mock.Anything).Return(false)
-	nds, err := NewNacosDataSource(client, getConfig, mh1)
+	nds, err := NewNacosDataSource(client, Group, DataId, mh1)
 
 	return nds, err
 }
@@ -80,7 +80,7 @@ func TestNacosDataSource(t *testing.T) {
 	t.Run("NewNacosDataSource", func(t *testing.T) {
 		client, err := createConfigClientTest()
 		assert.Nil(t, err)
-		nds, err := getNacosDataSource(client, configParam)
+		nds, err := getNacosDataSource(client)
 		assert.True(t, nds != nil && err == nil)
 	})
 
@@ -91,7 +91,7 @@ func TestNacosDataSource(t *testing.T) {
 		nacosClientMock := new(nacosClientMock)
 		nacosClientMock.On("GetConfig", mock.Anything).Return(TestSystemRules, nil)
 		nacosClientMock.On("ListenConfig", mock.Anything).Return(nil)
-		nds, err := getNacosDataSource(nacosClientMock, configParam)
+		nds, err := getNacosDataSource(nacosClientMock)
 		assert.True(t, nds != nil && err == nil)
 		err = nds.Initialize()
 		assert.True(t, err == nil)

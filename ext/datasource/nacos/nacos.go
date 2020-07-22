@@ -17,24 +17,26 @@ var (
 
 type NacosDataSource struct {
 	datasource.Base
-	client         config_client.IConfigClient
-	isInitialized  util.AtomicBool
-	propertyConfig vo.ConfigParam
-	closeChan      chan struct{}
+	client        config_client.IConfigClient
+	isInitialized util.AtomicBool
+	group         string
+	dataId        string
+	closeChan     chan struct{}
 }
 
-func NewNacosDataSource(client config_client.IConfigClient, propertyConfig vo.ConfigParam, handlers ...datasource.PropertyHandler) (*NacosDataSource, error) {
+func NewNacosDataSource(client config_client.IConfigClient, group, dataId string, handlers ...datasource.PropertyHandler) (*NacosDataSource, error) {
 	if client == nil {
 		return nil, errors.New("Nil nacos config client")
 	}
-	if len(propertyConfig.Group) == 0 || len(propertyConfig.DataId) == 0 {
-		return nil, errors.New(fmt.Sprintf("Invalid property config, group: %s, dataId: %s.", propertyConfig.Group, propertyConfig.DataId))
+	if len(group) == 0 || len(dataId) == 0 {
+		return nil, errors.New(fmt.Sprintf("Invalid parameters, group: %s, dataId: %s", group, dataId))
 	}
 	var ds = &NacosDataSource{
-		Base:           datasource.Base{},
-		client:         client,
-		propertyConfig: propertyConfig,
-		closeChan:      make(chan struct{}, 1),
+		Base:      datasource.Base{},
+		client:    client,
+		group:     group,
+		dataId:    dataId,
+		closeChan: make(chan struct{}, 1),
 	}
 	for _, h := range handlers {
 		ds.AddPropertyHandler(h)
@@ -55,18 +57,21 @@ func (s *NacosDataSource) Initialize() error {
 	}
 	err = s.listen(s.client)
 	if err == nil {
-		logger.Infof("Nacos data source is successfully initialized, property config: %+v", s.propertyConfig)
+		logger.Infof("Nacos data source is successfully initialized, group: %s, dataId: %s", s.group, s.dataId)
 	}
 	return err
 }
 
 func (s *NacosDataSource) ReadSource() ([]byte, error) {
-	content, err := s.client.GetConfig(s.propertyConfig)
+	content, err := s.client.GetConfig(vo.ConfigParam{
+		DataId: s.group,
+		Group:  s.dataId,
+	})
 	if err != nil {
 		return nil, errors.Errorf("Failed to read the nacos data source when initialization, err: %+v", err)
 	}
 
-	logger.Infof("Succeed to read source for property config: %+v, data: %s", s.propertyConfig, content)
+	logger.Infof("Succeed to read source for group: %s, dataId: %s, data: %s", s.group, s.dataId, content)
 	return []byte(content), err
 }
 
@@ -76,10 +81,10 @@ func (s *NacosDataSource) doUpdate(data []byte) error {
 
 func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error) {
 	listener := vo.ConfigParam{
-		DataId: s.propertyConfig.DataId,
-		Group:  s.propertyConfig.Group,
+		DataId: s.dataId,
+		Group:  s.group,
 		OnChange: func(namespace, group, dataId, data string) {
-			logger.Infof("Receive listened property. namespace: %s, group: %s, dataId: %s, data: %s.", namespace, group, dataId, data)
+			logger.Infof("Receive listened property. namespace: %s, group: %s, dataId: %s, data: %s", namespace, group, dataId, data)
 			err := s.doUpdate([]byte(data))
 			if err != nil {
 				logger.Errorf("Fail to update data source, err: %+v", err)
@@ -96,6 +101,6 @@ func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error)
 
 func (s *NacosDataSource) Close() error {
 	s.closeChan <- struct{}{}
-	logger.Infof("The nacos datasource had been closed. property config: %+v", s.propertyConfig)
+	logger.Infof("The nacos datasource had been closed, group: %s, dataId: %s", s.group, s.dataId)
 	return nil
 }

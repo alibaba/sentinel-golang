@@ -9,7 +9,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -44,10 +43,7 @@ func Example_NacosDatasource_CustomizeClient() {
 	h := &datasource.MockPropertyHandler{}
 	h.On("isPropertyConsistent", mock.Anything).Return(true)
 	h.On("Handle", mock.Anything).Return(nil)
-	nds, err := NewNacosDataSource(client, vo.ConfigParam{
-		DataId: "system-rules",
-		Group:  "sentinel-go",
-	}, h)
+	nds, err := NewNacosDataSource(client, "sentinel-go", "system-rules", h)
 	if err != nil {
 		fmt.Printf("Fail to create nacos data source client, err: %+v", err)
 		return
