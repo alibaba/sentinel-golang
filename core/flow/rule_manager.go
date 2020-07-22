@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
 
@@ -56,14 +57,20 @@ func onRuleUpdate(rules []*FlowRule) (err error) {
 		}
 	}()
 
-	tcMux.Lock()
-	defer tcMux.Unlock()
-
 	m := buildFlowMap(rules)
 
-	tcMap = m
-	logRuleUpdate(m)
+	start := util.CurrentTimeNano()
+	tcMux.Lock()
+	defer func() {
+		tcMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+		logger.Debugf("Updating flow rule spends %d ns.", util.CurrentTimeNano()-start)
+		logRuleUpdate(m)
+	}()
 
+	tcMap = m
 	return nil
 }
 

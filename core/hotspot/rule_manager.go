@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
 
@@ -98,13 +99,82 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	tcMux.Lock()
-	defer tcMux.Unlock()
+	newRuleMap := make(map[string][]*Rule)
+	for _, r := range rules {
+		if err := IsValidRule(r); err != nil {
+			logger.Warnf("Ignoring invalid hotspot rule when loading new rules, rule: %s, reason: %s", r.String(), err.Error())
+			continue
+		}
+		res := r.ResourceName()
+		ruleSet, ok := newRuleMap[res]
+		if !ok {
+			ruleSet = make([]*Rule, 0, 1)
+		}
+		ruleSet = append(ruleSet, r)
+		newRuleMap[res] = ruleSet
+	}
 
-	m := buildTcMap(rules)
+	m := make(trafficControllerMap)
+	for res, rules := range newRuleMap {
+		m[res] = make([]TrafficShapingController, 0, len(rules))
+	}
+
+	start := util.CurrentTimeNano()
+	tcMux.Lock()
+	defer func() {
+		tcMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+		logger.Debugf("Updating hotspot rule spends %d ns.", util.CurrentTimeNano()-start)
+		logRuleUpdate(m)
+	}()
+
+	for res, resRules := range newRuleMap {
+		emptyTcList := make([]TrafficShapingController, 0, 0)
+		for _, r := range resRules {
+			oldResTcs := tcMap[res]
+			if oldResTcs == nil {
+				oldResTcs = emptyTcList
+			}
+
+			equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResTcs)
+			// there is equivalent rule in old traffic shaping controller slice
+			if equalIdx >= 0 {
+				equalOldTC := oldResTcs[equalIdx]
+				insertTcToTcMap(equalOldTC, res, m)
+				// remove old tc from old resTcs
+				tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
+				continue
+			}
+
+			// generate new traffic shaping controller
+			generator, supported := tcGenFuncMap[r.ControlBehavior]
+			if !supported {
+				logger.Warnf("Ignoring the frequent param flow rule due to unsupported control behavior: %v", r)
+				continue
+			}
+			var tc TrafficShapingController
+			if reuseStatIdx >= 0 {
+				// generate new traffic shaping controller with reusable statistic metric.
+				tc = generator(r, oldResTcs[reuseStatIdx].BoundMetric())
+			} else {
+				tc = generator(r, nil)
+			}
+			if tc == nil {
+				logger.Debugf("Ignoring the frequent param flow rule due to bad generated traffic controller: %v", r)
+				continue
+			}
+
+			//  remove the reused traffic shaping controller old res tcs
+			if reuseStatIdx >= 0 {
+				tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
+			}
+			insertTcToTcMap(tc, res, m)
+		}
+	}
 	tcMap = m
 
-	logRuleUpdate(m)
 	return nil
 }
 
@@ -171,59 +241,6 @@ func insertTcToTcMap(tc TrafficShapingController, res string, m trafficControlle
 	} else {
 		m[res] = append(tcsOfRes, tc)
 	}
-}
-
-// buildTcMap be called on the condition that the mutex is locked
-func buildTcMap(rules []*Rule) trafficControllerMap {
-	m := make(trafficControllerMap)
-	if len(rules) == 0 {
-		return m
-	}
-
-	for _, r := range rules {
-		if err := IsValidRule(r); err != nil {
-			logger.Warnf("Ignoring invalid hotspot param flow rule: %v, reason: %s", r.String(), err.Error())
-			continue
-		}
-
-		res := r.Resource
-		oldResTcs := tcMap[res]
-		equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResTcs)
-
-		// there is equivalent rule in old traffic shaping controller slice
-		if equalIdx >= 0 {
-			equalOldTC := oldResTcs[equalIdx]
-			insertTcToTcMap(equalOldTC, res, m)
-			// remove old tc from old resTcs
-			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
-			continue
-		}
-
-		// generate new traffic shaping controller
-		generator, supported := tcGenFuncMap[r.ControlBehavior]
-		if !supported {
-			logger.Warnf("Ignoring the hotspot param flow rule due to unsupported control behavior: %v", r)
-			continue
-		}
-		var tc TrafficShapingController
-		if reuseStatIdx >= 0 {
-			// generate new traffic shaping controller with reusable statistic metric.
-			tc = generator(r, oldResTcs[reuseStatIdx].BoundMetric())
-		} else {
-			tc = generator(r, nil)
-		}
-		if tc == nil {
-			logger.Debugf("Ignoring the hotspot param flow rule due to bad generated traffic controller: %v", r)
-			continue
-		}
-
-		//  remove the reused traffic shaping controller old res tcs
-		if reuseStatIdx >= 0 {
-			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
-		}
-		insertTcToTcMap(tc, res, m)
-	}
-	return m
 }
 
 func IsValidRule(rule *Rule) error {

@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
 
@@ -159,8 +160,8 @@ func onRuleUpdate(rules []Rule) (err error) {
 			}
 		}
 	}()
-	newBreakerRules := make(map[string][]Rule)
 
+	newBreakerRules := make(map[string][]Rule)
 	for _, rule := range rules {
 		if rule == nil {
 			continue
@@ -180,9 +181,21 @@ func onRuleUpdate(rules []Rule) (err error) {
 	}
 
 	newBreakers := make(map[string][]CircuitBreaker)
+	// in order to avoid growing, build newBreakers in advance
+	for res, rules := range newBreakerRules {
+		newBreakers[res] = make([]CircuitBreaker, 0, len(rules))
+	}
 
+	start := util.CurrentTimeNano()
 	updateMux.Lock()
-	defer updateMux.Unlock()
+	defer func() {
+		updateMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+		logger.Debugf("Updating circuit breaker rule spends %d ns.", util.CurrentTimeNano()-start)
+		logRuleUpdate(newBreakerRules)
+	}()
 
 	for res, resRules := range newBreakerRules {
 		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
@@ -229,8 +242,6 @@ func onRuleUpdate(rules []Rule) (err error) {
 
 	breakerRules = newBreakerRules
 	breakers = newBreakers
-
-	logRuleUpdate(newBreakerRules)
 	return nil
 }
 
