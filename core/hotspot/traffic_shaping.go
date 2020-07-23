@@ -87,16 +87,14 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 			return nil
 		}
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-			fmt.Sprintf("Blocked by specific concurrency threshold, arg: %+v, current concurrency: %d,  specific concurrency: %d", arg, concurrency, specificConcurrency),
-			c.BoundRule(), concurrency)
+			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
 	threshold := int64(c.threshold)
 	if concurrency <= threshold {
 		return nil
 	}
 	return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-		fmt.Sprintf("Blocked by concurrency threshold, arg: %+v, current concurrency: %d, threshold concurrency: %d", arg, concurrency, threshold),
-		c.BoundRule(), concurrency)
+		fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 }
 
 // rejectTrafficShapingController use Reject strategy
@@ -145,14 +143,13 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 	}
 	if tokenCount <= 0 {
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-			fmt.Sprintf("Blocked by reject traffic shaping controller, arg: %+v", arg), c.BoundRule(), "")
+			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
 	maxCount := tokenCount + c.burstCount
 	if acquireCount > maxCount {
 		// return blocked because the acquired number is more than max count of rejectTrafficShapingController
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-			fmt.Sprintf("Blocked by reject traffic shaping controller, arg: %+v, the acquired number(%d) is more than max count(%d) of rejectTrafficShapingController", arg, acquireCount, maxCount),
-			c.BoundRule(), "")
+			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
 
 	for {
@@ -187,8 +184,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 				}
 				if newQps < 0 {
 					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-						fmt.Sprintf("rejectTrafficShapingController, the new QPS after subbing acquire(%d) is less than 0.", acquireCount),
-						c.BoundRule(), "")
+						fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 				}
 				if atomic.CompareAndSwapInt64(oldQpsPtr, restQps, newQps) {
 					atomic.StoreInt64(lastAddTokenTimePtr, currentTimeInMs)
@@ -208,8 +204,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 					}
 				} else {
 					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-						fmt.Sprintf("rejectTrafficShapingController, the rest token is not enough, oldRestToken: %d, acquire: %d", oldRestToken, acquireCount),
-						c.BoundRule(), "")
+						fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 				}
 			}
 			runtime.Gosched()
@@ -242,7 +237,8 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ac
 		tokenCount = val
 	}
 	if tokenCount <= 0 {
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, "throttlingTrafficShapingController, the setting tokenCount is <= 0", c.BoundRule(), "")
+		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
+			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
 	intervalCostTime := int64(math.Round(float64(acquireCount * c.durationInSec * 1000 / tokenCount)))
 	for {
@@ -270,8 +266,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ac
 			}
 		} else {
 			return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-				fmt.Sprintf("throttlingTrafficShapingController, current time(%d) is not reaching to expected time(%d)", currentTimeInMs, expectedTime),
-				c.BoundRule(), "")
+				fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 		}
 	}
 }
