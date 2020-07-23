@@ -64,8 +64,8 @@ func (s *NacosDataSource) Initialize() error {
 
 func (s *NacosDataSource) ReadSource() ([]byte, error) {
 	content, err := s.client.GetConfig(vo.ConfigParam{
-		DataId: s.group,
-		Group:  s.dataId,
+		DataId: s.dataId,
+		Group:  s.group,
 	})
 	if err != nil {
 		return nil, errors.Errorf("Failed to read the nacos data source when initialization, err: %+v", err)
