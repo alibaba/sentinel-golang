@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -34,6 +35,9 @@ func init() {
 	}
 	tcGenFuncMap[Throttling] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
+	}
+	tcGenFuncMap[WarmUp] = func(rule *FlowRule) *TrafficShapingController {
+		return NewTrafficShapingController(NewWarmUpTrafficShapingCalculator(rule.Count), NewWarmUpTrafficShapingChecker(rule.MetricType, rule.WarmUpPeriodSec, config.DEFAULT_COLD_FACTOR, rule.Count), rule)
 	}
 }
 

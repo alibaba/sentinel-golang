@@ -23,6 +23,7 @@ const (
 
 type ReadStat interface {
 	GetQPS(event MetricEvent) float64
+	GetPreviousQPS(event MetricEvent) float64
 	GetSum(event MetricEvent) int64
 
 	MinRT() float64
