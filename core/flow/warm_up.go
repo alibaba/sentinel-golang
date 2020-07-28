@@ -12,7 +12,6 @@ import (
 
 type WarmUpTrafficShapingCalculator struct {
 	threshold         float64
-	metricType        MetricType
 	warmUpPeriodInSec uint32
 	coldFactor        uint32
 	warningToken      uint64
@@ -22,7 +21,7 @@ type WarmUpTrafficShapingCalculator struct {
 	lastFilledTime    *uint64
 }
 
-func NewWarmUpTrafficShapingCalculator(metricType MetricType, warmUpPeriodInSec, warmUpColdFactor uint32, threshold float64) *WarmUpTrafficShapingCalculator {
+func NewWarmUpTrafficShapingCalculator(warmUpPeriodInSec, warmUpColdFactor uint32, threshold float64) *WarmUpTrafficShapingCalculator {
 	if warmUpColdFactor <= 1 {
 		warmUpColdFactor = config.DefaultWarmUpColdFactor
 	}
@@ -34,7 +33,6 @@ func NewWarmUpTrafficShapingCalculator(metricType MetricType, warmUpPeriodInSec,
 	slope := float64(warmUpColdFactor-1.0) / threshold / float64(maxToken-warningToken)
 
 	warmUpTrafficShapingCalculator := &WarmUpTrafficShapingCalculator{
-		metricType:        metricType,
 		warmUpPeriodInSec: warmUpPeriodInSec,
 		coldFactor:        warmUpColdFactor,
 		warningToken:      warningToken,
