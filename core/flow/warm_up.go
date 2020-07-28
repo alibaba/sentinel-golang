@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"github.com/alibaba/sentinel-golang/core/config"
 	"math"
 	"sync/atomic"
 
@@ -10,18 +11,7 @@ import (
 )
 
 type WarmUpTrafficShapingCalculator struct {
-	threshold float64
-}
-
-func NewWarmUpTrafficShapingCalculator(threshold float64) *WarmUpTrafficShapingCalculator {
-	return &WarmUpTrafficShapingCalculator{threshold: threshold}
-}
-
-func (d *WarmUpTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, uint32, int32) float64 {
-	return d.threshold
-}
-
-type WarmUpTrafficShapingChecker struct {
+	threshold         float64
 	metricType        MetricType
 	warmUpPeriodInSec uint32
 	coldFactor        uint32
@@ -30,62 +20,49 @@ type WarmUpTrafficShapingChecker struct {
 	slope             float64
 	storedTokens      *uint64
 	lastFilledTime    *uint64
-	count             float64
 }
 
-func NewWarmUpTrafficShapingChecker(metricType MetricType, warmUpPeriodInSec, coldFactor uint32, count float64) *WarmUpTrafficShapingChecker {
+func NewWarmUpTrafficShapingCalculator(metricType MetricType, warmUpPeriodInSec, coldFactor uint32, threshold float64) *WarmUpTrafficShapingCalculator {
 	if coldFactor <= 1 {
-		return nil
+		coldFactor = config.DEFAULT_COLD_FACTOR
 	}
 
-	warningToken := uint64((float64(warmUpPeriodInSec) * count) / float64(coldFactor-1))
+	warningToken := uint64((float64(warmUpPeriodInSec) * threshold) / float64(coldFactor-1))
 
-	maxToken := warningToken + uint64(2*float64(warmUpPeriodInSec)*count/float64(1.0+coldFactor))
+	maxToken := warningToken + uint64(2*float64(warmUpPeriodInSec)*threshold/float64(1.0+coldFactor))
 
-	slope := float64(coldFactor-1.0) / count / float64(maxToken-warningToken)
+	slope := float64(coldFactor-1.0) / threshold / float64(maxToken-warningToken)
 
-	warmUpTrafficShapingChecker := &WarmUpTrafficShapingChecker{
+	warmUpTrafficShapingCalculator := &WarmUpTrafficShapingCalculator{
 		metricType:        metricType,
 		warmUpPeriodInSec: warmUpPeriodInSec,
 		coldFactor:        coldFactor,
 		warningToken:      warningToken,
 		maxToken:          maxToken,
 		slope:             slope,
-		count:             count,
+		threshold:         threshold,
 		storedTokens:      new(uint64),
 		lastFilledTime:    new(uint64),
 	}
 
-	return warmUpTrafficShapingChecker
+	return warmUpTrafficShapingCalculator
 }
 
-func (d *WarmUpTrafficShapingChecker) DoCheck(node base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
-	if node == nil {
-		return nil
-	}
-	curCount := node.GetQPS(base.MetricEventPass)
-
+func (d *WarmUpTrafficShapingCalculator) CalculateAllowedTokens(node base.StatNode, acquireCount uint32, flag int32) float64 {
 	previousQps := node.GetPreviousQPS(base.MetricEventPass)
-
 	d.syncToken(previousQps)
 
 	restToken := atomic.LoadUint64(d.storedTokens)
 	if restToken >= d.warningToken {
 		aboveToken := restToken - d.warningToken
-		warningQps := math.Nextafter(1.0/(float64(aboveToken)*d.slope+1.0/threshold), math.MaxFloat64)
-		if curCount+float64(acquireCount) <= warningQps {
-			return nil
-		}
+		warningQps := math.Nextafter(1.0/(float64(aboveToken)*d.slope+1.0/d.threshold), math.MaxFloat64)
+		return warningQps
 	} else {
-		if curCount+float64(acquireCount) <= threshold {
-			return nil
-		}
+		return d.threshold
 	}
-
-	return base.NewTokenResultBlocked(base.BlockTypeFlow, "Flow")
 }
 
-func (d *WarmUpTrafficShapingChecker) syncToken(passQps float64) {
+func (d *WarmUpTrafficShapingCalculator) syncToken(passQps float64) {
 	currentTime := util.CurrentTimeMillis()
 	currentTime = currentTime - currentTime%1000
 
@@ -105,17 +82,17 @@ func (d *WarmUpTrafficShapingChecker) syncToken(passQps float64) {
 	}
 }
 
-func (d *WarmUpTrafficShapingChecker) coolDownTokens(currentTime uint64, passQps float64) uint64 {
+func (d *WarmUpTrafficShapingCalculator) coolDownTokens(currentTime uint64, passQps float64) uint64 {
 	oldValue := atomic.LoadUint64(d.storedTokens)
 	newValue := oldValue
 
 	// Prerequisites for adding a token:
 	// When token consumption is much lower than the warning line
 	if oldValue < d.warningToken {
-		newValue = uint64(float64(oldValue) + (float64(currentTime)-float64(atomic.LoadUint64(d.lastFilledTime)))*d.count/1000)
+		newValue = uint64(float64(oldValue) + (float64(currentTime)-float64(atomic.LoadUint64(d.lastFilledTime)))*d.threshold/1000)
 	} else if oldValue > d.warningToken {
-		if passQps < float64(uint32(d.count)/d.coldFactor) {
-			newValue = uint64(float64(oldValue) + float64(currentTime-atomic.LoadUint64(d.lastFilledTime))*d.count/1000)
+		if passQps < float64(uint32(d.threshold)/d.coldFactor) {
+			newValue = uint64(float64(oldValue) + float64(currentTime-atomic.LoadUint64(d.lastFilledTime))*d.threshold/1000)
 		}
 	}
 
