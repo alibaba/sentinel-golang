@@ -17,14 +17,14 @@ func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	rules := GetRules()
 	result := ctx.RuleCheckResult
 	for _, rule := range rules {
-		passed, m := s.doCheckRule(rule)
+		passed, snapshotValue := s.doCheckRule(rule)
 		if passed {
 			continue
 		}
 		if result == nil {
-			result = base.NewTokenResultBlockedWithCause(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+			result = base.NewTokenResultBlockedWithCause(base.BlockTypeSystemFlow, rule.MetricType.String(), rule, snapshotValue)
 		} else {
-			result.ResetToBlockedWithCauseFrom(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+			result.ResetToBlockedWithCause(base.BlockTypeSystemFlow, rule.MetricType.String(), rule, snapshotValue)
 		}
 		return result
 	}

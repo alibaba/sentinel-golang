@@ -283,7 +283,7 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 
 	rbs.On("Prepare", mock.Anything).Return()
 	fsm.On("Check", mock.Anything).Return(NewTokenResultPass())
-	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(blockType, "Unknown"))
+	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(blockType))
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
@@ -339,7 +339,7 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 
 	rbs.On("Prepare", mock.Anything).Return()
 	fsm.On("Check", mock.Anything).Return(NewTokenResultPass())
-	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(BlockTypeUnknown, "Unknown"))
+	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(BlockTypeUnknown))
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
