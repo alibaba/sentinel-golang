@@ -70,6 +70,7 @@ func (r *TokenResult) DeepCopyFrom(newResult *TokenResult) {
 			snapshotValue: newResult.blockErr.snapshotValue,
 		}
 	} else {
+		// TODO: review the reusing logic
 		r.blockErr.blockType = newResult.blockErr.blockType
 		r.blockErr.blockMsg = newResult.blockErr.blockMsg
 		r.blockErr.rule = newResult.blockErr.rule
@@ -83,29 +84,36 @@ func (r *TokenResult) ResetToPass() {
 	r.waitMs = 0
 }
 
-func (r *TokenResult) ResetToBlockedFrom(blockType BlockType, blockMsg string) {
+func (r *TokenResult) ResetToBlocked(blockType BlockType) {
 	r.status = ResultStatusBlocked
 	if r.blockErr == nil {
-		r.blockErr = &BlockError{
-			blockType: blockType,
-			blockMsg:  blockMsg,
-		}
+		r.blockErr = NewBlockError(blockType)
 	} else {
 		r.blockErr.blockType = blockType
-		r.blockErr.blockMsg = blockMsg
+		r.blockErr.blockMsg = ""
+		r.blockErr.rule = nil
+		r.blockErr.snapshotValue = nil
 	}
 	r.waitMs = 0
 }
 
-func (r *TokenResult) ResetToBlockedWithCauseFrom(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) {
+func (r *TokenResult) ResetToBlockedWithMessage(blockType BlockType, blockMsg string) {
 	r.status = ResultStatusBlocked
 	if r.blockErr == nil {
-		r.blockErr = &BlockError{
-			blockType:     blockType,
-			blockMsg:      blockMsg,
-			rule:          rule,
-			snapshotValue: snapshot,
-		}
+		r.blockErr = NewBlockErrorWithMessage(blockType, blockMsg)
+	} else {
+		r.blockErr.blockType = blockType
+		r.blockErr.blockMsg = blockMsg
+		r.blockErr.rule = nil
+		r.blockErr.snapshotValue = nil
+	}
+	r.waitMs = 0
+}
+
+func (r *TokenResult) ResetToBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) {
+	r.status = ResultStatusBlocked
+	if r.blockErr == nil {
+		r.blockErr = NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot)
 	} else {
 		r.blockErr.blockType = blockType
 		r.blockErr.blockMsg = blockMsg
@@ -142,7 +150,7 @@ func (r *TokenResult) String() string {
 	} else {
 		blockMsg = r.blockErr.Error()
 	}
-	return fmt.Sprintf("TokenResult{status=%+v, blockErr=%s, waitMs=%d}", r.status, blockMsg, r.waitMs)
+	return fmt.Sprintf("TokenResult{status=%s, blockErr=%s, waitMs=%d}", r.status.String(), blockMsg, r.waitMs)
 }
 
 func NewTokenResultPass() *TokenResult {
@@ -153,27 +161,27 @@ func NewTokenResultPass() *TokenResult {
 	}
 }
 
-func NewTokenResultBlocked(blockType BlockType, blockMsg string) *TokenResult {
+func NewTokenResultBlocked(blockType BlockType) *TokenResult {
 	return &TokenResult{
-		status: ResultStatusBlocked,
-		blockErr: &BlockError{
-			blockType: blockType,
-			blockMsg:  blockMsg,
-		},
-		waitMs: 0,
+		status:   ResultStatusBlocked,
+		blockErr: NewBlockError(blockType),
+		waitMs:   0,
+	}
+}
+
+func NewTokenResultBlockedWithMessage(blockType BlockType, blockMsg string) *TokenResult {
+	return &TokenResult{
+		status:   ResultStatusBlocked,
+		blockErr: NewBlockErrorWithMessage(blockType, blockMsg),
+		waitMs:   0,
 	}
 }
 
 func NewTokenResultBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) *TokenResult {
 	return &TokenResult{
-		status: ResultStatusBlocked,
-		blockErr: &BlockError{
-			blockType:     blockType,
-			blockMsg:      blockMsg,
-			rule:          rule,
-			snapshotValue: snapshot,
-		},
-		waitMs: 0,
+		status:   ResultStatusBlocked,
+		blockErr: NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot),
+		waitMs:   0,
 	}
 }
 
