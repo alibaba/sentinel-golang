@@ -30,7 +30,7 @@ var (
 func init() {
 	// Initialize the traffic shaping controller generator map for existing control behaviors.
 	tcGenFuncMap[Reject] = func(rule *FlowRule) *TrafficShapingController {
-		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule.MetricType), rule)
+		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule), rule)
 	}
 	tcGenFuncMap[Throttling] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
