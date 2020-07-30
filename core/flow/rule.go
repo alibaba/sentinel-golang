@@ -74,8 +74,8 @@ type FlowRule struct {
 	WarmUpPeriodSec   uint32
 	MaxQueueingTimeMs uint32
 	// ClusterMode indicates whether the rule is for cluster flow control or local.
-	ClusterMode   bool
-	ClusterConfig ClusterRuleConfig
+	ClusterMode      bool
+	ClusterConfig    ClusterRuleConfig
 	WarmUpColdFactor uint32
 }
 

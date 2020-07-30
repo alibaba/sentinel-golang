@@ -1,13 +1,12 @@
 package flow
 
 import (
-	"github.com/alibaba/sentinel-golang/core/config"
 	"math"
 	"sync/atomic"
 
-	"github.com/alibaba/sentinel-golang/util"
-
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 type WarmUpTrafficShapingCalculator struct {
