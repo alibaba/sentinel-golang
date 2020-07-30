@@ -124,9 +124,9 @@ func Test_listMetricFiles(t *testing.T) {
 				t.Errorf("listMetricFiles() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if osType := runtime.GOOS;osType=="windows"{
-				for i:=0;i<len(got);i++{
-					got[i]=strings.ReplaceAll(got[i],"\\","/")
+			if osType := runtime.GOOS; osType == "windows" {
+				for i := 0; i < len(got); i++ {
+					got[i] = strings.ReplaceAll(got[i], "\\", "/")
 				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {
