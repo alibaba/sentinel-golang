@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"encoding/json"
 	"fmt"
 
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
@@ -24,32 +25,14 @@ func checkSrcComplianceJson(src []byte) (bool, error) {
 }
 
 // FlowRulesJsonConverter provide JSON  as the default serialization for list of flow.FlowRule
-func FlowRulesJsonConverter(src []byte) (interface{}, error) {
+func FlowRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
 
 	rules := make([]*flow.FlowRule, 0)
-	result := gjson.ParseBytes(src)
-	for _, r := range result.Array() {
-		flowRule := &flow.FlowRule{
-			Resource:          r.Get("resource").String(),
-			LimitOrigin:       r.Get("limitOrigin").String(),
-			MetricType:        flow.MetricType(r.Get("metricType").Int()),
-			Count:             r.Get("count").Float(),
-			RelationStrategy:  flow.RelationStrategy(r.Get("relationStrategy").Int()),
-			ControlBehavior:   flow.ControlBehavior(r.Get("controlBehavior").Int()),
-			RefResource:       r.Get("refResource").String(),
-			WarmUpPeriodSec:   uint32(r.Get("warmUpPeriodSec").Int()),
-			MaxQueueingTimeMs: uint32(r.Get("maxQueueingTimeMs").Int()),
-			ClusterMode:       r.Get("clusterMode").Bool(),
-			ClusterConfig: flow.ClusterRuleConfig{
-				ThresholdType: flow.ClusterThresholdMode(r.Get("clusterConfig.thresholdType").Int()),
-			},
-		}
-		rules = append(rules, flowRule)
-	}
-	return rules, nil
+	err := json.Unmarshal(src, &rules)
+	return rules, err
 }
 
 // FlowRulesUpdater load the newest []flow.FlowRule to downstream flow component.

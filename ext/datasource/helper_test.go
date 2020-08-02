@@ -29,23 +29,23 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 	}
 
 	t.Run("TestFlowRulesJsonConverter_nil", func(t *testing.T) {
-		got, err := FlowRulesJsonConverter(nil)
+		got, err := FlowRuleJsonArrayParser(nil)
 		assert.True(t, got == nil && err == nil)
 
-		got, err = FlowRulesJsonConverter([]byte{})
+		got, err = FlowRuleJsonArrayParser([]byte{})
 		assert.True(t, got == nil && err == nil)
 	})
 
 	t.Run("TestFlowRulesJsonConverter_error", func(t *testing.T) {
-		got, err := FlowRulesJsonConverter([]byte{'x', 'i', 'm', 'u'})
+		got, err := FlowRuleJsonArrayParser([]byte{'x', 'i', 'm', 'u'})
 		assert.True(t, got == nil)
 		realErr, succ := err.(Error)
 		assert.True(t, succ && realErr.code == ConvertSourceError)
 	})
 
 	t.Run("TestFlowRulesJsonConverter_normal", func(t *testing.T) {
-		got, _ := FlowRulesJsonConverter(normalSrc)
-		assert.True(t, got != nil)
+		got, err := FlowRuleJsonArrayParser(normalSrc)
+		assert.True(t, got != nil && err == nil)
 		flowRules := got.([]*flow.FlowRule)
 		assert.True(t, len(flowRules) == 3)
 		r1 := &flow.FlowRule{
