@@ -75,16 +75,8 @@ func SystemRulesJsonConverter(src []byte) (interface{}, error) {
 	}
 
 	rules := make([]*system.SystemRule, 0)
-	result := gjson.ParseBytes(src)
-	for _, r := range result.Array() {
-		systemRule := &system.SystemRule{
-			MetricType:   system.MetricType(r.Get("metricType").Int()),
-			TriggerCount: r.Get("triggerCount").Float(),
-			Strategy:     system.AdaptiveStrategy(r.Get("strategy").Int()),
-		}
-		rules = append(rules, systemRule)
-	}
-	return rules, nil
+	err := json.Unmarshal(src, &rules)
+	return rules, err
 }
 
 // SystemRulesUpdater load the newest []system.SystemRule to downstream system component.

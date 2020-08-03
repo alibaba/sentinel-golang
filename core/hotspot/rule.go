@@ -74,8 +74,8 @@ func (t ParamKind) String() string {
 
 // SpecificValue indicates the specific param, contain the supported param kind and concrete value.
 type SpecificValue struct {
-	ValKind ParamKind
-	ValStr  string
+	ValKind ParamKind `json:"valKind"`
+	ValStr  string    `json:"valStr"`
 }
 
 func (s *SpecificValue) String() string {
@@ -85,26 +85,26 @@ func (s *SpecificValue) String() string {
 // Rule represents the hotspot(frequent) parameter flow control rule
 type Rule struct {
 	// Id is the unique id
-	Id string
+	Id string `json:"id"`
 	// Resource is the resource name
-	Resource        string
-	MetricType      MetricType
-	ControlBehavior ControlBehavior
+	Resource        string          `json:"resource"`
+	MetricType      MetricType      `json:"metricType"`
+	ControlBehavior ControlBehavior `json:"controlBehavior"`
 	// ParamIndex is the index in context arguments slice.
-	ParamIndex int
-	Threshold  float64
+	ParamIndex int     `json:"paramIndex"`
+	Threshold  float64 `json:"threshold"`
 	// MaxQueueingTimeMs only take effect in both Throttling ControlBehavior and QPS MetricType
-	MaxQueueingTimeMs int64
+	MaxQueueingTimeMs int64 `json:"maxQueueingTimeMs"`
 	// BurstCount is the silent count
 	// Only take effect in both Reject ControlBehavior and QPS MetricType
-	BurstCount int64
+	BurstCount int64 `json:"burstCount"`
 	// DurationInSec is the time interval in statistic
 	// Only take effect in QPS MetricType
-	DurationInSec int64
+	DurationInSec int64 `json:"durationInSec"`
 	// ParamsMaxCapacity is the max capacity of cache statistic
-	ParamsMaxCapacity int64
+	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
-	SpecificItems map[SpecificValue]int64
+	SpecificItems map[SpecificValue]int64 `json:"specificItems"`
 }
 
 func (r *Rule) String() string {
