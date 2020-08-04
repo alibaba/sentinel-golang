@@ -21,7 +21,6 @@ type NacosDataSource struct {
 	isInitialized util.AtomicBool
 	group         string
 	dataId        string
-	closeChan     chan struct{}
 }
 
 func NewNacosDataSource(client config_client.IConfigClient, group, dataId string, handlers ...datasource.PropertyHandler) (*NacosDataSource, error) {
@@ -32,11 +31,10 @@ func NewNacosDataSource(client config_client.IConfigClient, group, dataId string
 		return nil, errors.New(fmt.Sprintf("Invalid parameters, group: %s, dataId: %s", group, dataId))
 	}
 	var ds = &NacosDataSource{
-		Base:      datasource.Base{},
-		client:    client,
-		group:     group,
-		dataId:    dataId,
-		closeChan: make(chan struct{}, 1),
+		Base:   datasource.Base{},
+		client: client,
+		group:  group,
+		dataId: dataId,
 	}
 	for _, h := range handlers {
 		ds.AddPropertyHandler(h)
@@ -90,7 +88,6 @@ func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error)
 				logger.Errorf("Fail to update data source, err: %+v", err)
 			}
 		},
-		ListenCloseChan: s.closeChan,
 	}
 	err = client.ListenConfig(listener)
 	if err != nil {
@@ -100,7 +97,13 @@ func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error)
 }
 
 func (s *NacosDataSource) Close() error {
-	s.closeChan <- struct{}{}
+	err := s.client.CancelListenConfig(vo.ConfigParam{
+		DataId: s.dataId,
+		Group:  s.group,
+	})
+	if err != nil {
+		return errors.Errorf("Failed to cancel listen to the nacos data source, err: %+v", err)
+	}
 	logger.Infof("The nacos datasource had been closed, group: %s, dataId: %s", s.group, s.dataId)
 	return nil
 }

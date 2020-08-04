@@ -61,6 +61,12 @@ func (n *nacosClientMock) ListenConfig(params vo.ConfigParam) (err error) {
 	ret := n.Called(params)
 	return ret.Error(0)
 }
+
+func (n *nacosClientMock) CancelListenConfig(params vo.ConfigParam) (err error) {
+	ret := n.Called(params)
+	return ret.Error(0)
+}
+
 func (n *nacosClientMock) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
 	ret := n.Called(param)
 	return ret.Get(0).(*model.ConfigPage), ret.Error(1)
