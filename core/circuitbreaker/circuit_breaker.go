@@ -197,12 +197,16 @@ func newSlowRtCircuitBreakerWithStat(r *slowRtRule, stat *slowRequestLeapArray) 
 	}
 }
 
-func newSlowRtCircuitBreaker(r *slowRtRule) *slowRtCircuitBreaker {
+func newSlowRtCircuitBreaker(r *slowRtRule) (*slowRtCircuitBreaker, error) {
 	interval := r.StatIntervalMs
 	stat := &slowRequestLeapArray{}
-	stat.data = sbase.NewLeapArray(1, interval, stat)
+	leapArray, err := sbase.NewLeapArray(1, interval, stat)
+	if err != nil {
+		return nil, err
+	}
+	stat.data = leapArray
 
-	return newSlowRtCircuitBreakerWithStat(r, stat)
+	return newSlowRtCircuitBreakerWithStat(r, stat), nil
 }
 
 func (b *slowRtCircuitBreaker) BoundStat() interface{} {
@@ -379,12 +383,15 @@ func newErrorRatioCircuitBreakerWithStat(r *errorRatioRule, stat *errorCounterLe
 	}
 }
 
-func newErrorRatioCircuitBreaker(r *errorRatioRule) *errorRatioCircuitBreaker {
+func newErrorRatioCircuitBreaker(r *errorRatioRule) (*errorRatioCircuitBreaker, error) {
 	interval := r.StatIntervalMs
 	stat := &errorCounterLeapArray{}
-	stat.data = sbase.NewLeapArray(1, interval, stat)
-
-	return newErrorRatioCircuitBreakerWithStat(r, stat)
+	leapArray, err := sbase.NewLeapArray(1, interval, stat)
+	if err != nil {
+		return nil, err
+	}
+	stat.data = leapArray
+	return newErrorRatioCircuitBreakerWithStat(r, stat), nil
 }
 
 func (b *errorRatioCircuitBreaker) BoundStat() interface{} {
@@ -556,12 +563,15 @@ func newErrorCountCircuitBreakerWithStat(r *errorCountRule, stat *errorCounterLe
 	}
 }
 
-func newErrorCountCircuitBreaker(r *errorCountRule) *errorCountCircuitBreaker {
+func newErrorCountCircuitBreaker(r *errorCountRule) (*errorCountCircuitBreaker, error) {
 	interval := r.StatIntervalMs
 	stat := &errorCounterLeapArray{}
-	stat.data = sbase.NewLeapArray(1, interval, stat)
-
-	return newErrorCountCircuitBreakerWithStat(r, stat)
+	leapArray, err := sbase.NewLeapArray(1, interval, stat)
+	if err != nil {
+		return nil, err
+	}
+	stat.data = leapArray
+	return newErrorCountCircuitBreakerWithStat(r, stat), nil
 }
 
 func (b *errorCountCircuitBreaker) BoundStat() interface{} {
