@@ -95,7 +95,7 @@ func coroutineTask(wg *sync.WaitGroup, slidingWindow *BucketLeapArray, now uint6
 
 func TestBucketLeapArray_resetBucketTo(t *testing.T) {
 	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
-	idx := 6
+	idx := 19
 	oldBucketWrap := bla.data.array.get(idx)
 	oldBucket := oldBucketWrap.Value.Load()
 	if oldBucket == nil {

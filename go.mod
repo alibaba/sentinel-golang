@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/consul/api v1.4.0
 	github.com/labstack/echo/v4 v4.1.15
-	github.com/nacos-group/nacos-sdk-go v0.4.0
+	github.com/nacos-group/nacos-sdk-go v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v2.19.12+incompatible
 	github.com/stretchr/testify v1.5.1

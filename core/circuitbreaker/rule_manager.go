@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type CircuitBreakerGenFunc func(r Rule, reuseStat interface{}) CircuitBreaker
+type CircuitBreakerGenFunc func(r Rule, reuseStat interface{}) (CircuitBreaker, error)
 
 var (
 	logger       = logging.GetDefaultLogger()
@@ -24,10 +24,10 @@ var (
 )
 
 func init() {
-	cbGenFuncMap[SlowRequestRatio] = func(r Rule, reuseStat interface{}) CircuitBreaker {
+	cbGenFuncMap[SlowRequestRatio] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
 		rtRule, ok := r.(*slowRtRule)
 		if !ok || rtRule == nil {
-			return nil
+			return nil, errors.Errorf("rule don't match the SlowRequestRatio strategy, rule: %s", r.String())
 		}
 		if reuseStat == nil {
 			return newSlowRtCircuitBreaker(rtRule)
@@ -37,13 +37,13 @@ func init() {
 			logger.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*slowRequestLeapArray, in fact: %+v", stat)
 			return newSlowRtCircuitBreaker(rtRule)
 		}
-		return newSlowRtCircuitBreakerWithStat(rtRule, stat)
+		return newSlowRtCircuitBreakerWithStat(rtRule, stat), nil
 	}
 
-	cbGenFuncMap[ErrorRatio] = func(r Rule, reuseStat interface{}) CircuitBreaker {
+	cbGenFuncMap[ErrorRatio] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
 		errRatioRule, ok := r.(*errorRatioRule)
 		if !ok || errRatioRule == nil {
-			return nil
+			return nil, errors.Errorf("rule don't match the ErrorRatio strategy, rule: %s", r.String())
 		}
 		if reuseStat == nil {
 			return newErrorRatioCircuitBreaker(errRatioRule)
@@ -53,13 +53,13 @@ func init() {
 			logger.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
 			return newErrorRatioCircuitBreaker(errRatioRule)
 		}
-		return newErrorRatioCircuitBreakerWithStat(errRatioRule, stat)
+		return newErrorRatioCircuitBreakerWithStat(errRatioRule, stat), nil
 	}
 
-	cbGenFuncMap[ErrorCount] = func(r Rule, reuseStat interface{}) CircuitBreaker {
+	cbGenFuncMap[ErrorCount] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
 		errCountRule, ok := r.(*errorCountRule)
 		if !ok || errCountRule == nil {
-			return nil
+			return nil, errors.Errorf("rule don't match the ErrorCount strategy, rule: %s", r.String())
 		}
 		if reuseStat == nil {
 			return newErrorCountCircuitBreaker(errCountRule)
@@ -69,7 +69,7 @@ func init() {
 			logger.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
 			return newErrorCountCircuitBreaker(errCountRule)
 		}
-		return newErrorCountCircuitBreakerWithStat(errCountRule, stat)
+		return newErrorCountCircuitBreakerWithStat(errCountRule, stat), nil
 	}
 }
 
@@ -223,13 +223,14 @@ func onRuleUpdate(rules []Rule) (err error) {
 			}
 
 			var cb CircuitBreaker
+			var e error
 			if reuseStatIdx >= 0 {
-				cb = generator(r, oldResCbs[reuseStatIdx].BoundStat())
+				cb, e = generator(r, oldResCbs[reuseStatIdx].BoundStat())
 			} else {
-				cb = generator(r, nil)
+				cb, e = generator(r, nil)
 			}
-			if cb == nil {
-				logger.Warnf("Ignoring the rule due to bad generated circuit breaker: %v", r)
+			if cb == nil || e != nil {
+				logger.Warnf("Ignoring the rule due to bad generated circuit breaker, r: %s, err: %+v", r.String(), e)
 				continue
 			}
 
