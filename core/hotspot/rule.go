@@ -78,6 +78,12 @@ type SpecificValue struct {
 	ValStr  string    `json:"valStr"`
 }
 
+type SpecificItem struct {
+	ValKind   ParamKind `json:"valKind"`
+	ValStr    string    `json:"valStr"`
+	Threshold int64     `json:"threshold"`
+}
+
 func (s *SpecificValue) String() string {
 	return fmt.Sprintf("SpecificValue: [ValKind: %+v, ValStr: %s]", s.ValKind, s.ValStr)
 }
@@ -104,7 +110,8 @@ type Rule struct {
 	// ParamsMaxCapacity is the max capacity of cache statistic
 	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
-	SpecificItems map[SpecificValue]int64 `json:"specificItems"`
+	SpecificItemMap map[interface{}]int64
+	SpecificItems   []SpecificItem `json:"specificItems"`
 }
 
 func (r *Rule) String() string {

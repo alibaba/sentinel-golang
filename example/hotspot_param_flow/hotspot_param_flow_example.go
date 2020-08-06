@@ -34,9 +34,7 @@ func main() {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        0,
 			DurationInSec:     1,
-			SpecificItems: map[hotspot.SpecificValue]int64{
-				{ValKind: hotspot.KindInt, ValStr: "9"}: 0,
-			},
+			SpecificItemMap:   map[interface{}]int64{9: 0},
 		},
 		{
 			Resource:          Resource,
@@ -47,7 +45,7 @@ func main() {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     make(map[hotspot.SpecificValue]int64),
+			SpecificItemMap:   make(map[interface{}]int64),
 		},
 	})
 	if err != nil {

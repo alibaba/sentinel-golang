@@ -265,6 +265,9 @@ func IsValidRule(rule *Rule) error {
 	if rule.DurationInSec < 0 {
 		return errors.New("invalid duration")
 	}
+	if len(rule.SpecificItemMap) == 0 {
+		return errors.New("empty hotspot item")
+	}
 	return checkControlBehaviorField(rule)
 }
 
