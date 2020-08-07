@@ -3,7 +3,6 @@ package datasource
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
@@ -190,46 +189,6 @@ func HotSpotParamRulesJsonConverter(src []byte) (interface{}, error) {
 	err := json.Unmarshal(src, &rules)
 	if err != nil {
 		return nil, err
-	}
-	for _, r := range rules {
-		r.SpecificItemMap = make(map[interface{}]int64)
-		for _, item := range r.SpecificItems {
-			switch item.ValKind {
-			case hotspot.KindInt:
-				realVal, err := strconv.Atoi(item.ValStr)
-				if err != nil {
-					logger.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", item.ValKind, item.ValStr, err)
-					continue
-				}
-				r.SpecificItemMap[realVal] = item.Threshold
-
-			case hotspot.KindString:
-				r.SpecificItemMap[item.ValStr] = item.Threshold
-
-			case hotspot.KindBool:
-				realVal, err := strconv.ParseBool(item.ValStr)
-				if err != nil {
-					logger.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", item.ValStr, err)
-					continue
-				}
-				r.SpecificItemMap[realVal] = item.Threshold
-
-			case hotspot.KindFloat64:
-				realVal, err := strconv.ParseFloat(item.ValStr, 64)
-				if err != nil {
-					logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
-					continue
-				}
-				realVal, err = strconv.ParseFloat(fmt.Sprintf("%.5f", realVal), 64)
-				if err != nil {
-					logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
-					continue
-				}
-				r.SpecificItemMap[realVal] = item.Threshold
-			default:
-				logger.Errorf("Unsupported kind for specific item: %d", item.ValKind)
-			}
-		}
 	}
 	return rules, nil
 }

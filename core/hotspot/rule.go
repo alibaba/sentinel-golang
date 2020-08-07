@@ -74,11 +74,6 @@ func (t ParamKind) String() string {
 
 // SpecificValue indicates the specific param, contain the supported param kind and concrete value.
 type SpecificValue struct {
-	ValKind ParamKind `json:"valKind"`
-	ValStr  string    `json:"valStr"`
-}
-
-type SpecificItem struct {
 	ValKind   ParamKind `json:"valKind"`
 	ValStr    string    `json:"valStr"`
 	Threshold int64     `json:"threshold"`
@@ -110,8 +105,7 @@ type Rule struct {
 	// ParamsMaxCapacity is the max capacity of cache statistic
 	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
-	SpecificItemMap map[interface{}]int64
-	SpecificItems   []SpecificItem `json:"specificItems"`
+	SpecificItems []SpecificValue `json:"specificItems"`
 }
 
 func (r *Rule) String() string {
@@ -143,46 +137,46 @@ func (r *Rule) Equals(newRule *Rule) bool {
 }
 
 // parseSpecificItems parses the SpecificValue as real value.
-func parseSpecificItems(source map[SpecificValue]int64) map[interface{}]int64 {
+func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 	ret := make(map[interface{}]int64)
 	if len(source) == 0 {
 		return ret
 	}
-	for k, v := range source {
-		switch k.ValKind {
+	for _, item := range source {
+		switch item.ValKind {
 		case KindInt:
-			realVal, err := strconv.Atoi(k.ValStr)
+			realVal, err := strconv.Atoi(item.ValStr)
 			if err != nil {
-				logger.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", k.ValKind, k.ValStr, err)
+				logger.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", item.ValKind, item.ValStr, err)
 				continue
 			}
-			ret[realVal] = v
+			ret[realVal] = item.Threshold
 
 		case KindString:
-			ret[k.ValStr] = v
+			ret[item.ValStr] = item.Threshold
 
 		case KindBool:
-			realVal, err := strconv.ParseBool(k.ValStr)
+			realVal, err := strconv.ParseBool(item.ValStr)
 			if err != nil {
-				logger.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
-			ret[realVal] = v
+			ret[realVal] = item.Threshold
 
 		case KindFloat64:
-			realVal, err := strconv.ParseFloat(k.ValStr, 64)
+			realVal, err := strconv.ParseFloat(item.ValStr, 64)
 			if err != nil {
-				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
 			realVal, err = strconv.ParseFloat(fmt.Sprintf("%.5f", realVal), 64)
 			if err != nil {
-				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
-			ret[realVal] = v
+			ret[realVal] = item.Threshold
 		default:
-			logger.Errorf("Unsupported kind for specific item: %d", k.ValKind)
+			logger.Errorf("Unsupported kind for specific item: %d", item.ValKind)
 		}
 	}
 	return ret

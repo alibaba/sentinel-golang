@@ -35,14 +35,14 @@ type baseTrafficShapingController struct {
 }
 
 func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *baseTrafficShapingController {
-	//specificItems := parseSpecificItems(r.SpecificItemMap)
+	specificItems := parseSpecificItems(r.SpecificItems)
 	return &baseTrafficShapingController{
 		r:             r,
 		res:           r.Resource,
 		metricType:    r.MetricType,
 		paramIndex:    r.ParamIndex,
 		threshold:     r.Threshold,
-		specificItems: r.SpecificItemMap,
+		specificItems: specificItems,
 		durationInSec: r.DurationInSec,
 		metric:        metric,
 	}

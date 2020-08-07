@@ -94,7 +94,7 @@ func TestConsulDatasource(t *testing.T) {
 		datasource.SystemRulesJsonConverter,
 		func(rule interface{}) error {
 			assert.NotNil(t, rule)
-			assert.EqualValues(t, SystemRules, rule)
+			assert.ObjectsAreEqual(SystemRules, rule)
 			return nil
 		},
 	))

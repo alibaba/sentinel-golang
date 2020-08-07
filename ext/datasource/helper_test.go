@@ -332,9 +332,17 @@ func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 
 func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 	// Prepare test data
-	m := make(map[interface{}]int64)
-	m["sss"] = 1
-	m[1.123] = 3
+	m := make([]hotspot.SpecificValue, 2)
+	m[0] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m[1] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r1 := &hotspot.Rule{
 		Id:                "1",
 		Resource:          "abc",
@@ -345,12 +353,20 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		MaxQueueingTimeMs: 0,
 		BurstCount:        10,
 		DurationInSec:     1,
-		SpecificItemMap:   m,
+		SpecificItems:     m,
 	}
 
-	m2 := make(map[interface{}]int64)
-	m2["sss"] = 1
-	m2[1.123] = 3
+	m2 := make([]hotspot.SpecificValue, 2)
+	m2[0] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m2[1] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r2 := &hotspot.Rule{
 		Id:                "2",
 		Resource:          "abc",
@@ -361,12 +377,20 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     1,
-		SpecificItemMap:   m2,
+		SpecificItems:     m2,
 	}
 
-	m3 := make(map[interface{}]int64)
-	m3["sss"] = 1
-	m3[1.123] = 3
+	m3 := make([]hotspot.SpecificValue, 2)
+	m3[0] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m3[1] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r3 := &hotspot.Rule{
 		Id:                "3",
 		Resource:          "abc",
@@ -377,7 +401,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     1,
-		SpecificItemMap:   m3,
+		SpecificItems:     m3,
 	}
 
 	r4 := &hotspot.Rule{
@@ -390,7 +414,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     2,
-		SpecificItemMap:   m3,
+		SpecificItems:     m3,
 	}
 
 	err := HotSpotParamRulesUpdater([]*hotspot.Rule{r1, r2, r3, r4})
