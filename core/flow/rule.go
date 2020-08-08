@@ -58,7 +58,7 @@ type ClusterRuleConfig struct {
 // FlowRule describes the strategy of flow control.
 type FlowRule struct {
 	// ID represents the unique ID of the rule (optional).
-	ID uint64 `json:"id"`
+	ID uint64 `json:"id,omitempty"`
 
 	// Resource represents the resource name.
 	Resource string `json:"resource"`

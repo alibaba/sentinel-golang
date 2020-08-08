@@ -85,8 +85,8 @@ func (s *SpecificValue) String() string {
 
 // Rule represents the hotspot(frequent) parameter flow control rule
 type Rule struct {
-	// Id is the unique id
-	Id string `json:"id"`
+	// ID is the unique id
+	ID string `json:"id,omitempty"`
 	// Resource is the resource name
 	Resource        string          `json:"resource"`
 	MetricType      MetricType      `json:"metricType"`
@@ -110,7 +110,7 @@ type Rule struct {
 
 func (r *Rule) String() string {
 	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, ControlBehavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v}",
-		r.Id, r.Resource, r.MetricType, r.ControlBehavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
+		r.ID, r.Resource, r.MetricType, r.ControlBehavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
 }
 func (r *Rule) ResourceName() string {
 	return r.Resource

@@ -172,7 +172,7 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 		t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
 	}
 
-	got, err := SystemRulesJsonConverter(normalSrc)
+	got, err := SystemRulesJsonArrayParser(normalSrc)
 	systemRules := got.([]*system.SystemRule)
 	assert.True(t, err == nil && len(systemRules) == 4)
 
@@ -299,7 +299,7 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 
 func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 	t.Run("TestHotSpotParamRuleListJsonConverter_invalid", func(t *testing.T) {
-		properties, err := HotSpotParamRulesJsonConverter([]byte{'s', 'r', 'c'})
+		properties, err := HotSpotParamRulesJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, properties == nil)
 		assert.True(t, err != nil)
 	})
@@ -316,7 +316,7 @@ func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}
 
-		properties, err := HotSpotParamRulesJsonConverter(src)
+		properties, err := HotSpotParamRulesJsonArrayParser(src)
 		rules := properties.([]*hotspot.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 4)
@@ -344,7 +344,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		Threshold: 3,
 	}
 	r1 := &hotspot.Rule{
-		Id:                "1",
+		ID:                "1",
 		Resource:          "abc",
 		MetricType:        hotspot.Concurrency,
 		ControlBehavior:   hotspot.Reject,
@@ -368,7 +368,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		Threshold: 3,
 	}
 	r2 := &hotspot.Rule{
-		Id:                "2",
+		ID:                "2",
 		Resource:          "abc",
 		MetricType:        hotspot.QPS,
 		ControlBehavior:   hotspot.Throttling,
@@ -392,7 +392,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		Threshold: 3,
 	}
 	r3 := &hotspot.Rule{
-		Id:                "3",
+		ID:                "3",
 		Resource:          "abc",
 		MetricType:        hotspot.Concurrency,
 		ControlBehavior:   hotspot.Throttling,
@@ -405,7 +405,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 	}
 
 	r4 := &hotspot.Rule{
-		Id:                "4",
+		ID:                "4",
 		Resource:          "abc",
 		MetricType:        hotspot.Concurrency,
 		ControlBehavior:   hotspot.Throttling,

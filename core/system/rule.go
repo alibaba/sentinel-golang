@@ -57,7 +57,7 @@ func (t AdaptiveStrategy) String() string {
 }
 
 type SystemRule struct {
-	ID uint64 `json:"id"`
+	ID uint64 `json:"id,omitempty"`
 
 	MetricType   MetricType       `json:"metricType"`
 	TriggerCount float64          `json:"triggerCount"`

@@ -18,7 +18,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			Threshold: 100,
 		}
 		r1 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -48,7 +48,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 		}
 
 		r1 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -92,7 +92,7 @@ func Test_IsValidRule(t *testing.T) {
 			Threshold: 100,
 		}
 		r1 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -114,7 +114,7 @@ func Test_IsValidRule(t *testing.T) {
 			Threshold: 100,
 		}
 		r1 := &Rule{
-			Id:                "",
+			ID:                "",
 			Resource:          "",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -145,7 +145,7 @@ func Test_onRuleUpdate(t *testing.T) {
 	}
 
 	r1 := &Rule{
-		Id:                "1",
+		ID:                "1",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Reject,
@@ -169,7 +169,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		Threshold: 3,
 	}
 	r2 := &Rule{
-		Id:                "2",
+		ID:                "2",
 		Resource:          "abc",
 		MetricType:        QPS,
 		ControlBehavior:   Throttling,
@@ -193,7 +193,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		Threshold: 3,
 	}
 	r3 := &Rule{
-		Id:                "3",
+		ID:                "3",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Throttling,
@@ -206,7 +206,7 @@ func Test_onRuleUpdate(t *testing.T) {
 	}
 
 	r4 := &Rule{
-		Id:                "4",
+		ID:                "4",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Throttling,
@@ -225,7 +225,7 @@ func Test_onRuleUpdate(t *testing.T) {
 	assert.True(t, len(tcMap["abc"]) == 4)
 
 	r21 := &Rule{
-		Id:                "21",
+		ID:                "21",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Reject,
@@ -237,7 +237,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		SpecificItems:     m,
 	}
 	r22 := &Rule{
-		Id:                "22",
+		ID:                "22",
 		Resource:          "abc",
 		MetricType:        QPS,
 		ControlBehavior:   Throttling,
@@ -249,7 +249,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		SpecificItems:     m2,
 	}
 	r23 := &Rule{
-		Id:                "23",
+		ID:                "23",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Throttling,

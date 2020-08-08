@@ -79,7 +79,7 @@ func Test_Rule_String(t *testing.T) {
 			Threshold: 3,
 		}
 		r := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -110,7 +110,7 @@ func Test_Rule_Equals(t *testing.T) {
 			Threshold: 3,
 		}
 		r1 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -135,7 +135,7 @@ func Test_Rule_Equals(t *testing.T) {
 			Threshold: 3,
 		}
 		r2 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
