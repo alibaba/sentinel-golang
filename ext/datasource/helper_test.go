@@ -172,7 +172,7 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 		t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
 	}
 
-	got, err := SystemRulesJsonArrayParser(normalSrc)
+	got, err := SystemRuleJsonArrayParser(normalSrc)
 	systemRules := got.([]*system.SystemRule)
 	assert.True(t, err == nil && len(systemRules) == 4)
 
@@ -249,7 +249,7 @@ func TestSystemRulesUpdater(t *testing.T) {
 
 func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 	t.Run("TestCircuitBreakerRulesJsonConverter_failed", func(t *testing.T) {
-		properties, err := CircuitBreakerRulesJsonConverter([]byte{'s', 'r', 'c'})
+		properties, err := CircuitBreakerRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, properties == nil)
 		assert.True(t, err != nil)
 	})
@@ -266,7 +266,7 @@ func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}
 
-		properties, err := CircuitBreakerRulesJsonConverter(src)
+		properties, err := CircuitBreakerRuleJsonArrayParser(src)
 		rules := properties.([]cb.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 3)
@@ -299,7 +299,7 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 
 func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 	t.Run("TestHotSpotParamRuleListJsonConverter_invalid", func(t *testing.T) {
-		properties, err := HotSpotParamRulesJsonArrayParser([]byte{'s', 'r', 'c'})
+		properties, err := HotSpotParamRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, properties == nil)
 		assert.True(t, err != nil)
 	})
@@ -316,7 +316,7 @@ func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}
 
-		properties, err := HotSpotParamRulesJsonArrayParser(src)
+		properties, err := HotSpotParamRuleJsonArrayParser(src)
 		rules := properties.([]*hotspot.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 4)

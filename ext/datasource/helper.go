@@ -68,8 +68,8 @@ func NewFlowRulesHandler(converter PropertyConverter) PropertyHandler {
 	return NewDefaultPropertyHandler(converter, FlowRulesUpdater)
 }
 
-// SystemRulesJsonArrayParser provide JSON  as the default serialization for list of system.SystemRule
-func SystemRulesJsonArrayParser(src []byte) (interface{}, error) {
+// SystemRuleJsonArrayParser provide JSON  as the default serialization for list of system.SystemRule
+func SystemRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func NewSystemRulesHandler(converter PropertyConverter) *DefaultPropertyHandler 
 	return NewDefaultPropertyHandler(converter, SystemRulesUpdater)
 }
 
-func CircuitBreakerRulesJsonConverter(src []byte) (interface{}, error) {
+func CircuitBreakerRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
@@ -179,8 +179,8 @@ func NewCircuitBreakerRulesHandler(converter PropertyConverter) *DefaultProperty
 	return NewDefaultPropertyHandler(converter, CircuitBreakerRulesUpdater)
 }
 
-// HotSpotParamRulesJsonArrayParser decodes list of param flow rules from JSON bytes.
-func HotSpotParamRulesJsonArrayParser(src []byte) (interface{}, error) {
+// HotSpotParamRuleJsonArrayParser decodes list of param flow rules from JSON bytes.
+func HotSpotParamRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}

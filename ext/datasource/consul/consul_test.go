@@ -91,7 +91,7 @@ func TestConsulDatasource(t *testing.T) {
 	ds.kvQuerier = mock
 
 	ds.AddPropertyHandler(datasource.NewDefaultPropertyHandler(
-		datasource.SystemRulesJsonArrayParser,
+		datasource.SystemRuleJsonArrayParser,
 		func(rule interface{}) error {
 			assert.NotNil(t, rule)
 			assert.ObjectsAreEqual(SystemRules, rule)
