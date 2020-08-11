@@ -2,6 +2,7 @@ package hotspot
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -21,7 +22,7 @@ func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 		metric := tc.BoundMetric()
 		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
 		if !existed || concurrencyPtr == nil {
-			logger.Debugf("Parameter %+v does not exist in ConcurrencyCounter.", arg)
+			logging.Debugf("Parameter %+v does not exist in ConcurrencyCounter.", arg)
 			continue
 		}
 		util.IncrementAndGetInt64(concurrencyPtr)
@@ -47,7 +48,7 @@ func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 		metric := tc.BoundMetric()
 		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
 		if !existed || concurrencyPtr == nil {
-			logger.Debugf("Parameter: %+v does not exist in ConcurrencyCounter.", arg)
+			logging.Debugf("Parameter: %+v does not exist in ConcurrencyCounter.", arg)
 			continue
 		}
 		util.DecrementAndGetInt64(concurrencyPtr)

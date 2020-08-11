@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 // ControlBehavior indicates the traffic shaping behaviour.
@@ -147,7 +149,7 @@ func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 		case KindInt:
 			realVal, err := strconv.Atoi(item.ValStr)
 			if err != nil {
-				logger.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", item.ValKind, item.ValStr, err)
+				logging.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", item.ValKind, item.ValStr, err)
 				continue
 			}
 			ret[realVal] = item.Threshold
@@ -158,7 +160,7 @@ func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 		case KindBool:
 			realVal, err := strconv.ParseBool(item.ValStr)
 			if err != nil {
-				logger.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", item.ValStr, err)
+				logging.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
 			ret[realVal] = item.Threshold
@@ -166,17 +168,17 @@ func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 		case KindFloat64:
 			realVal, err := strconv.ParseFloat(item.ValStr, 64)
 			if err != nil {
-				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
+				logging.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
 			realVal, err = strconv.ParseFloat(fmt.Sprintf("%.5f", realVal), 64)
 			if err != nil {
-				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
+				logging.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
 			ret[realVal] = item.Threshold
 		default:
-			logger.Errorf("Unsupported kind for specific item: %d", item.ValKind)
+			logging.Errorf("Unsupported kind for specific item: %d", item.ValKind)
 		}
 	}
 	return ret

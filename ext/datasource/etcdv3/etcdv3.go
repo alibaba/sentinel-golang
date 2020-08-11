@@ -12,10 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	logger = logging.GetGlobalLogger()
-)
-
 type Etcdv3DataSource struct {
 	datasource.Base
 	propertyKey         string
@@ -46,9 +42,9 @@ func NewDatasource(client *clientv3.Client, key string, handlers ...datasource.P
 func (s *Etcdv3DataSource) Initialize() error {
 	err := s.doReadAndUpdate()
 	if err != nil {
-		logger.Errorf("Fail to update data for key[%s] when execute Initialize function, err: %+v", s.propertyKey, err)
+		logging.Errorf("Fail to update data for key[%s] when execute Initialize function, err: %+v", s.propertyKey, err)
 	}
-	go util.RunWithRecover(s.watch, logger)
+	go util.RunWithRecover(s.watch)
 	return nil
 }
 
@@ -63,7 +59,7 @@ func (s *Etcdv3DataSource) ReadSource() ([]byte, error) {
 		return nil, errors.Errorf("The key[%s] is not existed in etcd server.", s.propertyKey)
 	}
 	s.lastUpdatedRevision = resp.Header.GetRevision()
-	logger.Infof("Get the newest data for key:%s, revision: %d, value: %s", s.propertyKey, resp.Header.GetRevision(), resp.Kvs[0].Value)
+	logging.Infof("Get the newest data for key:%s, revision: %d, value: %s", s.propertyKey, resp.Header.GetRevision(), resp.Kvs[0].Value)
 	return resp.Kvs[0].Value, nil
 }
 
@@ -84,7 +80,7 @@ func (s *Etcdv3DataSource) processWatchResponse(resp *clientv3.WatchResponse) {
 	}
 
 	if err := resp.Err(); err != nil {
-		logger.Errorf("Watch on etcd endpoints(%+v) occur error, err: %+v", s.client.Endpoints(), err)
+		logging.Errorf("Watch on etcd endpoints(%+v) occur error, err: %+v", s.client.Endpoints(), err)
 		return
 	}
 
@@ -92,13 +88,13 @@ func (s *Etcdv3DataSource) processWatchResponse(resp *clientv3.WatchResponse) {
 		if ev.Type == mvccpb.PUT {
 			err := s.doReadAndUpdate()
 			if err != nil {
-				logger.Errorf("Fail to execute doReadAndUpdate for PUT event, err: %+v", err)
+				logging.Errorf("Fail to execute doReadAndUpdate for PUT event, err: %+v", err)
 			}
 		}
 		if ev.Type == mvccpb.DELETE {
 			updateErr := s.Handle(nil)
 			if updateErr != nil {
-				logger.Errorf("Fail to execute doReadAndUpdate for DELETE event, err: %+v", updateErr)
+				logging.Errorf("Fail to execute doReadAndUpdate for DELETE event, err: %+v", updateErr)
 			}
 		}
 	}

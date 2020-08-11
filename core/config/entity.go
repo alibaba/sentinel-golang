@@ -30,7 +30,7 @@ type SentinelConfig struct {
 
 // LogConfig represent the configuration of logging in Sentinel.
 type LogConfig struct {
-	// logger indicates that using logger to replace default logger.
+	// logger indicates that using logger to replace default logging.
 	Logger logging.Logger
 	// Dir represents the log directory path.
 	Dir string

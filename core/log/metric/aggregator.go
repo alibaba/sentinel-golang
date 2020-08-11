@@ -5,10 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/alibaba/sentinel-golang/logging"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/stat"
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -19,7 +20,6 @@ const (
 )
 
 var (
-	logger = logging.GetGlobalLogger()
 	// The timestamp of the last fetching. The time unit is ms (= second * 1000).
 	lastFetchTime int64 = -1
 	writeChan           = make(chan metricTimeMap, logFlushQueueSize)
@@ -38,12 +38,12 @@ func InitTask() (err error) {
 
 		metricWriter, err = NewDefaultMetricLogWriter(config.MetricLogSingleFileMaxSize(), config.MetricLogMaxFileAmount())
 		if err != nil {
-			logger.Errorf("Failed to initialize the MetricLogWriter: %+v", err)
+			logging.Errorf("Failed to initialize the MetricLogWriter: %+v", err)
 			return
 		}
 
 		// Schedule the log flushing task
-		go util.RunWithRecover(writeTaskLoop, logger)
+		go util.RunWithRecover(writeTaskLoop)
 		// Schedule the log aggregating task
 		ticker := time.NewTicker(time.Duration(flushInterval) * time.Second)
 		go util.RunWithRecover(func() {
@@ -56,7 +56,7 @@ func InitTask() (err error) {
 					return
 				}
 			}
-		}, logger)
+		})
 	})
 	return err
 }
@@ -77,7 +77,7 @@ func writeTaskLoop() {
 			for _, t := range keys {
 				err := metricWriter.Write(t, m[t])
 				if err != nil {
-					logger.Errorf("[MetricAggregatorTask] Write metric error: %+v", err)
+					logging.Errorf("[MetricAggregatorTask] Write metric error: %+v", err)
 				}
 			}
 		}

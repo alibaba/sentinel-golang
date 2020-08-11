@@ -63,7 +63,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 	if err != nil {
 		return err
 	}
-	logging.GetGlobalLogger().Infof("App name resolved: %s", AppName())
+	logging.Infof("App name resolved: %s", AppName())
 	return nil
 }
 
@@ -86,7 +86,7 @@ func loadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	logging.GetGlobalLogger().Infof("Resolving Sentinel config from file: %s", filePath)
+	logging.Infof("Resolving Sentinel config from file: %s", filePath)
 	return checkConfValid(&(globalCfg.Sentinel))
 }
 
@@ -138,11 +138,6 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 	filePath := logDir + logging.RecordLogFileName
 	if withPid {
 		filePath = filePath + ".pid" + strconv.Itoa(os.Getpid())
-	}
-
-	defaultLogger := logging.GetGlobalLogger()
-	if defaultLogger == nil {
-		return errors.New("Unexpected state: defaultLogger == nil")
 	}
 
 	fileLogger, err := logging.NewSimpleFileLogger(filePath, "", log.LstdFlags|log.Lshortfile)

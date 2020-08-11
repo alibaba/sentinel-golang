@@ -10,11 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// const
-var (
-	logger = logging.GetGlobalLogger()
-)
-
 // TrafficControllerGenFunc represents the TrafficShapingController generator function of a specific control behavior.
 type TrafficControllerGenFunc func(*FlowRule) *TrafficShapingController
 
@@ -40,9 +35,9 @@ func init() {
 func logRuleUpdate(m TrafficControllerMap) {
 	bs, err := json.Marshal(rulesFrom(m))
 	if err != nil {
-		logger.Info("[FlowRuleManager] Flow rules loaded")
+		logging.Info("[FlowRuleManager] Flow rules loaded")
 	} else {
-		logger.Infof("[FlowRuleManager] Flow rules loaded: %s", bs)
+		logging.Infof("[FlowRuleManager] Flow rules loaded: %s", bs)
 	}
 }
 
@@ -66,7 +61,7 @@ func onRuleUpdate(rules []*FlowRule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logger.Debugf("Updating flow rule spends %d ns.", util.CurrentTimeNano()-start)
+		logging.Debugf("Updating flow rule spends %d ns.", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
@@ -154,7 +149,7 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 
 	for _, rule := range rules {
 		if err := IsValidFlowRule(rule); err != nil {
-			logger.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
+			logging.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
 		if rule.LimitOrigin == "" {
@@ -162,12 +157,12 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 		}
 		generator, supported := tcGenFuncMap[rule.ControlBehavior]
 		if !supported {
-			logger.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
+			logging.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
 			continue
 		}
 		tsc := generator(rule)
 		if tsc == nil {
-			logger.Warnf("Ignoring the rule due to bad generated traffic controller: %v", rule)
+			logging.Warnf("Ignoring the rule due to bad generated traffic controller: %v", rule)
 			continue
 		}
 

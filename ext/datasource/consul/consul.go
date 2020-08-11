@@ -24,8 +24,6 @@ var (
 	ErrNilConsulClient     = errors.New("nil consul client")
 	ErrInvalidConsulConfig = errors.New("invalid consul config")
 	ErrKeyDoesNotExist     = errors.New("key does not exist")
-
-	logger = logging.GetGlobalLogger()
 )
 
 func NewDatasource(propertyKey string, opts ...Option) (datasource.DataSource, error) {
@@ -85,16 +83,16 @@ func (c *consulDataSource) Initialize() error {
 	}
 	if err := c.doReadAndUpdate(); err != nil {
 		// Failed to read default should't block initialization
-		logger.Errorf("[Consul] Failed to read initial data for key: %s, err: %s", c.propertyKey, err.Error())
+		logging.Errorf("[Consul] Failed to read initial data for key: %s, err: %s", c.propertyKey, err.Error())
 	}
 
-	go util.RunWithRecover(c.watch, logger)
+	go util.RunWithRecover(c.watch)
 
 	return nil
 }
 
 func (c *consulDataSource) watch() {
-	logger.Infof("[Consul] Consul data source is watching property: %s", c.propertyKey)
+	logging.Infof("[Consul] Consul data source is watching property: %s", c.propertyKey)
 	for {
 		if err := c.doReadAndUpdate(); err != nil {
 			if errors.Is(err, context.Canceled) {
@@ -105,12 +103,12 @@ func (c *consulDataSource) watch() {
 			}
 
 			if api.IsRetryableError(err) {
-				logger.Warnf("[Consul] Update failed with retryable error: %s", err.Error())
+				logging.Warnf("[Consul] Update failed with retryable error: %s", err.Error())
 				time.Sleep(time.Second)
 				continue
 			}
 
-			logger.Errorf("[Consul] Failed to update data, key: %s, err: %s", c.propertyKey, err.Error())
+			logging.Errorf("[Consul] Failed to update data, key: %s, err: %s", c.propertyKey, err.Error())
 		}
 	}
 }
@@ -134,6 +132,6 @@ func (c *consulDataSource) Close() error {
 	if c.cancel != nil {
 		c.cancel()
 	}
-	logger.Infof("[Consul] Consul data source has been closed, key: %s", c.propertyKey)
+	logging.Infof("[Consul] Consul data source has been closed, key: %s", c.propertyKey)
 	return nil
 }

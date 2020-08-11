@@ -10,8 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var logger = logging.GetGlobalLogger()
-
 // The implementation of sliding window based on LeapArray (as the sliding window infrastructure)
 // and MetricBucket (as the data type). The MetricBucket is used to record statistic
 // metrics per minimum time unit (i.e. the bucket time span).
@@ -80,21 +78,21 @@ func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
 func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent, count int64) {
 	curBucket, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", now, err)
+		logging.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", now, err)
 		return
 	}
 	if curBucket == nil {
-		logger.Error("Failed to add count: current bucket is nil")
+		logging.Error("Failed to add count: current bucket is nil")
 		return
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logger.Error("Failed to add count: current bucket atomic Value is nil")
+		logging.Error("Failed to add count: current bucket atomic Value is nil")
 		return
 	}
 	b, ok := mb.(*MetricBucket)
 	if !ok {
-		logger.Error("Failed to add count: bucket data type error")
+		logging.Error("Failed to add count: bucket data type error")
 		return
 	}
 	b.Add(event, count)
@@ -109,18 +107,18 @@ func (bla *BucketLeapArray) Count(event base.MetricEvent) int64 {
 func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) int64 {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current bucket, err: %+v.", errors.WithStack(err))
+		logging.Errorf("Fail to get current bucket, err: %+v.", errors.WithStack(err))
 	}
 	count := int64(0)
 	for _, ww := range bla.data.valuesWithTime(now) {
 		mb := ww.Value.Load()
 		if mb == nil {
-			logger.Error("Current bucket's Value is nil.")
+			logging.Error("Current bucket's Value is nil.")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logger.Error("Fail to assert MetricBucket type.")
+			logging.Error("Fail to assert MetricBucket type.")
 			continue
 		}
 		count += b.Get(event)
@@ -132,7 +130,7 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 func (bla *BucketLeapArray) Values(now uint64) []*BucketWrap {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, err)
+		logging.Errorf("Fail to get current(%d) bucket, err: %+v.", now, err)
 	}
 	return bla.data.valuesWithTime(now)
 }
@@ -140,7 +138,7 @@ func (bla *BucketLeapArray) Values(now uint64) []*BucketWrap {
 func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*BucketWrap {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logger.Errorf("Fail to get current(%d) bucket, err: %+v.", now, err)
+		logging.Errorf("Fail to get current(%d) bucket, err: %+v.", now, err)
 	}
 	return bla.data.ValuesConditional(now, predicate)
 }
@@ -148,7 +146,7 @@ func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePre
 func (bla *BucketLeapArray) MinRt() int64 {
 	_, err := bla.data.CurrentBucket(bla)
 	if err != nil {
-		logger.Errorf("Fail to get current bucket, err: %+v.", err)
+		logging.Errorf("Fail to get current bucket, err: %+v.", err)
 	}
 
 	ret := base.DefaultStatisticMaxRt
@@ -156,12 +154,12 @@ func (bla *BucketLeapArray) MinRt() int64 {
 	for _, v := range bla.data.Values() {
 		mb := v.Value.Load()
 		if mb == nil {
-			logger.Error("Current bucket's Value is nil.")
+			logging.Error("Current bucket's Value is nil.")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logger.Error("Fail to cast data as MetricBucket type")
+			logging.Error("Fail to cast data as MetricBucket type")
 			continue
 		}
 		mr := b.MinRt()
