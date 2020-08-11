@@ -50,6 +50,15 @@ func OverrideConfigFromEnvAndInitLog() error {
 	if err != nil {
 		return err
 	}
+
+	// Configured Logger is the highest priority
+	if configLogger := Logger(); configLogger != nil {
+		err = logging.ResetDefaultLogger(configLogger)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 	err = initializeLogConfig(LogBaseDir(), LogUsePid())
 	if err != nil {
 		return err
@@ -135,13 +144,16 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 	if defaultLogger == nil {
 		return errors.New("Unexpected state: defaultLogger == nil")
 	}
-	logFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+
+	fileLogger, err := logging.NewSimpleFileLogger(filePath, "", log.LstdFlags|log.Lshortfile)
 	if err != nil {
 		return err
 	}
-
 	// Note: not thread-safe!
-	logging.ResetDefaultLogger(log.New(logFile, "", log.LstdFlags|log.Lshortfile), logging.DefaultNamespace)
+	if err := logging.ResetDefaultLogger(fileLogger); err != nil {
+		return err
+	}
+
 	fmt.Println("INFO: log base directory is: " + logDir)
 
 	return nil
@@ -161,6 +173,10 @@ func AppName() string {
 
 func AppType() int32 {
 	return globalCfg.AppType()
+}
+
+func Logger() logging.Logger {
+	return globalCfg.Logger()
 }
 
 func LogBaseDir() string {

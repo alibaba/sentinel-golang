@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -43,29 +44,29 @@ func GetDefaultLogger() Logger {
 	return defaultLogger
 }
 
-func ResetDefaultLogger(log *log.Logger, namespace string) {
+// Note: Not thread-safe
+func ResetDefaultLogger(log Logger) error {
 	if log == nil {
-		defaultLogger.Errorf("Fail to reset defaultLogger, log is nil.")
-		return
+		return errors.New("nil logger")
 	}
-	defaultLogger.log = log
-	defaultLogger.namespace = namespace
+	defaultLogger = log
+	return nil
 }
 
-func NewConsoleLogger(namespace string) *SentinelLogger {
-	return &SentinelLogger{
+func NewConsoleLogger(namespace string) Logger {
+	return &DefaultLogger{
 		log:       log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
 		namespace: namespace,
 	}
 }
 
 // outputFile is the full path(absolute path)
-func NewSimpleFileLogger(filepath, namespace string, flag int) (*SentinelLogger, error) {
+func NewSimpleFileLogger(filepath, namespace string, flag int) (Logger, error) {
 	logFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		return nil, err
 	}
-	return &SentinelLogger{
+	return &DefaultLogger{
 		log:       log.New(logFile, "", flag),
 		namespace: namespace,
 	}, err
@@ -92,7 +93,7 @@ type Logger interface {
 }
 
 // sentinel general logger
-type SentinelLogger struct {
+type DefaultLogger struct {
 	// entity to log
 	log *log.Logger
 	// namespace
@@ -103,84 +104,84 @@ func merge(namespace, logLevel, msg string) string {
 	return fmt.Sprintf("[%s] [%s] %s", namespace, logLevel, msg)
 }
 
-func (l *SentinelLogger) Debug(v ...interface{}) {
+func (l *DefaultLogger) Debug(v ...interface{}) {
 	if Debug < globalLogLevel || len(v) == 0 {
 		return
 	}
 	l.log.Print(merge(l.namespace, "DEBUG", fmt.Sprint(v...)))
 }
 
-func (l *SentinelLogger) Debugf(format string, v ...interface{}) {
+func (l *DefaultLogger) Debugf(format string, v ...interface{}) {
 	if Debug < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "DEBUG", fmt.Sprintf(format, v...)))
 }
 
-func (l *SentinelLogger) Info(v ...interface{}) {
+func (l *DefaultLogger) Info(v ...interface{}) {
 	if Info < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "INFO", fmt.Sprint(v...)))
 }
 
-func (l *SentinelLogger) Infof(format string, v ...interface{}) {
+func (l *DefaultLogger) Infof(format string, v ...interface{}) {
 	if Info < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "INFO", fmt.Sprintf(format, v...)))
 }
 
-func (l *SentinelLogger) Warn(v ...interface{}) {
+func (l *DefaultLogger) Warn(v ...interface{}) {
 	if Warn < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "WARNING", fmt.Sprint(v...)))
 }
 
-func (l *SentinelLogger) Warnf(format string, v ...interface{}) {
+func (l *DefaultLogger) Warnf(format string, v ...interface{}) {
 	if Warn < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "WARNING", fmt.Sprintf(format, v...)))
 }
 
-func (l *SentinelLogger) Error(v ...interface{}) {
+func (l *DefaultLogger) Error(v ...interface{}) {
 	if Error < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "ERROR", fmt.Sprint(v...)))
 }
 
-func (l *SentinelLogger) Errorf(format string, v ...interface{}) {
+func (l *DefaultLogger) Errorf(format string, v ...interface{}) {
 	if Error < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "ERROR", fmt.Sprintf(format, v...)))
 }
 
-func (l *SentinelLogger) Fatal(v ...interface{}) {
+func (l *DefaultLogger) Fatal(v ...interface{}) {
 	if Fatal < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "FATAL", fmt.Sprint(v...)))
 }
 
-func (l *SentinelLogger) Fatalf(format string, v ...interface{}) {
+func (l *DefaultLogger) Fatalf(format string, v ...interface{}) {
 	if Fatal < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "FATAL", fmt.Sprintf(format, v...)))
 }
 
-func (l *SentinelLogger) Panic(v ...interface{}) {
+func (l *DefaultLogger) Panic(v ...interface{}) {
 	if Panic < globalLogLevel {
 		return
 	}
 	l.log.Print(merge(l.namespace, "PANIC", fmt.Sprint(v...)))
 }
 
-func (l *SentinelLogger) Panicf(format string, v ...interface{}) {
+func (l *DefaultLogger) Panicf(format string, v ...interface{}) {
 	if Panic < globalLogLevel {
 		return
 	}
