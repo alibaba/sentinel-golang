@@ -13,7 +13,7 @@ import (
 type CircuitBreakerGenFunc func(r Rule, reuseStat interface{}) (CircuitBreaker, error)
 
 var (
-	logger       = logging.GetDefaultLogger()
+	logger       = logging.GetGlobalLogger()
 	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc)
 
 	breakerRules = make(map[string][]Rule)

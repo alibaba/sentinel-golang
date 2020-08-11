@@ -53,7 +53,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 
 	// Configured Logger is the highest priority
 	if configLogger := Logger(); configLogger != nil {
-		err = logging.ResetDefaultLogger(configLogger)
+		err = logging.ResetGlobalLogger(configLogger)
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 	if err != nil {
 		return err
 	}
-	logging.GetDefaultLogger().Infof("App name resolved: %s", AppName())
+	logging.GetGlobalLogger().Infof("App name resolved: %s", AppName())
 	return nil
 }
 
@@ -86,7 +86,7 @@ func loadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	logging.GetDefaultLogger().Infof("Resolving Sentinel config from file: %s", filePath)
+	logging.GetGlobalLogger().Infof("Resolving Sentinel config from file: %s", filePath)
 	return checkConfValid(&(globalCfg.Sentinel))
 }
 
@@ -140,7 +140,7 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 		filePath = filePath + ".pid" + strconv.Itoa(os.Getpid())
 	}
 
-	defaultLogger := logging.GetDefaultLogger()
+	defaultLogger := logging.GetGlobalLogger()
 	if defaultLogger == nil {
 		return errors.New("Unexpected state: defaultLogger == nil")
 	}
@@ -150,7 +150,7 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 		return err
 	}
 	// Note: not thread-safe!
-	if err := logging.ResetDefaultLogger(fileLogger); err != nil {
+	if err := logging.ResetGlobalLogger(fileLogger); err != nil {
 		return err
 	}
 

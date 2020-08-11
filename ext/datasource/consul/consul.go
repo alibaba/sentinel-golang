@@ -25,7 +25,7 @@ var (
 	ErrInvalidConsulConfig = errors.New("invalid consul config")
 	ErrKeyDoesNotExist     = errors.New("key does not exist")
 
-	logger = logging.GetDefaultLogger()
+	logger = logging.GetGlobalLogger()
 )
 
 func NewDatasource(propertyKey string, opts ...Option) (datasource.DataSource, error) {

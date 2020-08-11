@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var logger = logging.GetDefaultLogger()
+var logger = logging.GetGlobalLogger()
 
 // PropertyConverter func is to convert source message bytes to the specific property.
 // the first  return value: is the real property;

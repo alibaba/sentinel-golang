@@ -12,7 +12,7 @@ type RuleMap map[MetricType][]*SystemRule
 
 // const
 var (
-	logger = logging.GetDefaultLogger()
+	logger = logging.GetGlobalLogger()
 
 	ruleMap    = make(RuleMap)
 	ruleMapMux = new(sync.RWMutex)

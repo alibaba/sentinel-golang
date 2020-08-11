@@ -10,7 +10,7 @@ import (
 type ResourceNodeMap map[string]*ResourceNode
 
 var (
-	logger = logging.GetDefaultLogger()
+	logger = logging.GetGlobalLogger()
 
 	inboundNode = NewResourceNode(base.TotalInBoundResourceName, base.ResTypeCommon)
 

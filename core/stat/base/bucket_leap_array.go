@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var logger = logging.GetDefaultLogger()
+var logger = logging.GetGlobalLogger()
 
 // The implementation of sliding window based on LeapArray (as the sliding window infrastructure)
 // and MetricBucket (as the data type). The MetricBucket is used to record statistic

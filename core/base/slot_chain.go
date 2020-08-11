@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var logger = logging.GetDefaultLogger()
+var logger = logging.GetGlobalLogger()
 
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on

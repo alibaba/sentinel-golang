@@ -17,7 +17,7 @@ type TrafficControllerGenFunc func(r *Rule, reuseMetric *ParamsMetric) TrafficSh
 type trafficControllerMap map[string][]TrafficShapingController
 
 var (
-	logger = logging.GetDefaultLogger()
+	logger = logging.GetGlobalLogger()
 
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
 	tcMap        = make(trafficControllerMap)

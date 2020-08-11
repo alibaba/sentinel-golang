@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	logger = logging.GetDefaultLogger()
+	logger = logging.GetGlobalLogger()
 )
 
 type NacosDataSource struct {

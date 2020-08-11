@@ -193,12 +193,12 @@ func (c *LRU) removeOldest() {
 func (c *LRU) removeElement(e *list.Element) {
 	c.evictList.Remove(e)
 	if e.Value == nil {
-		logging.GetDefaultLogger().Errorf("The Value of evictList's Element is nil.")
+		logging.GetGlobalLogger().Errorf("The Value of evictList's Element is nil.")
 		return
 	}
 	kv, ok := e.Value.(*entry)
 	if !ok {
-		logging.GetDefaultLogger().Errorf("Fail to assert the Value of evictList's Element as *entry.")
+		logging.GetGlobalLogger().Errorf("Fail to assert the Value of evictList's Element as *entry.")
 		return
 	}
 	delete(c.items, kv.key)

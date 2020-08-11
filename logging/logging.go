@@ -29,7 +29,7 @@ const (
 var (
 	globalLogLevel = Info
 
-	defaultLogger = NewConsoleLogger(DefaultNamespace)
+	globalLogger = NewConsoleLogger(DefaultNamespace)
 )
 
 func GetGlobalLoggerLevel() Level {
@@ -40,16 +40,16 @@ func SetGlobalLoggerLevel(l Level) {
 	globalLogLevel = l
 }
 
-func GetDefaultLogger() Logger {
-	return defaultLogger
+func GetGlobalLogger() Logger {
+	return globalLogger
 }
 
 // Note: Not thread-safe
-func ResetDefaultLogger(log Logger) error {
+func ResetGlobalLogger(log Logger) error {
 	if log == nil {
 		return errors.New("nil logger")
 	}
-	defaultLogger = log
+	globalLogger = log
 	return nil
 }
 

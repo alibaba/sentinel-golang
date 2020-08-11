@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	logger = logging.GetDefaultLogger()
+	logger = logging.GetGlobalLogger()
 	// The timestamp of the last fetching. The time unit is ms (= second * 1000).
 	lastFetchTime int64 = -1
 	writeChan           = make(chan metricTimeMap, logFlushQueueSize)

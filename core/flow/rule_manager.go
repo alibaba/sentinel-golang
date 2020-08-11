@@ -12,7 +12,7 @@ import (
 
 // const
 var (
-	logger = logging.GetDefaultLogger()
+	logger = logging.GetGlobalLogger()
 )
 
 // TrafficControllerGenFunc represents the TrafficShapingController generator function of a specific control behavior.
