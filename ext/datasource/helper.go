@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"encoding/json"
 	"fmt"
 
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
@@ -23,33 +24,15 @@ func checkSrcComplianceJson(src []byte) (bool, error) {
 	return true, nil
 }
 
-// FlowRulesJsonConverter provide JSON  as the default serialization for list of flow.FlowRule
-func FlowRulesJsonConverter(src []byte) (interface{}, error) {
+// FlowRuleJsonArrayParser provide JSON  as the default serialization for list of flow.FlowRule
+func FlowRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
 
 	rules := make([]*flow.FlowRule, 0)
-	result := gjson.ParseBytes(src)
-	for _, r := range result.Array() {
-		flowRule := &flow.FlowRule{
-			Resource:          r.Get("resource").String(),
-			LimitOrigin:       r.Get("limitOrigin").String(),
-			MetricType:        flow.MetricType(r.Get("metricType").Int()),
-			Count:             r.Get("count").Float(),
-			RelationStrategy:  flow.RelationStrategy(r.Get("relationStrategy").Int()),
-			ControlBehavior:   flow.ControlBehavior(r.Get("controlBehavior").Int()),
-			RefResource:       r.Get("refResource").String(),
-			WarmUpPeriodSec:   uint32(r.Get("warmUpPeriodSec").Int()),
-			MaxQueueingTimeMs: uint32(r.Get("maxQueueingTimeMs").Int()),
-			ClusterMode:       r.Get("clusterMode").Bool(),
-			ClusterConfig: flow.ClusterRuleConfig{
-				ThresholdType: flow.ClusterThresholdMode(r.Get("clusterConfig.thresholdType").Int()),
-			},
-		}
-		rules = append(rules, flowRule)
-	}
-	return rules, nil
+	err := json.Unmarshal(src, &rules)
+	return rules, err
 }
 
 // FlowRulesUpdater load the newest []flow.FlowRule to downstream flow component.
@@ -85,23 +68,15 @@ func NewFlowRulesHandler(converter PropertyConverter) PropertyHandler {
 	return NewDefaultPropertyHandler(converter, FlowRulesUpdater)
 }
 
-// SystemRulesJsonConverter provide JSON  as the default serialization for list of system.SystemRule
-func SystemRulesJsonConverter(src []byte) (interface{}, error) {
+// SystemRuleJsonArrayParser provide JSON  as the default serialization for list of system.SystemRule
+func SystemRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
 
 	rules := make([]*system.SystemRule, 0)
-	result := gjson.ParseBytes(src)
-	for _, r := range result.Array() {
-		systemRule := &system.SystemRule{
-			MetricType:   system.MetricType(r.Get("metricType").Int()),
-			TriggerCount: r.Get("triggerCount").Float(),
-			Strategy:     system.AdaptiveStrategy(r.Get("strategy").Int()),
-		}
-		rules = append(rules, systemRule)
-	}
-	return rules, nil
+	err := json.Unmarshal(src, &rules)
+	return rules, err
 }
 
 // SystemRulesUpdater load the newest []system.SystemRule to downstream system component.
@@ -137,7 +112,7 @@ func NewSystemRulesHandler(converter PropertyConverter) *DefaultPropertyHandler 
 	return NewDefaultPropertyHandler(converter, SystemRulesUpdater)
 }
 
-func CircuitBreakerRulesJsonConverter(src []byte) (interface{}, error) {
+func CircuitBreakerRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
@@ -204,38 +179,16 @@ func NewCircuitBreakerRulesHandler(converter PropertyConverter) *DefaultProperty
 	return NewDefaultPropertyHandler(converter, CircuitBreakerRulesUpdater)
 }
 
-// HotSpotParamRulesJsonConverter decodes list of param flow rules from JSON bytes.
-func HotSpotParamRulesJsonConverter(src []byte) (interface{}, error) {
+// HotSpotParamRuleJsonArrayParser decodes list of param flow rules from JSON bytes.
+func HotSpotParamRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
 
 	rules := make([]*hotspot.Rule, 0)
-	result := gjson.ParseBytes(src)
-	for _, r := range result.Array() {
-		rule := &hotspot.Rule{
-			Resource:          r.Get("resource").String(),
-			MetricType:        hotspot.MetricType(r.Get("metricType").Int()),
-			ControlBehavior:   hotspot.ControlBehavior(r.Get("controlBehavior").Int()),
-			ParamIndex:        int(r.Get("paramIndex").Int()),
-			Threshold:         r.Get("threshold").Float(),
-			MaxQueueingTimeMs: r.Get("maxQueueingTimeMs").Int(),
-			BurstCount:        r.Get("burstCount").Int(),
-			DurationInSec:     r.Get("durationInSec").Int(),
-			ParamsMaxCapacity: r.Get("paramsMaxCapacity").Int(),
-			SpecificItems:     nil,
-		}
-		for _, spItem := range r.Get("specificItems").Array() {
-			sp := hotspot.SpecificValue{
-				ValKind: hotspot.ParamKind(spItem.Get("valKind").Int()),
-				ValStr:  spItem.Get("valStr").String(),
-			}
-			if rule.SpecificItems == nil {
-				rule.SpecificItems = make(map[hotspot.SpecificValue]int64)
-			}
-			rule.SpecificItems[sp] = spItem.Get("threshold").Int()
-		}
-		rules = append(rules, rule)
+	err := json.Unmarshal(src, &rules)
+	if err != nil {
+		return nil, err
 	}
 	return rules, nil
 }

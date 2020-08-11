@@ -11,16 +11,14 @@ import (
 
 func Test_tcGenFuncMap(t *testing.T) {
 	t.Run("Test_tcGenFuncMap_withoutMetric", func(t *testing.T) {
-		m := make(map[SpecificValue]int64)
-		m[SpecificValue{
-			ValKind: KindInt,
-			ValStr:  "100",
-		}] = 100
-
-		parsedM := make(map[interface{}]int64)
-		parsedM[100] = 100
+		m := make([]SpecificValue, 1)
+		m[0] = SpecificValue{
+			ValKind:   KindInt,
+			ValStr:    "100",
+			Threshold: 100,
+		}
 		r1 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -42,16 +40,15 @@ func Test_tcGenFuncMap(t *testing.T) {
 	})
 
 	t.Run("Test_tcGenFuncMap_withMetric", func(t *testing.T) {
-		m := make(map[SpecificValue]int64)
-		m[SpecificValue{
-			ValKind: KindInt,
-			ValStr:  "100",
-		}] = 100
+		m := make([]SpecificValue, 1)
+		m[0] = SpecificValue{
+			ValKind:   KindInt,
+			ValStr:    "100",
+			Threshold: 100,
+		}
 
-		parsedM := make(map[interface{}]int64)
-		parsedM[100] = 100
 		r1 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -88,16 +85,14 @@ func Test_tcGenFuncMap(t *testing.T) {
 
 func Test_IsValidRule(t *testing.T) {
 	t.Run("Test_IsValidRule", func(t *testing.T) {
-		m := make(map[SpecificValue]int64)
-		m[SpecificValue{
-			ValKind: KindInt,
-			ValStr:  "100",
-		}] = 100
-
-		parsedM := make(map[interface{}]int64)
-		parsedM[100] = 100
+		m := make([]SpecificValue, 1)
+		m[0] = SpecificValue{
+			ValKind:   KindInt,
+			ValStr:    "100",
+			Threshold: 100,
+		}
 		r1 := &Rule{
-			Id:                "abc",
+			ID:                "abc",
 			Resource:          "abc",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -112,16 +107,14 @@ func Test_IsValidRule(t *testing.T) {
 	})
 
 	t.Run("Test_InValidRule", func(t *testing.T) {
-		m := make(map[SpecificValue]int64)
-		m[SpecificValue{
-			ValKind: KindInt,
-			ValStr:  "100",
-		}] = 100
-
-		parsedM := make(map[interface{}]int64)
-		parsedM[100] = 100
+		m := make([]SpecificValue, 1)
+		m[0] = SpecificValue{
+			ValKind:   KindInt,
+			ValStr:    "100",
+			Threshold: 100,
+		}
 		r1 := &Rule{
-			Id:                "",
+			ID:                "",
 			Resource:          "",
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
@@ -139,17 +132,20 @@ func Test_IsValidRule(t *testing.T) {
 func Test_onRuleUpdate(t *testing.T) {
 	tcMap = make(trafficControllerMap)
 
-	m := make(map[SpecificValue]int64)
-	m[SpecificValue{
-		ValKind: KindString,
-		ValStr:  "sss",
-	}] = 1
-	m[SpecificValue{
-		ValKind: KindFloat64,
-		ValStr:  "1.123",
-	}] = 3
+	m := make([]SpecificValue, 2)
+	m[0] = SpecificValue{
+		ValKind:   KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m[1] = SpecificValue{
+		ValKind:   KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
+
 	r1 := &Rule{
-		Id:                "1",
+		ID:                "1",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Reject,
@@ -161,17 +157,19 @@ func Test_onRuleUpdate(t *testing.T) {
 		SpecificItems:     m,
 	}
 
-	m2 := make(map[SpecificValue]int64)
-	m2[SpecificValue{
-		ValKind: KindString,
-		ValStr:  "sss",
-	}] = 1
-	m2[SpecificValue{
-		ValKind: KindFloat64,
-		ValStr:  "1.123",
-	}] = 3
+	m2 := make([]SpecificValue, 2)
+	m2[0] = SpecificValue{
+		ValKind:   KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m2[1] = SpecificValue{
+		ValKind:   KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r2 := &Rule{
-		Id:                "2",
+		ID:                "2",
 		Resource:          "abc",
 		MetricType:        QPS,
 		ControlBehavior:   Throttling,
@@ -183,17 +181,19 @@ func Test_onRuleUpdate(t *testing.T) {
 		SpecificItems:     m2,
 	}
 
-	m3 := make(map[SpecificValue]int64)
-	m3[SpecificValue{
-		ValKind: KindString,
-		ValStr:  "sss",
-	}] = 1
-	m3[SpecificValue{
-		ValKind: KindFloat64,
-		ValStr:  "1.123",
-	}] = 3
+	m3 := make([]SpecificValue, 2)
+	m3[0] = SpecificValue{
+		ValKind:   KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m3[1] = SpecificValue{
+		ValKind:   KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r3 := &Rule{
-		Id:                "3",
+		ID:                "3",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Throttling,
@@ -206,7 +206,7 @@ func Test_onRuleUpdate(t *testing.T) {
 	}
 
 	r4 := &Rule{
-		Id:                "4",
+		ID:                "4",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Throttling,
@@ -225,7 +225,7 @@ func Test_onRuleUpdate(t *testing.T) {
 	assert.True(t, len(tcMap["abc"]) == 4)
 
 	r21 := &Rule{
-		Id:                "21",
+		ID:                "21",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Reject,
@@ -237,7 +237,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		SpecificItems:     m,
 	}
 	r22 := &Rule{
-		Id:                "22",
+		ID:                "22",
 		Resource:          "abc",
 		MetricType:        QPS,
 		ControlBehavior:   Throttling,
@@ -249,7 +249,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		SpecificItems:     m2,
 	}
 	r23 := &Rule{
-		Id:                "23",
+		ID:                "23",
 		Resource:          "abc",
 		MetricType:        Concurrency,
 		ControlBehavior:   Throttling,

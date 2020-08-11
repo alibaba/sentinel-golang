@@ -29,23 +29,23 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 	}
 
 	t.Run("TestFlowRulesJsonConverter_nil", func(t *testing.T) {
-		got, err := FlowRulesJsonConverter(nil)
+		got, err := FlowRuleJsonArrayParser(nil)
 		assert.True(t, got == nil && err == nil)
 
-		got, err = FlowRulesJsonConverter([]byte{})
+		got, err = FlowRuleJsonArrayParser([]byte{})
 		assert.True(t, got == nil && err == nil)
 	})
 
 	t.Run("TestFlowRulesJsonConverter_error", func(t *testing.T) {
-		got, err := FlowRulesJsonConverter([]byte{'x', 'i', 'm', 'u'})
+		got, err := FlowRuleJsonArrayParser([]byte{'x', 'i', 'm', 'u'})
 		assert.True(t, got == nil)
 		realErr, succ := err.(Error)
 		assert.True(t, succ && realErr.code == ConvertSourceError)
 	})
 
 	t.Run("TestFlowRulesJsonConverter_normal", func(t *testing.T) {
-		got, _ := FlowRulesJsonConverter(normalSrc)
-		assert.True(t, got != nil)
+		got, err := FlowRuleJsonArrayParser(normalSrc)
+		assert.True(t, got != nil && err == nil)
 		flowRules := got.([]*flow.FlowRule)
 		assert.True(t, len(flowRules) == 3)
 		r1 := &flow.FlowRule{
@@ -172,7 +172,7 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 		t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
 	}
 
-	got, err := SystemRulesJsonConverter(normalSrc)
+	got, err := SystemRuleJsonArrayParser(normalSrc)
 	systemRules := got.([]*system.SystemRule)
 	assert.True(t, err == nil && len(systemRules) == 4)
 
@@ -249,7 +249,7 @@ func TestSystemRulesUpdater(t *testing.T) {
 
 func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 	t.Run("TestCircuitBreakerRulesJsonConverter_failed", func(t *testing.T) {
-		properties, err := CircuitBreakerRulesJsonConverter([]byte{'s', 'r', 'c'})
+		properties, err := CircuitBreakerRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, properties == nil)
 		assert.True(t, err != nil)
 	})
@@ -266,7 +266,7 @@ func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}
 
-		properties, err := CircuitBreakerRulesJsonConverter(src)
+		properties, err := CircuitBreakerRuleJsonArrayParser(src)
 		rules := properties.([]cb.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 3)
@@ -299,7 +299,7 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 
 func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 	t.Run("TestHotSpotParamRuleListJsonConverter_invalid", func(t *testing.T) {
-		properties, err := HotSpotParamRulesJsonConverter([]byte{'s', 'r', 'c'})
+		properties, err := HotSpotParamRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, properties == nil)
 		assert.True(t, err != nil)
 	})
@@ -316,33 +316,35 @@ func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}
 
-		properties, err := HotSpotParamRulesJsonConverter(src)
+		properties, err := HotSpotParamRuleJsonArrayParser(src)
 		rules := properties.([]*hotspot.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 4)
 		for _, r := range rules {
 			fmt.Println(r)
 		}
-		assert.True(t, strings.Contains(rules[0].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Reject, ParamIndex:0, Threshold:1000.000000, MaxQueueingTimeMs:1, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[{ValKind:KindInt ValStr:1000}:10001 {ValKind:KindString ValStr:ximu}:10002 {ValKind:KindBool ValStr:true}:10003]}"))
-		assert.True(t, strings.Contains(rules[1].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Throttling, ParamIndex:1, Threshold:2000.000000, MaxQueueingTimeMs:2, BurstCount:20, DurationInSec:2, ParamsMaxCapacity:20000, SpecificItems:map[{ValKind:KindInt ValStr:1000}:20001 {ValKind:KindString ValStr:ximu}:20002 {ValKind:KindBool ValStr:true}:20003]}"))
-		assert.True(t, strings.Contains(rules[2].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Reject, ParamIndex:2, Threshold:3000.000000, MaxQueueingTimeMs:3, BurstCount:30, DurationInSec:3, ParamsMaxCapacity:30000, SpecificItems:map[{ValKind:KindInt ValStr:1000}:30001 {ValKind:KindString ValStr:ximu}:30002 {ValKind:KindBool ValStr:true}:30003]}"))
-		assert.True(t, strings.Contains(rules[3].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Throttling, ParamIndex:3, Threshold:4000.000000, MaxQueueingTimeMs:4, BurstCount:40, DurationInSec:4, ParamsMaxCapacity:40000, SpecificItems:map[{ValKind:KindInt ValStr:1000}:40001 {ValKind:KindString ValStr:ximu}:40002 {ValKind:KindBool ValStr:true}:40003]}"))
+		assert.True(t, strings.Contains(rules[0].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Reject, ParamIndex:0, Threshold:1000.000000, MaxQueueingTimeMs:1, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:10001} {ValKind:KindString ValStr:ximu Threshold:10002} {ValKind:KindBool ValStr:true Threshold:10003}]}"))
+		assert.True(t, strings.Contains(rules[1].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Throttling, ParamIndex:1, Threshold:2000.000000, MaxQueueingTimeMs:2, BurstCount:20, DurationInSec:2, ParamsMaxCapacity:20000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:20001} {ValKind:KindString ValStr:ximu Threshold:20002} {ValKind:KindBool ValStr:true Threshold:20003}]}"))
+		assert.True(t, strings.Contains(rules[2].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Reject, ParamIndex:2, Threshold:3000.000000, MaxQueueingTimeMs:3, BurstCount:30, DurationInSec:3, ParamsMaxCapacity:30000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:30001} {ValKind:KindString ValStr:ximu Threshold:30002} {ValKind:KindBool ValStr:true Threshold:30003}]}"))
+		assert.True(t, strings.Contains(rules[3].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Throttling, ParamIndex:3, Threshold:4000.000000, MaxQueueingTimeMs:4, BurstCount:40, DurationInSec:4, ParamsMaxCapacity:40000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:40001} {ValKind:KindString ValStr:ximu Threshold:40002} {ValKind:KindBool ValStr:true Threshold:40003}]}"))
 	})
 }
 
 func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 	// Prepare test data
-	m := make(map[hotspot.SpecificValue]int64)
-	m[hotspot.SpecificValue{
-		ValKind: hotspot.KindString,
-		ValStr:  "sss",
-	}] = 1
-	m[hotspot.SpecificValue{
-		ValKind: hotspot.KindFloat64,
-		ValStr:  "1.123",
-	}] = 3
+	m := make([]hotspot.SpecificValue, 2)
+	m[0] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m[1] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r1 := &hotspot.Rule{
-		Id:                "1",
+		ID:                "1",
 		Resource:          "abc",
 		MetricType:        hotspot.Concurrency,
 		ControlBehavior:   hotspot.Reject,
@@ -354,17 +356,19 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		SpecificItems:     m,
 	}
 
-	m2 := make(map[hotspot.SpecificValue]int64)
-	m2[hotspot.SpecificValue{
-		ValKind: hotspot.KindString,
-		ValStr:  "sss",
-	}] = 1
-	m2[hotspot.SpecificValue{
-		ValKind: hotspot.KindFloat64,
-		ValStr:  "1.123",
-	}] = 3
+	m2 := make([]hotspot.SpecificValue, 2)
+	m2[0] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m2[1] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r2 := &hotspot.Rule{
-		Id:                "2",
+		ID:                "2",
 		Resource:          "abc",
 		MetricType:        hotspot.QPS,
 		ControlBehavior:   hotspot.Throttling,
@@ -376,17 +380,19 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 		SpecificItems:     m2,
 	}
 
-	m3 := make(map[hotspot.SpecificValue]int64)
-	m3[hotspot.SpecificValue{
-		ValKind: hotspot.KindString,
-		ValStr:  "sss",
-	}] = 1
-	m3[hotspot.SpecificValue{
-		ValKind: hotspot.KindFloat64,
-		ValStr:  "1.123",
-	}] = 3
+	m3 := make([]hotspot.SpecificValue, 2)
+	m3[0] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindString,
+		ValStr:    "sss",
+		Threshold: 1,
+	}
+	m3[1] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindFloat64,
+		ValStr:    "1.123",
+		Threshold: 3,
+	}
 	r3 := &hotspot.Rule{
-		Id:                "3",
+		ID:                "3",
 		Resource:          "abc",
 		MetricType:        hotspot.Concurrency,
 		ControlBehavior:   hotspot.Throttling,
@@ -399,7 +405,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 	}
 
 	r4 := &hotspot.Rule{
-		Id:                "4",
+		ID:                "4",
 		Resource:          "abc",
 		MetricType:        hotspot.Concurrency,
 		ControlBehavior:   hotspot.Throttling,
