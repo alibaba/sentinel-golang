@@ -74,8 +74,9 @@ func (t ParamKind) String() string {
 
 // SpecificValue indicates the specific param, contain the supported param kind and concrete value.
 type SpecificValue struct {
-	ValKind ParamKind
-	ValStr  string
+	ValKind   ParamKind `json:"valKind"`
+	ValStr    string    `json:"valStr"`
+	Threshold int64     `json:"threshold"`
 }
 
 func (s *SpecificValue) String() string {
@@ -84,32 +85,32 @@ func (s *SpecificValue) String() string {
 
 // Rule represents the hotspot(frequent) parameter flow control rule
 type Rule struct {
-	// Id is the unique id
-	Id string
+	// ID is the unique id
+	ID string `json:"id,omitempty"`
 	// Resource is the resource name
-	Resource        string
-	MetricType      MetricType
-	ControlBehavior ControlBehavior
+	Resource        string          `json:"resource"`
+	MetricType      MetricType      `json:"metricType"`
+	ControlBehavior ControlBehavior `json:"controlBehavior"`
 	// ParamIndex is the index in context arguments slice.
-	ParamIndex int
-	Threshold  float64
+	ParamIndex int     `json:"paramIndex"`
+	Threshold  float64 `json:"threshold"`
 	// MaxQueueingTimeMs only take effect in both Throttling ControlBehavior and QPS MetricType
-	MaxQueueingTimeMs int64
+	MaxQueueingTimeMs int64 `json:"maxQueueingTimeMs"`
 	// BurstCount is the silent count
 	// Only take effect in both Reject ControlBehavior and QPS MetricType
-	BurstCount int64
+	BurstCount int64 `json:"burstCount"`
 	// DurationInSec is the time interval in statistic
 	// Only take effect in QPS MetricType
-	DurationInSec int64
+	DurationInSec int64 `json:"durationInSec"`
 	// ParamsMaxCapacity is the max capacity of cache statistic
-	ParamsMaxCapacity int64
+	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
-	SpecificItems map[SpecificValue]int64
+	SpecificItems []SpecificValue `json:"specificItems"`
 }
 
 func (r *Rule) String() string {
 	return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, ControlBehavior:%+v, ParamIndex:%d, Threshold:%f, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v}",
-		r.Id, r.Resource, r.MetricType, r.ControlBehavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
+		r.ID, r.Resource, r.MetricType, r.ControlBehavior, r.ParamIndex, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
 }
 func (r *Rule) ResourceName() string {
 	return r.Resource
@@ -136,46 +137,46 @@ func (r *Rule) Equals(newRule *Rule) bool {
 }
 
 // parseSpecificItems parses the SpecificValue as real value.
-func parseSpecificItems(source map[SpecificValue]int64) map[interface{}]int64 {
+func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 	ret := make(map[interface{}]int64)
 	if len(source) == 0 {
 		return ret
 	}
-	for k, v := range source {
-		switch k.ValKind {
+	for _, item := range source {
+		switch item.ValKind {
 		case KindInt:
-			realVal, err := strconv.Atoi(k.ValStr)
+			realVal, err := strconv.Atoi(item.ValStr)
 			if err != nil {
-				logger.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", k.ValKind, k.ValStr, err)
+				logger.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", item.ValKind, item.ValStr, err)
 				continue
 			}
-			ret[realVal] = v
+			ret[realVal] = item.Threshold
 
 		case KindString:
-			ret[k.ValStr] = v
+			ret[item.ValStr] = item.Threshold
 
 		case KindBool:
-			realVal, err := strconv.ParseBool(k.ValStr)
+			realVal, err := strconv.ParseBool(item.ValStr)
 			if err != nil {
-				logger.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
-			ret[realVal] = v
+			ret[realVal] = item.Threshold
 
 		case KindFloat64:
-			realVal, err := strconv.ParseFloat(k.ValStr, 64)
+			realVal, err := strconv.ParseFloat(item.ValStr, 64)
 			if err != nil {
-				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
 			realVal, err = strconv.ParseFloat(fmt.Sprintf("%.5f", realVal), 64)
 			if err != nil {
-				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", k.ValStr, err)
+				logger.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
 				continue
 			}
-			ret[realVal] = v
+			ret[realVal] = item.Threshold
 		default:
-			logger.Errorf("Unsupported kind for specific item: %d", k.ValKind)
+			logger.Errorf("Unsupported kind for specific item: %d", item.ValKind)
 		}
 	}
 	return ret
