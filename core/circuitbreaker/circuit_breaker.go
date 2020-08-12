@@ -6,6 +6,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -318,21 +319,21 @@ func (s *slowRequestLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime uin
 func (s *slowRequestLeapArray) currentCounter() *slowRequestCounter {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logger.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", util.CurrentTimeMillis(), err)
+		logging.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", util.CurrentTimeMillis(), err)
 		return nil
 	}
 	if curBucket == nil {
-		logger.Error("Current bucket is nil")
+		logging.Error("Current bucket is nil")
 		return nil
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logger.Error("Current bucket atomic Value is nil")
+		logging.Error("Current bucket atomic Value is nil")
 		return nil
 	}
 	counter, ok := mb.(*slowRequestCounter)
 	if !ok {
-		logger.Error("Bucket data type error")
+		logging.Error("Bucket data type error")
 		return nil
 	}
 	return counter
@@ -344,12 +345,12 @@ func (s *slowRequestLeapArray) allCounter() []*slowRequestCounter {
 	for _, b := range buckets {
 		mb := b.Value.Load()
 		if mb == nil {
-			logger.Error("Current bucket atomic Value is nil")
+			logging.Error("Current bucket atomic Value is nil")
 			continue
 		}
 		counter, ok := mb.(*slowRequestCounter)
 		if !ok {
-			logger.Error("Bucket data type error")
+			logging.Error("Bucket data type error")
 			continue
 		}
 		ret = append(ret, counter)
@@ -498,21 +499,21 @@ func (s *errorCounterLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime ui
 func (s *errorCounterLeapArray) currentCounter() *errorCounter {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logger.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", util.CurrentTimeMillis(), err)
+		logging.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", util.CurrentTimeMillis(), err)
 		return nil
 	}
 	if curBucket == nil {
-		logger.Error("Current bucket is nil")
+		logging.Error("Current bucket is nil")
 		return nil
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logger.Error("Current bucket atomic Value is nil")
+		logging.Error("Current bucket atomic Value is nil")
 		return nil
 	}
 	counter, ok := mb.(*errorCounter)
 	if !ok {
-		logger.Error("Bucket data type error")
+		logging.Error("Bucket data type error")
 		return nil
 	}
 	return counter
@@ -524,12 +525,12 @@ func (s *errorCounterLeapArray) allCounter() []*errorCounter {
 	for _, b := range buckets {
 		mb := b.Value.Load()
 		if mb == nil {
-			logger.Error("Current bucket atomic Value is nil")
+			logging.Error("Current bucket atomic Value is nil")
 			continue
 		}
 		counter, ok := mb.(*errorCounter)
 		if !ok {
-			logger.Error("Bucket data type error")
+			logging.Error("Bucket data type error")
 			continue
 		}
 		ret = append(ret, counter)

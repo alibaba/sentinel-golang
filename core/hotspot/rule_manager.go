@@ -17,8 +17,6 @@ type TrafficControllerGenFunc func(r *Rule, reuseMetric *ParamsMetric) TrafficSh
 type trafficControllerMap map[string][]TrafficShapingController
 
 var (
-	logger = logging.GetDefaultLogger()
-
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
 	tcMap        = make(trafficControllerMap)
 	tcMux        = new(sync.RWMutex)
@@ -102,7 +100,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	newRuleMap := make(map[string][]*Rule)
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logger.Warnf("Ignoring invalid hotspot rule when loading new rules, rule: %s, reason: %s", r.String(), err.Error())
+			logging.Warnf("Ignoring invalid hotspot rule when loading new rules, rule: %s, reason: %s", r.String(), err.Error())
 			continue
 		}
 		res := r.ResourceName()
@@ -126,7 +124,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logger.Debugf("Updating hotspot rule spends %d ns.", util.CurrentTimeNano()-start)
+		logging.Debugf("Updating hotspot rule spends %d ns.", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
@@ -151,7 +149,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			// generate new traffic shaping controller
 			generator, supported := tcGenFuncMap[r.ControlBehavior]
 			if !supported {
-				logger.Warnf("Ignoring the frequent param flow rule due to unsupported control behavior: %v", r)
+				logging.Warnf("Ignoring the frequent param flow rule due to unsupported control behavior: %v", r)
 				continue
 			}
 			var tc TrafficShapingController
@@ -162,7 +160,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tc = generator(r, nil)
 			}
 			if tc == nil {
-				logger.Debugf("Ignoring the frequent param flow rule due to bad generated traffic controller: %v", r)
+				logging.Debugf("Ignoring the frequent param flow rule due to bad generated traffic controller: %v", r)
 				continue
 			}
 
@@ -186,7 +184,7 @@ func logRuleUpdate(m trafficControllerMap) {
 		sb.WriteString(r.String() + ",")
 	}
 	sb.WriteString("]")
-	logger.Info(sb.String())
+	logging.Info(sb.String())
 }
 
 func rulesFrom(m trafficControllerMap) []*Rule {
