@@ -8,6 +8,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/tidwall/gjson"
 )
 
@@ -145,7 +146,7 @@ func CircuitBreakerRuleJsonArrayParser(src []byte) (interface{}, error) {
 				cb.WithErrorCountThreshold(r.Get("threshold").Uint())))
 			continue
 		}
-		logger.Errorf("Unknown rule message: %s", r.Str)
+		logging.Errorf("Unknown rule message: %s", r.Str)
 	}
 	return rules, nil
 }

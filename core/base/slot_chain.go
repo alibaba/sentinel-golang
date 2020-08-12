@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var logger = logging.GetDefaultLogger()
-
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on
 type StatPrepareSlot interface {
@@ -131,7 +129,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	// If happened, need to add TokenResult in EntryContext
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Panicf("Sentinel internal panic in SlotChain, err: %+v", err)
+			logging.Panicf("Sentinel internal panic in SlotChain, err: %+v", err)
 			ctx.SetError(errors.Errorf("%+v", err))
 			return
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 // FlowSlot
@@ -22,7 +23,7 @@ func (s *FlowSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	// Check rules in order
 	for _, tc := range tcs {
 		if tc == nil {
-			logger.Warnf("nil traffic controller found, res: %s", res)
+			logging.Warnf("nil traffic controller found, res: %s", res)
 			continue
 		}
 		r := canPassCheck(tc, ctx.StatNode, ctx.Input.AcquireCount)

@@ -11,10 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	logger = logging.GetDefaultLogger()
-)
-
 type NacosDataSource struct {
 	datasource.Base
 	client        config_client.IConfigClient
@@ -55,7 +51,7 @@ func (s *NacosDataSource) Initialize() error {
 	}
 	err = s.listen(s.client)
 	if err == nil {
-		logger.Infof("Nacos data source is successfully initialized, group: %s, dataId: %s", s.group, s.dataId)
+		logging.Infof("Nacos data source is successfully initialized, group: %s, dataId: %s", s.group, s.dataId)
 	}
 	return err
 }
@@ -69,7 +65,7 @@ func (s *NacosDataSource) ReadSource() ([]byte, error) {
 		return nil, errors.Errorf("Failed to read the nacos data source when initialization, err: %+v", err)
 	}
 
-	logger.Infof("Succeed to read source for group: %s, dataId: %s, data: %s", s.group, s.dataId, content)
+	logging.Infof("Succeed to read source for group: %s, dataId: %s, data: %s", s.group, s.dataId, content)
 	return []byte(content), err
 }
 
@@ -82,10 +78,10 @@ func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error)
 		DataId: s.dataId,
 		Group:  s.group,
 		OnChange: func(namespace, group, dataId, data string) {
-			logger.Infof("Receive listened property. namespace: %s, group: %s, dataId: %s, data: %s", namespace, group, dataId, data)
+			logging.Infof("Receive listened property. namespace: %s, group: %s, dataId: %s, data: %s", namespace, group, dataId, data)
 			err := s.doUpdate([]byte(data))
 			if err != nil {
-				logger.Errorf("Fail to update data source, err: %+v", err)
+				logging.Errorf("Fail to update data source, err: %+v", err)
 			}
 		},
 	}
@@ -104,6 +100,6 @@ func (s *NacosDataSource) Close() error {
 	if err != nil {
 		return errors.Errorf("Failed to cancel listen to the nacos data source, err: %+v", err)
 	}
-	logger.Infof("The nacos datasource had been closed, group: %s, dataId: %s", s.group, s.dataId)
+	logging.Infof("The nacos datasource had been closed, group: %s, dataId: %s", s.group, s.dataId)
 	return nil
 }
