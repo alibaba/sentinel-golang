@@ -9,51 +9,8 @@ import (
 	"time"
 
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/stretchr/testify/assert"
 )
-
-func Test_newAtomicBucketWrapArray_normal(t *testing.T) {
-	type args struct {
-		len              int
-		bucketLengthInMs uint32
-		bg               BucketGenerator
-	}
-	tests := []struct {
-		name string
-		args args
-		want *AtomicBucketWrapArray
-	}{
-		{
-			name: "Test_newAtomicBucketWrapArray_normal",
-			args: args{
-				len:              int(SampleCount),
-				bucketLengthInMs: BucketLengthInMs,
-				bg:               &leapArrayMock{},
-			},
-			want: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ret := NewAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
-			if ret == nil || uintptr(ret.base) == uintptr(0) || ret.length != tt.args.len || ret.data == nil || len(ret.data) == 0 {
-				t.Errorf("NewAtomicBucketWrapArray() %+v is illegal.\n", ret)
-				return
-			}
-			dataNil := false
-			for _, v := range ret.data {
-				if v == nil {
-					dataNil = true
-					break
-				}
-			}
-			if dataNil {
-				t.Error("NewAtomicBucketWrapArray exists nil BucketWrap.")
-			}
-
-		})
-	}
-}
 
 func Test_atomicBucketWrapArray_elementOffset(t *testing.T) {
 	type args struct {
@@ -80,7 +37,8 @@ func Test_atomicBucketWrapArray_elementOffset(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			aa := NewAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
+			now := uint64(1596199310000)
+			aa := NewAtomicBucketWrapArrayWithTime(tt.args.len, tt.args.bucketLengthInMs, now, tt.args.bg)
 			if got := uintptr(aa.elementOffset(tt.args.idx)) - uintptr(aa.base); got != tt.want {
 				t.Errorf("AtomicBucketWrapArray.elementOffset() = %v, want %v \n", got, tt.want)
 			}
@@ -113,7 +71,8 @@ func Test_atomicBucketWrapArray_get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			aa := NewAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
+			now := uint64(1596199310000)
+			aa := NewAtomicBucketWrapArrayWithTime(tt.args.len, tt.args.bucketLengthInMs, now, tt.args.bg)
 			tt.want = aa.data[9]
 			if got := aa.get(tt.args.idx); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("AtomicBucketWrapArray.get() = %v, want %v", got, tt.want)
@@ -147,7 +106,8 @@ func Test_atomicBucketWrapArray_compareAndSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			aa := NewAtomicBucketWrapArray(tt.args.len, tt.args.bucketLengthInMs, tt.args.bg)
+			now := uint64(1596199310000)
+			aa := NewAtomicBucketWrapArrayWithTime(tt.args.len, tt.args.bucketLengthInMs, now, tt.args.bg)
 			update := &BucketWrap{
 				BucketStart: 8888888888888,
 				Value:       atomic.Value{},
@@ -183,7 +143,8 @@ func taskGet(wg *sync.WaitGroup, at *AtomicBucketWrapArray, t *testing.T) {
 }
 
 func Test_atomicBucketWrapArray_Concurrency_Get(t *testing.T) {
-	ret := NewAtomicBucketWrapArray(int(SampleCount), BucketLengthInMs, &leapArrayMock{})
+	now := uint64(1596199310000)
+	ret := NewAtomicBucketWrapArrayWithTime(int(SampleCount), BucketLengthInMs, now, &leapArrayMock{})
 	for _, ww := range ret.data {
 		c := new(int64)
 		*c = 0
@@ -230,7 +191,8 @@ func taskSet(wg *sync.WaitGroup, at *AtomicBucketWrapArray, t *testing.T) {
 }
 
 func Test_atomicBucketWrapArray_Concurrency_Set(t *testing.T) {
-	ret := NewAtomicBucketWrapArray(int(SampleCount), BucketLengthInMs, &leapArrayMock{})
+	now := uint64(1596199310000)
+	ret := NewAtomicBucketWrapArrayWithTime(int(SampleCount), BucketLengthInMs, now, &leapArrayMock{})
 	for _, ww := range ret.data {
 		c := new(int64)
 		*c = 0
@@ -252,4 +214,44 @@ func Test_atomicBucketWrapArray_Concurrency_Set(t *testing.T) {
 		}
 	}
 	t.Log("all done")
+}
+
+func TestNewAtomicBucketWrapArrayWithTime(t *testing.T) {
+	t.Run("TestNewAtomicBucketWrapArrayWithTime_normal", func(t *testing.T) {
+		now := uint64(1596199317001)
+		arrayStartTime := uint64(1596199316000)
+		idx := int((now - arrayStartTime) / 200)
+		a := NewAtomicBucketWrapArrayWithTime(10, 200, now, &leapArrayMock{})
+
+		targetTime := arrayStartTime + uint64(idx*200)
+		for i := idx; i < 10; i++ {
+			b := a.get(i)
+			assert.True(t, b.BucketStart == targetTime, "Check start failed")
+			targetTime += 200
+		}
+		for i := 0; i < idx; i++ {
+			b := a.get(i)
+			assert.True(t, b.BucketStart == targetTime, "Check start failed")
+			targetTime += 200
+		}
+	})
+
+	t.Run("TestNewAtomicBucketWrapArrayWithTime_edge1", func(t *testing.T) {
+		now := uint64(1596199316000)
+		arrayStartTime := uint64(1596199316000)
+		idx := int((now - arrayStartTime) / 200)
+		a := NewAtomicBucketWrapArrayWithTime(10, 200, now, &leapArrayMock{})
+
+		targetTime := arrayStartTime + uint64(idx*200)
+		for i := idx; i < 10; i++ {
+			b := a.get(i)
+			assert.True(t, b.BucketStart == targetTime, "Check start failed")
+			targetTime += 200
+		}
+		for i := 0; i < idx; i++ {
+			b := a.get(i)
+			assert.True(t, b.BucketStart == targetTime, "Check start failed")
+			targetTime += 200
+		}
+	})
 }

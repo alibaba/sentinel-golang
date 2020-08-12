@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 type Slot struct {
@@ -22,11 +23,11 @@ func matchArg(tc TrafficShapingController, args []interface{}) interface{} {
 		idx = len(args) + idx
 	}
 	if idx < 0 {
-		logger.Debugf("The param index in tc(%+v) is invalid for args(%+v)", tc, args)
+		logging.Debugf("The param index in tc(%+v) is invalid for args(%+v)", tc, args)
 		return nil
 	}
 	if idx >= len(args) {
-		logger.Debugf("The argument doesn't exist for index(%d) of tc(%+v), args: %+v", idx, tc, args)
+		logging.Debugf("The argument doesn't exist for index(%d) of tc(%+v), args: %+v", idx, tc, args)
 		return nil
 	}
 	arg := args[idx]

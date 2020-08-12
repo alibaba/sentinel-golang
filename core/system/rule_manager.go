@@ -12,8 +12,6 @@ type RuleMap map[MetricType][]*SystemRule
 
 // const
 var (
-	logger = logging.GetDefaultLogger()
-
 	ruleMap    = make(RuleMap)
 	ruleMapMux = new(sync.RWMutex)
 )
@@ -35,7 +33,7 @@ func LoadRules(rules []*SystemRule) (bool, error) {
 	m := buildRuleMap(rules)
 
 	if err := onRuleUpdate(m); err != nil {
-		logger.Errorf("Fail to load rules %+v, err: %+v", rules, err)
+		logging.Errorf("Fail to load rules %+v, err: %+v", rules, err)
 		return false, err
 	}
 
@@ -53,11 +51,11 @@ func onRuleUpdate(r RuleMap) error {
 	ruleMapMux.Lock()
 	defer func() {
 		ruleMapMux.Unlock()
-		logger.Debugf("Updating system rule spends %d ns.", util.CurrentTimeNano()-start)
+		logging.Debugf("Updating system rule spends %d ns.", util.CurrentTimeNano()-start)
 		if len(r) > 0 {
-			logger.Infof("[SystemRuleManager] System rules loaded: %v", r)
+			logging.Infof("[SystemRuleManager] System rules loaded: %v", r)
 		} else {
-			logger.Info("[SystemRuleManager] System rules were cleared")
+			logging.Info("[SystemRuleManager] System rules were cleared")
 		}
 	}()
 	ruleMap = r
@@ -73,7 +71,7 @@ func buildRuleMap(rules []*SystemRule) RuleMap {
 
 	for _, rule := range rules {
 		if err := IsValidSystemRule(rule); err != nil {
-			logger.Warnf("Ignoring invalid system rule: %v, reason: %s", rule, err.Error())
+			logging.Warnf("Ignoring invalid system rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
 		rulesOfRes, exists := m[rule.MetricType]

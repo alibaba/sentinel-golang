@@ -8,6 +8,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -56,7 +57,7 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
 	}
 	if size <= 0 {
-		logger.Warnf("The size of cache is not more than 0, ParamsMaxCapacity: %d, ParamsCapacityBase: %d", ParamsMaxCapacity, ParamsCapacityBase)
+		logging.Warnf("The size of cache is not more than 0, ParamsMaxCapacity: %d, ParamsCapacityBase: %d", ParamsMaxCapacity, ParamsCapacityBase)
 		size = ParamsMaxCapacity
 	}
 	metric := &ParamsMetric{

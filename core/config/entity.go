@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
@@ -29,6 +30,8 @@ type SentinelConfig struct {
 
 // LogConfig represent the configuration of logging in Sentinel.
 type LogConfig struct {
+	// logger indicates that using logger to replace default logging.
+	Logger logging.Logger
 	// Dir represents the log directory path.
 	Dir string
 	// UsePid indicates whether the filename ends with the process ID (PID).
@@ -68,6 +71,7 @@ func NewDefaultConfig() *Entity {
 				Type: DefaultAppType,
 			},
 			Log: LogConfig{
+				Logger: nil,
 				Dir:    GetDefaultLogDir(),
 				UsePid: false,
 				Metric: MetricLogConfig{
@@ -126,6 +130,10 @@ func (entity *Entity) AppType() int32 {
 
 func (entity *Entity) LogBaseDir() string {
 	return entity.Sentinel.Log.Dir
+}
+
+func (entity *Entity) Logger() logging.Logger {
+	return entity.Sentinel.Log.Logger
 }
 
 // LogUsePid returns whether the log file name contains the PID suffix.

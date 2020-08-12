@@ -10,10 +10,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-type CircuitBreakerGenFunc func(r Rule, reuseStat interface{}) CircuitBreaker
+type CircuitBreakerGenFunc func(r Rule, reuseStat interface{}) (CircuitBreaker, error)
 
 var (
-	logger       = logging.GetDefaultLogger()
 	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc)
 
 	breakerRules = make(map[string][]Rule)
@@ -24,52 +23,52 @@ var (
 )
 
 func init() {
-	cbGenFuncMap[SlowRequestRatio] = func(r Rule, reuseStat interface{}) CircuitBreaker {
+	cbGenFuncMap[SlowRequestRatio] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
 		rtRule, ok := r.(*slowRtRule)
 		if !ok || rtRule == nil {
-			return nil
+			return nil, errors.Errorf("rule don't match the SlowRequestRatio strategy, rule: %s", r.String())
 		}
 		if reuseStat == nil {
 			return newSlowRtCircuitBreaker(rtRule)
 		}
 		stat, ok := reuseStat.(*slowRequestLeapArray)
 		if !ok || stat == nil {
-			logger.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*slowRequestLeapArray, in fact: %+v", stat)
+			logging.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*slowRequestLeapArray, in fact: %+v", stat)
 			return newSlowRtCircuitBreaker(rtRule)
 		}
-		return newSlowRtCircuitBreakerWithStat(rtRule, stat)
+		return newSlowRtCircuitBreakerWithStat(rtRule, stat), nil
 	}
 
-	cbGenFuncMap[ErrorRatio] = func(r Rule, reuseStat interface{}) CircuitBreaker {
+	cbGenFuncMap[ErrorRatio] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
 		errRatioRule, ok := r.(*errorRatioRule)
 		if !ok || errRatioRule == nil {
-			return nil
+			return nil, errors.Errorf("rule don't match the ErrorRatio strategy, rule: %s", r.String())
 		}
 		if reuseStat == nil {
 			return newErrorRatioCircuitBreaker(errRatioRule)
 		}
 		stat, ok := reuseStat.(*errorCounterLeapArray)
 		if !ok || stat == nil {
-			logger.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
+			logging.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
 			return newErrorRatioCircuitBreaker(errRatioRule)
 		}
-		return newErrorRatioCircuitBreakerWithStat(errRatioRule, stat)
+		return newErrorRatioCircuitBreakerWithStat(errRatioRule, stat), nil
 	}
 
-	cbGenFuncMap[ErrorCount] = func(r Rule, reuseStat interface{}) CircuitBreaker {
+	cbGenFuncMap[ErrorCount] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
 		errCountRule, ok := r.(*errorCountRule)
 		if !ok || errCountRule == nil {
-			return nil
+			return nil, errors.Errorf("rule don't match the ErrorCount strategy, rule: %s", r.String())
 		}
 		if reuseStat == nil {
 			return newErrorCountCircuitBreaker(errCountRule)
 		}
 		stat, ok := reuseStat.(*errorCounterLeapArray)
 		if !ok || stat == nil {
-			logger.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
+			logging.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
 			return newErrorCountCircuitBreaker(errCountRule)
 		}
-		return newErrorCountCircuitBreakerWithStat(errCountRule, stat)
+		return newErrorCountCircuitBreakerWithStat(errCountRule, stat), nil
 	}
 }
 
@@ -167,7 +166,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 			continue
 		}
 		if err := rule.IsApplicable(); err != nil {
-			logger.Warnf("Ignoring invalid circuit breaking rule when loading new rules, rule: %+v, reason: %s", rule, err.Error())
+			logging.Warnf("Ignoring invalid circuit breaking rule when loading new rules, rule: %+v, reason: %s", rule, err.Error())
 			continue
 		}
 
@@ -193,7 +192,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logger.Debugf("Updating circuit breaker rule spends %d ns.", util.CurrentTimeNano()-start)
+		logging.Debugf("Updating circuit breaker rule spends %d ns.", util.CurrentTimeNano()-start)
 		logRuleUpdate(newBreakerRules)
 	}()
 
@@ -218,18 +217,19 @@ func onRuleUpdate(rules []Rule) (err error) {
 
 			generator := cbGenFuncMap[r.BreakerStrategy()]
 			if generator == nil {
-				logger.Warnf("Ignoring the rule due to unsupported circuit breaking strategy: %v", r)
+				logging.Warnf("Ignoring the rule due to unsupported circuit breaking strategy: %v", r)
 				continue
 			}
 
 			var cb CircuitBreaker
+			var e error
 			if reuseStatIdx >= 0 {
-				cb = generator(r, oldResCbs[reuseStatIdx].BoundStat())
+				cb, e = generator(r, oldResCbs[reuseStatIdx].BoundStat())
 			} else {
-				cb = generator(r, nil)
+				cb, e = generator(r, nil)
 			}
-			if cb == nil {
-				logger.Warnf("Ignoring the rule due to bad generated circuit breaker: %v", r)
+			if cb == nil || e != nil {
+				logging.Warnf("Ignoring the rule due to bad generated circuit breaker, r: %s, err: %+v", r.String(), e)
 				continue
 			}
 
@@ -271,7 +271,7 @@ func logRuleUpdate(rules map[string][]Rule) {
 		sb.WriteString(r.String() + ",")
 	}
 	sb.WriteString("]")
-	logger.Info(sb.String())
+	logging.Info(sb.String())
 }
 
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {

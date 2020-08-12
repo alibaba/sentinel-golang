@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
@@ -247,7 +248,7 @@ func NewRule(resource string, strategy Strategy, opts ...RuleOption) Rule {
 			Threshold: ruleOpts.errorCountThreshold,
 		}
 	default:
-		logger.Errorf("unsupported circuit breaker rule, strategy: %d", strategy)
+		logging.Errorf("unsupported circuit breaker rule, strategy: %d", strategy)
 		return nil
 	}
 }

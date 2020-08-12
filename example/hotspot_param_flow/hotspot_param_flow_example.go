@@ -16,6 +16,12 @@ type fooStruct struct {
 }
 
 func main() {
+	m := make([]hotspot.SpecificValue, 1)
+	m[0] = hotspot.SpecificValue{
+		ValKind:   hotspot.KindInt,
+		ValStr:    "9",
+		Threshold: 0,
+	}
 	var Resource = "test"
 
 	// We should initialize Sentinel first.
@@ -34,9 +40,7 @@ func main() {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        0,
 			DurationInSec:     1,
-			SpecificItems: map[hotspot.SpecificValue]int64{
-				{ValKind: hotspot.KindInt, ValStr: "9"}: 0,
-			},
+			SpecificItems:     m,
 		},
 		{
 			Resource:          Resource,
@@ -47,7 +51,7 @@ func main() {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     make(map[hotspot.SpecificValue]int64),
+			SpecificItems:     make([]hotspot.SpecificValue, 0),
 		},
 	})
 	if err != nil {
