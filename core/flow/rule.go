@@ -76,7 +76,7 @@ type FlowRule struct {
 	// ClusterMode indicates whether the rule is for cluster flow control or local.
 	ClusterMode      bool              `json:"clusterMode"`
 	ClusterConfig    ClusterRuleConfig `json:"clusterConfig"`
-	WarmUpColdFactor uint32
+	WarmUpColdFactor uint32            `json:"warmUpColdFactor"`
 }
 
 func (f *FlowRule) String() string {
