@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"math/rand"
 	"testing"
+	"time"
+
+	"github.com/alibaba/sentinel-golang/util"
 
 	"github.com/alibaba/sentinel-golang/core/flow"
 
@@ -11,6 +16,12 @@ import (
 )
 
 func Benchmark_qps(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		doTest()
+	}
+}
+
+func doTest() {
 	// We should initialize Sentinel first.
 	err := sentinel.InitDefault()
 	if err != nil {
@@ -30,7 +41,24 @@ func Benchmark_qps(b *testing.B) {
 		log.Fatalf("Unexpected error: %+v", err)
 		return
 	}
-	for i := 0; i < b.N; i++ {
-		sentinel.Entry("some-test", sentinel.WithTrafficType(base.Inbound))
+	for i := 0; i < 10; i++ {
+		go func() {
+			for {
+				e, b := sentinel.Entry("some-test", sentinel.WithTrafficType(base.Inbound))
+				if b != nil {
+					// Blocked. We could get the block reason from the BlockError.
+					time.Sleep(time.Duration(rand.Uint64()%10) * time.Millisecond)
+				} else {
+					// Passed, wrap the logic here.
+					fmt.Println(util.CurrentTimeMillis(), "passed")
+					time.Sleep(time.Duration(rand.Uint64()%10) * time.Millisecond)
+
+					// Be sure the entry is exited finally.
+					e.Exit()
+				}
+
+			}
+		}()
 	}
+	time.Sleep(time.Second * 5)
 }
