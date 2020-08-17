@@ -29,8 +29,11 @@ func (e *SentinelEntry) SetError(err error) {
 	}
 }
 
-func (e *SentinelEntry) Context() *EntryContext {
-	return e.ctx
+func (e *SentinelEntry) Err() error {
+	if e.ctx != nil {
+		return e.ctx.Err()
+	}
+	return nil
 }
 
 func (e *SentinelEntry) Resource() *ResourceWrapper {
@@ -56,6 +59,9 @@ func (e *SentinelEntry) Exit(exitOps ...ExitOption) {
 		opt(&options)
 	}
 	ctx := e.ctx
+	if ctx == nil {
+		return
+	}
 	if options.err != nil {
 		ctx.SetError(options.err)
 	}
