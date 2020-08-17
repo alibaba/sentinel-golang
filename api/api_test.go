@@ -109,14 +109,13 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
 
-	entry, b := entry("abc", &EntryOptions{
+	_, b := entry("abc", &EntryOptions{
 		resourceType: base.ResTypeCommon,
 		entryType:    base.Inbound,
 		acquireCount: 1,
 		flag:         0,
 		slotChain:    sc,
 	})
-	assert.Nil(t, entry)
 	assert.NotNil(t, b)
 	assert.Equal(t, blockType, b.BlockType())
 
