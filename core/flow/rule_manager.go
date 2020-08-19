@@ -170,10 +170,94 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 		if !exists {
 			m[rule.Resource] = []*TrafficShapingController{tsc}
 		} else {
-			m[rule.Resource] = append(rulesOfRes, tsc)
+			if isAppend(rulesOfRes, tsc.rule.ID) {
+				m[rule.Resource] = append(rulesOfRes, tsc)
+			}
 		}
+
 	}
 	return m
+}
+
+func isAppend(rulesOfRes []*TrafficShapingController, ruleId uint64) bool {
+	for _, v := range rulesOfRes {
+		if v.rule.ID == ruleId {
+			logging.Warnf("Rule id:%d duplicate , current rule cannot be loaded", ruleId)
+			return false
+		}
+	}
+	return true
+}
+
+func UpdateRule(rule *FlowRule) {
+	if err := IsValidFlowRule(rule); err != nil {
+		logging.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
+		return
+	}
+	if rule.LimitOrigin == "" {
+		rule.LimitOrigin = LimitOriginDefault
+	}
+	rulesOfRes, exists := tcMap[rule.Resource]
+
+	if !exists {
+		logging.Warnf("Cannot be updated ,because not loaded flow rule:%v", rule)
+		return
+	}
+	updateFlag := false
+	defer tcMux.RUnlock()
+	for k, v := range rulesOfRes {
+		if v.rule.ID == rule.ID {
+			tcMux.RLock()
+			generator, supported := tcGenFuncMap[rule.ControlBehavior]
+			if !supported {
+				logging.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
+				return
+			}
+			tsc := generator(rule)
+			if tsc == nil {
+				logging.Warnf("Ignoring the rule due to bad generated traffic controller: %v", rule)
+				return
+			}
+			rulesOfRes[k] = tsc
+			updateFlag = true
+		}
+	}
+
+	if !updateFlag {
+		logging.Warnf("No rule to update was found based on ID:%d", rule.ID)
+		return
+	}
+}
+
+func AppendRule(rule *FlowRule) error {
+	if err := IsValidFlowRule(rule); err != nil {
+		return err
+	}
+	if rule.ID == 0 {
+		return errors.New("Update rule id cannot be 0")
+	}
+	if rule.LimitOrigin == "" {
+		rule.LimitOrigin = LimitOriginDefault
+	}
+	generator, supported := tcGenFuncMap[rule.ControlBehavior]
+	if !supported {
+		return errors.New("Unsupported control behavior")
+	}
+	tsc := generator(rule)
+	if tsc == nil {
+		return errors.New("Bad generated traffic controller")
+	}
+	rulesOfRes, exists := tcMap[rule.Resource]
+	tcMux.RLock()
+	defer tcMux.RUnlock()
+	if !exists {
+		return errors.New("The current rule cannot be appended because the same resource has not been loaded")
+	} else {
+		if isAppend(rulesOfRes, tsc.rule.ID) {
+			tcMap[rule.Resource] = append(rulesOfRes, tsc)
+		}
+	}
+	return nil
 }
 
 // IsValidFlowRule checks whether the given FlowRule is valid.

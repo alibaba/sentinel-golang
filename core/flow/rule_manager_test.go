@@ -57,3 +57,32 @@ func TestIsValidFlowRule(t *testing.T) {
 	assert.Error(t, IsValidFlowRule(badRule4))
 	assert.NoError(t, IsValidFlowRule(goodRule1))
 }
+
+func TestAppendRule(t *testing.T) {
+	_, err := LoadRules([]*FlowRule{
+		{
+			ID:              10,
+			Count:           20,
+			MetricType:      QPS,
+			Resource:        "test-append-rule",
+			ControlBehavior: Reject,
+		},
+		{
+			ID:              10,
+			Count:           20,
+			MetricType:      QPS,
+			Resource:        "test-append-rule1",
+			ControlBehavior: Reject,
+		},
+	})
+	assert.Nil(t, err)
+	err = AppendRule(&FlowRule{
+		ID:              11,
+		Count:           20,
+		MetricType:      QPS,
+		Resource:        "test-append-rule1",
+		ControlBehavior: Reject,
+	})
+	assert.Nil(t, err)
+	assert.True(t, tcMap["test-append-rule1"][1].rule.ID == 11)
+}
