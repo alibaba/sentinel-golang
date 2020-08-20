@@ -76,7 +76,7 @@ func TestAppendRule(t *testing.T) {
 		},
 	})
 	assert.Nil(t, err)
-	err = AppendRule(&FlowRule{
+	err = AddRule(&FlowRule{
 		ID:              11,
 		Count:           20,
 		MetricType:      QPS,
@@ -85,4 +85,33 @@ func TestAppendRule(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.True(t, tcMap["test-append-rule1"][1].rule.ID == 11)
+}
+
+func TestUpdateRule(t *testing.T) {
+	_, err := LoadRules([]*FlowRule{
+		{
+			ID:              10,
+			Count:           20,
+			MetricType:      QPS,
+			Resource:        "test-append-rule",
+			ControlBehavior: Reject,
+		},
+		{
+			ID:              10,
+			Count:           20,
+			MetricType:      QPS,
+			Resource:        "test-append-rule1",
+			ControlBehavior: Reject,
+		},
+	})
+	assert.Nil(t, err)
+	err = UpdateRule(&FlowRule{
+		ID:              16,
+		Count:           30,
+		MetricType:      Concurrency,
+		Resource:        "test-append-rule1",
+		ControlBehavior: Reject,
+	})
+	assert.Nil(t, err)
+	assert.True(t, tcMap["test-append-rule1"][0].rule.Count == 30)
 }

@@ -32,6 +32,19 @@ func main() {
 		return
 	}
 
+	_, err = flow.LoadRules([]*flow.FlowRule{
+		{
+			Resource:        "some-test",
+			MetricType:      flow.QPS,
+			Count:           10,
+			ControlBehavior: flow.Reject,
+		},
+	})
+	if err != nil {
+		log.Fatalf("Unexpected error: %+v", err)
+		return
+	}
+
 	ch := make(chan struct{})
 
 	for i := 0; i < 10; i++ {
