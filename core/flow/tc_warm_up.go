@@ -4,6 +4,8 @@ import (
 	"math"
 	"sync/atomic"
 
+	"github.com/alibaba/sentinel-golang/logging"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/util"
@@ -21,8 +23,9 @@ type WarmUpTrafficShapingCalculator struct {
 }
 
 func NewWarmUpTrafficShapingCalculator(rule *FlowRule) *WarmUpTrafficShapingCalculator {
-	if rule.WarmUpColdFactor <= 1 {
+	if rule.WarmUpColdFactor == 0 {
 		rule.WarmUpColdFactor = config.DefaultWarmUpColdFactor
+		logging.Warnf("[NewWarmUpTrafficShapingCalculator] No set WarmUpColdFactor,use default values: %d", config.DefaultWarmUpColdFactor)
 	}
 
 	warningToken := uint64((float64(rule.WarmUpPeriodSec) * rule.Count) / float64(rule.WarmUpColdFactor-1))
