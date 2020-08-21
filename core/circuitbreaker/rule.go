@@ -79,7 +79,7 @@ func (b *RuleBase) IsApplicable() error {
 	if b.RetryTimeoutMs <= 0 {
 		return errors.New("invalid RetryTimeoutMs")
 	}
-	if b.MinRequestAmount <= 0 {
+	if b.MinRequestAmount < 0 {
 		return errors.New("invalid MinRequestAmount")
 	}
 	if b.StatIntervalMs <= 0 {

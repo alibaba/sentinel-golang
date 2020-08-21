@@ -2,12 +2,18 @@ package base
 
 import (
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/logging"
 )
+
+type ExitHandler func(entry *SentinelEntry, ctx *EntryContext) error
 
 type SentinelEntry struct {
 	res *ResourceWrapper
-	// one entry with one context
+	// one entry bounds with one context
 	ctx *EntryContext
+
+	exitHandlers []ExitHandler
 	// each entry holds a slot chain.
 	// it means this entry will go through the sc
 	sc *SlotChain
@@ -17,10 +23,15 @@ type SentinelEntry struct {
 
 func NewSentinelEntry(ctx *EntryContext, rw *ResourceWrapper, sc *SlotChain) *SentinelEntry {
 	return &SentinelEntry{
-		res: rw,
-		ctx: ctx,
-		sc:  sc,
+		res:          rw,
+		ctx:          ctx,
+		exitHandlers: make([]ExitHandler, 0),
+		sc:           sc,
 	}
+}
+
+func (e *SentinelEntry) WhenExit(exitHandler ExitHandler) {
+	e.exitHandlers = append(e.exitHandlers, exitHandler)
 }
 
 func (e *SentinelEntry) SetError(err error) {
@@ -56,10 +67,18 @@ func (e *SentinelEntry) Exit(exitOps ...ExitOption) {
 		opt(&options)
 	}
 	ctx := e.ctx
+	if ctx == nil {
+		return
+	}
 	if options.err != nil {
 		ctx.SetError(options.err)
 	}
 	e.exitCtl.Do(func() {
+		for _, handler := range e.exitHandlers {
+			if err := handler(e, ctx); err != nil {
+				logging.Errorf("Fail to execute exitHandler for resource: %s, err: %+v", e.Resource().Name(), err)
+			}
+		}
 		if e.sc != nil {
 			e.sc.exit(ctx)
 			e.sc.RefurbishContext(ctx)

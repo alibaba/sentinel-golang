@@ -284,6 +284,10 @@ func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	stateChangeListeners = append(stateChangeListeners, listeners...)
 }
 
+func ClearStateChangeListeners() {
+	stateChangeListeners = make([]StateChangeListener, 0)
+}
+
 // SetCircuitBreakerGenerator sets the circuit breaker generator for the given strategy.
 // Note that modifying the generator of default strategies is not allowed.
 func SetCircuitBreakerGenerator(s Strategy, generator CircuitBreakerGenFunc) error {
