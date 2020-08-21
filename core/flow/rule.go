@@ -74,8 +74,9 @@ type FlowRule struct {
 	WarmUpPeriodSec   uint32 `json:"warmUpPeriodSec"`
 	MaxQueueingTimeMs uint32 `json:"maxQueueingTimeMs"`
 	// ClusterMode indicates whether the rule is for cluster flow control or local.
-	ClusterMode   bool              `json:"clusterMode"`
-	ClusterConfig ClusterRuleConfig `json:"clusterConfig"`
+	ClusterMode      bool              `json:"clusterMode"`
+	ClusterConfig    ClusterRuleConfig `json:"clusterConfig"`
+	WarmUpColdFactor uint32            `json:"warmUpColdFactor"`
 }
 
 func (f *FlowRule) String() string {
