@@ -31,6 +31,9 @@ func init() {
 	tcGenFuncMap[Throttling] = func(rule *FlowRule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
+	tcGenFuncMap[WarmUp] = func(rule *FlowRule) *TrafficShapingController {
+		return NewTrafficShapingController(NewWarmUpTrafficShapingCalculator(rule), NewDefaultTrafficShapingChecker(rule), rule)
+	}
 }
 
 func logRuleUpdate(m TrafficControllerMap) {
