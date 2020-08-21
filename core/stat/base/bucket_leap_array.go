@@ -136,10 +136,6 @@ func (bla *BucketLeapArray) Values(now uint64) []*BucketWrap {
 }
 
 func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*BucketWrap {
-	_, err := bla.data.currentBucketOfTime(now, bla)
-	if err != nil {
-		logging.Errorf("Fail to get current(%d) bucket, err: %+v.", now, err)
-	}
 	return bla.data.ValuesConditional(now, predicate)
 }
 

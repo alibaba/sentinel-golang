@@ -101,6 +101,10 @@ func (m *SlidingWindowMetric) GetQPS(event base.MetricEvent) float64 {
 	return m.getQPSWithTime(util.CurrentTimeMillis(), event)
 }
 
+func (m *SlidingWindowMetric) GetPreviousQPS(event base.MetricEvent) float64 {
+	return m.getQPSWithTime(util.CurrentTimeMillis()-uint64(m.bucketLengthInMs), event)
+}
+
 func (m *SlidingWindowMetric) getQPSWithTime(now uint64, event base.MetricEvent) float64 {
 	return float64(m.getSumWithTime(now, event)) / m.getIntervalInSecond()
 }
