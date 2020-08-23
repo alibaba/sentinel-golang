@@ -284,6 +284,8 @@ func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	stateChangeListeners = append(stateChangeListeners, listeners...)
 }
 
+// ClearStateChangeListeners will clear the all StateChangeListener
+// Note: this function is not thread-safe.
 func ClearStateChangeListeners() {
 	stateChangeListeners = make([]StateChangeListener, 0)
 }

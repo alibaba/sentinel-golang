@@ -87,7 +87,7 @@ type CircuitBreaker interface {
 	TryPass(ctx *base.EntryContext) bool
 	// CurrentState returns current state of the circuit breaker.
 	CurrentState() State
-	// OnRequestComplete record a passed request with the given response time as well as error (if present),
+	// OnRequestComplete record a completed request with the given response time as well as error (if present),
 	// and handle state transformation of the circuit breaker.
 	// OnRequestComplete is called only when a passed invocation finished.
 	OnRequestComplete(rtt uint64, err error)
@@ -148,6 +148,9 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen(ctx *base.EntryContext) bool {
 		if entry == nil {
 			logging.Errorf("nil entry when probing, rule: %+v", b.rule)
 		} else {
+			// add hook for entry exit
+			// if the current circuit breaker performs the probe through this entry, but the entry was blocked,
+			// this hook will guarantee current circuit breaker state machine will rollback to Open from Half-Open
 			entry.WhenExit(func(entry *base.SentinelEntry, ctx *base.EntryContext) error {
 				if ctx.IsBlocked() && b.state.casState(HalfOpen, Open) {
 					for _, listener := range stateChangeListeners {
@@ -268,11 +271,9 @@ func (b *slowRtCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	} else if curStatus == HalfOpen {
 		if rt > b.maxAllowedRt {
 			// fail to probe
-			logging.Debugf("probe failed, rule: %+v", b.BoundRule())
 			b.fromHalfOpenToOpen(1.0)
 		} else {
 			// succeed to probe
-			logging.Debugf("probe successful, rule: %+v", b.BoundRule())
 			b.fromHalfOpenToClosed()
 			b.resetMetric()
 		}
@@ -453,11 +454,9 @@ func (b *errorRatioCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	}
 	if curStatus == HalfOpen {
 		if err == nil {
-			logging.Debugf("probe successful, rule: %+v", b.BoundRule())
 			b.fromHalfOpenToClosed()
 			b.resetMetric()
 		} else {
-			logging.Debugf("probe failed, rule: %+v", b.BoundRule())
 			b.fromHalfOpenToOpen(1.0)
 		}
 		return
@@ -633,11 +632,9 @@ func (b *errorCountCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	}
 	if curStatus == HalfOpen {
 		if err == nil {
-			logging.Debugf("probe successful, rule: %+v", b.BoundRule())
 			b.fromHalfOpenToClosed()
 			b.resetMetric()
 		} else {
-			logging.Debugf("probe failed, rule: %+v", b.BoundRule())
 			b.fromHalfOpenToOpen(1)
 		}
 		return
