@@ -274,14 +274,19 @@ func logRuleUpdate(rules map[string][]Rule) {
 	logging.Info(sb.String())
 }
 
+// Note: this function is not thread-safe.
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	if len(listeners) == 0 {
 		return
 	}
-	updateMux.Lock()
-	defer updateMux.Unlock()
 
 	stateChangeListeners = append(stateChangeListeners, listeners...)
+}
+
+// ClearStateChangeListeners will clear the all StateChangeListener
+// Note: this function is not thread-safe.
+func ClearStateChangeListeners() {
+	stateChangeListeners = make([]StateChangeListener, 0)
 }
 
 // SetCircuitBreakerGenerator sets the circuit breaker generator for the given strategy.

@@ -220,6 +220,7 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
 	ctx.Resource = rw
+	ctx.SetEntry(NewSentinelEntry(ctx, rw, sc))
 	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
 		AcquireCount: 1,
@@ -261,6 +262,7 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	sc := NewSlotChain()
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
+	ctx.SetEntry(NewSentinelEntry(ctx, rw, sc))
 	ctx.Resource = rw
 	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
