@@ -40,8 +40,9 @@ type StatSlot interface {
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	// blockError introduce the block detail
 	OnEntryBlocked(ctx *EntryContext, blockError *BlockError)
-	// onComplete function will be invoked when chain exits.
-	// The request may be executed successful or blocked or internal error
+	// OnCompleted function will be invoked when chain exits.
+	// The semantics of OnCompleted is the entry passed and completed
+	// Note: blocked entry will not call this function
 	OnCompleted(ctx *EntryContext)
 }
 
