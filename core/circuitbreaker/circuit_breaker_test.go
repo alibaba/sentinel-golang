@@ -12,9 +12,9 @@ type CircuitBreakerMock struct {
 	mock.Mock
 }
 
-func (m *CircuitBreakerMock) BoundRule() Rule {
+func (m *CircuitBreakerMock) BoundRule() *Rule {
 	args := m.Called()
-	return args.Get(0).(Rule)
+	return args.Get(0).(*Rule)
 }
 
 func (m *CircuitBreakerMock) BoundStat() interface{} {

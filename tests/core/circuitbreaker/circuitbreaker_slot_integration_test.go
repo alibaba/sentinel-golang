@@ -25,18 +25,18 @@ type StateChangeListenerMock struct {
 
 func (s *StateChangeListenerMock) OnTransformToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	_ = s.Called(prev, rule)
-	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
 	return
 }
 
 func (s *StateChangeListenerMock) OnTransformToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
 	_ = s.Called(prev, rule, snapshot)
-	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.BreakerStrategy(), prev.String(), snapshot, util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
 }
 
 func (s *StateChangeListenerMock) OnTransformToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	_ = s.Called(prev, rule)
-	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
 }
 
 // Test scenario
@@ -59,16 +59,25 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cbRule1 := circuitbreaker.NewRule("abc", circuitbreaker.SlowRequestRatio,
-		circuitbreaker.WithStatIntervalMs(10000), circuitbreaker.WithRetryTimeoutMs(1),
-		circuitbreaker.WithMinRequestAmount(0), circuitbreaker.WithMaxAllowedRtMs(3),
-		circuitbreaker.WithMaxSlowRequestRatio(0.1))
-	// Statistic time span=10s, recoveryTimeout=3s, maxErrorRatio=50%
-	cbRule2 := circuitbreaker.NewRule("abc", circuitbreaker.ErrorRatio,
-		circuitbreaker.WithStatIntervalMs(10000), circuitbreaker.WithRetryTimeoutMs(2000000),
-		circuitbreaker.WithMinRequestAmount(0), circuitbreaker.WithErrorRatioThreshold(0.1))
+	cbRule1 := &circuitbreaker.Rule{
+		Resource:         "abc",
+		Strategy:         circuitbreaker.SlowRequestRatio,
+		RetryTimeoutMs:   1,
+		MinRequestAmount: 0,
+		StatIntervalMs:   10000,
+		MaxAllowedRtMs:   3,
+		Threshold:        0.1,
+	}
+	cbRule2 := &circuitbreaker.Rule{
+		Resource:         "abc",
+		Strategy:         circuitbreaker.ErrorRatio,
+		RetryTimeoutMs:   2000000,
+		MinRequestAmount: 0,
+		StatIntervalMs:   10000,
+		Threshold:        0.1,
+	}
 
-	_, err = circuitbreaker.LoadRules([]circuitbreaker.Rule{cbRule1, cbRule2})
+	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{cbRule1, cbRule2})
 	stateListener := &StateChangeListenerMock{}
 	circuitbreaker.RegisterStateChangeListeners(stateListener)
 	if err != nil {
@@ -101,14 +110,14 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	stateListener2 := &StateChangeListenerMock{}
 	circuitbreaker.RegisterStateChangeListeners(stateListener2)
 	stateListener2.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
-	stateListener2.On("OnTransformToOpen", circuitbreaker.HalfOpen, cbRule1, mock.Anything).Return()
-	stateListener2.On("OnTransformToHalfOpen", circuitbreaker.Open, cbRule1).Return()
+	stateListener2.On("OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything).Return()
+	stateListener2.On("OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything).Return()
 	e, b = sentinel.Entry("abc", sentinel.WithSlotChain(sc))
-	assert.True(t, b != nil && b.BlockType() == base.BlockTypeCircuitBreaking && reflect.DeepEqual(b.TriggeredRule(), cbRule2))
+	assert.True(t, b != nil && b.BlockType() == base.BlockTypeCircuitBreaking && b.TriggeredRule().(*circuitbreaker.Rule) == cbRule2)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToHalfOpen", 1)
-	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, cbRule1)
+	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToOpen", 1)
-	stateListener2.AssertCalled(t, "OnTransformToOpen", circuitbreaker.HalfOpen, cbRule1, mock.Anything)
+	stateListener2.AssertCalled(t, "OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything)
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
 	// Third, same with second request.
@@ -116,14 +125,14 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	stateListener3 := &StateChangeListenerMock{}
 	circuitbreaker.RegisterStateChangeListeners(stateListener3)
 	stateListener3.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
-	stateListener3.On("OnTransformToOpen", circuitbreaker.HalfOpen, cbRule1, mock.Anything).Return()
-	stateListener3.On("OnTransformToHalfOpen", circuitbreaker.Open, cbRule1).Return()
+	stateListener3.On("OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything).Return()
+	stateListener3.On("OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything).Return()
 	e, b = sentinel.Entry("abc", sentinel.WithSlotChain(sc))
-	assert.True(t, b != nil && b.BlockType() == base.BlockTypeCircuitBreaking && reflect.DeepEqual(b.TriggeredRule(), cbRule2))
+	assert.True(t, b != nil && b.BlockType() == base.BlockTypeCircuitBreaking && b.TriggeredRule().(*circuitbreaker.Rule) == cbRule2)
 	stateListener3.AssertNumberOfCalls(t, "OnTransformToHalfOpen", 1)
-	stateListener3.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, cbRule1)
+	stateListener3.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything)
 	stateListener3.AssertNumberOfCalls(t, "OnTransformToOpen", 1)
-	stateListener3.AssertCalled(t, "OnTransformToOpen", circuitbreaker.HalfOpen, cbRule1, mock.Anything)
+	stateListener3.AssertCalled(t, "OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything)
 
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
@@ -144,12 +153,17 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cbRule1 := circuitbreaker.NewRule("abc", circuitbreaker.SlowRequestRatio,
-		circuitbreaker.WithStatIntervalMs(10000), circuitbreaker.WithRetryTimeoutMs(20),
-		circuitbreaker.WithMinRequestAmount(0), circuitbreaker.WithMaxAllowedRtMs(3),
-		circuitbreaker.WithMaxSlowRequestRatio(0.1))
+	cbRule1 := &circuitbreaker.Rule{
+		Resource:         "abc",
+		Strategy:         circuitbreaker.SlowRequestRatio,
+		RetryTimeoutMs:   20,
+		MinRequestAmount: 0,
+		StatIntervalMs:   10000,
+		MaxAllowedRtMs:   3,
+		Threshold:        0.1,
+	}
 
-	_, err = circuitbreaker.LoadRules([]circuitbreaker.Rule{cbRule1})
+	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{cbRule1})
 	stateListener := &StateChangeListenerMock{}
 	circuitbreaker.RegisterStateChangeListeners(stateListener)
 	if err != nil {
@@ -181,15 +195,15 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 	stateListener2 := &StateChangeListenerMock{}
 	circuitbreaker.RegisterStateChangeListeners(stateListener2)
 	stateListener2.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
-	stateListener2.On("OnTransformToOpen", circuitbreaker.HalfOpen, cbRule1, mock.Anything).Return()
-	stateListener2.On("OnTransformToHalfOpen", circuitbreaker.Open, cbRule1).Return()
+	stateListener2.On("OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything).Return()
+	stateListener2.On("OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything).Return()
 	e, b = sentinel.Entry("abc", sentinel.WithSlotChain(sc))
 	e.Exit()
 	assert.True(t, b == nil)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToHalfOpen", 1)
-	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, cbRule1)
+	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToClosed", 1)
-	stateListener2.AssertCalled(t, "OnTransformToClosed", circuitbreaker.HalfOpen, cbRule1)
+	stateListener2.AssertCalled(t, "OnTransformToClosed", circuitbreaker.HalfOpen, mock.Anything)
 
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
@@ -209,16 +223,25 @@ func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cbRule1 := circuitbreaker.NewRule("abc", circuitbreaker.SlowRequestRatio,
-		circuitbreaker.WithStatIntervalMs(100000), circuitbreaker.WithRetryTimeoutMs(1),
-		circuitbreaker.WithMinRequestAmount(0), circuitbreaker.WithMaxAllowedRtMs(3),
-		circuitbreaker.WithMaxSlowRequestRatio(0.1))
-	// Statistic time span=10s, recoveryTimeout=3s, maxErrorRatio=50%
-	cbRule2 := circuitbreaker.NewRule("abc", circuitbreaker.ErrorRatio,
-		circuitbreaker.WithStatIntervalMs(100000), circuitbreaker.WithRetryTimeoutMs(2000000),
-		circuitbreaker.WithMinRequestAmount(0), circuitbreaker.WithErrorRatioThreshold(0.1))
+	cbRule1 := &circuitbreaker.Rule{
+		Resource:         "abc",
+		Strategy:         circuitbreaker.SlowRequestRatio,
+		RetryTimeoutMs:   1,
+		MinRequestAmount: 0,
+		StatIntervalMs:   10000,
+		MaxAllowedRtMs:   3,
+		Threshold:        0.1,
+	}
+	cbRule2 := &circuitbreaker.Rule{
+		Resource:         "abc",
+		Strategy:         circuitbreaker.ErrorRatio,
+		RetryTimeoutMs:   2000000,
+		MinRequestAmount: 0,
+		StatIntervalMs:   10000,
+		Threshold:        0.1,
+	}
 
-	_, err = circuitbreaker.LoadRules([]circuitbreaker.Rule{cbRule1, cbRule2})
+	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{cbRule1, cbRule2})
 	stateListener := &StateChangeListenerMock{}
 	circuitbreaker.RegisterStateChangeListeners(stateListener)
 	if err != nil {
@@ -252,8 +275,8 @@ func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
 	stateListener2 := &StateChangeListenerMock{}
 	circuitbreaker.RegisterStateChangeListeners(stateListener2)
 	stateListener2.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
-	stateListener2.On("OnTransformToOpen", circuitbreaker.HalfOpen, cbRule1, mock.Anything).Return()
-	stateListener2.On("OnTransformToHalfOpen", circuitbreaker.Open, cbRule1).Return()
+	stateListener2.On("OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything).Return()
+	stateListener2.On("OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything).Return()
 
 	probeFailedCount := int64(0)
 	for i := 0; i < 100; i++ {
@@ -273,9 +296,9 @@ func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
 	}
 
 	wg.Wait()
-	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, cbRule1)
+	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToHalfOpen", int(atomic.LoadInt64(&probeFailedCount)))
-	stateListener2.AssertCalled(t, "OnTransformToOpen", circuitbreaker.HalfOpen, cbRule1, mock.Anything)
+	stateListener2.AssertCalled(t, "OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToOpen", int(atomic.LoadInt64(&probeFailedCount)))
 
 	fmt.Println("slow rt rule probe failed: ", atomic.LoadInt64(&probeFailedCount))

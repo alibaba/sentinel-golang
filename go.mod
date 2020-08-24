@@ -16,7 +16,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v2.19.12+incompatible
 	github.com/stretchr/testify v1.5.1
-	github.com/tidwall/gjson v1.6.0
 	go.uber.org/multierr v1.5.0
 	golang.org/x/tools v0.0.0-20200426102838-f3a5411a4c3b // indirect
 	google.golang.org/grpc v1.22.1
