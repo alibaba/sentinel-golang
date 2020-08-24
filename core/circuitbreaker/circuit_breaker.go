@@ -66,13 +66,19 @@ func (s *State) casState(expect State, update State) bool {
 // StateChangeListener listens on the circuit breaker state change event
 type StateChangeListener interface {
 	// OnTransformToClosed is triggered when circuit breaker state transformed to Closed.
+	// Argument rule is copy from circuit breaker's rule, any changes of rule don't take effect for circuit breaker
+	// Copying rule has a performance penalty and avoids invalid listeners as much as possible
 	OnTransformToClosed(prev State, rule Rule)
 
 	// OnTransformToOpen is triggered when circuit breaker state transformed to Open.
 	// The "snapshot" indicates the triggered value when the transformation occurs.
+	// Argument rule is copy from circuit breaker's rule, any changes of rule don't take effect for circuit breaker
+	// Copying rule has a performance penalty and avoids invalid listeners as much as possible
 	OnTransformToOpen(prev State, rule Rule, snapshot interface{})
 
 	// OnTransformToHalfOpen is triggered when circuit breaker state transformed to HalfOpen.
+	// Argument rule is copy from circuit breaker's rule, any changes of rule don't take effect for circuit breaker
+	// Copying rule has a performance penalty and avoids invalid listeners as much as possible
 	OnTransformToHalfOpen(prev State, rule Rule)
 }
 
