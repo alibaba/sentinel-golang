@@ -323,13 +323,16 @@ func IsValid(r *Rule) error {
 	if r.StatIntervalMs <= 0 {
 		return errors.New("invalid StatIntervalMs")
 	}
-	if r.Threshold < 0 {
+	if r.RetryTimeoutMs <= 0 {
+		return errors.New("invalid RetryTimeoutMs")
+	}
+	if r.Threshold < 0.0 {
 		return errors.New("invalid Threshold")
 	}
-	if r.Strategy == SlowRequestRatio && (r.Threshold < 0.0 || r.Threshold > 1.0) {
+	if r.Strategy == SlowRequestRatio && r.Threshold > 1.0 {
 		return errors.New("invalid slow request ratio threshold (valid range: [0.0, 1.0])")
 	}
-	if r.Strategy == ErrorRatio && (r.Threshold < 0.0 || r.Threshold > 1.0) {
+	if r.Strategy == ErrorRatio && r.Threshold > 1.0 {
 		return errors.New("invalid error ratio threshold (valid range: [0.0, 1.0])")
 	}
 	return nil
