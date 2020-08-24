@@ -159,7 +159,7 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen(ctx *base.EntryContext) bool {
 			entry.WhenExit(func(entry *base.SentinelEntry, ctx *base.EntryContext) error {
 				if ctx.IsBlocked() && b.state.casState(HalfOpen, Open) {
 					for _, listener := range stateChangeListeners {
-						listener.OnTransformToOpen(HalfOpen, b.rule, 1.0)
+						listener.OnTransformToOpen(HalfOpen, *b.rule, 1.0)
 					}
 				}
 				return nil

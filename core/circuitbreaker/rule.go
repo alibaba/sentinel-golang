@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 )
 
 // Strategy represents the strategy of circuit breaker.
@@ -64,28 +63,6 @@ func (r *Rule) String() string {
 	// fallback string
 	return fmt.Sprintf("{id=%s,resource=%s, strategy=%s, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d, MaxAllowedRtMs=%d, Threshold=%f}",
 		r.Id, r.Resource, r.Strategy, r.RetryTimeoutMs, r.MinRequestAmount, r.StatIntervalMs, r.MaxAllowedRtMs, r.Threshold)
-}
-
-func (r *Rule) isApplicable() error {
-	if len(r.Resource) == 0 {
-		return errors.New("empty resource name")
-	}
-	if int(r.Strategy) < int(SlowRequestRatio) || int(r.Strategy) > int(ErrorCount) {
-		return errors.New("invalid Strategy")
-	}
-	if r.StatIntervalMs <= 0 {
-		return errors.New("invalid StatIntervalMs")
-	}
-	if r.Threshold < 0 {
-		return errors.New("invalid Threshold")
-	}
-	if r.Strategy == SlowRequestRatio && (r.Threshold < 0.0 || r.Threshold > 1.0) {
-		return errors.New("invalid slow request ratio threshold (valid range: [0.0, 1.0])")
-	}
-	if r.Strategy == ErrorRatio && (r.Threshold < 0.0 || r.Threshold > 1.0) {
-		return errors.New("invalid error ratio threshold (valid range: [0.0, 1.0])")
-	}
-	return nil
 }
 
 func (r *Rule) isStatReusable(newRule *Rule) bool {

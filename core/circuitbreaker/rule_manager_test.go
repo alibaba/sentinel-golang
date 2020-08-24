@@ -62,7 +62,7 @@ func Test_isApplicableRule_valid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.args.rule.isApplicable(); got != tt.want {
+			if got := IsValid(tt.args.rule); got != tt.want {
 				t.Errorf("RuleManager.isApplicable() = %v, want %v", got, tt.want)
 			}
 		})
@@ -80,7 +80,7 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 			MaxAllowedRtMs:   5,
 			Threshold:        -1.0,
 		}
-		if got := rule.isApplicable(); got == nil {
+		if got := IsValid(rule); got == nil {
 			t.Errorf("RuleManager.isApplicable() = %v", got)
 		}
 	})
@@ -93,7 +93,7 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 			StatIntervalMs:   1000,
 			Threshold:        -0.3,
 		}
-		if got := rule.isApplicable(); got == nil {
+		if got := IsValid(rule); got == nil {
 			t.Errorf("RuleManager.isApplicable() = %v", got)
 		}
 	})
@@ -106,7 +106,7 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 			StatIntervalMs:   1000,
 			Threshold:        0,
 		}
-		if got := rule.isApplicable(); got == nil {
+		if got := IsValid(rule); got == nil {
 			t.Errorf("RuleManager.isApplicable() = %v", got)
 		}
 	})
