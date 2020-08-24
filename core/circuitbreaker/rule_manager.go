@@ -274,12 +274,11 @@ func logRuleUpdate(rules map[string][]Rule) {
 	logging.Info(sb.String())
 }
 
+// Note: this function is not thread-safe.
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	if len(listeners) == 0 {
 		return
 	}
-	updateMux.Lock()
-	defer updateMux.Unlock()
 
 	stateChangeListeners = append(stateChangeListeners, listeners...)
 }
