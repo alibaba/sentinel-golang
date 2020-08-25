@@ -9,9 +9,11 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/golang/protobuf v1.4.0
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/consul/api v1.4.0
 	github.com/labstack/echo/v4 v4.1.15
+	github.com/micro/go-micro/v2 v2.9.1
 	github.com/nacos-group/nacos-sdk-go v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v2.19.12+incompatible
