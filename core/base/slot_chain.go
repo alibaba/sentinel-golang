@@ -185,7 +185,14 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 }
 
 func (sc *SlotChain) exit(ctx *EntryContext) {
+	if ctx == nil || ctx.Entry() == nil {
+		return
+	}
 	for _, s := range sc.stats {
+		// The OnCompleted is called only when entry passed
+		if ctx.IsBlocked() {
+			continue
+		}
 		s.OnCompleted(ctx)
 	}
 	// relieve the context here
