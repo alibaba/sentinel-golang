@@ -2,17 +2,25 @@ package go_micro
 
 import (
 	"context"
-	"github.com/alibaba/sentinel-golang/adapter/go_micro/proto"
-	sentinel "github.com/alibaba/sentinel-golang/api"
-	"github.com/alibaba/sentinel-golang/core/flow"
-	"github.com/micro/go-micro/v2"
+	"errors"
 	"log"
-	"sync"
 	"testing"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/adapter/go_micro/proto"
+	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/micro/go-micro/v2"
+	"github.com/micro/go-micro/v2/server"
+	"github.com/stretchr/testify/assert"
 )
 
-type TestHandler struct {}
+const FakeErrorMsg = "fake error for testing"
+
+type TestHandler struct{}
+
 func (h *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.Response) error {
 	rsp.Result = "Pong"
 	return nil
@@ -20,19 +28,25 @@ func (h *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.R
 
 func TestServerLimiter(t *testing.T) {
 
-	server := micro.NewService(
+	svr := micro.NewService(
 		micro.Name("sentinel.test.server"),
 		micro.Version("latest"),
-		micro.WrapHandler(NewHandlerWrapper()),
+		micro.WrapHandler(NewHandlerWrapper(
+			// add custom fallback function to return a fake error for assertion
+			WithServerBlockFallback(
+				func(ctx context.Context, request server.Request, blockError *base.BlockError) error {
+					return errors.New(FakeErrorMsg)
+				}),
+		)),
 	)
 
-	_ = proto.RegisterTestHandler(server.Server(), &TestHandler{})
+	_ = proto.RegisterTestHandler(svr.Server(), &TestHandler{})
 
-	go server.Run()
+	go svr.Run()
 
 	time.Sleep(time.Second)
 
-	c := server.Client()
+	c := svr.Client()
 	req := c.NewRequest("sentinel.test.server", "Test.Ping", &proto.Request{})
 
 	err := sentinel.InitDefault()
@@ -42,31 +56,36 @@ func TestServerLimiter(t *testing.T) {
 
 	_, err = flow.LoadRules([]*flow.FlowRule{
 		{
-			Resource:        "Test.Ping",
+			Resource:        req.Method(),
 			MetricType:      flow.QPS,
-			Count:           LimitCount,
+			Count:           1,
 			ControlBehavior: flow.Reject,
 		},
 	})
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	assert.Nil(t, err)
 
 	var rsp = &proto.Response{}
 
-	wg := new(sync.WaitGroup)
-	wg.Add(30)
-	for i := 0; i < LimitCount * 3 ; i++ {
-		go func() {
+	t.Run("success", func(t *testing.T) {
+		var _, err = flow.LoadRules([]*flow.FlowRule{
+			{
+				Resource:        req.Method(),
+				MetricType:      flow.QPS,
+				Count:           1,
+				ControlBehavior: flow.Reject,
+			},
+		})
+		assert.Nil(t, err)
+		err = c.Call(context.TODO(), req, rsp)
+		assert.Nil(t, err)
+		assert.EqualValues(t, "Pong", rsp.Result)
+		assert.EqualValues(t, 1, int(stat.GetResourceNode(req.Method()).GetQPS(base.MetricEventPass)))
+
+		t.Run("second fail", func(t *testing.T) {
 			err := c.Call(context.TODO(), req, rsp)
-			if err != nil {
-				t.Logf("Got err when call, %v", err)
-			} else  {
-				t.Log("Simulate call finished")
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
+			assert.Error(t, err)
+			assert.EqualValues(t, 1, int(stat.GetResourceNode(req.Method()).GetQPS(base.MetricEventPass)))
+		})
+	})
 }

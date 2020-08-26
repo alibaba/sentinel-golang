@@ -2,6 +2,7 @@ package go_micro
 
 import (
 	"context"
+
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/micro/go-micro/v2/server"

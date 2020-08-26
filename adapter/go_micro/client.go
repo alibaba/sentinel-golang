@@ -2,6 +2,7 @@ package go_micro
 
 import (
 	"context"
+
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/micro/go-micro/v2/client"
@@ -14,7 +15,7 @@ type clientWrapper struct {
 
 func (c *clientWrapper) Call(ctx context.Context, req client.Request, rsp interface{}, opts ...client.CallOption) error {
 	resourceName := req.Method()
-	options  := evaluateOptions(c.Opts)
+	options := evaluateOptions(c.Opts)
 
 	if options.clientResourceExtract != nil {
 		resourceName = options.clientResourceExtract(ctx, req)
@@ -34,7 +35,6 @@ func (c *clientWrapper) Call(ctx context.Context, req client.Request, rsp interf
 	}
 	defer entry.Exit()
 
-
 	err := c.Client.Call(ctx, req, rsp, opts...)
 	if err != nil {
 		sentinel.TraceError(entry, err)
@@ -42,7 +42,6 @@ func (c *clientWrapper) Call(ctx context.Context, req client.Request, rsp interf
 
 	return err
 }
-
 
 func (c *clientWrapper) Stream(ctx context.Context, req client.Request, opts ...client.CallOption) (client.Stream, error) {
 	options := evaluateOptions(c.Opts)
@@ -73,8 +72,6 @@ func (c *clientWrapper) Stream(ctx context.Context, req client.Request, opts ...
 
 	return stream, err
 }
-
-
 
 // NewClientWrapper returns a sentinel client Wrapper.
 func NewClientWrapper(opts ...Option) client.Wrapper {

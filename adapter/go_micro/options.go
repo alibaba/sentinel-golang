@@ -2,10 +2,10 @@ package go_micro
 
 import (
 	"context"
-	"github.com/micro/go-micro/v2/client"
-	"github.com/micro/go-micro/v2/server"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/micro/go-micro/v2/client"
+	"github.com/micro/go-micro/v2/server"
 )
 
 type (
@@ -19,7 +19,7 @@ type (
 		streamServerResourceExtract func(server.Stream) string
 
 		clientBlockFallback func(context.Context, client.Request, *base.BlockError) error
-		serverBlockFallback func(context.Context, server.Request, *base.BlockError)  error
+		serverBlockFallback func(context.Context, server.Request, *base.BlockError) error
 
 		streamClientBlockFallback func(context.Context, client.Request, *base.BlockError) (client.Stream, error)
 		streamServerBlockFallback func(server.Stream, *base.BlockError) server.Stream

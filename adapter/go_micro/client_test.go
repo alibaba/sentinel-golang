@@ -2,18 +2,20 @@ package go_micro
 
 import (
 	"context"
+	"errors"
+	"log"
+	"testing"
+
 	"github.com/alibaba/sentinel-golang/adapter/go_micro/proto"
 	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/client/selector"
 	"github.com/micro/go-micro/v2/registry/memory"
-	"log"
-	"sync"
-	"testing"
+	"github.com/stretchr/testify/assert"
 )
-
-const LimitCount = 10
 
 func TestClientLimiter(t *testing.T) {
 	// setup
@@ -24,7 +26,13 @@ func TestClientLimiter(t *testing.T) {
 		// set the selector
 		client.Selector(s),
 		// add the breaker wrapper
-		client.Wrap(NewClientWrapper()),
+		client.Wrap(NewClientWrapper(
+			// add custom fallback function to return a fake error for assertion
+			WithClientBlockFallback(
+				func(ctx context.Context, request client.Request, blockError *base.BlockError) error {
+					return errors.New(FakeErrorMsg)
+				}),
+		)),
 	)
 
 	req := c.NewRequest("sentinel.test.server", "Test.Ping", &proto.Request{}, client.WithContentType("application/json"))
@@ -34,32 +42,28 @@ func TestClientLimiter(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	_, err = flow.LoadRules([]*flow.FlowRule{
-		{
-			Resource:        "Test.Ping",
-			MetricType:      flow.QPS,
-			Count:           LimitCount,
-			ControlBehavior: flow.Reject,
-		},
-	})
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	rsp := &proto.Response{}
-	wg := new(sync.WaitGroup)
-	wg.Add(30)
-	for i := 0; i < LimitCount * 3 ; i++ {
-		go func() {
+
+	t.Run("success", func(t *testing.T) {
+		var _, err = flow.LoadRules([]*flow.FlowRule{
+			{
+				Resource:        req.Method(),
+				MetricType:      flow.QPS,
+				Count:           1,
+				ControlBehavior: flow.Reject,
+			},
+		})
+		assert.Nil(t, err)
+		err = c.Call(context.TODO(), req, rsp)
+		// No server started, the return err should not be nil
+		assert.NotNil(t, err)
+		assert.NotEqual(t, FakeErrorMsg, err.Error())
+		assert.EqualValues(t, 1, int(stat.GetResourceNode(req.Method()).GetQPS(base.MetricEventPass)))
+
+		t.Run("second fail", func(t *testing.T) {
 			err := c.Call(context.TODO(), req, rsp)
-			if err != nil {
-				t.Logf("Got err when call, %v", err)
-			} else  {
-				t.Log("Simulate call finished")
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
+			assert.EqualError(t, err, FakeErrorMsg)
+			assert.EqualValues(t, 1, int(stat.GetResourceNode(req.Method()).GetQPS(base.MetricEventPass)))
+		})
+	})
 }
