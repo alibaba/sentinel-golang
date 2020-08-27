@@ -25,18 +25,18 @@ type StateChangeListenerMock struct {
 
 func (s *StateChangeListenerMock) OnTransformToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	_ = s.Called(prev, rule)
-	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
+	logging.Debugf("rule.strategy: %+v, From %s to Closed, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
 	return
 }
 
 func (s *StateChangeListenerMock) OnTransformToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
 	_ = s.Called(prev, rule, snapshot)
-	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
+	logging.Debugf("rule.strategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
 }
 
 func (s *StateChangeListenerMock) OnTransformToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	_ = s.Called(prev, rule)
-	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
+	logging.Debugf("rule.strategy: %+v, From %s to Half-Open, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
 }
 
 // Test scenario
@@ -212,6 +212,7 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 }
 
 func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
+	logging.SetGlobalLoggerLevel(logging.InfoLevel)
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
 		t.Fatal(clearErr)
