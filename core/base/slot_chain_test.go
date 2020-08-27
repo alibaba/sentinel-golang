@@ -303,7 +303,7 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	dsm.AssertNumberOfCalls(t, "Check", 1)
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 1)
-	ssm.AssertNumberOfCalls(t, "OnCompleted", 1)
+	ssm.AssertNumberOfCalls(t, "OnCompleted", 0)
 }
 
 type badPrepareSlotMock struct {

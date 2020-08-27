@@ -34,9 +34,6 @@ func (c *ConcurrencyStatSlot) OnEntryBlocked(ctx *base.EntryContext, blockError 
 }
 
 func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
-	if ctx.IsBlocked() {
-		return
-	}
 	res := ctx.Resource.Name()
 	args := ctx.Input.Args
 	tcs := getTrafficControllersFor(res)
