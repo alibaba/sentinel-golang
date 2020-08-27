@@ -6,10 +6,12 @@ import (
 	"testing"
 
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
 func Test_Size_1000_Circuit_Breaker_Rules_Update(t *testing.T) {
+	logging.SetGlobalLoggerLevel(logging.ErrorLevel)
 	rs := make([]*cb.Rule, 0, 1000)
 	rand.Seed(int64(util.CurrentTimeMillis()))
 	intervals := []uint32{10000, 15000, 20000, 25000, 30000}
@@ -30,6 +32,7 @@ func Test_Size_1000_Circuit_Breaker_Rules_Update(t *testing.T) {
 	if err != nil {
 		t.Errorf("error")
 	}
+	logging.SetGlobalLoggerLevel(logging.InfoLevel)
 }
 
 func Benchmark_Size_1000_Circuit_Breaker_Rules_Update(b *testing.B) {
@@ -61,6 +64,7 @@ func Benchmark_Size_1000_Circuit_Breaker_Rules_Update(b *testing.B) {
 }
 
 func Test_Size_10000_Circuit_Breaker_Rules_Update(t *testing.T) {
+	logging.SetGlobalLoggerLevel(logging.ErrorLevel)
 	rs := make([]*cb.Rule, 0, 10000)
 	intervals := []uint32{10000, 15000, 20000, 25000, 30000}
 	for i := 0; i < 10000; i++ {
@@ -80,6 +84,7 @@ func Test_Size_10000_Circuit_Breaker_Rules_Update(t *testing.T) {
 	if err != nil {
 		t.Errorf("error")
 	}
+	logging.SetGlobalLoggerLevel(logging.InfoLevel)
 }
 
 func Benchmark_Size_10000_Circuit_Breaker_Rules_Update(b *testing.B) {
