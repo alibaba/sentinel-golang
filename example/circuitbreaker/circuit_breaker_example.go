@@ -16,15 +16,15 @@ type stateChangeTestListener struct {
 }
 
 func (s *stateChangeTestListener) OnTransformToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
-	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
 }
 
 func (s *stateChangeTestListener) OnTransformToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
-	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.BreakerStrategy(), prev.String(), snapshot, util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
 }
 
 func (s *stateChangeTestListener) OnTransformToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
-	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.BreakerStrategy(), prev.String(), util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
 }
 
 func main() {
@@ -36,16 +36,26 @@ func main() {
 	// Register a state change listener so that we could observer the state change of the internal circuit breaker.
 	circuitbreaker.RegisterStateChangeListeners(&stateChangeTestListener{})
 
-	_, err = circuitbreaker.LoadRules([]circuitbreaker.Rule{
+	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
 		// Statistic time span=10s, recoveryTimeout=3s, slowRtUpperBound=50ms, maxSlowRequestRatio=50%
-		circuitbreaker.NewRule("abc", circuitbreaker.SlowRequestRatio,
-			circuitbreaker.WithStatIntervalMs(10000), circuitbreaker.WithRetryTimeoutMs(3000),
-			circuitbreaker.WithMinRequestAmount(10), circuitbreaker.WithMaxAllowedRtMs(50),
-			circuitbreaker.WithMaxSlowRequestRatio(0.5)),
+		{
+			Resource:         "abc",
+			Strategy:         circuitbreaker.SlowRequestRatio,
+			RetryTimeoutMs:   3000,
+			MinRequestAmount: 10,
+			StatIntervalMs:   10000,
+			MaxAllowedRtMs:   50,
+			Threshold:        0.5,
+		},
 		// Statistic time span=10s, recoveryTimeout=3s, maxErrorRatio=50%
-		circuitbreaker.NewRule("abc", circuitbreaker.ErrorRatio,
-			circuitbreaker.WithStatIntervalMs(10000), circuitbreaker.WithRetryTimeoutMs(3000),
-			circuitbreaker.WithMinRequestAmount(10), circuitbreaker.WithErrorRatioThreshold(0.5)),
+		{
+			Resource:         "abc",
+			Strategy:         circuitbreaker.ErrorRatio,
+			RetryTimeoutMs:   3000,
+			MinRequestAmount: 10,
+			StatIntervalMs:   10000,
+			Threshold:        0.5,
+		},
 	})
 	if err != nil {
 		log.Fatal(err)
