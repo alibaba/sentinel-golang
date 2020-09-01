@@ -20,7 +20,6 @@ var (
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
-	cacheRules   = make([]*FlowRule, 0)
 )
 
 func init() {
@@ -77,9 +76,6 @@ func onRuleUpdate(rules []*FlowRule) (err error) {
 func LoadRules(rules []*FlowRule) (bool, error) {
 	// TODO: rethink the design
 	err := onRuleUpdate(rules)
-	if err == nil {
-		cacheRules = rules
-	}
 	return true, err
 }
 
@@ -186,6 +182,7 @@ func buildFlowMap(rules []*FlowRule) TrafficControllerMap {
 	return m
 }
 
+//
 func isAppend(rulesOfRes []*TrafficShapingController, ruleId uint64) bool {
 	for _, v := range rulesOfRes {
 		if v.rule.ID == ruleId {
@@ -206,6 +203,8 @@ func UpdateRule(rule *FlowRule) error {
 	if rule.LimitOrigin == "" {
 		rule.LimitOrigin = LimitOriginDefault
 	}
+	defer tcMux.RUnlock()
+	tcMux.RLock()
 	rulesOfRes, exists := tcMap[rule.Resource]
 
 	if !exists {
@@ -222,9 +221,8 @@ func UpdateRule(rule *FlowRule) error {
 			if tsc == nil {
 				return errors.New("Ignoring the rule due to bad generated traffic controller")
 			}
-			tcMux.RLock()
 			rulesOfRes[k] = tsc
-			tcMux.RUnlock()
+
 			updateFlag = true
 		}
 	}
@@ -235,13 +233,15 @@ func UpdateRule(rule *FlowRule) error {
 	return nil
 }
 
-func AddRule(rule *FlowRule) error {
+func AppendRule(rule *FlowRule) error {
 	if err := IsValidFlowRule(rule); err != nil {
 		return err
 	}
 	if rule.LimitOrigin == "" {
 		rule.LimitOrigin = LimitOriginDefault
 	}
+	defer tcMux.RUnlock()
+	tcMux.RLock()
 	generator, supported := tcGenFuncMap[rule.ControlBehavior]
 	if !supported {
 		return errors.New("Unsupported control behavior")
@@ -255,9 +255,7 @@ func AddRule(rule *FlowRule) error {
 		return errors.New("The current rule cannot be appended because the same resource has not been loaded")
 	} else {
 		if tsc.rule.ID == 0 || isAppend(rulesOfRes, tsc.rule.ID) {
-			tcMux.RLock()
 			tcMap[rule.Resource] = append(rulesOfRes, tsc)
-			tcMux.RUnlock()
 		}
 	}
 	return nil
