@@ -1,4 +1,4 @@
-package go_micro
+package micro
 
 import (
 	"context"
@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alibaba/sentinel-golang/adapter/go_micro/proto"
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/tests/adapter/micro/proto"
 	"github.com/micro/go-micro/v2"
 	"github.com/micro/go-micro/v2/server"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +29,7 @@ func (h *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.R
 func TestServerLimiter(t *testing.T) {
 
 	svr := micro.NewService(
+		micro.Address("localhost:56436"),
 		micro.Name("sentinel.test.server"),
 		micro.Version("latest"),
 		micro.WrapHandler(NewHandlerWrapper(

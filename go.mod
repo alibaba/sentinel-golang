@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/apache/dubbo-go v1.4.2
-	github.com/coreos/etcd v3.3.13+incompatible
+	github.com/coreos/etcd v3.3.18+incompatible
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
@@ -20,6 +20,6 @@ require (
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/multierr v1.5.0
 	golang.org/x/tools v0.0.0-20200426102838-f3a5411a4c3b // indirect
-	google.golang.org/grpc v1.22.1
+	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.2.8
 )
