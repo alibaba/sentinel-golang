@@ -123,7 +123,7 @@ func (r *Rule) IsStatReusable(newRule *Rule) bool {
 	return r.Resource == newRule.Resource && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.DurationInSec == newRule.DurationInSec
 }
 
-// IsEqualsTo checks whether current rule is consistent with the given rule.
+// Equals checks whether current rule is consistent with the given rule.
 func (r *Rule) Equals(newRule *Rule) bool {
 	baseCheck := r.Resource == newRule.Resource && r.MetricType == newRule.MetricType && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.ParamIndex == newRule.ParamIndex && r.Threshold == newRule.Threshold && r.DurationInSec == newRule.DurationInSec && reflect.DeepEqual(r.SpecificItems, newRule.SpecificItems)
 	if !baseCheck {

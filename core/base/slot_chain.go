@@ -40,8 +40,9 @@ type StatSlot interface {
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	// blockError introduce the block detail
 	OnEntryBlocked(ctx *EntryContext, blockError *BlockError)
-	// onComplete function will be invoked when chain exits.
-	// The request may be executed successful or blocked or internal error
+	// OnCompleted function will be invoked when chain exits.
+	// The semantics of OnCompleted is the entry passed and completed
+	// Note: blocked entry will not call this function
 	OnCompleted(ctx *EntryContext)
 }
 
@@ -184,6 +185,14 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 }
 
 func (sc *SlotChain) exit(ctx *EntryContext) {
+	if ctx == nil || ctx.Entry() == nil {
+		logging.Errorf("nil ctx or nil associated entry")
+		return
+	}
+	// The OnCompleted is called only when entry passed
+	if ctx.IsBlocked() {
+		return
+	}
 	for _, s := range sc.stats {
 		s.OnCompleted(ctx)
 	}

@@ -23,7 +23,7 @@ func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func checkPass(ctx *base.EntryContext) (bool, Rule) {
+func checkPass(ctx *base.EntryContext) (bool, *Rule) {
 	breakers := getResBreakers(ctx.Resource.Name())
 	for _, breaker := range breakers {
 		passed := breaker.TryPass(ctx)
