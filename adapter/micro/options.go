@@ -1,4 +1,4 @@
-package go_micro
+package micro
 
 import (
 	"context"

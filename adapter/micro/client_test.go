@@ -1,4 +1,4 @@
-package go_micro
+package micro
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"log"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/adapter/go_micro/proto"
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/tests/adapter/micro/proto"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/client/selector"
 	"github.com/micro/go-micro/v2/registry/memory"

@@ -1,6 +1,6 @@
 syntax = "proto3";
 package proto;
-option go_package = "adapter/go_micro/proto;proto";
+option go_package = "tests/adapter/micro/proto;proto";
 
 service Test {
   rpc Ping(Request) returns (Response) {}
