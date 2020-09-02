@@ -3,16 +3,13 @@ package nacos
 import (
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/clients"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-
-	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
-
 	"github.com/alibaba/sentinel-golang/ext/datasource"
-	"github.com/stretchr/testify/assert"
-
+	"github.com/nacos-group/nacos-sdk-go/clients"
+	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 

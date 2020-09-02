@@ -6,14 +6,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/alibaba/sentinel-golang/ext/datasource/nacos"
-
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/ext/datasource"
+	"github.com/alibaba/sentinel-golang/ext/datasource/nacos"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/nacos-group/nacos-sdk-go/clients"
-
-	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 )
 
@@ -25,6 +24,17 @@ type Counter struct {
 
 func main() {
 	counter := Counter{pass: new(int64), block: new(int64), total: new(int64)}
+
+	if err := sentinel.InitDefault(); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// For testing
+	if err := logging.ResetGlobalLogger(logging.NewConsoleLogger("nacos-datasource-example")); err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	//nacos server info
 	sc := []constant.ServerConfig{
