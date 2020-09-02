@@ -1,10 +1,12 @@
-package nacos
+package main
 
 import (
 	"fmt"
 	"math/rand"
 	"sync/atomic"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/ext/datasource/nacos"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -21,9 +23,10 @@ type Counter struct {
 	total *int64
 }
 
-func Example_NacosDatasource_CustomizeClient() {
+func main() {
 	counter := Counter{pass: new(int64), block: new(int64), total: new(int64)}
 
+	//nacos server info
 	sc := []constant.ServerConfig{
 		{
 			ContextPath: "/nacos",
@@ -31,10 +34,11 @@ func Example_NacosDatasource_CustomizeClient() {
 			IpAddr:      "127.0.0.1",
 		},
 	}
-
+	//nacos client info
 	cc := constant.ClientConfig{
 		TimeoutMs: 5000,
 	}
+	//build nacos config client
 	client, err := clients.CreateConfigClient(map[string]interface{}{
 		"serverConfigs": sc,
 		"clientConfig":  cc,
@@ -44,17 +48,23 @@ func Example_NacosDatasource_CustomizeClient() {
 		return
 	}
 	h := datasource.NewFlowRulesHandler(datasource.FlowRuleJsonArrayParser)
-	nds, err := NewNacosDataSource(client, "sentinel-go", "flow", h)
+	//sentinel-go is nacos configuration management Group in flow control
+	//flow is nacos configuration management DataId in flow control
+	nds, err := nacos.NewNacosDataSource(client, "sentinel-go", "flow", h)
 	if err != nil {
 		fmt.Printf("Fail to create nacos data source client, err: %+v", err)
 		return
 	}
+	//initialize *NacosDataSource and load rule
 	err = nds.Initialize()
 	if err != nil {
 		fmt.Printf("Fail to initialize nacos data source client, err: %+v", err)
 		return
 	}
+	//Starting counter
 	go timerTask(&counter)
+
+	//Simulation of the request
 	ch := make(chan struct{})
 	for i := 0; i < 10; i++ {
 		go func() {
