@@ -44,9 +44,9 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 	t.Run("TestFlowRulesJsonConverter_normal", func(t *testing.T) {
 		got, err := FlowRuleJsonArrayParser(normalSrc)
 		assert.True(t, got != nil && err == nil)
-		flowRules := got.([]*flow.FlowRule)
+		flowRules := got.([]*flow.Rule)
 		assert.True(t, len(flowRules) == 3)
-		r1 := &flow.FlowRule{
+		r1 := &flow.Rule{
 			Resource:          "abc",
 			LimitOrigin:       "default",
 			MetricType:        flow.Concurrency,
@@ -59,7 +59,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[0], r1))
 
-		r2 := &flow.FlowRule{
+		r2 := &flow.Rule{
 			Resource:          "abc",
 			LimitOrigin:       "default",
 			MetricType:        flow.QPS,
@@ -72,7 +72,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[1], r2))
 
-		r3 := &flow.FlowRule{
+		r3 := &flow.Rule{
 			Resource:          "abc",
 			LimitOrigin:       "default",
 			MetricType:        flow.QPS,
@@ -90,7 +90,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 func TestFlowRulesUpdater(t *testing.T) {
 	t.Run("TestFlowRulesUpdater_Nil", func(t *testing.T) {
 		flow.ClearRules()
-		flow.LoadRules([]*flow.FlowRule{
+		flow.LoadRules([]*flow.Rule{
 			{
 				ID:                0,
 				Resource:          "abc",
@@ -111,20 +111,20 @@ func TestFlowRulesUpdater(t *testing.T) {
 	t.Run("TestFlowRulesUpdater_Assert_Failed", func(t *testing.T) {
 		flow.ClearRules()
 		err := FlowRulesUpdater("xxxxxxxx")
-		assert.True(t, err != nil && strings.Contains(err.Error(), "Fail to type assert data to []flow.FlowRule"))
+		assert.True(t, err != nil && strings.Contains(err.Error(), "Fail to type assert data to []flow.Rule"))
 	})
 
 	t.Run("TestFlowRulesUpdater_Empty_Rules", func(t *testing.T) {
 		flow.ClearRules()
-		p := make([]flow.FlowRule, 0)
+		p := make([]flow.Rule, 0)
 		err := FlowRulesUpdater(p)
 		assert.True(t, err == nil && len(flow.GetRules()) == 0)
 	})
 
 	t.Run("TestFlowRulesUpdater_Normal", func(t *testing.T) {
 		flow.ClearRules()
-		p := make([]flow.FlowRule, 0)
-		fw := flow.FlowRule{
+		p := make([]flow.Rule, 0)
+		fw := flow.Rule{
 			ID:                0,
 			Resource:          "aaaa",
 			LimitOrigin:       "aaa",

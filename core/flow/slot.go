@@ -53,7 +53,7 @@ func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, acqu
 	return checkInLocal(tc, node, acquireCount, flag)
 }
 
-func selectNodeByRelStrategy(rule *FlowRule, node base.StatNode) base.StatNode {
+func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
 	if rule.RelationStrategy == AssociatedResource {
 		return stat.GetResourceNode(rule.RefResource)
 	}
