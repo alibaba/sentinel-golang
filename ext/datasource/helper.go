@@ -17,34 +17,34 @@ func checkSrcComplianceJson(src []byte) (bool, error) {
 	return true, nil
 }
 
-// FlowRuleJsonArrayParser provide JSON  as the default serialization for list of flow.FlowRule
+// FlowRuleJsonArrayParser provide JSON  as the default serialization for list of flow.Rule
 func FlowRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
 
-	rules := make([]*flow.FlowRule, 0)
+	rules := make([]*flow.Rule, 0)
 	err := json.Unmarshal(src, &rules)
 	return rules, err
 }
 
-// FlowRulesUpdater load the newest []flow.FlowRule to downstream flow component.
+// FlowRulesUpdater load the newest []flow.Rule to downstream flow component.
 func FlowRulesUpdater(data interface{}) error {
 	if data == nil {
 		return flow.ClearRules()
 	}
 
-	rules := make([]*flow.FlowRule, 0)
-	if val, ok := data.([]flow.FlowRule); ok {
+	rules := make([]*flow.Rule, 0)
+	if val, ok := data.([]flow.Rule); ok {
 		for _, v := range val {
 			rules = append(rules, &v)
 		}
-	} else if val, ok := data.([]*flow.FlowRule); ok {
+	} else if val, ok := data.([]*flow.Rule); ok {
 		rules = val
 	} else {
 		return Error{
 			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []flow.FlowRule or []*flow.FlowRule, in fact, data: %+v", data),
+			desc: fmt.Sprintf("Fail to type assert data to []flow.Rule or []*flow.Rule, in fact, data: %+v", data),
 		}
 	}
 	succ, err := flow.LoadRules(rules)

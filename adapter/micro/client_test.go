@@ -45,7 +45,7 @@ func TestClientLimiter(t *testing.T) {
 	rsp := &proto.Response{}
 
 	t.Run("success", func(t *testing.T) {
-		var _, err = flow.LoadRules([]*flow.FlowRule{
+		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:        req.Method(),
 				MetricType:      flow.QPS,

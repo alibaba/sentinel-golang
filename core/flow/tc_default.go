@@ -17,10 +17,10 @@ func (d *DefaultTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, 
 }
 
 type DefaultTrafficShapingChecker struct {
-	rule *FlowRule
+	rule *Rule
 }
 
-func NewDefaultTrafficShapingChecker(rule *FlowRule) *DefaultTrafficShapingChecker {
+func NewDefaultTrafficShapingChecker(rule *Rule) *DefaultTrafficShapingChecker {
 	return &DefaultTrafficShapingChecker{rule: rule}
 }
 
