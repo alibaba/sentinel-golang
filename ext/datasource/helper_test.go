@@ -155,25 +155,25 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 	}
 
 	got, err := SystemRuleJsonArrayParser(normalSrc)
-	systemRules := got.([]*system.SystemRule)
+	systemRules := got.([]*system.Rule)
 	assert.True(t, err == nil && len(systemRules) == 4)
 
-	r0 := &system.SystemRule{
+	r0 := &system.Rule{
 		MetricType:   system.Load,
 		TriggerCount: 0.5,
 		Strategy:     system.BBR,
 	}
-	r1 := &system.SystemRule{
+	r1 := &system.Rule{
 		MetricType:   system.AvgRT,
 		TriggerCount: 0.6,
 		Strategy:     system.BBR,
 	}
-	r2 := &system.SystemRule{
+	r2 := &system.Rule{
 		MetricType:   system.Concurrency,
 		TriggerCount: 0.7,
 		Strategy:     system.BBR,
 	}
-	r3 := &system.SystemRule{
+	r3 := &system.Rule{
 		MetricType:   system.InboundQPS,
 		TriggerCount: 0.8,
 		Strategy:     system.BBR,
@@ -188,7 +188,7 @@ func TestSystemRulesJsonConvert(t *testing.T) {
 func TestSystemRulesUpdater(t *testing.T) {
 	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
 		system.ClearRules()
-		system.LoadRules([]*system.SystemRule{
+		system.LoadRules([]*system.Rule{
 			{
 				ID:           0,
 				MetricType:   0,
@@ -204,20 +204,20 @@ func TestSystemRulesUpdater(t *testing.T) {
 	t.Run("TestSystemRulesUpdater_Assert_Failed", func(t *testing.T) {
 		system.ClearRules()
 		err := SystemRulesUpdater("xxxxxxxx")
-		assert.True(t, err != nil && strings.Contains(err.Error(), "Fail to type assert data to []system.SystemRule"))
+		assert.True(t, err != nil && strings.Contains(err.Error(), "Fail to type assert data to []system.Rule"))
 	})
 
 	t.Run("TestSystemRulesUpdater_Empty_Rules", func(t *testing.T) {
 		system.ClearRules()
-		p := make([]system.SystemRule, 0)
+		p := make([]system.Rule, 0)
 		err := SystemRulesUpdater(p)
 		assert.True(t, err == nil && len(system.GetRules()) == 0)
 	})
 
 	t.Run("TestSystemRulesUpdater_Normal", func(t *testing.T) {
 		system.ClearRules()
-		p := make([]system.SystemRule, 0)
-		sr := system.SystemRule{
+		p := make([]system.Rule, 0)
+		sr := system.Rule{
 			ID:           0,
 			MetricType:   0,
 			TriggerCount: 0,
