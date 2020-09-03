@@ -31,7 +31,7 @@ func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func (s *SystemAdaptiveSlot) doCheckRule(rule *SystemRule) (bool, float64) {
+func (s *SystemAdaptiveSlot) doCheckRule(rule *Rule) (bool, float64) {
 	threshold := rule.TriggerCount
 	switch rule.MetricType {
 	case InboundQPS:

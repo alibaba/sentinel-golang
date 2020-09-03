@@ -61,34 +61,34 @@ func NewFlowRulesHandler(converter PropertyConverter) PropertyHandler {
 	return NewDefaultPropertyHandler(converter, FlowRulesUpdater)
 }
 
-// SystemRuleJsonArrayParser provide JSON  as the default serialization for list of system.SystemRule
+// SystemRuleJsonArrayParser provide JSON  as the default serialization for list of system.Rule
 func SystemRuleJsonArrayParser(src []byte) (interface{}, error) {
 	if valid, err := checkSrcComplianceJson(src); !valid {
 		return nil, err
 	}
 
-	rules := make([]*system.SystemRule, 0)
+	rules := make([]*system.Rule, 0)
 	err := json.Unmarshal(src, &rules)
 	return rules, err
 }
 
-// SystemRulesUpdater load the newest []system.SystemRule to downstream system component.
+// SystemRulesUpdater load the newest []system.Rule to downstream system component.
 func SystemRulesUpdater(data interface{}) error {
 	if data == nil {
 		return system.ClearRules()
 	}
 
-	rules := make([]*system.SystemRule, 0)
-	if val, ok := data.([]system.SystemRule); ok {
+	rules := make([]*system.Rule, 0)
+	if val, ok := data.([]system.Rule); ok {
 		for _, v := range val {
 			rules = append(rules, &v)
 		}
-	} else if val, ok := data.([]*system.SystemRule); ok {
+	} else if val, ok := data.([]*system.Rule); ok {
 		rules = val
 	} else {
 		return Error{
 			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []system.SystemRule or []*system.SystemRule, in fact, data: %+v", data),
+			desc: fmt.Sprintf("Fail to type assert data to []system.Rule or []*system.Rule, in fact, data: %+v", data),
 		}
 	}
 	succ, err := system.LoadRules(rules)
