@@ -203,18 +203,8 @@ func IsValidFlowRule(rule *FlowRule) error {
 	if rule.RelationStrategy == AssociatedResource && rule.RefResource == "" {
 		return errors.New("Bad flow rule: invalid control behavior")
 	}
-	if err := checkClusterField(rule); err != nil {
-		return err
-	}
 
 	return checkControlBehaviorField(rule)
-}
-
-func checkClusterField(rule *FlowRule) error {
-	if rule.ClusterMode && rule.ID <= 0 {
-		return errors.New("invalid cluster rule ID")
-	}
-	return nil
 }
 
 func checkControlBehaviorField(rule *FlowRule) error {

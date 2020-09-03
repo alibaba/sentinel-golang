@@ -47,13 +47,11 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 func TestIsValidFlowRule(t *testing.T) {
 	badRule1 := &FlowRule{ID: 1, Count: 1, MetricType: QPS, Resource: ""}
 	badRule2 := &FlowRule{ID: 1, Count: -1.9, MetricType: QPS, Resource: "test"}
-	badRule3 := &FlowRule{Count: 5, MetricType: QPS, Resource: "test", ClusterMode: true}
-	badRule4 := &FlowRule{Count: 5, MetricType: QPS, Resource: "test", ControlBehavior: WarmUp}
+	badRule3 := &FlowRule{Count: 5, MetricType: QPS, Resource: "test", ControlBehavior: WarmUp}
 	goodRule1 := &FlowRule{Count: 10, MetricType: QPS, Resource: "test", ControlBehavior: Throttling}
 
 	assert.Error(t, IsValidFlowRule(badRule1))
 	assert.Error(t, IsValidFlowRule(badRule2))
 	assert.Error(t, IsValidFlowRule(badRule3))
-	assert.Error(t, IsValidFlowRule(badRule4))
 	assert.NoError(t, IsValidFlowRule(goodRule1))
 }

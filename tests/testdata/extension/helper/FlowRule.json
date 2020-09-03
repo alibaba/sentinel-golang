@@ -8,11 +8,7 @@
         "controlBehavior": 0,
         "refResource": "refDefault",
         "warmUpPeriodSec": 10,
-        "maxQueueingTimeMs": 1000,
-        "clusterMode": false,
-        "clusterConfig": {
-            "thresholdType": 0
-        }
+        "maxQueueingTimeMs": 1000
     },
     {
         "resource": "abc",
@@ -23,11 +19,7 @@
         "controlBehavior": 1,
         "refResource": "refDefault",
         "warmUpPeriodSec": 20,
-        "maxQueueingTimeMs": 2000,
-        "clusterMode": true,
-        "clusterConfig": {
-            "thresholdType": 1
-        }
+        "maxQueueingTimeMs": 2000
     },
     {
         "resource": "abc",
@@ -38,10 +30,6 @@
         "controlBehavior": 1,
         "refResource": "refDefault",
         "warmUpPeriodSec": 30,
-        "maxQueueingTimeMs": 3000,
-        "clusterMode": true,
-        "clusterConfig": {
-            "thresholdType": 1
-        }
+        "maxQueueingTimeMs": 3000
     }
 ]

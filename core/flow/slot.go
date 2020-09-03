@@ -50,9 +50,6 @@ func canPassCheck(tc *TrafficShapingController, node base.StatNode, acquireCount
 }
 
 func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
-	if tc.rule.ClusterMode {
-		// TODO: support cluster mode
-	}
 	return checkInLocal(tc, node, acquireCount, flag)
 }
 

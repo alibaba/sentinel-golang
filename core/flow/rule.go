@@ -44,17 +44,6 @@ const (
 	WarmUpThrottling
 )
 
-type ClusterThresholdMode uint32
-
-const (
-	AvgLocalThreshold ClusterThresholdMode = iota
-	GlobalThreshold
-)
-
-type ClusterRuleConfig struct {
-	ThresholdType ClusterThresholdMode `json:"thresholdType"`
-}
-
 // FlowRule describes the strategy of flow control.
 type FlowRule struct {
 	// ID represents the unique ID of the rule (optional).
@@ -71,12 +60,9 @@ type FlowRule struct {
 	ControlBehavior  ControlBehavior  `json:"controlBehavior"`
 
 	RefResource       string `json:"refResource"`
-	WarmUpPeriodSec   uint32 `json:"warmUpPeriodSec"`
 	MaxQueueingTimeMs uint32 `json:"maxQueueingTimeMs"`
-	// ClusterMode indicates whether the rule is for cluster flow control or local.
-	ClusterMode      bool              `json:"clusterMode"`
-	ClusterConfig    ClusterRuleConfig `json:"clusterConfig"`
-	WarmUpColdFactor uint32            `json:"warmUpColdFactor"`
+	WarmUpPeriodSec   uint32 `json:"warmUpPeriodSec"`
+	WarmUpColdFactor  uint32 `json:"warmUpColdFactor"`
 }
 
 func (f *FlowRule) String() string {

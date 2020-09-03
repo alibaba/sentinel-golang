@@ -56,10 +56,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 			RefResource:       "refDefault",
 			WarmUpPeriodSec:   10,
 			MaxQueueingTimeMs: 1000,
-			ClusterMode:       false,
-			ClusterConfig: flow.ClusterRuleConfig{
-				ThresholdType: flow.AvgLocalThreshold,
-			},
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[0], r1))
 
@@ -73,10 +69,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 			RefResource:       "refDefault",
 			WarmUpPeriodSec:   20,
 			MaxQueueingTimeMs: 2000,
-			ClusterMode:       true,
-			ClusterConfig: flow.ClusterRuleConfig{
-				ThresholdType: flow.GlobalThreshold,
-			},
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[1], r2))
 
@@ -90,10 +82,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 			RefResource:       "refDefault",
 			WarmUpPeriodSec:   30,
 			MaxQueueingTimeMs: 3000,
-			ClusterMode:       true,
-			ClusterConfig: flow.ClusterRuleConfig{
-				ThresholdType: flow.GlobalThreshold,
-			},
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[2], r3))
 	})
@@ -114,8 +102,6 @@ func TestFlowRulesUpdater(t *testing.T) {
 				RefResource:       "",
 				WarmUpPeriodSec:   0,
 				MaxQueueingTimeMs: 0,
-				ClusterMode:       false,
-				ClusterConfig:     flow.ClusterRuleConfig{},
 			}})
 		assert.True(t, len(flow.GetRules()) == 1, "Fail to prepare test data.")
 		err := FlowRulesUpdater(nil)
@@ -149,8 +135,6 @@ func TestFlowRulesUpdater(t *testing.T) {
 			RefResource:       "",
 			WarmUpPeriodSec:   0,
 			MaxQueueingTimeMs: 0,
-			ClusterMode:       false,
-			ClusterConfig:     flow.ClusterRuleConfig{},
 		}
 		p = append(p, fw)
 		err := FlowRulesUpdater(p)
