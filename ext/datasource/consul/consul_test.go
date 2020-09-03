@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	SystemRules = []*system.SystemRule{
+	SystemRules = []*system.Rule{
 		{MetricType: 0, Strategy: 0},
 		{MetricType: 0, Strategy: 0},
 		{MetricType: 0, Strategy: 0},

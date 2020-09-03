@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type RuleMap map[MetricType][]*SystemRule
+type RuleMap map[MetricType][]*Rule
 
 // const
 var (
@@ -17,11 +17,11 @@ var (
 )
 
 // GetRules return all the rules
-func GetRules() []*SystemRule {
+func GetRules() []*Rule {
 	ruleMapMux.RLock()
 	defer ruleMapMux.RUnlock()
 
-	rules := make([]*SystemRule, 0)
+	rules := make([]*Rule, 0)
 	for _, rs := range ruleMap {
 		rules = append(rules, rs...)
 	}
@@ -29,7 +29,7 @@ func GetRules() []*SystemRule {
 }
 
 // LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
-func LoadRules(rules []*SystemRule) (bool, error) {
+func LoadRules(rules []*Rule) (bool, error) {
 	m := buildRuleMap(rules)
 
 	if err := onRuleUpdate(m); err != nil {
@@ -62,7 +62,7 @@ func onRuleUpdate(r RuleMap) error {
 	return nil
 }
 
-func buildRuleMap(rules []*SystemRule) RuleMap {
+func buildRuleMap(rules []*Rule) RuleMap {
 	m := make(RuleMap)
 
 	if len(rules) == 0 {
@@ -76,7 +76,7 @@ func buildRuleMap(rules []*SystemRule) RuleMap {
 		}
 		rulesOfRes, exists := m[rule.MetricType]
 		if !exists {
-			m[rule.MetricType] = []*SystemRule{rule}
+			m[rule.MetricType] = []*Rule{rule}
 		} else {
 			m[rule.MetricType] = append(rulesOfRes, rule)
 		}
@@ -85,9 +85,9 @@ func buildRuleMap(rules []*SystemRule) RuleMap {
 }
 
 // IsValidSystemRule determine the system rule is valid or not
-func IsValidSystemRule(rule *SystemRule) error {
+func IsValidSystemRule(rule *Rule) error {
 	if rule == nil {
-		return errors.New("nil SystemRule")
+		return errors.New("nil Rule")
 	}
 	if rule.TriggerCount < 0 {
 		return errors.New("negative threshold")
