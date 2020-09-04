@@ -25,13 +25,8 @@ func (e *BlockError) TriggeredValue() interface{} {
 	return e.snapshotValue
 }
 
-func NewBlockErrorFromDeepCopy(from *BlockError) *BlockError {
-	return &BlockError{
-		blockType:     from.blockType,
-		blockMsg:      from.blockMsg,
-		rule:          from.rule,
-		snapshotValue: from.snapshotValue,
-	}
+func NewBlockErrorFromDeepCopy(blockErr BlockError) *BlockError {
+	return &blockErr
 }
 
 func NewBlockError(blockType BlockType, blockMsg string) *BlockError {

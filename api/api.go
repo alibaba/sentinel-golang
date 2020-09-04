@@ -148,7 +148,7 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 	if r.Status() == base.ResultStatusBlocked {
 		// r will be put to Pool in calling Exit()
 		// must finish the lifecycle of r.
-		blockErr := base.NewBlockErrorFromDeepCopy(r.BlockError())
+		blockErr := base.NewBlockErrorFromDeepCopy(*r.BlockError())
 		e.Exit()
 		return nil, blockErr
 	}
