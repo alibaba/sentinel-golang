@@ -215,21 +215,9 @@ func onRuleUpdate(rules []Rule) (err error) {
 				continue
 			}
 
-			generator := cbGenFuncMap[r.BreakerStrategy()]
-			if generator == nil {
-				logging.Warnf("Ignoring the rule due to unsupported circuit breaking strategy: %v", r)
-				continue
-			}
-
-			var cb CircuitBreaker
-			var e error
-			if reuseStatIdx >= 0 {
-				cb, e = generator(r, oldResCbs[reuseStatIdx].BoundStat())
-			} else {
-				cb, e = generator(r, nil)
-			}
-			if cb == nil || e != nil {
-				logging.Warnf("Ignoring the rule due to bad generated circuit breaker, r: %s, err: %+v", r.String(), e)
+			cb, err := buildCircuitBreaker(reuseStatIdx, r, oldResCbs)
+			if err != nil {
+				logging.Warnf("BuildCircuitBreaker error: %v", err)
 				continue
 			}
 
@@ -242,6 +230,104 @@ func onRuleUpdate(rules []Rule) (err error) {
 
 	breakerRules = newBreakerRules
 	breakers = newBreakers
+	return nil
+}
+
+func AppendRule(r Rule) error {
+	res := r.ResourceName()
+	oldResCbs := breakers[res]
+	if oldResCbs == nil {
+		oldResCbs = make([]CircuitBreaker, 0, 0)
+	}
+	updateMux.Lock()
+	defer func() {
+		updateMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+	}()
+	equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResCbs)
+
+	if equalIdx >= 0 {
+		return errors.New("The current appended rule already exists.")
+	}
+
+	cb, err := buildCircuitBreaker(reuseStatIdx, r, oldResCbs)
+	if err != nil {
+		return err
+	}
+
+	insertCbToCbMap(cb, res, breakers)
+	breakerRules[res] = append(breakerRules[res], r)
+	return nil
+}
+
+func buildCircuitBreaker(reuseStatIdx int, r Rule, oldResCbs []CircuitBreaker) (CircuitBreaker, error) {
+	generator := cbGenFuncMap[r.BreakerStrategy()]
+	if generator == nil {
+		return nil, errors.New(fmt.Sprintf("Ignoring the rule due to unsupported circuit breaking strategy: %v", r))
+	}
+	var cb CircuitBreaker
+	var e error
+	if reuseStatIdx >= 0 {
+		cb, e = generator(r, oldResCbs[reuseStatIdx].BoundStat())
+	} else {
+		cb, e = generator(r, nil)
+	}
+	if cb == nil || e != nil {
+		return nil, errors.New(fmt.Sprintf("Ignoring the rule due to bad generated circuit breaker, r: %s, err: %+v", r.String(), e))
+	}
+	return cb, nil
+}
+
+func UpdateRule(id string, r Rule) error {
+	res := r.ResourceName()
+	oldResCbs := breakers[res]
+	if oldResCbs == nil {
+		return errors.New("Update failed, the current rule resource to be updated does not exist.")
+	}
+	updateMux.Lock()
+	defer func() {
+		updateMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+	}()
+	for index, oldResCb := range oldResCbs {
+		strategy := oldResCb.BoundRule().BreakerStrategy()
+		var ruleId string
+		switch strategy {
+		case SlowRequestRatio:
+			ruleId = oldResCb.BoundRule().(*slowRtRule).Id
+		case ErrorRatio:
+			ruleId = oldResCb.BoundRule().(*errorRatioRule).Id
+		case ErrorCount:
+			ruleId = oldResCb.BoundRule().(*errorCountRule).Id
+		default:
+			logging.Errorf("unsupported circuit breaker rule, strategy: %d", strategy)
+			continue
+		}
+		//如果找到对应Id.则更新，复用断路器的state
+		if id == ruleId {
+			var (
+				cb  CircuitBreaker
+				err error
+			)
+			if oldResCb.BoundRule().IsStatReusable(r) {
+				cb, err = buildCircuitBreaker(index, r, oldResCbs)
+			} else {
+				cb, err = buildCircuitBreaker(-1, r, oldResCbs)
+			}
+
+			if err != nil {
+				return errors.New(fmt.Sprintf("BuildCircuitBreaker error: %v", err))
+			}
+
+			breakers[res] = append(oldResCbs[:index], oldResCbs[index+1:]...)
+			insertCbToCbMap(cb, res, breakers)
+			break
+		}
+	}
 	return nil
 }
 
