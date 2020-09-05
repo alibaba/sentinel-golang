@@ -1,11 +1,15 @@
 package base
 
+import "fmt"
+
 // BlockError indicates the request was blocked by Sentinel.
 type BlockError struct {
 	blockType BlockType
-	blockMsg  string
+	// blockMsg provides additional message for the block error.
+	blockMsg string
 
-	rule          SentinelRule
+	rule SentinelRule
+	// snapshotValue represents the triggered "snapshot" value
 	snapshotValue interface{}
 }
 
@@ -29,8 +33,12 @@ func NewBlockErrorFromDeepCopy(blockErr BlockError) *BlockError {
 	return &blockErr
 }
 
-func NewBlockError(blockType BlockType, blockMsg string) *BlockError {
-	return &BlockError{blockType: blockType, blockMsg: blockMsg}
+func NewBlockError(blockType BlockType) *BlockError {
+	return &BlockError{blockType: blockType}
+}
+
+func NewBlockErrorWithMessage(blockType BlockType, message string) *BlockError {
+	return &BlockError{blockType: blockType, blockMsg: message}
 }
 
 func NewBlockErrorWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) *BlockError {
@@ -38,5 +46,8 @@ func NewBlockErrorWithCause(blockType BlockType, blockMsg string, rule SentinelR
 }
 
 func (e *BlockError) Error() string {
-	return "SentinelBlockException: " + e.blockMsg
+	if len(e.blockMsg) == 0 {
+		return fmt.Sprintf("SentinelBlockError: %s", e.blockType.String())
+	}
+	return fmt.Sprintf("SentinelBlockError: %s, message: %s", e.blockType.String(), e.blockMsg)
 }

@@ -20,15 +20,15 @@ type TrafficShapingController struct {
 	flowCalculator TrafficShapingCalculator
 	flowChecker    TrafficShapingChecker
 
-	rule *FlowRule
+	rule *Rule
 }
 
 // NewTrafficShapingController creates a TrafficShapingController wrapped with the given checker and flow rule.
-func NewTrafficShapingController(flowCalculator TrafficShapingCalculator, flowChecker TrafficShapingChecker, rule *FlowRule) *TrafficShapingController {
+func NewTrafficShapingController(flowCalculator TrafficShapingCalculator, flowChecker TrafficShapingChecker, rule *Rule) *TrafficShapingController {
 	return &TrafficShapingController{flowCalculator: flowCalculator, flowChecker: flowChecker, rule: rule}
 }
 
-func (t *TrafficShapingController) Rule() *FlowRule {
+func (t *TrafficShapingController) Rule() *Rule {
 	return t.rule
 }
 

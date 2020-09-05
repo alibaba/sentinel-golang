@@ -17,21 +17,21 @@ func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	rules := GetRules()
 	result := ctx.RuleCheckResult
 	for _, rule := range rules {
-		passed, m := s.doCheckRule(rule)
+		passed, snapshotValue := s.doCheckRule(rule)
 		if passed {
 			continue
 		}
 		if result == nil {
-			result = base.NewTokenResultBlockedWithCause(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+			result = base.NewTokenResultBlockedWithCause(base.BlockTypeSystemFlow, rule.MetricType.String(), rule, snapshotValue)
 		} else {
-			result.ResetToBlockedWithCauseFrom(base.BlockTypeSystemFlow, base.BlockTypeSystemFlow.String(), rule, m)
+			result.ResetToBlockedWithCause(base.BlockTypeSystemFlow, rule.MetricType.String(), rule, snapshotValue)
 		}
 		return result
 	}
 	return result
 }
 
-func (s *SystemAdaptiveSlot) doCheckRule(rule *SystemRule) (bool, float64) {
+func (s *SystemAdaptiveSlot) doCheckRule(rule *Rule) (bool, float64) {
 	threshold := rule.TriggerCount
 	switch rule.MetricType {
 	case InboundQPS:

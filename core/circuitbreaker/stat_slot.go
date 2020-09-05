@@ -5,6 +5,7 @@ import (
 )
 
 // MetricStatSlot records metrics for circuit breaker on invocation completed.
+// MetricStatSlot must be filled into slot chain if circuit breaker is alive.
 type MetricStatSlot struct {
 }
 
@@ -19,10 +20,6 @@ func (c *MetricStatSlot) OnEntryBlocked(_ *base.EntryContext, _ *base.BlockError
 }
 
 func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
-	// The slot will ignore blocked requests.
-	if ctx.RuleCheckResult == nil || ctx.RuleCheckResult.IsBlocked() {
-		return
-	}
 	res := ctx.Resource.Name()
 	err := ctx.Err()
 	rt := ctx.Rt()

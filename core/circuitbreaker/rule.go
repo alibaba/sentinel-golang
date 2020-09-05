@@ -3,19 +3,19 @@ package circuitbreaker
 import (
 	"fmt"
 
-	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
-	"go.uber.org/multierr"
 )
 
-// The strategy of circuit breaker.
-// Each strategy represents one rule type.
+// Strategy represents the strategy of circuit breaker.
+// Each strategy is associated with one rule type.
 type Strategy int8
 
 const (
+	// SlowRequestRatio strategy changes the circuit breaker state based on slow request ratio
 	SlowRequestRatio Strategy = iota
+	// ErrorRatio strategy changes the circuit breaker state based on error request ratio
 	ErrorRatio
+	// ErrorCount strategy changes the circuit breaker state based on error amount
 	ErrorCount
 )
 
@@ -32,199 +32,71 @@ func (s Strategy) String() string {
 	}
 }
 
-// Rule represents the base interface of the circuit breaker rule.
-type Rule interface {
-	base.SentinelRule
-	// BreakerStrategy returns the strategy.
-	BreakerStrategy() Strategy
-	// IsApplicable checks whether the rule is valid and could be converted to a corresponding circuit breaker.
-	IsApplicable() error
-	// BreakerStatIntervalMs returns the statistic interval of circuit breaker (in milliseconds).
-	BreakerStatIntervalMs() uint32
-	// IsEqualsTo checks whether current rule is consistent with the given rule.
-	IsEqualsTo(r Rule) bool
-	// IsStatReusable checks whether current rule is "statistically" equal to the given rule.
-	IsStatReusable(r Rule) bool
-}
-
-// RuleBase encompasses common fields of circuit breaking rule.
-type RuleBase struct {
+// Rule encompasses the fields of circuit breaking rule.
+type Rule struct {
 	// unique id
-	Id string
+	Id string `json:"id,omitempty"`
 	// resource name
-	Resource string
-	Strategy Strategy
-	// RetryTimeoutMs represents recovery timeout (in seconds) before the circuit breaker opens.
+	Resource string   `json:"resource"`
+	Strategy Strategy `json:"strategy"`
+	// RetryTimeoutMs represents recovery timeout (in milliseconds) before the circuit breaker opens.
 	// During the open period, no requests are permitted until the timeout has elapsed.
 	// After that, the circuit breaker will transform to half-open state for trying a few "trial" requests.
-	RetryTimeoutMs uint32
+	RetryTimeoutMs uint32 `json:"retryTimeoutMs"`
 	// MinRequestAmount represents the minimum number of requests (in an active statistic time span)
 	// that can trigger circuit breaking.
-	MinRequestAmount uint64
+	MinRequestAmount uint64 `json:"minRequestAmount"`
 	// StatIntervalMs represents statistic time interval of the internal circuit breaker (in ms).
-	StatIntervalMs uint32
-}
-
-func (b *RuleBase) BreakerStatIntervalMs() uint32 {
-	return b.StatIntervalMs
-}
-
-func (b *RuleBase) IsApplicable() error {
-	if !(len(b.Resource) > 0 && b.RetryTimeoutMs >= 0 && b.MinRequestAmount >= 0 && b.StatIntervalMs >= 0) {
-		return errors.Errorf("Illegal parameters, Id=%s, Resource=%s, Strategy=%d, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d.",
-			b.Id, b.Resource, b.Strategy, b.RetryTimeoutMs, b.MinRequestAmount, b.StatIntervalMs)
-	}
-	return nil
-}
-
-func (b *RuleBase) IsStatReusable(r Rule) bool {
-	return b.Resource == r.ResourceName() && b.Strategy == r.BreakerStrategy() && b.StatIntervalMs == r.BreakerStatIntervalMs()
-}
-
-func (b *RuleBase) String() string {
-	// fallback string
-	return fmt.Sprintf("RuleBase{id=%s,resource=%s, strategy=%+v, RetryTimeoutMs=%d, MinRequestAmount=%d}",
-		b.Id, b.Resource, b.Strategy, b.RetryTimeoutMs, b.MinRequestAmount)
-}
-
-func (b *RuleBase) BreakerStrategy() Strategy {
-	return b.Strategy
-}
-
-func (b *RuleBase) ResourceName() string {
-	return b.Resource
-}
-
-// SlowRequestRatio circuit breaker rule
-type slowRtRule struct {
-	RuleBase
-	// MaxAllowedRt indicates that any invocation whose response time exceeds this value
+	StatIntervalMs uint32 `json:"statIntervalMs"`
+	// MaxAllowedRtMs indicates that any invocation whose response time exceeds this value (in ms)
 	// will be recorded as a slow request.
-	MaxAllowedRt uint64
-	// MaxSlowRequestRatio represents the threshold of slow request ratio.
-	MaxSlowRequestRatio float64
+	// MaxAllowedRtMs only takes effect for SlowRequestRatio strategy
+	MaxAllowedRtMs uint64 `json:"maxAllowedRtMs"`
+	// Threshold represents the threshold of circuit breaker.
+	// for SlowRequestRatio, it represents the max slow request ratio
+	// for ErrorRatio, it represents the max error request ratio
+	// for ErrorCount, it represents the max error request count
+	Threshold float64 `json:"threshold"`
 }
 
-func NewSlowRtRule(resource string, intervalMs uint32, retryTimeoutMs uint32, maxAllowedRt, minRequestAmount uint64, maxSlowRequestRatio float64) *slowRtRule {
-	return &slowRtRule{
-		RuleBase: RuleBase{
-			Id:               util.NewUuid(),
-			Resource:         resource,
-			Strategy:         SlowRequestRatio,
-			RetryTimeoutMs:   retryTimeoutMs,
-			MinRequestAmount: minRequestAmount,
-			StatIntervalMs:   intervalMs,
-		},
-		MaxAllowedRt:        maxAllowedRt,
-		MaxSlowRequestRatio: maxSlowRequestRatio,
-	}
+func (r *Rule) String() string {
+	// fallback string
+	return fmt.Sprintf("{id=%s,resource=%s, strategy=%s, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d, MaxAllowedRtMs=%d, Threshold=%f}",
+		r.Id, r.Resource, r.Strategy, r.RetryTimeoutMs, r.MinRequestAmount, r.StatIntervalMs, r.MaxAllowedRtMs, r.Threshold)
 }
 
-func (r *slowRtRule) IsEqualsTo(newRule Rule) bool {
-	newSlowRtRule, ok := newRule.(*slowRtRule)
-	if !ok {
+func (r *Rule) isStatReusable(newRule *Rule) bool {
+	if newRule == nil {
 		return false
 	}
-	return r.Resource == newSlowRtRule.Resource && r.Strategy == newSlowRtRule.Strategy && r.RetryTimeoutMs == newSlowRtRule.RetryTimeoutMs &&
-		r.MinRequestAmount == newSlowRtRule.MinRequestAmount && r.StatIntervalMs == newSlowRtRule.StatIntervalMs &&
-		r.MaxAllowedRt == newSlowRtRule.MaxAllowedRt && r.MaxSlowRequestRatio == newSlowRtRule.MaxSlowRequestRatio
+	return r.Resource == newRule.Resource && r.Strategy == newRule.Strategy && r.StatIntervalMs == newRule.StatIntervalMs
 }
 
-func (r *slowRtRule) IsApplicable() error {
-	baseApplicableError := r.RuleBase.IsApplicable()
-	var slowRtError error
-	if !(r.MaxSlowRequestRatio >= 0.0 && r.MaxAllowedRt >= 0) {
-		slowRtError = errors.Errorf("Illegal parameters in slowRtRule, MaxSlowRequestRatio: %f, MaxAllowedRt: %d", r.MaxSlowRequestRatio, r.MaxAllowedRt)
-	}
-	return multierr.Append(baseApplicableError, slowRtError)
+func (r *Rule) ResourceName() string {
+	return r.Resource
 }
 
-func (r *slowRtRule) String() string {
-	return fmt.Sprintf("slowRtRule{RuleBase:%s, MaxAllowedRt=%d, MaxSlowRequestRatio=%f}", r.RuleBase.String(), r.MaxAllowedRt, r.MaxSlowRequestRatio)
-}
-
-// Error ratio circuit breaker rule
-type errorRatioRule struct {
-	RuleBase
-	Threshold float64
-}
-
-func NewErrorRatioRule(resource string, intervalMs uint32, retryTimeoutMs uint32, minRequestAmount uint64, maxErrorRatio float64) *errorRatioRule {
-	return &errorRatioRule{
-		RuleBase: RuleBase{
-			Id:               util.NewUuid(),
-			Resource:         resource,
-			Strategy:         ErrorRatio,
-			RetryTimeoutMs:   retryTimeoutMs,
-			MinRequestAmount: minRequestAmount,
-			StatIntervalMs:   intervalMs,
-		},
-		Threshold: maxErrorRatio,
-	}
-}
-
-func (r *errorRatioRule) String() string {
-	return fmt.Sprintf("errorRatioRule{RuleBase:%s, Threshold=%f}", r.RuleBase.String(), r.Threshold)
-}
-
-func (r *errorRatioRule) IsEqualsTo(newRule Rule) bool {
-	newErrorRatioRule, ok := newRule.(*errorRatioRule)
-	if !ok {
+func (r *Rule) isEqualsToBase(newRule *Rule) bool {
+	if newRule == nil {
 		return false
 	}
-	return r.Resource == newErrorRatioRule.Resource && r.Strategy == newErrorRatioRule.Strategy && r.RetryTimeoutMs == newErrorRatioRule.RetryTimeoutMs &&
-		r.MinRequestAmount == newErrorRatioRule.MinRequestAmount && r.StatIntervalMs == newErrorRatioRule.StatIntervalMs &&
-		r.Threshold == newErrorRatioRule.Threshold
+	return r.Resource == newRule.Resource && r.Strategy == newRule.Strategy && r.RetryTimeoutMs == newRule.RetryTimeoutMs &&
+		r.MinRequestAmount == newRule.MinRequestAmount && r.StatIntervalMs == newRule.StatIntervalMs
 }
 
-func (r *errorRatioRule) IsApplicable() error {
-	baseApplicableError := r.RuleBase.IsApplicable()
-	var errorRatioRuleError error
-	if !(r.Threshold >= 0.0) {
-		errorRatioRuleError = errors.Errorf("Illegal parameters in errorRatioRule, Threshold: %f.", r.Threshold)
-	}
-	return multierr.Append(baseApplicableError, errorRatioRuleError)
-}
-
-// Error count circuit breaker rule
-type errorCountRule struct {
-	RuleBase
-	Threshold uint64
-}
-
-func NewErrorCountRule(resource string, intervalMs uint32, retryTimeoutMs uint32, minRequestAmount, maxErrorCount uint64) *errorCountRule {
-	return &errorCountRule{
-		RuleBase: RuleBase{
-			Id:               util.NewUuid(),
-			Resource:         resource,
-			Strategy:         ErrorCount,
-			RetryTimeoutMs:   retryTimeoutMs,
-			MinRequestAmount: minRequestAmount,
-			StatIntervalMs:   intervalMs,
-		},
-		Threshold: maxErrorCount,
-	}
-}
-
-func (r *errorCountRule) String() string {
-	return fmt.Sprintf("errorCountRule{RuleBase:%s, Threshold=%d}", r.RuleBase.String(), r.Threshold)
-}
-
-func (r *errorCountRule) IsEqualsTo(newRule Rule) bool {
-	newErrorCountRule, ok := newRule.(*errorCountRule)
-	if !ok {
+func (r *Rule) isEqualsTo(newRule *Rule) bool {
+	if !r.isEqualsToBase(newRule) {
 		return false
 	}
-	return r.Resource == newErrorCountRule.Resource && r.Strategy == newErrorCountRule.Strategy && r.RetryTimeoutMs == newErrorCountRule.RetryTimeoutMs &&
-		r.MinRequestAmount == newErrorCountRule.MinRequestAmount && r.StatIntervalMs == newErrorCountRule.StatIntervalMs &&
-		r.Threshold == newErrorCountRule.Threshold
-}
 
-func (r *errorCountRule) IsApplicable() error {
-	baseApplicableError := r.RuleBase.IsApplicable()
-	var errorCountRuleError error
-	if !(r.Threshold >= 0) {
-		errorCountRuleError = errors.Errorf("Illegal parameters in errorCountRule, Threshold: %d.", r.Threshold)
+	switch newRule.Strategy {
+	case SlowRequestRatio:
+		return r.MaxAllowedRtMs == newRule.MaxAllowedRtMs && util.Float64Equals(r.Threshold, newRule.Threshold)
+	case ErrorRatio:
+		return util.Float64Equals(r.Threshold, newRule.Threshold)
+	case ErrorCount:
+		return util.Float64Equals(r.Threshold, newRule.Threshold)
+	default:
+		return false
 	}
-	return multierr.Append(baseApplicableError, errorCountRuleError)
 }

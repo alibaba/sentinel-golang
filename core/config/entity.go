@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
@@ -29,6 +30,8 @@ type SentinelConfig struct {
 
 // LogConfig represent the configuration of logging in Sentinel.
 type LogConfig struct {
+	// logger indicates that using logger to replace default logging.
+	Logger logging.Logger
 	// Dir represents the log directory path.
 	Dir string
 	// UsePid indicates whether the filename ends with the process ID (PID).
@@ -68,6 +71,7 @@ func NewDefaultConfig() *Entity {
 				Type: DefaultAppType,
 			},
 			Log: LogConfig{
+				Logger: nil,
 				Dir:    GetDefaultLogDir(),
 				UsePid: false,
 				Metric: MetricLogConfig{
@@ -86,7 +90,17 @@ func NewDefaultConfig() *Entity {
 	}
 }
 
-func checkValid(conf *SentinelConfig) error {
+func CheckValid(entity *Entity) error {
+	if entity == nil {
+		return errors.New("Nil entity")
+	}
+	if len(entity.Version) == 0 {
+		return errors.New("Empty version")
+	}
+	return checkConfValid(&entity.Sentinel)
+}
+
+func checkConfValid(conf *SentinelConfig) error {
 	if conf == nil {
 		return errors.New("Nil globalCfg")
 	}
@@ -104,4 +118,45 @@ func checkValid(conf *SentinelConfig) error {
 		return errors.New("Bad system stat globalCfg: collectIntervalMs = 0")
 	}
 	return nil
+}
+
+func (entity *Entity) AppName() string {
+	return entity.Sentinel.App.Name
+}
+
+func (entity *Entity) AppType() int32 {
+	return entity.Sentinel.App.Type
+}
+
+func (entity *Entity) LogBaseDir() string {
+	return entity.Sentinel.Log.Dir
+}
+
+func (entity *Entity) Logger() logging.Logger {
+	return entity.Sentinel.Log.Logger
+}
+
+// LogUsePid returns whether the log file name contains the PID suffix.
+func (entity *Entity) LogUsePid() bool {
+	return entity.Sentinel.Log.UsePid
+}
+
+func (entity *Entity) MetricLogFlushIntervalSec() uint32 {
+	return entity.Sentinel.Log.Metric.FlushIntervalSec
+}
+
+func (entity *Entity) MetricLogSingleFileMaxSize() uint64 {
+	return entity.Sentinel.Log.Metric.SingleFileMaxSize
+}
+
+func (entity *Entity) MetricLogMaxFileAmount() uint32 {
+	return entity.Sentinel.Log.Metric.MaxFileCount
+}
+
+func (entity *Entity) SystemStatCollectIntervalMs() uint32 {
+	return entity.Sentinel.Stat.System.CollectIntervalMs
+}
+
+func (entity *Entity) UseCacheTime() bool {
+	return entity.Sentinel.UseCacheTime
 }

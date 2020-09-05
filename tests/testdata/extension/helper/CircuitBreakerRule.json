@@ -1,0 +1,27 @@
+[
+    {
+        "resource": "abc",
+        "strategy": 0,
+        "retryTimeoutMs": 10,
+        "minRequestAmount": 10,
+        "statIntervalMs": 1000,
+        "maxAllowedRtMs": 100,
+        "threshold": 0.1
+    },
+    {
+        "resource": "abc",
+        "strategy": 1,
+        "retryTimeoutMs": 20,
+        "minRequestAmount": 20,
+        "statIntervalMs": 2000,
+        "threshold": 0.2
+    },
+    {
+        "resource": "abc",
+        "strategy": 2,
+        "retryTimeoutMs": 30,
+        "minRequestAmount": 30,
+        "statIntervalMs": 3000,
+        "threshold": 30
+    }
+]
