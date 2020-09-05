@@ -5,7 +5,6 @@ import (
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -72,12 +71,12 @@ func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*BucketWrap
 	for _, ww := range values {
 		mb := ww.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when summing count")
+			logger.Error("Illegal state: current bucket Value is nil when summing count")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Fail to cast data Value(%+v) to MetricBucket type", mb)
+			logger.Errorf("Fail to cast data Value(%+v) to MetricBucket type", mb)
 			continue
 		}
 		ret += counter.Get(event)
@@ -101,10 +100,6 @@ func (m *SlidingWindowMetric) GetQPS(event base.MetricEvent) float64 {
 	return m.getQPSWithTime(util.CurrentTimeMillis(), event)
 }
 
-func (m *SlidingWindowMetric) GetPreviousQPS(event base.MetricEvent) float64 {
-	return m.getQPSWithTime(util.CurrentTimeMillis()-uint64(m.bucketLengthInMs), event)
-}
-
 func (m *SlidingWindowMetric) getQPSWithTime(now uint64, event base.MetricEvent) float64 {
 	return float64(m.getSumWithTime(now, event)) / m.getIntervalInSecond()
 }
@@ -119,12 +114,12 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when GetMaxOfSingleBucket")
+			logger.Error("Illegal state: current bucket Value is nil when GetMaxOfSingleBucket")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
+			logger.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
 			continue
 		}
 		v := counter.Get(event)
@@ -145,12 +140,12 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when calculating minRT")
+			logger.Error("Illegal state: current bucket Value is nil when calculating minRT")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
+			logger.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
 			continue
 		}
 		v := counter.MinRt()
@@ -204,12 +199,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 	for _, w := range ws {
 		mi := w.Value.Load()
 		if mi == nil {
-			logging.Error("Get nil bucket when generating MetricItem from buckets")
+			logger.Error("Get nil bucket when generating MetricItem from buckets")
 			return nil
 		}
 		mb, ok := mi.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast to MetricBucket type, bucket startTime: %d", w.BucketStart)
+			logger.Errorf("Failed to cast to MetricBucket type, bucket startTime: %d", w.BucketStart)
 			return nil
 		}
 		item.PassQps += uint64(mb.Get(base.MetricEventPass))
@@ -229,12 +224,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 func (m *SlidingWindowMetric) metricItemFromBucket(w *BucketWrap) *base.MetricItem {
 	mi := w.Value.Load()
 	if mi == nil {
-		logging.Error("Get nil bucket when generating MetricItem from buckets")
+		logger.Error("Get nil bucket when generating MetricItem from buckets")
 		return nil
 	}
 	mb, ok := mi.(*MetricBucket)
 	if !ok {
-		logging.Errorf("Fail to cast data Value to MetricBucket type, bucket startTime: %d", w.BucketStart)
+		logger.Errorf("Fail to cast data Value to MetricBucket type, bucket startTime: %d", w.BucketStart)
 		return nil
 	}
 	completeQps := mb.Get(base.MetricEventComplete)

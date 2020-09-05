@@ -15,15 +15,15 @@ func TestGetRules(t *testing.T) {
 	t.Run("GetUpdatedRules", func(t *testing.T) {
 		defer func() { ruleMap = make(RuleMap) }()
 
-		r := map[MetricType][]*Rule{
-			InboundQPS:  {&Rule{MetricType: InboundQPS, TriggerCount: 1}},
-			Concurrency: {&Rule{MetricType: Concurrency, TriggerCount: 2}},
+		r := map[MetricType][]*SystemRule{
+			InboundQPS:  {&SystemRule{MetricType: InboundQPS, TriggerCount: 1}},
+			Concurrency: {&SystemRule{MetricType: Concurrency, TriggerCount: 2}},
 		}
 		ruleMap = r
 		rules := GetRules()
 		assert.Equal(t, 2, len(rules))
 
-		r[InboundQPS] = append(r[InboundQPS], &Rule{MetricType: InboundQPS, TriggerCount: 2})
+		r[InboundQPS] = append(r[InboundQPS], &SystemRule{MetricType: InboundQPS, TriggerCount: 2})
 		ruleMap = r
 		rules = GetRules()
 		assert.Equal(t, 3, len(rules))
@@ -40,7 +40,7 @@ func TestLoadRules(t *testing.T) {
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
 		defer func() { ruleMap = make(RuleMap) }()
-		sRule := []*Rule{
+		sRule := []*SystemRule{
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: Concurrency, TriggerCount: 2},
 		}
@@ -59,9 +59,9 @@ func TestClearRules(t *testing.T) {
 	})
 
 	t.Run("NoEmptyOriginRuleMap", func(t *testing.T) {
-		r := map[MetricType][]*Rule{
-			InboundQPS:  {&Rule{MetricType: InboundQPS, TriggerCount: 1}},
-			Concurrency: {&Rule{MetricType: Concurrency, TriggerCount: 2}},
+		r := map[MetricType][]*SystemRule{
+			InboundQPS:  {&SystemRule{MetricType: InboundQPS, TriggerCount: 1}},
+			Concurrency: {&SystemRule{MetricType: Concurrency, TriggerCount: 2}},
 		}
 		ruleMap = r
 		err := ClearRules()
@@ -80,10 +80,10 @@ func TestOnRuleUpdate(t *testing.T) {
 	t.Run("ValidSystemRule", func(t *testing.T) {
 		defer func() { ruleMap = make(RuleMap) }()
 		rMap := RuleMap{
-			InboundQPS: []*Rule{
+			InboundQPS: []*SystemRule{
 				{MetricType: InboundQPS, TriggerCount: 1},
 			},
-			Concurrency: []*Rule{
+			Concurrency: []*SystemRule{
 				{MetricType: Concurrency, TriggerCount: 2},
 			},
 		}
@@ -100,7 +100,7 @@ func TestBuildRuleMap(t *testing.T) {
 	})
 
 	t.Run("InvalidSystemRule", func(t *testing.T) {
-		sRule := []*Rule{
+		sRule := []*SystemRule{
 			{MetricType: InboundQPS, TriggerCount: -1},
 		}
 		r := buildRuleMap(sRule)
@@ -108,7 +108,7 @@ func TestBuildRuleMap(t *testing.T) {
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
-		sRule := []*Rule{
+		sRule := []*SystemRule{
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: Concurrency, TriggerCount: 2},
 		}
@@ -117,7 +117,7 @@ func TestBuildRuleMap(t *testing.T) {
 	})
 
 	t.Run("MultiRuleOneTypeValidSystemRule", func(t *testing.T) {
-		sRule := []*Rule{
+		sRule := []*SystemRule{
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: InboundQPS, TriggerCount: 2},
 		}
@@ -129,29 +129,29 @@ func TestBuildRuleMap(t *testing.T) {
 func TestIsValidSystemRule(t *testing.T) {
 	t.Run("NilSystemRule", func(t *testing.T) {
 		err := IsValidSystemRule(nil)
-		assert.EqualError(t, err, "nil Rule")
+		assert.EqualError(t, err, "nil SystemRule")
 	})
 
 	t.Run("NegativeThreshold", func(t *testing.T) {
-		sRule := &Rule{MetricType: InboundQPS, TriggerCount: -1}
+		sRule := &SystemRule{MetricType: InboundQPS, TriggerCount: -1}
 		err := IsValidSystemRule(sRule)
 		assert.EqualError(t, err, "negative threshold")
 	})
 
 	t.Run("InvalidMetricType", func(t *testing.T) {
-		sRule := &Rule{MetricType: MetricTypeSize}
+		sRule := &SystemRule{MetricType: MetricTypeSize}
 		err := IsValidSystemRule(sRule)
 		assert.EqualError(t, err, "invalid metric type")
 	})
 
 	t.Run("InvalidCPUUsage", func(t *testing.T) {
-		sRule := &Rule{MetricType: CpuUsage, TriggerCount: 75}
+		sRule := &SystemRule{MetricType: CpuUsage, TriggerCount: 75}
 		err := IsValidSystemRule(sRule)
 		assert.EqualError(t, err, "invalid CPU usage, valid range is [0.0, 1.0]")
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
-		sRule := &Rule{MetricType: Load, TriggerCount: 12, Strategy: BBR}
+		sRule := &SystemRule{MetricType: Load, TriggerCount: 12, Strategy: BBR}
 		err := IsValidSystemRule(sRule)
 		assert.NoError(t, err)
 	})

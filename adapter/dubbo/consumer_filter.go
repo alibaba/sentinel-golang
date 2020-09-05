@@ -31,8 +31,7 @@ func (d *consumerFilter) Invoke(ctx context.Context, invoker protocol.Invoker, i
 	}
 	ctx = context.WithValue(ctx, InterfaceEntryKey, interfaceEntry)
 
-	methodEntry, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC),
-		sentinel.WithTrafficType(base.Outbound), sentinel.WithArgs(invocation.Arguments()...))
+	methodEntry, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Outbound), sentinel.WithArgs(invocation.Attachments()))
 	if b != nil {
 		// method blocked
 		return consumerDubboFallback(ctx, invoker, invocation, b)

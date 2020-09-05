@@ -4,32 +4,28 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
-type Slot struct {
+type CircuitBreakerSlot struct {
 }
 
-func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
+func (b *CircuitBreakerSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	resource := ctx.Resource.Name()
 	result := ctx.RuleCheckResult
 	if len(resource) == 0 {
 		return result
 	}
-	if passed, rule := checkPass(ctx); !passed {
-		if result == nil {
-			result = base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, "", rule, nil)
-		} else {
-			result.ResetToBlockedWithCause(base.BlockTypeCircuitBreaking, "", rule, nil)
-		}
+	if !checkPass(ctx) {
+		result.ResetToBlockedFrom(base.BlockTypeCircuitBreaking, "CircuitBreaking")
 	}
 	return result
 }
 
-func checkPass(ctx *base.EntryContext) (bool, *Rule) {
+func checkPass(ctx *base.EntryContext) bool {
 	breakers := getResBreakers(ctx.Resource.Name())
 	for _, breaker := range breakers {
-		passed := breaker.TryPass(ctx)
-		if !passed {
-			return false, breaker.BoundRule()
+		isPass := breaker.TryPass(ctx)
+		if !isPass {
+			return false
 		}
 	}
-	return true, nil
+	return true
 }

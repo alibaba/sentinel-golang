@@ -3,8 +3,7 @@ package base
 import "github.com/alibaba/sentinel-golang/util"
 
 type EntryContext struct {
-	entry *SentinelEntry
-	// internal error when sentinel Entry or
+	// internal error when sentinel entry or
 	// biz error of downstream
 	err error
 	// Use to calculate RT
@@ -20,14 +19,6 @@ type EntryContext struct {
 	RuleCheckResult *TokenResult
 	// reserve for storing some intermediate data from the Entry execution process
 	Data map[interface{}]interface{}
-}
-
-func (ctx *EntryContext) SetEntry(entry *SentinelEntry) {
-	ctx.entry = entry
-}
-
-func (ctx *EntryContext) Entry() *SentinelEntry {
-	return ctx.entry
 }
 
 func (ctx *EntryContext) Err() error {
@@ -88,7 +79,6 @@ func (i *SentinelInput) reset() {
 // Reset init EntryContext,
 func (ctx *EntryContext) Reset() {
 	// reset all fields of ctx
-	ctx.entry = nil
 	ctx.err = nil
 	ctx.startTime = 0
 	ctx.rt = 0

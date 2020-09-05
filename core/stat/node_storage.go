@@ -10,6 +10,8 @@ import (
 type ResourceNodeMap map[string]*ResourceNode
 
 var (
+	logger = logging.GetDefaultLogger()
+
 	inboundNode = NewResourceNode(base.TotalInBoundResourceName, base.ResTypeCommon)
 
 	resNodeMap = make(ResourceNodeMap)
@@ -54,7 +56,7 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 	}
 
 	if len(resNodeMap) >= int(base.DefaultMaxResourceAmount) {
-		logging.Warnf("Resource amount exceeds the threshold: %d.", base.DefaultMaxResourceAmount)
+		logger.Warnf("Resource amount exceeds the threshold: %d.", base.DefaultMaxResourceAmount)
 	}
 	node = NewResourceNode(resource, resourceType)
 	resNodeMap[resource] = node

@@ -5,7 +5,6 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
-	"github.com/alibaba/sentinel-golang/logging"
 )
 
 // FlowSlot
@@ -23,7 +22,7 @@ func (s *FlowSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	// Check rules in order
 	for _, tc := range tcs {
 		if tc == nil {
-			logging.Warnf("nil traffic controller found, res: %s", res)
+			logger.Warnf("nil traffic controller found, res: %s", res)
 			continue
 		}
 		r := canPassCheck(tc, ctx.StatNode, ctx.Input.AcquireCount)
@@ -50,10 +49,13 @@ func canPassCheck(tc *TrafficShapingController, node base.StatNode, acquireCount
 }
 
 func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
+	if tc.rule.ClusterMode {
+		// TODO: support cluster mode
+	}
 	return checkInLocal(tc, node, acquireCount, flag)
 }
 
-func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
+func selectNodeByRelStrategy(rule *FlowRule, node base.StatNode) base.StatNode {
 	if rule.RelationStrategy == AssociatedResource {
 		return stat.GetResourceNode(rule.RefResource)
 	}

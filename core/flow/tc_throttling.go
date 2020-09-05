@@ -34,7 +34,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, thresh
 		return nil
 	}
 	if threshold <= 0 {
-		return base.NewTokenResultBlocked(base.BlockTypeFlow)
+		return base.NewTokenResultBlocked(base.BlockTypeFlow, "Flow")
 	}
 	// Here we use nanosecond so that we could control the queueing time more accurately.
 	curNano := util.CurrentTimeNano()
@@ -50,7 +50,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, thresh
 	}
 	estimatedQueueingDuration := atomic.LoadUint64(&c.lastPassedTime) + interval - util.CurrentTimeNano()
 	if estimatedQueueingDuration > c.maxQueueingTimeNs {
-		return base.NewTokenResultBlocked(base.BlockTypeFlow)
+		return base.NewTokenResultBlocked(base.BlockTypeFlow, "Flow")
 	}
 
 	oldTime := atomic.AddUint64(&c.lastPassedTime, interval)
@@ -58,7 +58,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, thresh
 	if estimatedQueueingDuration > c.maxQueueingTimeNs {
 		// Subtract the interval.
 		atomic.AddUint64(&c.lastPassedTime, ^(interval - 1))
-		return base.NewTokenResultBlocked(base.BlockTypeFlow)
+		return base.NewTokenResultBlocked(base.BlockTypeFlow, "Flow")
 	}
 	if estimatedQueueingDuration > 0 {
 		return base.NewTokenResultShouldWait(estimatedQueueingDuration / util.UnixTimeUnitOffset)

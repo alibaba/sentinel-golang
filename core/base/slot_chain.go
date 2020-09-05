@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var logger = logging.GetDefaultLogger()
+
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on
 type StatPrepareSlot interface {
@@ -40,9 +42,8 @@ type StatSlot interface {
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	// blockError introduce the block detail
 	OnEntryBlocked(ctx *EntryContext, blockError *BlockError)
-	// OnCompleted function will be invoked when chain exits.
-	// The semantics of OnCompleted is the entry passed and completed
-	// Note: blocked entry will not call this function
+	// onComplete function will be invoked when chain exits.
+	// The request may be executed successful or blocked or internal error
 	OnCompleted(ctx *EntryContext)
 }
 
@@ -130,7 +131,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	// If happened, need to add TokenResult in EntryContext
 	defer func() {
 		if err := recover(); err != nil {
-			logging.Panicf("Sentinel internal panic in SlotChain, err: %+v", err)
+			logger.Panicf("Sentinel internal panic in SlotChain, err: %+v", err)
 			ctx.SetError(errors.Errorf("%+v", err))
 			return
 		}
@@ -185,14 +186,6 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 }
 
 func (sc *SlotChain) exit(ctx *EntryContext) {
-	if ctx == nil || ctx.Entry() == nil {
-		logging.Errorf("nil ctx or nil associated entry")
-		return
-	}
-	// The OnCompleted is called only when entry passed
-	if ctx.IsBlocked() {
-		return
-	}
 	for _, s := range sc.stats {
 		s.OnCompleted(ctx)
 	}

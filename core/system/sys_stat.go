@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/load"
@@ -50,18 +49,18 @@ func InitCollector(intervalMs uint32) {
 					return
 				}
 			}
-		})
+		}, logger)
 	})
 }
 
 func retrieveAndUpdateSystemStat() {
 	cpuStats, err := cpu.Times(false)
 	if err != nil {
-		logging.Warnf("Failed to retrieve current CPU usage: %+v", err)
+		logger.Warnf("Failed to retrieve current CPU usage: %+v", err)
 	}
 	loadStat, err := load.Avg()
 	if err != nil {
-		logging.Warnf("Failed to retrieve current system load: %+v", err)
+		logger.Warnf("Failed to retrieve current system load: %+v", err)
 	}
 	if len(cpuStats) > 0 {
 		curCpuStat := &cpuStats[0]

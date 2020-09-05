@@ -40,7 +40,7 @@ func TestCheckEmptyRule(t *testing.T) {
 
 func TestDoCheckRuleConcurrency(t *testing.T) {
 	var sas *SystemAdaptiveSlot
-	rule := &Rule{MetricType: Concurrency,
+	rule := &SystemRule{MetricType: Concurrency,
 		TriggerCount: 0.5}
 
 	t.Run("TrueConcurrency", func(t *testing.T) {
@@ -60,7 +60,7 @@ func TestDoCheckRuleConcurrency(t *testing.T) {
 
 func TestDoCheckRuleLoad(t *testing.T) {
 	var sas *SystemAdaptiveSlot
-	rule := &Rule{MetricType: Load,
+	rule := &SystemRule{MetricType: Load,
 		TriggerCount: 0.5}
 
 	t.Run("TrueLoad", func(t *testing.T) {
@@ -81,7 +81,7 @@ func TestDoCheckRuleLoad(t *testing.T) {
 
 func TestDoCheckRuleCpuUsage(t *testing.T) {
 	var sas *SystemAdaptiveSlot
-	rule := &Rule{MetricType: CpuUsage,
+	rule := &SystemRule{MetricType: CpuUsage,
 		TriggerCount: 0.5}
 
 	t.Run("TrueCpuUsage", func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestDoCheckRuleCpuUsage(t *testing.T) {
 
 func TestDoCheckRuleDefault(t *testing.T) {
 	var sas *SystemAdaptiveSlot
-	rule := &Rule{MetricType: MetricTypeSize,
+	rule := &SystemRule{MetricType: MetricTypeSize,
 		TriggerCount: 0.5}
 
 	isOK, v := sas.doCheckRule(rule)

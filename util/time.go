@@ -10,20 +10,21 @@ const (
 	UnixTimeUnitOffset = uint64(time.Millisecond / time.Nanosecond)
 )
 
-// FormatTimeMillis formats Unix timestamp (ms) to time string.
+// FormatTimeMillis converts Millisecond to time string
+// tsMillis accurates to millisecond，otherwise, an exception will occur
 func FormatTimeMillis(tsMillis uint64) string {
 	return time.Unix(0, int64(tsMillis*UnixTimeUnitOffset)).Format(TimeFormat)
 }
 
-// FormatDate formats Unix timestamp (ms) to date string
+// FormatDate converts to date string
+// tsMillis accurates to millisecond，otherwise, an exception will occur
 func FormatDate(tsMillis uint64) string {
 	return time.Unix(0, int64(tsMillis*UnixTimeUnitOffset)).Format(DateFormat)
 }
 
 // Returns the current Unix timestamp in milliseconds.
 func CurrentTimeMillis() uint64 {
-	// Read from cache first.
-	tickerNow := CurrentTimeMillsWithTicker()
+	tickerNow := CurrentTimeMillWithTicker()
 	if tickerNow > uint64(0) {
 		return tickerNow
 	}

@@ -7,7 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-// PropertyConverter func is to convert source message bytes to the specific property.
+var logger = logging.GetDefaultLogger()
+
+// PropertyConverter func is to converter source message bytes to the specific property.
 // the first  return value: is the real property;
 // the second return value: return nil if succeed to convert src, if not return the detailed error when convert src.
 // if src is nil or len(src)==0, the return value is (nil,nil)
@@ -48,8 +50,8 @@ func (h *DefaultPropertyHandler) isPropertyConsistent(src interface{}) bool {
 
 func (h *DefaultPropertyHandler) Handle(src []byte) error {
 	defer func() {
-		if err := recover(); err != nil {
-			logging.Panicf("Unexpected panic: %+v", errors.Errorf("%+v", err))
+		if err := recover(); err != nil && logger != nil {
+			logger.Panicf("Unexpected panic: %+v", errors.Errorf("%+v", err))
 		}
 	}()
 	// convert to target property

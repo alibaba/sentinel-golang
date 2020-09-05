@@ -41,8 +41,7 @@ type AdaptiveStrategy int32
 
 const (
 	NoAdaptive AdaptiveStrategy = -1
-	// 1
-	BBR AdaptiveStrategy = iota
+	BBR        AdaptiveStrategy = iota
 )
 
 func (t AdaptiveStrategy) String() string {
@@ -56,24 +55,24 @@ func (t AdaptiveStrategy) String() string {
 	}
 }
 
-type Rule struct {
+type SystemRule struct {
 	ID uint64 `json:"id,omitempty"`
 
 	MetricType   MetricType       `json:"metricType"`
-	TriggerCount float64          `json:"triggerCount"`
-	Strategy     AdaptiveStrategy `json:"strategy"`
+	TriggerCount float64          `json:"count"`
+	Strategy     AdaptiveStrategy `json:"adaptiveStrategy"`
 }
 
-func (r *Rule) String() string {
+func (r *SystemRule) String() string {
 	b, err := json.Marshal(r)
 	if err != nil {
 		// Return the fallback string
-		return fmt.Sprintf("Rule{metricType=%s, triggerCount=%.2f, adaptiveStrategy=%s}",
+		return fmt.Sprintf("SystemRule{metricType=%s, triggerCount=%.2f, adaptiveStrategy=%s}",
 			r.MetricType, r.TriggerCount, r.Strategy)
 	}
 	return string(b)
 }
 
-func (r *Rule) ResourceName() string {
+func (r *SystemRule) ResourceName() string {
 	return r.MetricType.String()
 }

@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
@@ -106,7 +105,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFile(filename string, offset ui
 		}
 		item, err := base.MetricItemFromFatString(line)
 		if err != nil {
-			logging.Errorf("Failed to convert MetricItem to string: %+v", err)
+			logger.Errorf("Failed to convert MetricItem to string: %+v", err)
 			continue
 		}
 		tsSec := item.Timestamp / 1000
@@ -140,7 +139,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, 
 		}
 		item, err := base.MetricItemFromFatString(line)
 		if err != nil {
-			logging.Errorf("Invalid line of metric file: %s, error: %+v", line, err)
+			logger.Errorf("Invalid line of metric file: %s, error: %+v", line, err)
 			continue
 		}
 		tsSec := item.Timestamp / 1000

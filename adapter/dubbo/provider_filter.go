@@ -30,8 +30,7 @@ func (d *providerFilter) Invoke(ctx context.Context, invoker protocol.Invoker, i
 	}
 	ctx = context.WithValue(ctx, InterfaceEntryKey, interfaceEntry)
 
-	methodEntry, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC),
-		sentinel.WithTrafficType(base.Inbound), sentinel.WithArgs(invocation.Arguments()...))
+	methodEntry, b = sentinel.Entry(methodResourceName, sentinel.WithResourceType(base.ResTypeRPC), sentinel.WithTrafficType(base.Inbound), sentinel.WithArgs(invocation.Attachments()))
 	if b != nil {
 		// method blocked
 		return providerDubboFallback(ctx, invoker, invocation, b)

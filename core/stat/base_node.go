@@ -37,10 +37,6 @@ func (n *BaseStatNode) GetQPS(event base.MetricEvent) float64 {
 	return n.metric.GetQPS(event)
 }
 
-func (n *BaseStatNode) GetPreviousQPS(event base.MetricEvent) float64 {
-	return n.metric.GetPreviousQPS(event)
-}
-
 func (n *BaseStatNode) GetSum(event base.MetricEvent) int64 {
 	return n.metric.GetSum(event)
 }
