@@ -1,4 +1,0 @@
-language: go
-
-dist: xenial
-sudo: required
