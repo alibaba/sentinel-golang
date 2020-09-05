@@ -35,5 +35,5 @@ jobs:
         diff -u <(echo -n) <(goimports -d .)
         go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
     
-#    - name: Coverage
-#       run: bash <(curl -s https://codecov.io/bash)//
+    - name: Coverage
+       run: bash <(curl -s https://codecov.io/bash)//
