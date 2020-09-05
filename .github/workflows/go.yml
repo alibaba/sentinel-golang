@@ -12,9 +12,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - go_version: ^1.12
-          - go_version: ^1.13
-          - go_version: ^1.14
+          - go_version: 1.12
+          - go_version: 1.13
+          - go_version: 1.14
     steps:
 
     - name: Set up Go 1.x
