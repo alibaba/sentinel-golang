@@ -17,11 +17,11 @@ func (d *DefaultTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, 
 }
 
 type DefaultTrafficShapingChecker struct {
-	rule *Rule
+	metricType MetricType
 }
 
-func NewDefaultTrafficShapingChecker(rule *Rule) *DefaultTrafficShapingChecker {
-	return &DefaultTrafficShapingChecker{rule: rule}
+func NewDefaultTrafficShapingChecker(metricType MetricType) *DefaultTrafficShapingChecker {
+	return &DefaultTrafficShapingChecker{metricType: metricType}
 }
 
 func (d *DefaultTrafficShapingChecker) DoCheck(node base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
@@ -29,13 +29,13 @@ func (d *DefaultTrafficShapingChecker) DoCheck(node base.StatNode, acquireCount 
 		return nil
 	}
 	var curCount float64
-	if d.rule.MetricType == Concurrency {
+	if d.metricType == Concurrency {
 		curCount = float64(node.CurrentGoroutineNum())
 	} else {
 		curCount = node.GetQPS(base.MetricEventPass)
 	}
 	if curCount+float64(acquireCount) > threshold {
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, "", d.rule, curCount)
+		return base.NewTokenResultBlocked(base.BlockTypeFlow, "Flow")
 	}
 	return nil
 }

@@ -3,7 +3,6 @@ package metric
 import (
 	"os"
 	"reflect"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -123,11 +122,6 @@ func Test_listMetricFiles(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("listMetricFiles() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if osType := runtime.GOOS; osType == "windows" {
-				for i := 0; i < len(got); i++ {
-					got[i] = strings.ReplaceAll(got[i], "\\", "/")
-				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("listMetricFiles() = %v, want %v", got, tt.want)

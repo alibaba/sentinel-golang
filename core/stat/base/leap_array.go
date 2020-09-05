@@ -49,33 +49,28 @@ type AtomicBucketWrapArray struct {
 	data   []*BucketWrap
 }
 
-func NewAtomicBucketWrapArrayWithTime(len int, bucketLengthInMs uint32, now uint64, generator BucketGenerator) *AtomicBucketWrapArray {
+// New AtomicBucketWrapArray with initializing field data
+// Default, automatically initialize each BucketWrap
+// len: length of array
+// bucketLengthInMs: bucket length of BucketWrap
+// generator: generator to generate bucket
+func NewAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator BucketGenerator) *AtomicBucketWrapArray {
 	ret := &AtomicBucketWrapArray{
 		length: len,
 		data:   make([]*BucketWrap, len),
 	}
 
-	timeId := now / uint64(bucketLengthInMs)
-	idx := int(timeId) % len
-	startTime := calculateStartTime(now, bucketLengthInMs)
-
-	for i := idx; i <= len-1; i++ {
+	// automatically initialize each BucketWrap
+	// tail BucketWrap of data is initialized with current time
+	startTime := calculateStartTime(util.CurrentTimeMillis(), bucketLengthInMs)
+	for i := len - 1; i >= 0; i-- {
 		ww := &BucketWrap{
 			BucketStart: startTime,
 			Value:       atomic.Value{},
 		}
 		ww.Value.Store(generator.NewEmptyBucket())
 		ret.data[i] = ww
-		startTime += uint64(bucketLengthInMs)
-	}
-	for i := 0; i < idx; i++ {
-		ww := &BucketWrap{
-			BucketStart: startTime,
-			Value:       atomic.Value{},
-		}
-		ww.Value.Store(generator.NewEmptyBucket())
-		ret.data[i] = ww
-		startTime += uint64(bucketLengthInMs)
+		startTime -= uint64(bucketLengthInMs)
 	}
 
 	// calculate base address for real data array
@@ -84,17 +79,8 @@ func NewAtomicBucketWrapArrayWithTime(len int, bucketLengthInMs uint32, now uint
 	return ret
 }
 
-// New AtomicBucketWrapArray with initializing field data
-// Default, automatically initialize each BucketWrap
-// len: length of array
-// bucketLengthInMs: bucket length of BucketWrap
-// generator: generator to generate bucket
-func NewAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator BucketGenerator) *AtomicBucketWrapArray {
-	return NewAtomicBucketWrapArrayWithTime(len, bucketLengthInMs, util.CurrentTimeMillis(), generator)
-}
-
 func (aa *AtomicBucketWrapArray) elementOffset(idx int) unsafe.Pointer {
-	if idx >= aa.length || idx < 0 {
+	if idx >= aa.length && idx < 0 {
 		panic(fmt.Sprintf("The index (%d) is out of bounds, length is %d.", idx, aa.length))
 	}
 	basePtr := aa.base
@@ -117,14 +103,7 @@ func (aa *AtomicBucketWrapArray) compareAndSet(idx int, except, update *BucketWr
 // The BucketWrap leap array,
 // sampleCount represent the number of BucketWrap
 // intervalInMs represent the interval of LeapArray.
-// For example, bucketLengthInMs is 200ms, intervalInMs is 1000ms, so sampleCount is 5.
-// Give a diagram to illustrate
-// Suppose current time is 888, bucketLengthInMs is 200ms, intervalInMs is 1000ms, LeapArray will build the below windows
-//   B0       B1      B2     B3      B4
-//   |_______|_______|_______|_______|_______|
-//  1000    1200    1400    1600    800    (1000)
-//                                        ^
-//                                      time=888
+// For example, bucketLengthInMs is 500ms, intervalInMs is 1min, so sampleCount is 120.
 type LeapArray struct {
 	bucketLengthInMs uint32
 	sampleCount      uint32
@@ -134,20 +113,20 @@ type LeapArray struct {
 	updateLock mutex
 }
 
-func NewLeapArray(sampleCount uint32, intervalInMs uint32, generator BucketGenerator) (*LeapArray, error) {
+func NewLeapArray(sampleCount uint32, intervalInMs uint32, generator BucketGenerator) *LeapArray {
 	if intervalInMs%sampleCount != 0 {
-		return nil, errors.Errorf("Invalid parameters, intervalInMs is %d, sampleCount is %d", intervalInMs, sampleCount)
+		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
 	}
 	if generator == nil {
-		return nil, errors.Errorf("Invalid parameters, BucketGenerator is nil")
+		panic("Invalid parameters, generator is nil.")
 	}
 	bucketLengthInMs := intervalInMs / sampleCount
 	return &LeapArray{
 		bucketLengthInMs: bucketLengthInMs,
 		sampleCount:      sampleCount,
 		intervalInMs:     intervalInMs,
-		array:            NewAtomicBucketWrapArray(int(sampleCount), bucketLengthInMs, generator),
-	}, nil
+		array:            NewAtomicBucketWrapArray(int(sampleCount), intervalInMs, generator),
+	}
 }
 
 func (la *LeapArray) CurrentBucket(bg BucketGenerator) (*BucketWrap, error) {

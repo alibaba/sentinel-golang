@@ -220,7 +220,6 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
 	ctx.Resource = rw
-	ctx.SetEntry(NewSentinelEntry(ctx, rw, sc))
 	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
 		AcquireCount: 1,
@@ -262,7 +261,6 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	sc := NewSlotChain()
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
-	ctx.SetEntry(NewSentinelEntry(ctx, rw, sc))
 	ctx.Resource = rw
 	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
@@ -285,7 +283,7 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 
 	rbs.On("Prepare", mock.Anything).Return()
 	fsm.On("Check", mock.Anything).Return(NewTokenResultPass())
-	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(blockType))
+	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(blockType, "Unknown"))
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()
@@ -303,7 +301,7 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	dsm.AssertNumberOfCalls(t, "Check", 1)
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 1)
-	ssm.AssertNumberOfCalls(t, "OnCompleted", 0)
+	ssm.AssertNumberOfCalls(t, "OnCompleted", 1)
 }
 
 type badPrepareSlotMock struct {
@@ -341,7 +339,7 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 
 	rbs.On("Prepare", mock.Anything).Return()
 	fsm.On("Check", mock.Anything).Return(NewTokenResultPass())
-	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(BlockTypeUnknown))
+	dsm.On("Check", mock.Anything).Return(NewTokenResultBlocked(BlockTypeUnknown, "Unknown"))
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
 	ssm.On("OnCompleted", mock.Anything).Return()

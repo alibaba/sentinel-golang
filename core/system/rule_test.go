@@ -57,14 +57,14 @@ func TestAdaptiveStrategyString(t *testing.T) {
 
 func TestSystemRuleResourceName(t *testing.T) {
 	t.Run("ValidResourceName", func(t *testing.T) {
-		sr := &Rule{MetricType: Concurrency}
+		sr := &SystemRule{MetricType: Concurrency}
 		assert.Equal(t, "concurrency", sr.ResourceName())
 	})
 }
 
 func TestSystemRuleString(t *testing.T) {
 	t.Run("ValidSystemRuleString", func(t *testing.T) {
-		sr := &Rule{MetricType: Concurrency}
-		assert.NotContains(t, sr.String(), "Rule")
+		sr := &SystemRule{MetricType: Concurrency}
+		assert.NotContains(t, sr.String(), "SystemRule")
 	})
 }

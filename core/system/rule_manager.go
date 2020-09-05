@@ -4,24 +4,25 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
 
-type RuleMap map[MetricType][]*Rule
+type RuleMap map[MetricType][]*SystemRule
 
 // const
 var (
+	logger = logging.GetDefaultLogger()
+
 	ruleMap    = make(RuleMap)
 	ruleMapMux = new(sync.RWMutex)
 )
 
 // GetRules return all the rules
-func GetRules() []*Rule {
+func GetRules() []*SystemRule {
 	ruleMapMux.RLock()
 	defer ruleMapMux.RUnlock()
 
-	rules := make([]*Rule, 0)
+	rules := make([]*SystemRule, 0)
 	for _, rs := range ruleMap {
 		rules = append(rules, rs...)
 	}
@@ -29,11 +30,11 @@ func GetRules() []*Rule {
 }
 
 // LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
-func LoadRules(rules []*Rule) (bool, error) {
+func LoadRules(rules []*SystemRule) (bool, error) {
 	m := buildRuleMap(rules)
 
 	if err := onRuleUpdate(m); err != nil {
-		logging.Errorf("Fail to load rules %+v, err: %+v", rules, err)
+		logger.Errorf("Fail to load rules %+v, err: %+v", rules, err)
 		return false, err
 	}
 
@@ -47,22 +48,20 @@ func ClearRules() error {
 }
 
 func onRuleUpdate(r RuleMap) error {
-	start := util.CurrentTimeNano()
 	ruleMapMux.Lock()
-	defer func() {
-		ruleMapMux.Unlock()
-		logging.Debugf("Updating system rule spends %d ns.", util.CurrentTimeNano()-start)
-		if len(r) > 0 {
-			logging.Infof("[SystemRuleManager] System rules loaded: %v", r)
-		} else {
-			logging.Info("[SystemRuleManager] System rules were cleared")
-		}
-	}()
+	defer ruleMapMux.Unlock()
+
 	ruleMap = r
+	if len(r) > 0 {
+		logger.Infof("[SystemRuleManager] System rules loaded: %v", r)
+	} else {
+		logger.Info("[SystemRuleManager] System rules were cleared")
+	}
+
 	return nil
 }
 
-func buildRuleMap(rules []*Rule) RuleMap {
+func buildRuleMap(rules []*SystemRule) RuleMap {
 	m := make(RuleMap)
 
 	if len(rules) == 0 {
@@ -71,12 +70,12 @@ func buildRuleMap(rules []*Rule) RuleMap {
 
 	for _, rule := range rules {
 		if err := IsValidSystemRule(rule); err != nil {
-			logging.Warnf("Ignoring invalid system rule: %v, reason: %s", rule, err.Error())
+			logger.Warnf("Ignoring invalid system rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
 		rulesOfRes, exists := m[rule.MetricType]
 		if !exists {
-			m[rule.MetricType] = []*Rule{rule}
+			m[rule.MetricType] = []*SystemRule{rule}
 		} else {
 			m[rule.MetricType] = append(rulesOfRes, rule)
 		}
@@ -85,9 +84,9 @@ func buildRuleMap(rules []*Rule) RuleMap {
 }
 
 // IsValidSystemRule determine the system rule is valid or not
-func IsValidSystemRule(rule *Rule) error {
+func IsValidSystemRule(rule *SystemRule) error {
 	if rule == nil {
-		return errors.New("nil Rule")
+		return errors.New("nil SystemRule")
 	}
 	if rule.TriggerCount < 0 {
 		return errors.New("negative threshold")

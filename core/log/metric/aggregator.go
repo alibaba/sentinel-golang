@@ -19,6 +19,7 @@ const (
 )
 
 var (
+	logger = logging.GetDefaultLogger()
 	// The timestamp of the last fetching. The time unit is ms (= second * 1000).
 	lastFetchTime int64 = -1
 	writeChan           = make(chan metricTimeMap, logFlushQueueSize)
@@ -30,20 +31,19 @@ var (
 
 func InitTask() (err error) {
 	initOnce.Do(func() {
-		flushInterval := config.MetricLogFlushIntervalSec()
-		if flushInterval == 0 {
-			return
-		}
-
 		metricWriter, err = NewDefaultMetricLogWriter(config.MetricLogSingleFileMaxSize(), config.MetricLogMaxFileAmount())
 		if err != nil {
-			logging.Errorf("Failed to initialize the MetricLogWriter: %+v", err)
+			logger.Errorf("Failed to initialize the MetricLogWriter: %+v", err)
 			return
 		}
 
 		// Schedule the log flushing task
-		go util.RunWithRecover(writeTaskLoop)
+		go util.RunWithRecover(writeTaskLoop, logger)
 		// Schedule the log aggregating task
+		flushInterval := config.MetricLogFlushIntervalSec()
+		if flushInterval == 0 {
+			return
+		}
 		ticker := time.NewTicker(time.Duration(flushInterval) * time.Second)
 		go util.RunWithRecover(func() {
 			for {
@@ -55,7 +55,7 @@ func InitTask() (err error) {
 					return
 				}
 			}
-		})
+		}, logger)
 	})
 	return err
 }
@@ -76,7 +76,7 @@ func writeTaskLoop() {
 			for _, t := range keys {
 				err := metricWriter.Write(t, m[t])
 				if err != nil {
-					logging.Errorf("[MetricAggregatorTask] Write metric error: %+v", err)
+					logger.Errorf("[MetricAggregatorTask] Write metric error: %+v", err)
 				}
 			}
 		}

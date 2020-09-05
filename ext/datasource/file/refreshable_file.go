@@ -11,6 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	logger = logging.GetDefaultLogger()
+)
+
 type RefreshableFileDataSource struct {
 	datasource.Base
 	sourceFilePath string
@@ -51,7 +55,7 @@ func (s *RefreshableFileDataSource) Initialize() error {
 
 	err := s.doReadAndUpdate()
 	if err != nil {
-		logging.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
+		logger.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
 	}
 
 	w, err := fsnotify.NewWatcher()
@@ -72,24 +76,24 @@ func (s *RefreshableFileDataSource) Initialize() error {
 				if ev.Op&fsnotify.Write == fsnotify.Write {
 					err := s.doReadAndUpdate()
 					if err != nil {
-						logging.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
+						logger.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
 					}
 				}
 
 				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
-					logging.Warnf("The file source [%s] was removed or renamed.", s.sourceFilePath)
+					logger.Errorf("The file source[%s] was removed or renamed.", s.sourceFilePath)
 					updateErr := s.Handle(nil)
 					if updateErr != nil {
-						logging.Errorf("Fail to update nil property, err: %+v", updateErr)
+						logger.Errorf("Fail to update nil property, err: %+v.", updateErr)
 					}
 				}
 			case err := <-s.watcher.Errors:
-				logging.Errorf("Watch err on file[%s], err: %+v", s.sourceFilePath, err)
+				logger.Errorf("Watch err on file[%s], err: %+v", s.sourceFilePath, err)
 			case <-s.closeChan:
 				return
 			}
 		}
-	})
+	}, logger)
 	return nil
 }
 
@@ -104,6 +108,6 @@ func (s *RefreshableFileDataSource) doReadAndUpdate() (err error) {
 
 func (s *RefreshableFileDataSource) Close() error {
 	s.closeChan <- struct{}{}
-	logging.Infof("The RefreshableFileDataSource for [%s] had been closed.", s.sourceFilePath)
+	logger.Infof("The RefreshableFileDataSource for [%s] had been closed.", s.sourceFilePath)
 	return nil
 }
