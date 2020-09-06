@@ -10,12 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-type CircuitBreakerGenFunc func(r Rule, reuseStat interface{}) (CircuitBreaker, error)
+type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
 
 var (
 	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc)
 
-	breakerRules = make(map[string][]Rule)
+	breakerRules = make(map[string][]*Rule)
 	breakers     = make(map[string][]CircuitBreaker)
 	updateMux    = &sync.RWMutex{}
 
@@ -23,61 +23,58 @@ var (
 )
 
 func init() {
-	cbGenFuncMap[SlowRequestRatio] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
-		rtRule, ok := r.(*slowRtRule)
-		if !ok || rtRule == nil {
-			return nil, errors.Errorf("rule don't match the SlowRequestRatio strategy, rule: %s", r.String())
+	cbGenFuncMap[SlowRequestRatio] = func(r *Rule, reuseStat interface{}) (CircuitBreaker, error) {
+		if r == nil {
+			return nil, errors.New("nil rule")
 		}
 		if reuseStat == nil {
-			return newSlowRtCircuitBreaker(rtRule)
+			return newSlowRtCircuitBreaker(r)
 		}
 		stat, ok := reuseStat.(*slowRequestLeapArray)
 		if !ok || stat == nil {
 			logging.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*slowRequestLeapArray, in fact: %+v", stat)
-			return newSlowRtCircuitBreaker(rtRule)
+			return newSlowRtCircuitBreaker(r)
 		}
-		return newSlowRtCircuitBreakerWithStat(rtRule, stat), nil
+		return newSlowRtCircuitBreakerWithStat(r, stat), nil
 	}
 
-	cbGenFuncMap[ErrorRatio] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
-		errRatioRule, ok := r.(*errorRatioRule)
-		if !ok || errRatioRule == nil {
-			return nil, errors.Errorf("rule don't match the ErrorRatio strategy, rule: %s", r.String())
+	cbGenFuncMap[ErrorRatio] = func(r *Rule, reuseStat interface{}) (CircuitBreaker, error) {
+		if r == nil {
+			return nil, errors.New("nil rule")
 		}
 		if reuseStat == nil {
-			return newErrorRatioCircuitBreaker(errRatioRule)
+			return newErrorRatioCircuitBreaker(r)
 		}
 		stat, ok := reuseStat.(*errorCounterLeapArray)
 		if !ok || stat == nil {
 			logging.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
-			return newErrorRatioCircuitBreaker(errRatioRule)
+			return newErrorRatioCircuitBreaker(r)
 		}
-		return newErrorRatioCircuitBreakerWithStat(errRatioRule, stat), nil
+		return newErrorRatioCircuitBreakerWithStat(r, stat), nil
 	}
 
-	cbGenFuncMap[ErrorCount] = func(r Rule, reuseStat interface{}) (CircuitBreaker, error) {
-		errCountRule, ok := r.(*errorCountRule)
-		if !ok || errCountRule == nil {
-			return nil, errors.Errorf("rule don't match the ErrorCount strategy, rule: %s", r.String())
+	cbGenFuncMap[ErrorCount] = func(r *Rule, reuseStat interface{}) (CircuitBreaker, error) {
+		if r == nil {
+			return nil, errors.New("nil rule")
 		}
 		if reuseStat == nil {
-			return newErrorCountCircuitBreaker(errCountRule)
+			return newErrorCountCircuitBreaker(r)
 		}
 		stat, ok := reuseStat.(*errorCounterLeapArray)
 		if !ok || stat == nil {
 			logging.Warnf("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray, in fact: %+v", stat)
-			return newErrorCountCircuitBreaker(errCountRule)
+			return newErrorCountCircuitBreaker(r)
 		}
-		return newErrorCountCircuitBreakerWithStat(errCountRule, stat), nil
+		return newErrorCountCircuitBreakerWithStat(r, stat), nil
 	}
 }
 
-func GetResRules(resource string) []Rule {
+func GetResRules(resource string) []*Rule {
 	updateMux.RLock()
 	ret, ok := breakerRules[resource]
 	updateMux.RUnlock()
 	if !ok {
-		ret = make([]Rule, 0)
+		ret = make([]*Rule, 0)
 	}
 	return ret
 }
@@ -94,7 +91,7 @@ func ClearRules() error {
 //
 // bool: was designed to indicate whether the internal map has been changed
 // error: was designed to indicate whether occurs the error.
-func LoadRules(rules []Rule) (bool, error) {
+func LoadRules(rules []*Rule) (bool, error) {
 	// TODO in order to avoid invalid update, should check consistent with last update rules
 	err := onRuleUpdate(rules)
 	return true, err
@@ -112,7 +109,7 @@ func getResBreakers(resource string) []CircuitBreaker {
 	return ret
 }
 
-func calculateReuseIndexFor(r Rule, oldResCbs []CircuitBreaker) (equalIdx, reuseStatIdx int) {
+func calculateReuseIndexFor(r *Rule, oldResCbs []CircuitBreaker) (equalIdx, reuseStatIdx int) {
 	// the index of equivalent rule in old circuit breaker slice
 	equalIdx = -1
 	// the index of statistic reusable rule in old circuit breaker slice
@@ -120,13 +117,13 @@ func calculateReuseIndexFor(r Rule, oldResCbs []CircuitBreaker) (equalIdx, reuse
 
 	for idx, oldTc := range oldResCbs {
 		oldRule := oldTc.BoundRule()
-		if oldRule.IsEqualsTo(r) {
+		if oldRule.isEqualsTo(r) {
 			// break if there is equivalent rule
 			equalIdx = idx
 			break
 		}
 		// find the index of first StatReusable rule
-		if !oldRule.IsStatReusable(r) {
+		if !oldRule.isStatReusable(r) {
 			continue
 		}
 		if reuseStatIdx >= 0 {
@@ -149,7 +146,7 @@ func insertCbToCbMap(cb CircuitBreaker, res string, m map[string][]CircuitBreake
 }
 
 // Concurrent safe to update rules
-func onRuleUpdate(rules []Rule) (err error) {
+func onRuleUpdate(rules []*Rule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -160,12 +157,12 @@ func onRuleUpdate(rules []Rule) (err error) {
 		}
 	}()
 
-	newBreakerRules := make(map[string][]Rule)
+	newBreakerRules := make(map[string][]*Rule)
 	for _, rule := range rules {
 		if rule == nil {
 			continue
 		}
-		if err := rule.IsApplicable(); err != nil {
+		if err := IsValid(rule); err != nil {
 			logging.Warnf("Ignoring invalid circuit breaking rule when loading new rules, rule: %+v, reason: %s", rule, err.Error())
 			continue
 		}
@@ -173,7 +170,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 		classification := rule.ResourceName()
 		ruleSet, ok := newBreakerRules[classification]
 		if !ok {
-			ruleSet = make([]Rule, 0, 1)
+			ruleSet = make([]*Rule, 0, 1)
 		}
 		ruleSet = append(ruleSet, rule)
 		newBreakerRules[classification] = ruleSet
@@ -233,7 +230,7 @@ func onRuleUpdate(rules []Rule) (err error) {
 	return nil
 }
 
-func AppendRule(r Rule) error {
+func AppendRule(r *Rule) error {
 	res := r.ResourceName()
 	oldResCbs := breakers[res]
 	if oldResCbs == nil {
@@ -262,8 +259,8 @@ func AppendRule(r Rule) error {
 	return nil
 }
 
-func buildCircuitBreaker(reuseStatIdx int, r Rule, oldResCbs []CircuitBreaker) (CircuitBreaker, error) {
-	generator := cbGenFuncMap[r.BreakerStrategy()]
+func buildCircuitBreaker(reuseStatIdx int, r *Rule, oldResCbs []CircuitBreaker) (CircuitBreaker, error) {
+	generator := cbGenFuncMap[r.Strategy]
 	if generator == nil {
 		return nil, errors.New(fmt.Sprintf("Ignoring the rule due to unsupported circuit breaking strategy: %v", r))
 	}
@@ -280,7 +277,7 @@ func buildCircuitBreaker(reuseStatIdx int, r Rule, oldResCbs []CircuitBreaker) (
 	return cb, nil
 }
 
-func UpdateRule(id string, r Rule) error {
+func UpdateRule(id string, r *Rule) error {
 	res := r.ResourceName()
 	oldResCbs := breakers[res]
 	if oldResCbs == nil {
@@ -309,28 +306,15 @@ func UpdateRule(id string, r Rule) error {
 	return nil
 }
 
-func updateSpecifiedCircuitBreaker(updateRuleId string, r Rule, oldResCbs []CircuitBreaker) error {
+func updateSpecifiedCircuitBreaker(updateRuleId string, r *Rule, oldResCbs []CircuitBreaker) error {
 	res := r.ResourceName()
 	for index, oldResCb := range oldResCbs {
-		strategy := oldResCb.BoundRule().BreakerStrategy()
-		var ruleId string
-		switch strategy {
-		case SlowRequestRatio:
-			ruleId = oldResCb.BoundRule().(*slowRtRule).Id
-		case ErrorRatio:
-			ruleId = oldResCb.BoundRule().(*errorRatioRule).Id
-		case ErrorCount:
-			ruleId = oldResCb.BoundRule().(*errorCountRule).Id
-		default:
-			logging.Errorf("unsupported circuitBreaker rule, strategy: %d", strategy)
-			continue
-		}
-		if updateRuleId == ruleId {
+		if updateRuleId == oldResCb.BoundRule().Id {
 			var (
 				cb  CircuitBreaker
 				err error
 			)
-			if oldResCb.BoundRule().IsStatReusable(r) {
+			if oldResCb.BoundRule().isStatReusable(r) {
 				cb, err = buildCircuitBreaker(index, r, oldResCbs)
 			} else {
 				cb, err = buildCircuitBreaker(-1, r, oldResCbs)
@@ -347,25 +331,13 @@ func updateSpecifiedCircuitBreaker(updateRuleId string, r Rule, oldResCbs []Circ
 	return errors.New(fmt.Sprintf("Rule to be updated was not found,id:%s", updateRuleId))
 }
 
-func updateSpecifiedRule(updateRuleId string, r Rule, oldRules []Rule) error {
+func updateSpecifiedRule(updateRuleId string, r *Rule, oldRules []*Rule) error {
 	for index, oldRule := range oldRules {
-		if r.IsEqualsTo(oldRule) {
+		if r.isEqualsTo(oldRule) {
 			return errors.New("The rule to be updated already exists.")
 		}
-		strategy := oldRule.BreakerStrategy()
-		var ruleId string
-		switch strategy {
-		case SlowRequestRatio:
-			ruleId = oldRule.(*slowRtRule).Id
-		case ErrorRatio:
-			ruleId = oldRule.(*errorRatioRule).Id
-		case ErrorCount:
-			ruleId = oldRule.(*errorCountRule).Id
-		default:
-			logging.Errorf("unsupported rule type, strategy: %d", strategy)
-			continue
-		}
-		if updateRuleId == ruleId {
+
+		if updateRuleId == oldRule.Id {
 			oldRules[index] = r
 			return nil
 		}
@@ -373,8 +345,8 @@ func updateSpecifiedRule(updateRuleId string, r Rule, oldRules []Rule) error {
 	return errors.New(fmt.Sprintf("Rule to be updated was not found,id:%s", updateRuleId))
 }
 
-func rulesFrom(rm map[string][]Rule) []Rule {
-	rules := make([]Rule, 0)
+func rulesFrom(rm map[string][]*Rule) []*Rule {
+	rules := make([]*Rule, 0)
 	if len(rm) == 0 {
 		return rules
 	}
@@ -391,7 +363,7 @@ func rulesFrom(rm map[string][]Rule) []Rule {
 	return rules
 }
 
-func logRuleUpdate(rules map[string][]Rule) {
+func logRuleUpdate(rules map[string][]*Rule) {
 	sb := strings.Builder{}
 	sb.WriteString("Circuit breaking rules loaded: [")
 
@@ -402,14 +374,19 @@ func logRuleUpdate(rules map[string][]Rule) {
 	logging.Info(sb.String())
 }
 
+// Note: this function is not thread-safe.
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	if len(listeners) == 0 {
 		return
 	}
-	updateMux.Lock()
-	defer updateMux.Unlock()
 
 	stateChangeListeners = append(stateChangeListeners, listeners...)
+}
+
+// ClearStateChangeListeners will clear the all StateChangeListener
+// Note: this function is not thread-safe.
+func ClearStateChangeListeners() {
+	stateChangeListeners = make([]StateChangeListener, 0)
 }
 
 // SetCircuitBreakerGenerator sets the circuit breaker generator for the given strategy.
@@ -436,5 +413,30 @@ func RemoveCircuitBreakerGenerator(s Strategy) error {
 	defer updateMux.Unlock()
 
 	delete(cbGenFuncMap, s)
+	return nil
+}
+
+func IsValid(r *Rule) error {
+	if len(r.Resource) == 0 {
+		return errors.New("empty resource name")
+	}
+	if int(r.Strategy) < int(SlowRequestRatio) || int(r.Strategy) > int(ErrorCount) {
+		return errors.New("invalid Strategy")
+	}
+	if r.StatIntervalMs <= 0 {
+		return errors.New("invalid StatIntervalMs")
+	}
+	if r.RetryTimeoutMs <= 0 {
+		return errors.New("invalid RetryTimeoutMs")
+	}
+	if r.Threshold < 0.0 {
+		return errors.New("invalid Threshold")
+	}
+	if r.Strategy == SlowRequestRatio && r.Threshold > 1.0 {
+		return errors.New("invalid slow request ratio threshold (valid range: [0.0, 1.0])")
+	}
+	if r.Strategy == ErrorRatio && r.Threshold > 1.0 {
+		return errors.New("invalid error ratio threshold (valid range: [0.0, 1.0])")
+	}
 	return nil
 }

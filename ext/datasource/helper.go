@@ -8,19 +8,11 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/system"
-	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/tidwall/gjson"
 )
 
 func checkSrcComplianceJson(src []byte) (bool, error) {
 	if len(src) == 0 {
 		return false, nil
-	}
-	if !gjson.ValidBytes(src) {
-		return false, Error{
-			code: ConvertSourceError,
-			desc: fmt.Sprintf("The source is invalid json: %s", src),
-		}
 	}
 	return true, nil
 }
@@ -118,37 +110,9 @@ func CircuitBreakerRuleJsonArrayParser(src []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	rules := make([]cb.Rule, 0)
-	result := gjson.ParseBytes(src)
-	for _, r := range result.Array() {
-		if uint64(cb.SlowRequestRatio) == r.Get("strategy").Uint() {
-			rules = append(rules, cb.NewRule(r.Get("resource").String(), cb.SlowRequestRatio,
-				cb.WithStatIntervalMs(uint32(r.Get("statIntervalMs").Uint())),
-				cb.WithRetryTimeoutMs(uint32(r.Get("retryTimeoutMs").Uint())),
-				cb.WithMinRequestAmount(r.Get("minRequestAmount").Uint()),
-				cb.WithMaxAllowedRtMs(r.Get("maxAllowedRt").Uint()),
-				cb.WithMaxSlowRequestRatio(r.Get("maxSlowRequestRatio").Float())))
-			continue
-		}
-		if uint64(cb.ErrorRatio) == r.Get("strategy").Uint() {
-			rules = append(rules, cb.NewRule(r.Get("resource").String(), cb.ErrorRatio,
-				cb.WithStatIntervalMs(uint32(r.Get("statIntervalMs").Uint())),
-				cb.WithRetryTimeoutMs(uint32(r.Get("retryTimeoutMs").Uint())),
-				cb.WithMinRequestAmount(r.Get("minRequestAmount").Uint()),
-				cb.WithErrorRatioThreshold(r.Get("threshold").Float())))
-			continue
-		}
-		if uint64(cb.ErrorCount) == r.Get("strategy").Uint() {
-			rules = append(rules, cb.NewRule(r.Get("resource").String(), cb.ErrorCount,
-				cb.WithStatIntervalMs(uint32(r.Get("statIntervalMs").Uint())),
-				cb.WithRetryTimeoutMs(uint32(r.Get("retryTimeoutMs").Uint())),
-				cb.WithMinRequestAmount(r.Get("minRequestAmount").Uint()),
-				cb.WithErrorCountThreshold(r.Get("threshold").Uint())))
-			continue
-		}
-		logging.Errorf("Unknown rule message: %s", r.Str)
-	}
-	return rules, nil
+	rules := make([]*cb.Rule, 0)
+	err := json.Unmarshal(src, &rules)
+	return rules, err
 }
 
 // CircuitBreakerRulesUpdater load the newest []cb.Rule to downstream circuit breaker component.
@@ -157,8 +121,8 @@ func CircuitBreakerRulesUpdater(data interface{}) error {
 		return cb.ClearRules()
 	}
 
-	var rules []cb.Rule
-	if val, ok := data.([]cb.Rule); ok {
+	var rules []*cb.Rule
+	if val, ok := data.([]*cb.Rule); ok {
 		rules = val
 	} else {
 		return Error{

@@ -305,6 +305,9 @@ func checkControlBehaviorField(rule *FlowRule) error {
 		if rule.WarmUpPeriodSec <= 0 {
 			return errors.New("invalid warmUpPeriodSec")
 		}
+		if rule.WarmUpColdFactor == 1 {
+			return errors.New("WarmUpColdFactor must be great than 1")
+		}
 		return nil
 	case WarmUpThrottling:
 		if rule.WarmUpPeriodSec <= 0 {

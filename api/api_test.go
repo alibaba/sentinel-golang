@@ -125,5 +125,5 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	rcs2.AssertNumberOfCalls(t, "Check", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 1)
-	ssm.AssertNumberOfCalls(t, "OnCompleted", 1)
+	ssm.AssertNumberOfCalls(t, "OnCompleted", 0)
 }

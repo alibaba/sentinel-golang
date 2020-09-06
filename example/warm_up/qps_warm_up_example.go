@@ -10,6 +10,7 @@ import (
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -25,17 +26,19 @@ func main() {
 	counter := Counter{pass: new(int64), block: new(int64), total: new(int64)}
 	// We should initialize Sentinel first.
 	err := sentinel.InitDefault()
+	logging.ResetGlobalLogger(logging.NewConsoleLogger("flow-warmup-test"))
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 
 	_, err = flow.LoadRules([]*flow.FlowRule{
 		{
-			Resource:        "some-test",
-			MetricType:      flow.QPS,
-			Count:           100,
-			ControlBehavior: flow.WarmUp,
-			WarmUpPeriodSec: 10,
+			Resource:         "some-test",
+			MetricType:       flow.QPS,
+			Count:            100,
+			ControlBehavior:  flow.WarmUp,
+			WarmUpPeriodSec:  10,
+			WarmUpColdFactor: 3,
 		},
 	})
 	if err != nil {

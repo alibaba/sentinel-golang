@@ -37,10 +37,8 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 	})
 
 	t.Run("TestFlowRulesJsonConverter_error", func(t *testing.T) {
-		got, err := FlowRuleJsonArrayParser([]byte{'x', 'i', 'm', 'u'})
-		assert.True(t, got == nil)
-		realErr, succ := err.(Error)
-		assert.True(t, succ && realErr.code == ConvertSourceError)
+		_, err := FlowRuleJsonArrayParser([]byte{'x', 'i', 'm', 'u'})
+		assert.True(t, err != nil)
 	})
 
 	t.Run("TestFlowRulesJsonConverter_normal", func(t *testing.T) {
@@ -249,8 +247,7 @@ func TestSystemRulesUpdater(t *testing.T) {
 
 func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 	t.Run("TestCircuitBreakerRulesJsonConverter_failed", func(t *testing.T) {
-		properties, err := CircuitBreakerRuleJsonArrayParser([]byte{'s', 'r', 'c'})
-		assert.True(t, properties == nil)
+		_, err := CircuitBreakerRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, err != nil)
 	})
 
@@ -267,34 +264,72 @@ func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 		}
 
 		properties, err := CircuitBreakerRuleJsonArrayParser(src)
-		rules := properties.([]cb.Rule)
+		rules := properties.([]*cb.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 3)
-		assert.True(t, strings.Contains(rules[0].String(), "resource=abc, strategy=SlowRequestRatio, RetryTimeoutMs=10, MinRequestAmount=10, StatIntervalMs=1000}, MaxAllowedRtMs=100, MaxSlowRequestRatio=0.100000"))
-		assert.True(t, strings.Contains(rules[1].String(), "resource=abc, strategy=ErrorRatio, RetryTimeoutMs=20, MinRequestAmount=20, StatIntervalMs=2000}, Threshold=0.200000"))
-		assert.True(t, strings.Contains(rules[2].String(), "resource=abc, strategy=ErrorCount, RetryTimeoutMs=30, MinRequestAmount=30, StatIntervalMs=3000}, Threshold=30"))
+		assert.True(t, reflect.DeepEqual(rules[0], &cb.Rule{
+			Resource:         "abc",
+			Strategy:         cb.SlowRequestRatio,
+			RetryTimeoutMs:   10,
+			MinRequestAmount: 10,
+			StatIntervalMs:   1000,
+			MaxAllowedRtMs:   100,
+			Threshold:        0.1,
+		}))
+		assert.True(t, reflect.DeepEqual(rules[1], &cb.Rule{
+			Resource:         "abc",
+			Strategy:         cb.ErrorRatio,
+			RetryTimeoutMs:   20,
+			MinRequestAmount: 20,
+			StatIntervalMs:   2000,
+			Threshold:        0.2,
+		}))
+		assert.True(t, reflect.DeepEqual(rules[2], &cb.Rule{
+			Resource:         "abc",
+			Strategy:         cb.ErrorCount,
+			RetryTimeoutMs:   30,
+			MinRequestAmount: 30,
+			StatIntervalMs:   3000,
+			Threshold:        30,
+		}))
 	})
 }
 
 func TestCircuitBreakerRulesUpdater(t *testing.T) {
 	// Prepare test data
-	r1 := cb.NewRule("abc", cb.SlowRequestRatio, cb.WithStatIntervalMs(1000),
-		cb.WithRetryTimeoutMs(1000), cb.WithMaxAllowedRtMs(20),
-		cb.WithMinRequestAmount(5), cb.WithMaxSlowRequestRatio(0.1))
-	r2 := cb.NewRule("abc", cb.ErrorRatio, cb.WithStatIntervalMs(1000),
-		cb.WithRetryTimeoutMs(1000), cb.WithMinRequestAmount(5),
-		cb.WithMaxSlowRequestRatio(0.3))
-	r3 := cb.NewRule("abc", cb.ErrorCount, cb.WithStatIntervalMs(1000),
-		cb.WithRetryTimeoutMs(1000), cb.WithMinRequestAmount(5),
-		cb.WithMaxSlowRequestRatio(10))
+	r1 := &cb.Rule{
+		Resource:         "abc",
+		Strategy:         cb.SlowRequestRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		MaxAllowedRtMs:   20,
+		Threshold:        0.1,
+	}
+	r2 := &cb.Rule{
+		Resource:         "abc",
+		Strategy:         cb.ErrorRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        0.3,
+	}
+	r3 := &cb.Rule{
+		Resource:         "abc",
+		Strategy:         cb.ErrorCount,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        10,
+	}
 
-	err := CircuitBreakerRulesUpdater([]cb.Rule{r1, r2, r3})
+	err := CircuitBreakerRulesUpdater([]*cb.Rule{r1, r2, r3})
 	assert.True(t, err == nil)
 
 	rules := cb.GetResRules("abc")
-	assert.True(t, rules[0].IsEqualsTo(r1))
-	assert.True(t, rules[1].IsEqualsTo(r2))
-	assert.True(t, rules[2].IsEqualsTo(r3))
+	assert.True(t, reflect.DeepEqual(rules[0], r1))
+	assert.True(t, reflect.DeepEqual(rules[1], r2))
+	assert.True(t, reflect.DeepEqual(rules[2], r3))
 }
 
 func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
