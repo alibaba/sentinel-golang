@@ -1,6 +1,7 @@
 package circuitbreaker
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -145,5 +146,181 @@ func Test_onRuleUpdate(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(newCbs[1].BoundStat(), b2.BoundStat()))
 		assert.True(t, reflect.DeepEqual(newCbs[2].BoundRule(), r6))
 		assert.True(t, reflect.DeepEqual(newCbs[3].BoundRule(), r7))
+	})
+}
+
+func Test_updateSpecifiedRule(t *testing.T) {
+	t.Run("Test_updateSpecifiedRule", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		r2 := NewRule("abc", ErrorRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(0.3))
+		r3 := NewRule("abc", ErrorCount, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(10))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1, r2, r3})
+		assert.Nil(t, err)
+		assert.True(t, len(breakers) == 1)
+		assert.True(t, len(breakers["abc"]) == 3)
+		assert.True(t, reflect.DeepEqual(breakers["abc"][0].BoundRule(), r1))
+
+		slowRtRuleR1 := r1.(*slowRtRule)
+		updateR1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1001),
+			WithRetryTimeoutMs(1001), WithMaxAllowedRtMs(30),
+			WithMinRequestAmount(6), WithMaxSlowRequestRatio(0.1))
+		err = UpdateRule(slowRtRuleR1.Id, updateR1)
+		assert.Nil(t, err)
+		assert.True(t, reflect.DeepEqual(breakers["abc"][0].BoundRule(), updateR1))
+	})
+
+	t.Run("Test_updateRuleReuseStat", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		r2 := NewRule("abc", ErrorRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(0.3))
+		r3 := NewRule("abc", ErrorCount, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(10))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1, r2, r3})
+		assert.Nil(t, err)
+		assert.True(t, len(breakers) == 1)
+		assert.True(t, len(breakers["abc"]) == 3)
+		assert.True(t, reflect.DeepEqual(breakers["abc"][0].BoundRule(), r1))
+
+		stat := breakers["abc"][0].BoundStat()
+
+		slowRtRuleR1 := r1.(*slowRtRule)
+		updateR1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1001), WithMaxAllowedRtMs(21),
+			WithMinRequestAmount(6), WithMaxSlowRequestRatio(0.2))
+		err = UpdateRule(slowRtRuleR1.Id, updateR1)
+		assert.Nil(t, err)
+		assert.True(t, reflect.DeepEqual(breakers["abc"][0].BoundStat(), stat))
+	})
+
+	t.Run("Test_notFoundRuleIdError", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1})
+		assert.Nil(t, err)
+
+		updateR1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1001),
+			WithRetryTimeoutMs(1001), WithMaxAllowedRtMs(30),
+			WithMinRequestAmount(6), WithMaxSlowRequestRatio(0.1))
+		err = UpdateRule("xxxxxx", updateR1)
+		assert.Contains(t, err.Error(), "Rule to be updated was not found,id")
+	})
+
+	t.Run("Test_notFoundRuleResourceError", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1})
+		assert.Nil(t, err)
+
+		slowRtRuleR1 := r1.(*slowRtRule)
+		updateR1 := NewRule("abcd", SlowRequestRatio, WithStatIntervalMs(1001),
+			WithRetryTimeoutMs(1001), WithMaxAllowedRtMs(30),
+			WithMinRequestAmount(6), WithMaxSlowRequestRatio(0.1))
+		err = UpdateRule(slowRtRuleR1.Id, updateR1)
+		assert.Contains(t, err.Error(), "Update failed, the current circuitBreaker resource to be updated does not exist")
+	})
+
+	t.Run("Test_alreadyExistRuleError", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1})
+		assert.Nil(t, err)
+
+		slowRtRuleR1 := r1.(*slowRtRule)
+		updateR1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		err = UpdateRule(slowRtRuleR1.Id, updateR1)
+		assert.Contains(t, err.Error(), "The rule to be updated already exists.")
+	})
+}
+
+func Test_appendRule(t *testing.T) {
+	t.Run("Test_appendRule", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		r2 := NewRule("abc", ErrorRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(0.3))
+		r3 := NewRule("abc", ErrorCount, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(10))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1, r2, r3})
+		assert.Nil(t, err)
+		assert.True(t, len(breakers) == 1)
+		assert.True(t, len(breakers["abc"]) == 3)
+		assert.True(t, reflect.DeepEqual(breakers["abc"][0].BoundRule(), r1))
+
+		r4 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1001),
+			WithRetryTimeoutMs(1001), WithMaxAllowedRtMs(30),
+			WithMinRequestAmount(6), WithMaxSlowRequestRatio(0.2))
+		err = AppendRule(r4)
+		assert.Nil(t, err)
+		assert.True(t, len(breakers) == 1)
+		assert.True(t, len(breakers["abc"]) == 4)
+		assert.True(t, reflect.DeepEqual(breakers["abc"][3].BoundRule(), r4))
+	})
+
+	t.Run("Test_appendRuleByDifferentResource", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		r2 := NewRule("abc", ErrorRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(0.3))
+		r3 := NewRule("abc", ErrorCount, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMinRequestAmount(5),
+			WithMaxSlowRequestRatio(10))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1, r2, r3})
+		assert.Nil(t, err)
+		assert.True(t, len(breakers) == 1)
+		assert.True(t, len(breakers["abc"]) == 3)
+		assert.True(t, reflect.DeepEqual(breakers["abc"][0].BoundRule(), r1))
+
+		r4 := NewRule("abcd", SlowRequestRatio, WithStatIntervalMs(1001),
+			WithRetryTimeoutMs(1001), WithMaxAllowedRtMs(30),
+			WithMinRequestAmount(6), WithMaxSlowRequestRatio(0.2))
+		err = AppendRule(r4)
+		assert.Nil(t, err)
+		assert.True(t, len(breakers) == 2)
+		assert.True(t, len(breakers["abc"]) == 3)
+		assert.True(t, len(breakers["abcd"]) == 1)
+		assert.True(t, reflect.DeepEqual(breakers["abcd"][0].BoundRule(), r4))
+	})
+
+	t.Run("Test_alreadyExistRuleError", func(t *testing.T) {
+		r1 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		breakers = make(map[string][]CircuitBreaker)
+		_, err := LoadRules([]Rule{r1})
+		assert.Nil(t, err)
+
+		r2 := NewRule("abc", SlowRequestRatio, WithStatIntervalMs(1000),
+			WithRetryTimeoutMs(1000), WithMaxAllowedRtMs(20),
+			WithMinRequestAmount(5), WithMaxSlowRequestRatio(0.1))
+		err = AppendRule(r2)
+		fmt.Println(err)
+		assert.Contains(t, err.Error(), "The current appended rule already exists")
 	})
 }

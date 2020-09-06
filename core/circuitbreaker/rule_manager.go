@@ -246,13 +246,13 @@ func AppendRule(r Rule) error {
 			return
 		}
 	}()
-	equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResCbs)
+	equalIdx, _ := calculateReuseIndexFor(r, oldResCbs)
 
 	if equalIdx >= 0 {
 		return errors.New("The current appended rule already exists.")
 	}
 
-	cb, err := buildCircuitBreaker(reuseStatIdx, r, oldResCbs)
+	cb, err := buildCircuitBreaker(-1, r, oldResCbs)
 	if err != nil {
 		return err
 	}
@@ -284,8 +284,13 @@ func UpdateRule(id string, r Rule) error {
 	res := r.ResourceName()
 	oldResCbs := breakers[res]
 	if oldResCbs == nil {
+		return errors.New("Update failed, the current circuitBreaker resource to be updated does not exist.")
+	}
+	oldRules := breakerRules[res]
+	if oldRules == nil {
 		return errors.New("Update failed, the current rule resource to be updated does not exist.")
 	}
+
 	updateMux.Lock()
 	defer func() {
 		updateMux.Unlock()
@@ -293,6 +298,19 @@ func UpdateRule(id string, r Rule) error {
 			return
 		}
 	}()
+
+	if err := updateSpecifiedRule(id, r, oldRules); err != nil {
+		return err
+	}
+
+	if err := updateSpecifiedCircuitBreaker(id, r, oldResCbs); err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateSpecifiedCircuitBreaker(updateRuleId string, r Rule, oldResCbs []CircuitBreaker) error {
+	res := r.ResourceName()
 	for index, oldResCb := range oldResCbs {
 		strategy := oldResCb.BoundRule().BreakerStrategy()
 		var ruleId string
@@ -304,11 +322,10 @@ func UpdateRule(id string, r Rule) error {
 		case ErrorCount:
 			ruleId = oldResCb.BoundRule().(*errorCountRule).Id
 		default:
-			logging.Errorf("unsupported circuit breaker rule, strategy: %d", strategy)
+			logging.Errorf("unsupported circuitBreaker rule, strategy: %d", strategy)
 			continue
 		}
-		//如果找到对应Id.则更新，复用断路器的state
-		if id == ruleId {
+		if updateRuleId == ruleId {
 			var (
 				cb  CircuitBreaker
 				err error
@@ -320,15 +337,40 @@ func UpdateRule(id string, r Rule) error {
 			}
 
 			if err != nil {
-				return errors.New(fmt.Sprintf("BuildCircuitBreaker error: %v", err))
+				return errors.New(fmt.Sprintf("Build circuitBreaker error: %v", err))
 			}
-
-			breakers[res] = append(oldResCbs[:index], oldResCbs[index+1:]...)
-			insertCbToCbMap(cb, res, breakers)
-			break
+			oldResCbs[index] = cb
+			breakers[res] = oldResCbs
+			return nil
 		}
 	}
-	return nil
+	return errors.New(fmt.Sprintf("Rule to be updated was not found,id:%s", updateRuleId))
+}
+
+func updateSpecifiedRule(updateRuleId string, r Rule, oldRules []Rule) error {
+	for index, oldRule := range oldRules {
+		if r.IsEqualsTo(oldRule) {
+			return errors.New("The rule to be updated already exists.")
+		}
+		strategy := oldRule.BreakerStrategy()
+		var ruleId string
+		switch strategy {
+		case SlowRequestRatio:
+			ruleId = oldRule.(*slowRtRule).Id
+		case ErrorRatio:
+			ruleId = oldRule.(*errorRatioRule).Id
+		case ErrorCount:
+			ruleId = oldRule.(*errorCountRule).Id
+		default:
+			logging.Errorf("unsupported rule type, strategy: %d", strategy)
+			continue
+		}
+		if updateRuleId == ruleId {
+			oldRules[index] = r
+			return nil
+		}
+	}
+	return errors.New(fmt.Sprintf("Rule to be updated was not found,id:%s", updateRuleId))
 }
 
 func rulesFrom(rm map[string][]Rule) []Rule {
