@@ -22,7 +22,7 @@ type WarmUpTrafficShapingCalculator struct {
 	lastFilledTime    uint64
 }
 
-func NewWarmUpTrafficShapingCalculator(rule *FlowRule) *WarmUpTrafficShapingCalculator {
+func NewWarmUpTrafficShapingCalculator(rule *Rule) *WarmUpTrafficShapingCalculator {
 	if rule.WarmUpColdFactor <= 1 {
 		rule.WarmUpColdFactor = config.DefaultWarmUpColdFactor
 		logging.Warnf("[NewWarmUpTrafficShapingCalculator] invalid WarmUpColdFactor,use default values: %d", config.DefaultWarmUpColdFactor)

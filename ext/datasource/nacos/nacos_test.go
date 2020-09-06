@@ -3,13 +3,13 @@ package nacos
 import (
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
-
 	"github.com/alibaba/sentinel-golang/ext/datasource"
-	"github.com/stretchr/testify/assert"
-
+	"github.com/nacos-group/nacos-sdk-go/clients"
+	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -84,7 +84,21 @@ func getNacosDataSource(client config_client.IConfigClient) (*NacosDataSource, e
 func TestNacosDataSource(t *testing.T) {
 
 	t.Run("NewNacosDataSource", func(t *testing.T) {
-		client, err := createConfigClientTest()
+		sc := []constant.ServerConfig{
+			{
+				ContextPath: "/nacos",
+				Port:        8848,
+				IpAddr:      "127.0.0.1",
+			},
+		}
+
+		cc := constant.ClientConfig{
+			TimeoutMs: 5000,
+		}
+		client, err := clients.CreateConfigClient(map[string]interface{}{
+			"serverConfigs": sc,
+			"clientConfig":  cc,
+		})
 		assert.Nil(t, err)
 		nds, err := getNacosDataSource(client)
 		assert.True(t, nds != nil && err == nil)

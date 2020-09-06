@@ -2,6 +2,7 @@
 
 # Sentinel: The Sentinel of Your Microservices
 
+![CI](https://github.com/alibaba/sentinel-golang/workflows/CI/badge.svg?branch=master)
 [![Build Status](https://travis-ci.org/alibaba/sentinel-golang.svg?branch=master)](https://travis-ci.org/alibaba/sentinel-golang)
 [![codecov](https://codecov.io/gh/alibaba/sentinel-golang/branch/master/graph/badge.svg)](https://codecov.io/gh/alibaba/sentinel-golang)
 [![Go Report Card](https://goreportcard.com/badge/github.com/alibaba/sentinel-golang)](https://goreportcard.com/report/github.com/alibaba/sentinel-golang)
