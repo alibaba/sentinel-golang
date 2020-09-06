@@ -19,6 +19,10 @@ var (
 	initLogOnce sync.Once
 )
 
+func SetDefaultConfig(config *Entity) {
+	globalCfg = config
+}
+
 // InitConfig loads general configuration from the given file.
 func InitConfig(configPath string) error {
 	// Priority: system environment > YAML file > default config
@@ -31,27 +35,39 @@ func InitConfig(configPath string) error {
 	}
 	// First Sentinel will try to load config from the given file.
 	// If the path is empty (not set), Sentinel will use the default config.
-	err := LoadFromYamlFile(configPath)
+	err := loadFromYamlFile(configPath)
 	if err != nil {
 		return err
 	}
+
+	return OverrideConfigFromEnvAndInitLog()
+}
+
+func OverrideConfigFromEnvAndInitLog() error {
 	// Then Sentinel will try to get fundamental config items from system environment.
 	// If present, the value in system env will override the value in config file.
-	err = overrideItemsFromSystemEnv()
-	if err != nil {
-		return err
-	}
-	err = InitializeLogConfig(LogBaseDir(), LogUsePid())
+	err := overrideItemsFromSystemEnv()
 	if err != nil {
 		return err
 	}
 
-	logging.GetDefaultLogger().Infof("App name resolved: %s", AppName())
-
+	// Configured Logger is the highest priority
+	if configLogger := Logger(); configLogger != nil {
+		err = logging.ResetGlobalLogger(configLogger)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err = initializeLogConfig(LogBaseDir(), LogUsePid())
+	if err != nil {
+		return err
+	}
+	logging.Infof("App name resolved: %s", AppName())
 	return nil
 }
 
-func LoadFromYamlFile(filePath string) error {
+func loadFromYamlFile(filePath string) error {
 	if filePath == DefaultConfigFilename {
 		if _, err := os.Stat(DefaultConfigFilename); err != nil {
 			//use default globalCfg.
@@ -70,8 +86,8 @@ func LoadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	logging.GetDefaultLogger().Infof("Resolving Sentinel config from file: %s", filePath)
-	return checkValid(&(globalCfg.Sentinel))
+	logging.Infof("Resolving Sentinel config from file: %s", filePath)
+	return checkConfValid(&(globalCfg.Sentinel))
 }
 
 func overrideItemsFromSystemEnv() error {
@@ -100,10 +116,10 @@ func overrideItemsFromSystemEnv() error {
 	if logDir := os.Getenv(LogDirEnvKey); !util.IsBlank(logDir) {
 		globalCfg.Sentinel.Log.Dir = logDir
 	}
-	return checkValid(&(globalCfg.Sentinel))
+	return checkConfValid(&(globalCfg.Sentinel))
 }
 
-func InitializeLogConfig(logDir string, usePid bool) (err error) {
+func initializeLogConfig(logDir string, usePid bool) (err error) {
 	if logDir == "" {
 		return errors.New("Invalid empty log path")
 	}
@@ -124,17 +140,15 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 		filePath = filePath + ".pid" + strconv.Itoa(os.Getpid())
 	}
 
-	defaultLogger := logging.GetDefaultLogger()
-	if defaultLogger == nil {
-		return errors.New("Unexpected state: defaultLogger == nil")
-	}
-	logFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+	fileLogger, err := logging.NewSimpleFileLogger(filePath, "", log.LstdFlags|log.Lshortfile)
 	if err != nil {
 		return err
 	}
-
 	// Note: not thread-safe!
-	logging.ResetDefaultLogger(log.New(logFile, "", log.LstdFlags|log.Lshortfile), logging.DefaultNamespace)
+	if err := logging.ResetGlobalLogger(fileLogger); err != nil {
+		return err
+	}
+
 	fmt.Println("INFO: log base directory is: " + logDir)
 
 	return nil
@@ -149,38 +163,42 @@ func GetDefaultLogDir() string {
 }
 
 func AppName() string {
-	return globalCfg.Sentinel.App.Name
+	return globalCfg.AppName()
 }
 
 func AppType() int32 {
-	return globalCfg.Sentinel.App.Type
+	return globalCfg.AppType()
+}
+
+func Logger() logging.Logger {
+	return globalCfg.Logger()
 }
 
 func LogBaseDir() string {
-	return globalCfg.Sentinel.Log.Dir
+	return globalCfg.LogBaseDir()
 }
 
 // LogUsePid returns whether the log file name contains the PID suffix.
 func LogUsePid() bool {
-	return globalCfg.Sentinel.Log.UsePid
+	return globalCfg.LogUsePid()
 }
 
 func MetricLogFlushIntervalSec() uint32 {
-	return globalCfg.Sentinel.Log.Metric.FlushIntervalSec
+	return globalCfg.MetricLogFlushIntervalSec()
 }
 
 func MetricLogSingleFileMaxSize() uint64 {
-	return globalCfg.Sentinel.Log.Metric.SingleFileMaxSize
+	return globalCfg.MetricLogSingleFileMaxSize()
 }
 
 func MetricLogMaxFileAmount() uint32 {
-	return globalCfg.Sentinel.Log.Metric.MaxFileCount
+	return globalCfg.MetricLogMaxFileAmount()
 }
 
 func SystemStatCollectIntervalMs() uint32 {
-	return globalCfg.Sentinel.Stat.System.CollectIntervalMs
+	return globalCfg.SystemStatCollectIntervalMs()
 }
 
 func UseCacheTime() bool {
-	return globalCfg.Sentinel.UseCacheTime
+	return globalCfg.UseCacheTime()
 }

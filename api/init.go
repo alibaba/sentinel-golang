@@ -15,10 +15,48 @@ func InitDefault() error {
 	return initSentinel("")
 }
 
+// InitWithConfig initializes Sentinel using given config.
+func InitWithConfig(confEntity *config.Entity) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+
+	err = config.CheckValid(confEntity)
+	if err != nil {
+		return err
+	}
+	config.SetDefaultConfig(confEntity)
+	if err = config.OverrideConfigFromEnvAndInitLog(); err != nil {
+		return err
+	}
+	return initCoreComponents()
+}
+
 // Init loads Sentinel general configuration from the given YAML file
 // and initializes Sentinel.
-func Init(configPath string) error {
+func InitWithConfigFile(configPath string) error {
 	return initSentinel(configPath)
+}
+
+// initCoreComponents init core components with default config
+// it's better SetDefaultConfig before initCoreComponents
+func initCoreComponents() error {
+	if err := metric.InitTask(); err != nil {
+		return err
+	}
+
+	system.InitCollector(config.SystemStatCollectIntervalMs())
+	if config.UseCacheTime() {
+		util.StartTimeTicker()
+	}
+
+	return nil
 }
 
 func initSentinel(configPath string) (err error) {
@@ -36,16 +74,4 @@ func initSentinel(configPath string) (err error) {
 		return err
 	}
 	return initCoreComponents()
-}
-
-func initCoreComponents() (err error) {
-	if err = metric.InitTask(); err != nil {
-		return err
-	}
-
-	system.InitCollector(config.SystemStatCollectIntervalMs())
-	if config.UseCacheTime() {
-		util.StartTimeTicker()
-	}
-	return err
 }

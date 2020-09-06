@@ -103,7 +103,7 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	blockType := base.BlockTypeFlow
 
 	ps1.On("Prepare", mock.Anything).Return()
-	rcs1.On("Check", mock.Anything).Return(base.NewTokenResultBlocked(blockType, "Flow"))
+	rcs1.On("Check", mock.Anything).Return(base.NewTokenResultBlocked(blockType))
 	rcs2.On("Check", mock.Anything).Return(base.NewTokenResultPass())
 	ssm.On("OnEntryPassed", mock.Anything).Return()
 	ssm.On("OnEntryBlocked", mock.Anything, mock.Anything).Return()
@@ -125,5 +125,5 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	rcs2.AssertNumberOfCalls(t, "Check", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 1)
-	ssm.AssertNumberOfCalls(t, "OnCompleted", 1)
+	ssm.AssertNumberOfCalls(t, "OnCompleted", 0)
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func MockSystemRulesConverter(src []byte) (interface{}, error) {
-	ret := make([]system.SystemRule, 0)
+	ret := make([]system.Rule, 0)
 	_ = json.Unmarshal(src, &ret)
 	return ret, nil
 }
@@ -50,7 +50,7 @@ func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}
-	ret1 := make([]system.SystemRule, 0)
+	ret1 := make([]system.Rule, 0)
 	_ = json.Unmarshal(src, &ret1)
 	isConsistent := h.isPropertyConsistent(ret1)
 	assert.True(t, isConsistent == false, "Fail to execute isPropertyConsistent.")
@@ -59,7 +59,7 @@ func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}
-	ret2 := make([]system.SystemRule, 0)
+	ret2 := make([]system.Rule, 0)
 	_ = json.Unmarshal(src2, &ret2)
 	isConsistent = h.isPropertyConsistent(ret2)
 	assert.True(t, isConsistent == true, "Fail to execute isPropertyConsistent.")
@@ -68,7 +68,7 @@ func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}
-	ret3 := make([]system.SystemRule, 0)
+	ret3 := make([]system.Rule, 0)
 	_ = json.Unmarshal(src3, &ret3)
 	isConsistent = h.isPropertyConsistent(ret3)
 	assert.True(t, isConsistent == false, "Fail to execute isPropertyConsistent.")

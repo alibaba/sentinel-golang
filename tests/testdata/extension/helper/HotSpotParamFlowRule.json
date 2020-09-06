@@ -1,0 +1,114 @@
+[
+    {
+        "resource": "abc",
+        "metricType": 0,
+        "controlBehavior": 0,
+        "paramIndex": 0,
+        "threshold": 1000,
+        "maxQueueingTimeMs": 1,
+        "burstCount": 10,
+        "durationInSec": 1,
+        "paramsMaxCapacity": 10000,
+        "specificItems": [
+            {
+                "valKind": 0,
+                "valStr": "1000",
+                "threshold": 10001
+            },
+            {
+                "valKind": 1,
+                "valStr": "ximu",
+                "threshold": 10002
+            },
+            {
+                "valKind": 2,
+                "valStr": "true",
+                "threshold": 10003
+            }
+        ]
+    },
+    {
+        "resource": "abc",
+        "metricType": 0,
+        "controlBehavior": 1,
+        "paramIndex": 1,
+        "threshold": 2000,
+        "maxQueueingTimeMs": 2,
+        "burstCount": 20,
+        "durationInSec": 2,
+        "paramsMaxCapacity": 20000,
+        "specificItems": [
+            {
+                "valKind": 0,
+                "valStr": "1000",
+                "threshold": 20001
+            },
+            {
+                "valKind": 1,
+                "valStr": "ximu",
+                "threshold": 20002
+            },
+            {
+                "valKind": 2,
+                "valStr": "true",
+                "threshold": 20003
+            }
+        ]
+    },
+    {
+        "resource": "abc",
+        "metricType": 1,
+        "controlBehavior": 0,
+        "paramIndex": 2,
+        "threshold": 3000,
+        "maxQueueingTimeMs": 3,
+        "burstCount": 30,
+        "durationInSec": 3,
+        "paramsMaxCapacity": 30000,
+        "specificItems": [
+            {
+                "valKind": 0,
+                "valStr": "1000",
+                "threshold": 30001
+            },
+            {
+                "valKind": 1,
+                "valStr": "ximu",
+                "threshold": 30002
+            },
+            {
+                "valKind": 2,
+                "valStr": "true",
+                "threshold": 30003
+            }
+        ]
+    },
+    {
+        "resource": "abc",
+        "metricType": 1,
+        "controlBehavior": 1,
+        "paramIndex": 3,
+        "threshold": 4000,
+        "maxQueueingTimeMs": 4,
+        "burstCount": 40,
+        "durationInSec": 4,
+        "paramsMaxCapacity": 40000,
+        "specificItems": [
+            {
+                "valKind": 0,
+                "valStr": "1000",
+                "threshold": 40001
+            },
+            {
+                "valKind": 1,
+                "valStr": "ximu",
+                "threshold": 40002
+            },
+            {
+                "valKind": 2,
+                "valStr": "true",
+                "threshold": 40003
+            }
+        ]
+    }
+]

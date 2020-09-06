@@ -9,7 +9,7 @@ import (
 func TraceError(entry *base.SentinelEntry, err error) {
 	defer func() {
 		if e := recover(); e != nil {
-			logging.GetDefaultLogger().Panicf("Failed to TraceError, panic error: %+v", e)
+			logging.Panicf("Failed to TraceError, panic error: %+v", e)
 			return
 		}
 	}()

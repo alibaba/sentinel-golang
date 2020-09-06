@@ -1,3 +1,4 @@
+// Package api provides fundamental APIs of Sentinel.
 package api
 
 import (
@@ -140,6 +141,7 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 	options.Reset()
 	entryOptsPool.Put(options)
 	e := base.NewSentinelEntry(ctx, rw, sc)
+	ctx.SetEntry(e)
 	r := sc.Entry(ctx)
 	if r == nil {
 		// This indicates internal error in some slots, so just pass
