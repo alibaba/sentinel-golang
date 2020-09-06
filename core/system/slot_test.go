@@ -109,9 +109,3 @@ func TestDoCheckRuleDefault(t *testing.T) {
 	assert.Equal(t, true, isOK)
 	assert.Equal(t, float64(0), v)
 }
-
-func TestString(t *testing.T) {
-	var sas *SystemAdaptiveSlot
-
-	assert.True(t, sas.String() == SlotName)
-}
