@@ -5,8 +5,6 @@ import (
 	"github.com/alibaba/sentinel-golang/core/stat"
 )
 
-const SlotName = "SystemAdaptiveSlot"
-
 type SystemAdaptiveSlot struct {
 }
 
@@ -75,8 +73,4 @@ func checkBbrSimple() bool {
 		return false
 	}
 	return true
-}
-
-func (s *SystemAdaptiveSlot) String() string {
-	return SlotName
 }
