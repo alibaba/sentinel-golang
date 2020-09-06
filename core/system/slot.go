@@ -5,8 +5,6 @@ import (
 	"github.com/alibaba/sentinel-golang/core/stat"
 )
 
-const SlotName = "SystemAdaptiveSlot"
-
 type SystemAdaptiveSlot struct {
 }
 
@@ -31,7 +29,7 @@ func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func (s *SystemAdaptiveSlot) doCheckRule(rule *SystemRule) (bool, float64) {
+func (s *SystemAdaptiveSlot) doCheckRule(rule *Rule) (bool, float64) {
 	threshold := rule.TriggerCount
 	switch rule.MetricType {
 	case InboundQPS:
@@ -75,8 +73,4 @@ func checkBbrSimple() bool {
 		return false
 	}
 	return true
-}
-
-func (s *SystemAdaptiveSlot) String() string {
-	return SlotName
 }

@@ -1,3 +1,4 @@
+// Package api provides fundamental APIs of Sentinel.
 package api
 
 import (

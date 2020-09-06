@@ -56,7 +56,7 @@ func (t AdaptiveStrategy) String() string {
 	}
 }
 
-type SystemRule struct {
+type Rule struct {
 	ID uint64 `json:"id,omitempty"`
 
 	MetricType   MetricType       `json:"metricType"`
@@ -64,16 +64,16 @@ type SystemRule struct {
 	Strategy     AdaptiveStrategy `json:"strategy"`
 }
 
-func (r *SystemRule) String() string {
+func (r *Rule) String() string {
 	b, err := json.Marshal(r)
 	if err != nil {
 		// Return the fallback string
-		return fmt.Sprintf("SystemRule{metricType=%s, triggerCount=%.2f, adaptiveStrategy=%s}",
+		return fmt.Sprintf("Rule{metricType=%s, triggerCount=%.2f, adaptiveStrategy=%s}",
 			r.MetricType, r.TriggerCount, r.Strategy)
 	}
 	return string(b)
 }
 
-func (r *SystemRule) ResourceName() string {
+func (r *Rule) ResourceName() string {
 	return r.MetricType.String()
 }

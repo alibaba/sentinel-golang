@@ -19,7 +19,7 @@ func main() {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 
-	_, err = flow.LoadRules([]*flow.FlowRule{
+	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:        "some-test",
 			MetricType:      flow.QPS,
@@ -32,7 +32,7 @@ func main() {
 		return
 	}
 
-	_, err = flow.LoadRules([]*flow.FlowRule{
+	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:        "some-test",
 			MetricType:      flow.QPS,
