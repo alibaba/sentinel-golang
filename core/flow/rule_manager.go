@@ -170,105 +170,17 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 		}
 
 		rulesOfRes, exists := m[rule.Resource]
-		if err := isAppend(rulesOfRes, tsc.rule); err != nil {
-			logging.Warn(err)
-			continue
-		}
 		if !exists {
 			m[rule.Resource] = []*TrafficShapingController{tsc}
 		} else {
 			m[rule.Resource] = append(rulesOfRes, tsc)
 		}
-
 	}
 	return m
 }
 
-//Check for duplicate rule ids
-func isAppend(rulesOfRes []*TrafficShapingController, rule *Rule) error {
-	if rule != nil {
-		for _, v := range rulesOfRes {
-			if v.rule.ID == rule.ID {
-				return errors.New(fmt.Sprintf("Rule id:%d duplicate , current rule cannot be loaded", rule.ID))
-			}
-		}
-	}
-	return nil
-}
-
-//Update Rule
-func UpdateRule(rule *Rule) error {
-	if err := IsValidFlowRule(rule); err != nil {
-		return err
-	}
-	if rule.ID == 0 {
-		return errors.New("Update rule id cannot be 0")
-	}
-	if rule.LimitOrigin == "" {
-		rule.LimitOrigin = LimitOriginDefault
-	}
-	defer tcMux.RUnlock()
-	tcMux.RLock()
-	rulesOfRes, exists := tcMap[rule.Resource]
-
-	if !exists {
-		return errors.New("Cannot be updated ,because not loaded flow rule")
-	}
-	updateFlag := false
-	for k, v := range rulesOfRes {
-		if v.rule.ID == rule.ID {
-			generator, supported := tcGenFuncMap[rule.ControlBehavior]
-			if !supported {
-				return errors.New("Ignoring the rule due to unsupported control behavior")
-			}
-			tsc := generator(rule)
-			if tsc == nil {
-				return errors.New("Ignoring the rule due to bad generated traffic controller")
-			}
-			rulesOfRes[k] = tsc
-			updateFlag = true
-		}
-	}
-
-	if !updateFlag {
-		return errors.New(fmt.Sprintf("No rule to update was found based on rule id:%d", rule.ID))
-	}
-	return nil
-}
-
-//Append Rule
-func AppendRule(rule *Rule) error {
-	if err := IsValidFlowRule(rule); err != nil {
-		return err
-	}
-	if rule.LimitOrigin == "" {
-		rule.LimitOrigin = LimitOriginDefault
-	}
-	defer tcMux.RUnlock()
-	tcMux.RLock()
-	generator, supported := tcGenFuncMap[rule.ControlBehavior]
-	if !supported {
-		return errors.New("Unsupported control behavior")
-	}
-	tsc := generator(rule)
-	if tsc == nil {
-		return errors.New("Bad generated traffic controller")
-	}
-	rulesOfRes, exists := tcMap[rule.Resource]
-	if err := isAppend(rulesOfRes, tsc.rule); err != nil {
-		return err
-	}
-	if !exists {
-		tcMap[rule.Resource] = []*TrafficShapingController{tsc}
-	} else {
-		tcMap[rule.Resource] = append(rulesOfRes, tsc)
-	}
-	return nil
-}
-
 // IsValidFlowRule checks whether the given Rule is valid.
 func IsValidFlowRule(rule *Rule) error {
-
 	if rule == nil {
 		return errors.New("nil Rule")
 	}
