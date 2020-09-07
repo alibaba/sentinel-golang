@@ -170,29 +170,33 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 		}
 
 		rulesOfRes, exists := m[rule.Resource]
+		if err := isAppend(rulesOfRes, tsc.rule); err != nil {
+			logging.Warn(err)
+			continue
+		}
 		if !exists {
 			m[rule.Resource] = []*TrafficShapingController{tsc}
 		} else {
-			if tsc.rule.ID == 0 || isAppend(rulesOfRes, tsc.rule.ID) {
-				m[rule.Resource] = append(rulesOfRes, tsc)
-			}
+			m[rule.Resource] = append(rulesOfRes, tsc)
 		}
 
 	}
 	return m
 }
 
-//
-func isAppend(rulesOfRes []*TrafficShapingController, ruleId uint64) bool {
-	for _, v := range rulesOfRes {
-		if v.rule.ID == ruleId {
-			logging.Warnf("Rule id:%d duplicate , current rule cannot be loaded", ruleId)
-			return false
+//Check for duplicate rule ids
+func isAppend(rulesOfRes []*TrafficShapingController, rule *Rule) error {
+	if rule != nil {
+		for _, v := range rulesOfRes {
+			if v.rule.ID == rule.ID {
+				return errors.New(fmt.Sprintf("Rule id:%d duplicate , current rule cannot be loaded", rule.ID))
+			}
 		}
 	}
-	return true
+	return nil
 }
 
+//Update Rule
 func UpdateRule(rule *Rule) error {
 	if err := IsValidFlowRule(rule); err != nil {
 		return err
@@ -222,7 +226,6 @@ func UpdateRule(rule *Rule) error {
 				return errors.New("Ignoring the rule due to bad generated traffic controller")
 			}
 			rulesOfRes[k] = tsc
-
 			updateFlag = true
 		}
 	}
@@ -233,6 +236,7 @@ func UpdateRule(rule *Rule) error {
 	return nil
 }
 
+//Append Rule
 func AppendRule(rule *Rule) error {
 	if err := IsValidFlowRule(rule); err != nil {
 		return err
@@ -251,12 +255,13 @@ func AppendRule(rule *Rule) error {
 		return errors.New("Bad generated traffic controller")
 	}
 	rulesOfRes, exists := tcMap[rule.Resource]
+	if err := isAppend(rulesOfRes, tsc.rule); err != nil {
+		return err
+	}
 	if !exists {
-		return errors.New("The current rule cannot be appended because the same resource has not been loaded")
+		tcMap[rule.Resource] = []*TrafficShapingController{tsc}
 	} else {
-		if tsc.rule.ID == 0 || isAppend(rulesOfRes, tsc.rule.ID) {
-			tcMap[rule.Resource] = append(rulesOfRes, tsc)
-		}
+		tcMap[rule.Resource] = append(rulesOfRes, tsc)
 	}
 	return nil
 }
