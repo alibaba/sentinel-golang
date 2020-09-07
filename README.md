@@ -1,30 +1,16 @@
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/9434884/43697219-3cb4ef3a-9975-11e8-9a9c-73f4f537442d.png" alt="Sentinel Logo" width="50%"/>
-</p>
-<h2 align="center">
-Sentinel: The Sentinel of Your Microservices
-</h2>
+<img src="https://user-images.githubusercontent.com/9434884/43697219-3cb4ef3a-9975-11e8-9a9c-73f4f537442d.png" alt="Sentinel Logo" width="50%">
 
-<p align="center">
-  <a>
-    <img alt="CI" src="https://github.com/alibaba/sentinel-golang/workflows/CI/badge.svg?branch=master"></a>
-  <a href="https://travis-ci.org/alibaba/sentinel-golang">
-    <img alt="Build Status" src="https://travis-ci.org/alibaba/sentinel-golang.svg?branch=master"></a>
-  <a href="https://codecov.io/gh/alibaba/sentinel-golang">
-    <img alt="codecov" src="https://codecov.io/gh/alibaba/sentinel-golang/branch/master/graph/badge.svg"></a>
-  <a href="tps://goreportcard.com/report/github.com/alibaba/sentinel-golang">
-    <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/alibaba/sentinel-golang"></a>
-  <a href="https://www.apache.org/licenses/LICENSE-2.0.html">
-    <img alt="License" src="https://img.shields.io/badge/license-Apache%202-4EB1BA.svg"></a>
-  <a href="https://gitter.im/alibaba/Sentinel">
-    <img alt="Gitter" src="https://badges.gitter.im/alibaba/Sentinel.svg"></a>
-  <a href="https://github.com/alibaba/sentinel-golang/commits/dev">
-    <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/alibaba/sentinel-golang.svg?style=flat-square"></a>
-  <a href="https://github.com/alibaba/sentinel-golang">
-    <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/alibaba/sentinel-golang"></a>
-  <a href="alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aclosed">
-    <img alt = "GitHub closed issues" src="https://img.shields.io/github/issues-closed/alibaba/sentinel-golang.svg?style=flat-square"></a>
-</p>
+# Sentinel: The Sentinel of Your Microservices
+
+![CI](https://github.com/alibaba/sentinel-golang/workflows/CI/badge.svg?branch=master)
+[![Build Status](https://travis-ci.org/alibaba/sentinel-golang.svg?branch=master)](https://travis-ci.org/alibaba/sentinel-golang)
+[![codecov](https://codecov.io/gh/alibaba/sentinel-golang/branch/master/graph/badge.svg)](https://codecov.io/gh/alibaba/sentinel-golang)
+[![Go Report Card](https://goreportcard.com/badge/github.com/alibaba/sentinel-golang)](https://goreportcard.com/report/github.com/alibaba/sentinel-golang)
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![Gitter](https://badges.gitter.im/alibaba/Sentinel.svg)](https://gitter.im/alibaba/Sentinel)
+[![GitHub last commit](https://img.shields.io/github/last-commit/alibaba/sentinel-golang.svg?style=flat-square)](https://github.com/alibaba/sentinel-golang/commits/dev)
+[![GitHub repo size](https://img.shields.io/github/repo-size/alibaba/sentinel-golang)](https://github.com/alibaba/sentinel-golang)
+[![GitHub closed issues](https://img.shields.io/github/issues-closed/alibaba/sentinel-golang.svg?style=flat-square)](alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aclosed)
 
 ## Introduction
 
