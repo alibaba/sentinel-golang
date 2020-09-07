@@ -278,6 +278,13 @@ func buildCircuitBreaker(reuseStatIdx int, r *Rule, oldResCbs []CircuitBreaker) 
 }
 
 func UpdateRule(id string, r *Rule) error {
+	updateMux.Lock()
+	defer func() {
+		updateMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+	}()
 	res := r.ResourceName()
 	oldResCbs := breakers[res]
 	if oldResCbs == nil {
@@ -287,14 +294,6 @@ func UpdateRule(id string, r *Rule) error {
 	if oldRules == nil {
 		return errors.New("Update failed, the current rule resource to be updated does not exist.")
 	}
-
-	updateMux.Lock()
-	defer func() {
-		updateMux.Unlock()
-		if r := recover(); r != nil {
-			return
-		}
-	}()
 
 	if err := updateSpecifiedRule(id, r, oldRules); err != nil {
 		return err
