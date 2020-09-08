@@ -298,3 +298,57 @@ func Test_onRuleUpdate(t *testing.T) {
 
 	tcMap = make(trafficControllerMap)
 }
+
+func Test_AppendRule(t *testing.T) {
+	t.Run("appendRule", func(t *testing.T) {
+		m := make([]SpecificValue, 2)
+		m[0] = SpecificValue{
+			ValKind:   KindString,
+			ValStr:    "sss",
+			Threshold: 1,
+		}
+		m[1] = SpecificValue{
+			ValKind:   KindFloat64,
+			ValStr:    "1.123",
+			Threshold: 3,
+		}
+
+		r1 := &Rule{
+			ID:                "1",
+			Resource:          "abc",
+			MetricType:        Concurrency,
+			ControlBehavior:   Reject,
+			ParamIndex:        0,
+			Threshold:         100,
+			MaxQueueingTimeMs: 0,
+			BurstCount:        10,
+			DurationInSec:     1,
+			SpecificItems:     m,
+		}
+		_, err := LoadRules([]*Rule{r1})
+		assert.Nil(t, err)
+
+		m1 := make([]SpecificValue, 2)
+		m1[0] = SpecificValue{
+			ValKind:   KindString,
+			ValStr:    "sss",
+			Threshold: 1,
+		}
+
+		r2 := &Rule{
+			ID:                "1",
+			Resource:          "abc",
+			MetricType:        Concurrency,
+			ControlBehavior:   Reject,
+			ParamIndex:        0,
+			Threshold:         100,
+			MaxQueueingTimeMs: 0,
+			BurstCount:        10,
+			DurationInSec:     1,
+			SpecificItems:     m1,
+		}
+		err = AppendRule(r2)
+		assert.Nil(t, err)
+		assert.True(t, len(tcMap["abc"]) == 2)
+	})
+}

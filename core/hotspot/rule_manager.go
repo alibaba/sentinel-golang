@@ -176,6 +176,80 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	return nil
 }
 
+func AppendRule(r *Rule) error {
+	if err := IsValidRule(r); err != nil {
+		return errors.New(fmt.Sprintf("The current rule is invalid and cannot be appended, rule: %s, reason: %s", r.String(), err.Error()))
+	}
+	tcMux.Lock()
+	defer func() {
+		tcMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+	}()
+	res := r.ResourceName()
+	oldResTcs := tcMap[res]
+	equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResTcs)
+	if equalIdx >= 0 {
+		return errors.New("The current appended rule already exists.")
+	}
+	tc, err := buildTrafficShapingController(reuseStatIdx, r, oldResTcs)
+	if err != nil {
+		return err
+	}
+	insertTcToTcMap(tc, res, tcMap)
+	return nil
+}
+
+func UpdateRule(id string, r *Rule) error {
+	if err := IsValidRule(r); err != nil {
+		return errors.New(fmt.Sprintf("The current rule is invalid and cannot be update, rule: %s, reason: %s", r.String(), err.Error()))
+	}
+	res := r.ResourceName()
+	oldResCbs := tcMap[res]
+	if oldResCbs == nil {
+		return errors.New("Update failed, the current hotspot resource to be updated does not exist.")
+	}
+	for index, oldResCb := range oldResCbs {
+		if id == oldResCb.BoundRule().ID {
+			var (
+				tc  TrafficShapingController
+				err error
+			)
+			if oldResCb.BoundRule().IsStatReusable(r) {
+				tc, err = buildTrafficShapingController(index, r, oldResCbs)
+			} else {
+				tc, err = buildTrafficShapingController(-1, r, oldResCbs)
+			}
+			if err != nil {
+				return errors.New(fmt.Sprintf("Update Rule build build traffic controller error: %v", err))
+			}
+			oldResCbs[index] = tc
+			tcMap[res] = oldResCbs
+			return nil
+		}
+	}
+	return errors.New(fmt.Sprintf("Rule to be updated was not found,id:%s", id))
+}
+
+func buildTrafficShapingController(reuseStatIdx int, r *Rule, oldResTcs []TrafficShapingController) (tc TrafficShapingController, err error) {
+	// generate new traffic shaping controller
+	generator, supported := tcGenFuncMap[r.ControlBehavior]
+	if !supported {
+		return nil, errors.New(fmt.Sprintf("Ignoring the frequent param flow rule due to unsupported control behavior: %v", r))
+	}
+	if reuseStatIdx >= 0 {
+		// generate new traffic shaping controller with reusable statistic metric.
+		tc = generator(r, oldResTcs[reuseStatIdx].BoundMetric())
+	} else {
+		tc = generator(r, nil)
+	}
+	if tc == nil {
+		return nil, errors.New(fmt.Sprintf("Ignoring the frequent param flow rule due to bad generated traffic controller: %v", r))
+	}
+	return tc, nil
+}
+
 func logRuleUpdate(m trafficControllerMap) {
 	sb := strings.Builder{}
 	sb.WriteString("Hotspot parameter flow control rules loaded: [")
