@@ -107,6 +107,8 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
+// getRules returns all the rules。Any changes of rules take effect for flow module
+// getRules is an internal interface.
 func getRules() []*Rule {
 	tcMux.RLock()
 	defer tcMux.RUnlock()
@@ -114,6 +116,8 @@ func getRules() []*Rule {
 	return rulesFrom(tcMap)
 }
 
+// getResRules returns specific resource's rules。Any changes of rules take effect for flow module
+// getResRules is an internal interface.
 func getResRules(res string) []*Rule {
 	tcMux.RLock()
 	defer tcMux.RUnlock()
