@@ -21,10 +21,11 @@ func main() {
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:        "some-test",
-			MetricType:      flow.QPS,
-			Count:           10,
-			ControlBehavior: flow.Reject,
+			Resource:               "some-test",
+			MetricType:             flow.QPS,
+			Count:                  10,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
 		},
 	})
 	if err != nil {
