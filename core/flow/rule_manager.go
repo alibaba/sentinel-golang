@@ -155,9 +155,6 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 			logging.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
-		if rule.LimitOrigin == "" {
-			rule.LimitOrigin = LimitOriginDefault
-		}
 		generator, supported := tcGenFuncMap[rule.ControlBehavior]
 		if !supported {
 			logging.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
