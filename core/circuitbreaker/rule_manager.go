@@ -231,10 +231,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 func AppendRule(r *Rule) error {
-	res := r.ResourceName()
-	oldResCbs := breakers[res]
-	if oldResCbs == nil {
-		oldResCbs = make([]CircuitBreaker, 0, 0)
+	if err := IsValid(r); err != nil {
+		return errors.New(fmt.Sprintf("Failed to append circuitbreaker rule, rule: %s, reason: %s", r.String(), err.Error()))
 	}
 	updateMux.Lock()
 	defer func() {
@@ -243,6 +241,12 @@ func AppendRule(r *Rule) error {
 			return
 		}
 	}()
+	res := r.ResourceName()
+	oldResCbs := breakers[res]
+	if oldResCbs == nil {
+		oldResCbs = make([]CircuitBreaker, 0, 0)
+	}
+
 	equalIdx, _ := calculateReuseIndexFor(r, oldResCbs)
 
 	if equalIdx >= 0 {
@@ -278,6 +282,9 @@ func buildCircuitBreaker(reuseStatIdx int, r *Rule, oldResCbs []CircuitBreaker) 
 }
 
 func UpdateRule(id string, r *Rule) error {
+	if err := IsValid(r); err != nil {
+		return errors.New(fmt.Sprintf("Failed to update circuitbreaker rule, rule: %s, reason: %s", r.String(), err.Error()))
+	}
 	updateMux.Lock()
 	defer func() {
 		updateMux.Unlock()
