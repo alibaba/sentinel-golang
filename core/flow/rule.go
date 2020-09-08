@@ -5,15 +5,6 @@ import (
 	"fmt"
 )
 
-const (
-	// LimitOriginDefault represents all origins.
-	LimitOriginDefault = "default"
-	// LimitOriginOther represents all origins excluding those configured in other rules.
-	// For example, if resource "abc" has a rule whose limit origin is "originA",
-	// the "other" origin will represents all origins excluding "originA".
-	LimitOriginOther = "other"
-)
-
 // MetricType represents the target metric type.
 type MetricType int32
 
@@ -50,19 +41,17 @@ type Rule struct {
 	ID uint64 `json:"id,omitempty"`
 
 	// Resource represents the resource name.
-	Resource string `json:"resource"`
-	// LimitOrigin represents the target origin (reserved field).
-	LimitOrigin string     `json:"limitOrigin"`
-	MetricType  MetricType `json:"metricType"`
+	Resource   string     `json:"resource"`
+	MetricType MetricType `json:"metricType"`
 	// Count represents the threshold.
-	Count            float64          `json:"count"`
-	RelationStrategy RelationStrategy `json:"relationStrategy"`
-	ControlBehavior  ControlBehavior  `json:"controlBehavior"`
+	Count           float64         `json:"count"`
+	ControlBehavior ControlBehavior `json:"controlBehavior"`
 
-	RefResource       string `json:"refResource"`
-	MaxQueueingTimeMs uint32 `json:"maxQueueingTimeMs"`
-	WarmUpPeriodSec   uint32 `json:"warmUpPeriodSec"`
-	WarmUpColdFactor  uint32 `json:"warmUpColdFactor"`
+	RelationStrategy  RelationStrategy `json:"relationStrategy"`
+	RefResource       string           `json:"refResource"`
+	MaxQueueingTimeMs uint32           `json:"maxQueueingTimeMs"`
+	WarmUpPeriodSec   uint32           `json:"warmUpPeriodSec"`
+	WarmUpColdFactor  uint32           `json:"warmUpColdFactor"`
 }
 
 func (f *Rule) String() string {

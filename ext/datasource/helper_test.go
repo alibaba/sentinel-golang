@@ -48,7 +48,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		assert.True(t, len(flowRules) == 3)
 		r1 := &flow.Rule{
 			Resource:          "abc",
-			LimitOrigin:       "default",
 			MetricType:        flow.Concurrency,
 			Count:             100,
 			RelationStrategy:  flow.Direct,
@@ -61,7 +60,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 
 		r2 := &flow.Rule{
 			Resource:          "abc",
-			LimitOrigin:       "default",
 			MetricType:        flow.QPS,
 			Count:             200,
 			RelationStrategy:  flow.AssociatedResource,
@@ -74,7 +72,6 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 
 		r3 := &flow.Rule{
 			Resource:          "abc",
-			LimitOrigin:       "default",
 			MetricType:        flow.QPS,
 			Count:             300,
 			RelationStrategy:  flow.Direct,
@@ -94,7 +91,6 @@ func TestFlowRulesUpdater(t *testing.T) {
 			{
 				ID:                0,
 				Resource:          "abc",
-				LimitOrigin:       "default",
 				MetricType:        0,
 				Count:             0,
 				RelationStrategy:  0,
@@ -127,7 +123,6 @@ func TestFlowRulesUpdater(t *testing.T) {
 		fw := flow.Rule{
 			ID:                0,
 			Resource:          "aaaa",
-			LimitOrigin:       "aaa",
 			MetricType:        0,
 			Count:             0,
 			RelationStrategy:  0,
