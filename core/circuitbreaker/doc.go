@@ -11,8 +11,8 @@
 //
 // Sentinel circuit breaker is implemented based on state machines. There are three state:
 //
-//  1. Closed: all entries could pass checking;
-//  2. Open: the circuit breaker is broken, all entries are blocked. After retry timeout, circuit breaker switches state to Half-Open and allows one entry to probe whether the resource returns to its expected state;
+//  1. Closed: all entries could pass checking.
+//  2. Open: the circuit breaker is broken, all entries are blocked. After retry timeout, circuit breaker switches state to Half-Open and allows one entry to probe whether the resource returns to its expected state.
 //  3. Half-Open: the circuit breaker is in a temporary state of probing, only one entry is allowed to access resource, others are blocked.
 //
 // Sentinel circuit breaker provides the listener to listen on the state changes.

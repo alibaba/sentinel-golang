@@ -2,8 +2,8 @@
 //
 // Users must initialize Sentinel before loading Sentinel rules. Sentinel support three ways to perform initialization:
 //
-//  1. api.InitDefault(), using default config to initialize;
-//  2. api.InitWithConfig(confEntity *config.Entity), using customized config Entity to initialize
+//  1. api.InitDefault(), using default config to initialize.
+//  2. api.InitWithConfig(confEntity *config.Entity), using customized config Entity to initialize.
 //  3. api.InitWithConfigFile(configPath string), using yaml file to initialize.
 //
 // Here is the example code to use Sentinel:
