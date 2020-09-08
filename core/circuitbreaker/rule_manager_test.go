@@ -156,6 +156,7 @@ func Test_onUpdateRules(t *testing.T) {
 func Test_onRuleUpdate(t *testing.T) {
 	t.Run("Test_onRuleUpdate", func(t *testing.T) {
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -165,6 +166,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			Threshold:        0.1,
 		}
 		r2 := &Rule{
+			Id:               "2",
 			Resource:         "abc",
 			Strategy:         ErrorRatio,
 			RetryTimeoutMs:   1000,
@@ -173,6 +175,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			Threshold:        0.3,
 		}
 		r3 := &Rule{
+			Id:               "3",
 			Resource:         "abc",
 			Strategy:         ErrorCount,
 			RetryTimeoutMs:   1000,
@@ -191,6 +194,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(breakers["abc"][2].BoundRule(), r3))
 
 		r4 := &Rule{
+			Id:               "4",
 			Resource:         "abc",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -200,6 +204,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			Threshold:        0.1,
 		}
 		r5 := &Rule{
+			Id:               "5",
 			Resource:         "abc",
 			Strategy:         ErrorRatio,
 			RetryTimeoutMs:   100,
@@ -208,6 +213,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			Threshold:        0.5,
 		}
 		r6 := &Rule{
+			Id:               "6",
 			Resource:         "abc",
 			Strategy:         ErrorCount,
 			RetryTimeoutMs:   1000,
@@ -216,6 +222,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			Threshold:        10,
 		}
 		r7 := &Rule{
+			Id:               "7",
 			Resource:         "abc",
 			Strategy:         ErrorCount,
 			RetryTimeoutMs:   1000,
@@ -238,6 +245,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 	t.Run("Test_updateSpecifiedRule", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -247,6 +255,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 			Threshold:        0.1,
 		}
 		r2 := &Rule{
+			Id:               "2",
 			Resource:         "abc01",
 			Strategy:         ErrorRatio,
 			RetryTimeoutMs:   1000,
@@ -255,6 +264,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 			Threshold:        0.3,
 		}
 		r3 := &Rule{
+			Id:               "3",
 			Resource:         "abc01",
 			Strategy:         ErrorCount,
 			RetryTimeoutMs:   1000,
@@ -271,6 +281,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(breakers["abc01"][0].BoundRule(), r1))
 
 		updateR1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   2000,
@@ -287,6 +298,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 	t.Run("Test_updateRuleReuseStat", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -296,6 +308,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 			Threshold:        0.1,
 		}
 		r2 := &Rule{
+			Id:               "2",
 			Resource:         "abc01",
 			Strategy:         ErrorRatio,
 			RetryTimeoutMs:   1000,
@@ -304,6 +317,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 			Threshold:        0.3,
 		}
 		r3 := &Rule{
+			Id:               "3",
 			Resource:         "abc01",
 			Strategy:         ErrorCount,
 			RetryTimeoutMs:   1000,
@@ -322,6 +336,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 		stat := breakers["abc01"][0].BoundStat()
 
 		updateR1 := &Rule{
+			Id:               "4",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   10001,
@@ -338,6 +353,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 	t.Run("Test_notFoundRuleIdError", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -367,6 +383,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 	t.Run("Test_notFoundRuleResourceError", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -396,6 +413,7 @@ func Test_updateSpecifiedRule(t *testing.T) {
 	t.Run("Test_alreadyExistRuleError", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -427,6 +445,7 @@ func Test_appendRule(t *testing.T) {
 	t.Run("Test_appendRule", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -436,6 +455,7 @@ func Test_appendRule(t *testing.T) {
 			Threshold:        0.1,
 		}
 		r2 := &Rule{
+			Id:               "2",
 			Resource:         "abc01",
 			Strategy:         ErrorRatio,
 			RetryTimeoutMs:   1000,
@@ -444,6 +464,7 @@ func Test_appendRule(t *testing.T) {
 			Threshold:        0.3,
 		}
 		r3 := &Rule{
+			Id:               "3",
 			Resource:         "abc01",
 			Strategy:         ErrorCount,
 			RetryTimeoutMs:   1000,
@@ -460,6 +481,7 @@ func Test_appendRule(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(breakers["abc01"][0].BoundRule(), r1))
 
 		r4 := &Rule{
+			Id:               "4",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1001,
@@ -478,6 +500,7 @@ func Test_appendRule(t *testing.T) {
 	t.Run("Test_appendRuleByDifferentResource", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -487,6 +510,7 @@ func Test_appendRule(t *testing.T) {
 			Threshold:        0.1,
 		}
 		r2 := &Rule{
+			Id:               "2",
 			Resource:         "abc01",
 			Strategy:         ErrorRatio,
 			RetryTimeoutMs:   1000,
@@ -495,6 +519,7 @@ func Test_appendRule(t *testing.T) {
 			Threshold:        0.3,
 		}
 		r3 := &Rule{
+			Id:               "3",
 			Resource:         "abc01",
 			Strategy:         ErrorCount,
 			RetryTimeoutMs:   1000,
@@ -511,6 +536,7 @@ func Test_appendRule(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(breakers["abc01"][0].BoundRule(), r1))
 
 		r4 := &Rule{
+			Id:               "4",
 			Resource:         "abc02",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1001,
@@ -530,6 +556,7 @@ func Test_appendRule(t *testing.T) {
 	t.Run("Test_alreadyExistRuleError", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
+			Id:               "1",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,
@@ -544,6 +571,7 @@ func Test_appendRule(t *testing.T) {
 		assert.Nil(t, err)
 
 		r2 := &Rule{
+			Id:               "2",
 			Resource:         "abc01",
 			Strategy:         SlowRequestRatio,
 			RetryTimeoutMs:   1000,

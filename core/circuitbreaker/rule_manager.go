@@ -200,6 +200,10 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			if oldResCbs == nil {
 				oldResCbs = emptyCircuitBreakerList
 			}
+			if err := isAppend(oldResCbs, r); err != nil {
+				logging.Warn(err)
+				continue
+			}
 			equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResCbs)
 
 			// First check equals scenario
@@ -230,6 +234,17 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	return nil
 }
 
+func isAppend(rulesOfRes []CircuitBreaker, rule *Rule) error {
+	if rule != nil {
+		for _, v := range rulesOfRes {
+			if v.BoundRule().Id == rule.Id {
+				return errors.New(fmt.Sprintf("Rule id:%s duplicate , current rule cannot be loaded", rule.Id))
+			}
+		}
+	}
+	return nil
+}
+
 func AppendRule(r *Rule) error {
 	if err := IsValid(r); err != nil {
 		return errors.New(fmt.Sprintf("Failed to append circuitbreaker rule, rule: %s, reason: %s", r.String(), err.Error()))
@@ -246,7 +261,9 @@ func AppendRule(r *Rule) error {
 	if oldResCbs == nil {
 		oldResCbs = make([]CircuitBreaker, 0, 0)
 	}
-
+	if err := isAppend(oldResCbs, r); err != nil {
+		return err
+	}
 	equalIdx, _ := calculateReuseIndexFor(r, oldResCbs)
 
 	if equalIdx >= 0 {
@@ -284,6 +301,9 @@ func buildCircuitBreaker(reuseStatIdx int, r *Rule, oldResCbs []CircuitBreaker) 
 func UpdateRule(id string, r *Rule) error {
 	if err := IsValid(r); err != nil {
 		return errors.New(fmt.Sprintf("Failed to update circuitbreaker rule, rule: %s, reason: %s", r.String(), err.Error()))
+	}
+	if id == "" {
+		return errors.New("invalid Id")
 	}
 	updateMux.Lock()
 	defer func() {
