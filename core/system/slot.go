@@ -5,10 +5,10 @@ import (
 	"github.com/alibaba/sentinel-golang/core/stat"
 )
 
-type SystemAdaptiveSlot struct {
+type AdaptiveSlot struct {
 }
 
-func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
+func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if ctx == nil || ctx.Resource == nil || ctx.Resource.FlowType() != base.Inbound {
 		return nil
 	}
@@ -29,7 +29,7 @@ func (s *SystemAdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func (s *SystemAdaptiveSlot) doCheckRule(rule *Rule) (bool, float64) {
+func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, float64) {
 	threshold := rule.TriggerCount
 	switch rule.MetricType {
 	case InboundQPS:
