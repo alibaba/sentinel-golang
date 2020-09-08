@@ -47,11 +47,14 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		flowRules := got.([]*flow.Rule)
 		assert.True(t, len(flowRules) == 3)
 		r1 := &flow.Rule{
-			Resource:          "abc",
-			MetricType:        flow.Concurrency,
-			Count:             100,
-			RelationStrategy:  flow.Direct,
-			ControlBehavior:   flow.Reject,
+			Resource:         "abc",
+			MetricType:       flow.Concurrency,
+			Count:            100,
+			RelationStrategy: flow.DirectResource,
+			ControlStrategy: flow.ControlStrategy{
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
+			},
 			RefResource:       "refDefault",
 			WarmUpPeriodSec:   10,
 			MaxQueueingTimeMs: 1000,
@@ -59,11 +62,14 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(flowRules[0], r1))
 
 		r2 := &flow.Rule{
-			Resource:          "abc",
-			MetricType:        flow.QPS,
-			Count:             200,
-			RelationStrategy:  flow.AssociatedResource,
-			ControlBehavior:   flow.WarmUp,
+			Resource:         "abc",
+			MetricType:       flow.QPS,
+			Count:            200,
+			RelationStrategy: flow.AssociatedResource,
+			ControlStrategy: flow.ControlStrategy{
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Throttling,
+			},
 			RefResource:       "refDefault",
 			WarmUpPeriodSec:   20,
 			MaxQueueingTimeMs: 2000,
@@ -71,11 +77,14 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(flowRules[1], r2))
 
 		r3 := &flow.Rule{
-			Resource:          "abc",
-			MetricType:        flow.QPS,
-			Count:             300,
-			RelationStrategy:  flow.Direct,
-			ControlBehavior:   flow.WarmUp,
+			Resource:         "abc",
+			MetricType:       flow.QPS,
+			Count:            300,
+			RelationStrategy: flow.DirectResource,
+			ControlStrategy: flow.ControlStrategy{
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Throttling,
+			},
 			RefResource:       "refDefault",
 			WarmUpPeriodSec:   30,
 			MaxQueueingTimeMs: 3000,
@@ -89,12 +98,15 @@ func TestFlowRulesUpdater(t *testing.T) {
 		flow.ClearRules()
 		flow.LoadRules([]*flow.Rule{
 			{
-				ID:                0,
-				Resource:          "abc",
-				MetricType:        0,
-				Count:             0,
-				RelationStrategy:  0,
-				ControlBehavior:   0,
+				ID:               0,
+				Resource:         "abc",
+				MetricType:       0,
+				Count:            0,
+				RelationStrategy: 0,
+				ControlStrategy: flow.ControlStrategy{
+					TokenCalculateStrategy: flow.Direct,
+					ControlBehavior:        flow.Reject,
+				},
 				RefResource:       "",
 				WarmUpPeriodSec:   0,
 				MaxQueueingTimeMs: 0,
@@ -121,12 +133,15 @@ func TestFlowRulesUpdater(t *testing.T) {
 		flow.ClearRules()
 		p := make([]flow.Rule, 0)
 		fw := flow.Rule{
-			ID:                0,
-			Resource:          "aaaa",
-			MetricType:        0,
-			Count:             0,
-			RelationStrategy:  0,
-			ControlBehavior:   0,
+			ID:               0,
+			Resource:         "aaaa",
+			MetricType:       0,
+			Count:            0,
+			RelationStrategy: 0,
+			ControlStrategy: flow.ControlStrategy{
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
+			},
 			RefResource:       "",
 			WarmUpPeriodSec:   0,
 			MaxQueueingTimeMs: 0,
