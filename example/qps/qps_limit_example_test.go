@@ -28,13 +28,11 @@ func doTest() {
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:   "some-test",
-			MetricType: flow.QPS,
-			Count:      100,
-			ControlStrategy: flow.ControlStrategy{
-				TokenCalculateStrategy: flow.Direct,
-				ControlBehavior:        flow.Reject,
-			},
+			Resource:               "some-test",
+			MetricType:             flow.QPS,
+			Count:                  100,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
 		},
 	})
 	if err != nil {

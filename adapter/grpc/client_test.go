@@ -25,13 +25,11 @@ func TestUnaryClientIntercept(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "client:" + method,
-				MetricType: flow.QPS,
-				Count:      1,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "client:" + method,
+				MetricType:             flow.QPS,
+				Count:                  1,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -46,13 +44,11 @@ func TestUnaryClientIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "client:" + method,
-				MetricType: flow.QPS,
-				Count:      0,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "client:" + method,
+				MetricType:             flow.QPS,
+				Count:                  0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -75,13 +71,11 @@ func TestStreamClientIntercept(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "client:/grpc.testing.TestService/StreamingOutputCall",
-				MetricType: flow.QPS,
-				Count:      1,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "client:/grpc.testing.TestService/StreamingOutputCall",
+				MetricType:             flow.QPS,
+				Count:                  1,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -98,13 +92,11 @@ func TestStreamClientIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "client:/grpc.testing.TestService/StreamingOutputCall",
-				MetricType: flow.QPS,
-				Count:      0,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "client:/grpc.testing.TestService/StreamingOutputCall",
+				MetricType:             flow.QPS,
+				Count:                  0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)

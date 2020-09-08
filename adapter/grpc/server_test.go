@@ -31,13 +31,11 @@ func TestStreamServerIntercept(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "/grpc.testing.TestService/StreamingInputCall",
-				MetricType: flow.QPS,
-				Count:      1,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "/grpc.testing.TestService/StreamingInputCall",
+				MetricType:             flow.QPS,
+				Count:                  1,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -52,13 +50,11 @@ func TestStreamServerIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "/grpc.testing.TestService/StreamingInputCall",
-				MetricType: flow.QPS,
-				Count:      0,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "/grpc.testing.TestService/StreamingInputCall",
+				MetricType:             flow.QPS,
+				Count:                  0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -79,13 +75,11 @@ func TestUnaryServerIntercept(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "/grpc.testing.TestService/UnaryCall",
-				MetricType: flow.QPS,
-				Count:      1,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "/grpc.testing.TestService/UnaryCall",
+				MetricType:             flow.QPS,
+				Count:                  1,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -110,13 +104,11 @@ func TestUnaryServerIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:   "/grpc.testing.TestService/UnaryCall",
-				MetricType: flow.QPS,
-				Count:      0,
-				ControlStrategy: flow.ControlStrategy{
-					TokenCalculateStrategy: flow.Direct,
-					ControlBehavior:        flow.Reject,
-				},
+				Resource:               "/grpc.testing.TestService/UnaryCall",
+				MetricType:             flow.QPS,
+				Count:                  0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)

@@ -33,15 +33,13 @@ func main() {
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:   "some-test",
-			MetricType: flow.QPS,
-			Count:      100,
-			ControlStrategy: flow.ControlStrategy{
-				TokenCalculateStrategy: flow.WarmUp,
-				ControlBehavior:        flow.Reject,
-			},
-			WarmUpPeriodSec:  10,
-			WarmUpColdFactor: 3,
+			Resource:               "some-test",
+			MetricType:             flow.QPS,
+			Count:                  100,
+			TokenCalculateStrategy: flow.WarmUp,
+			ControlBehavior:        flow.Reject,
+			WarmUpPeriodSec:        10,
+			WarmUpColdFactor:       3,
 		},
 	})
 	if err != nil {

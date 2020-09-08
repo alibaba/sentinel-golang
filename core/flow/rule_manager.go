@@ -13,38 +13,43 @@ import (
 // TrafficControllerGenFunc represents the TrafficShapingController generator function of a specific control behavior.
 type TrafficControllerGenFunc func(*Rule) *TrafficShapingController
 
+type trafficControllerGenKey struct {
+	tokenCalculateStrategy TokenCalculateStrategy
+	controlBehavior        ControlBehavior
+}
+
 // TrafficControllerMap represents the map storage for TrafficShapingController.
 type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[ControlStrategy]TrafficControllerGenFunc)
+	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
 )
 
 func init() {
 	// Initialize the traffic shaping controller generator map for existing control behaviors.
-	tcGenFuncMap[ControlStrategy{
-		TokenCalculateStrategy: Direct,
-		ControlBehavior:        Reject,
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: Direct,
+		controlBehavior:        Reject,
 	}] = func(rule *Rule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule), rule)
 	}
-	tcGenFuncMap[ControlStrategy{
-		TokenCalculateStrategy: Direct,
-		ControlBehavior:        Throttling,
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: Direct,
+		controlBehavior:        Throttling,
 	}] = func(rule *Rule) *TrafficShapingController {
 		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
-	tcGenFuncMap[ControlStrategy{
-		TokenCalculateStrategy: WarmUp,
-		ControlBehavior:        Reject,
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: WarmUp,
+		controlBehavior:        Reject,
 	}] = func(rule *Rule) *TrafficShapingController {
 		return NewTrafficShapingController(NewWarmUpTrafficShapingCalculator(rule), NewDefaultTrafficShapingChecker(rule), rule)
 	}
-	tcGenFuncMap[ControlStrategy{
-		TokenCalculateStrategy: WarmUp,
-		ControlBehavior:        Throttling,
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: WarmUp,
+		controlBehavior:        Throttling,
 	}] = func(rule *Rule) *TrafficShapingController {
 		return NewTrafficShapingController(NewWarmUpTrafficShapingCalculator(rule), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
@@ -167,34 +172,41 @@ func rulesFrom(m TrafficControllerMap) []*Rule {
 
 // SetTrafficShapingGenerator sets the traffic controller generator for the given control strategy.
 // Note that modifying the generator of default control strategy is not allowed.
-func SetTrafficShapingGenerator(cs ControlStrategy, generator TrafficControllerGenFunc) error {
+func SetTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy, controlBehavior ControlBehavior, generator TrafficControllerGenFunc) error {
 	if generator == nil {
 		return errors.New("nil generator")
 	}
-	if cs.TokenCalculateStrategy >= Direct && cs.TokenCalculateStrategy <= WarmUp {
+
+	if tokenCalculateStrategy >= Direct && tokenCalculateStrategy <= WarmUp {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
-	if cs.ControlBehavior >= Reject && cs.ControlBehavior <= Throttling {
+	if controlBehavior >= Reject && controlBehavior <= Throttling {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
 	tcMux.Lock()
 	defer tcMux.Unlock()
 
-	tcGenFuncMap[cs] = generator
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: tokenCalculateStrategy,
+		controlBehavior:        controlBehavior,
+	}] = generator
 	return nil
 }
 
-func RemoveTrafficShapingGenerator(cs ControlStrategy) error {
-	if cs.TokenCalculateStrategy >= Direct && cs.TokenCalculateStrategy <= WarmUp {
+func RemoveTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy, controlBehavior ControlBehavior) error {
+	if tokenCalculateStrategy >= Direct && tokenCalculateStrategy <= WarmUp {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
-	if cs.ControlBehavior >= Reject && cs.ControlBehavior <= Throttling {
+	if controlBehavior >= Reject && controlBehavior <= Throttling {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
 	tcMux.Lock()
 	defer tcMux.Unlock()
 
-	delete(tcGenFuncMap, cs)
+	delete(tcGenFuncMap, trafficControllerGenKey{
+		tokenCalculateStrategy: tokenCalculateStrategy,
+		controlBehavior:        controlBehavior,
+	})
 	return nil
 }
 
@@ -217,7 +229,10 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 			logging.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
-		generator, supported := tcGenFuncMap[rule.ControlStrategy]
+		generator, supported := tcGenFuncMap[trafficControllerGenKey{
+			tokenCalculateStrategy: rule.TokenCalculateStrategy,
+			controlBehavior:        rule.ControlBehavior,
+		}]
 		if !supported {
 			logging.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
 			continue
@@ -255,7 +270,7 @@ func IsValidRule(rule *Rule) error {
 	if rule.RelationStrategy < 0 {
 		return errors.New("invalid relation strategy")
 	}
-	if rule.ControlStrategy.TokenCalculateStrategy < 0 || rule.ControlStrategy.ControlBehavior < 0 {
+	if rule.TokenCalculateStrategy < 0 || rule.ControlBehavior < 0 {
 		return errors.New("invalid control strategy")
 	}
 
@@ -267,7 +282,7 @@ func IsValidRule(rule *Rule) error {
 }
 
 func checkControlStrategyField(rule *Rule) error {
-	switch rule.ControlStrategy.TokenCalculateStrategy {
+	switch rule.TokenCalculateStrategy {
 	case WarmUp:
 		if rule.WarmUpPeriodSec <= 0 {
 			return errors.New("invalid warmUpPeriodSec")
