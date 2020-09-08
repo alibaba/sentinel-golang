@@ -129,6 +129,8 @@ func getResRules(res string) []*Rule {
 	return ret
 }
 
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for flow module if user changes the rule.
 func GetRules() []Rule {
 	rules := getRules()
 	ret := make([]Rule, 0, len(rules))
@@ -138,6 +140,8 @@ func GetRules() []Rule {
 	return ret
 }
 
+// GetResRules returns specific resource's rules based on copy.
+// It doesn't take effect for flow module if user changes the rule.
 func GetResRules(res string) []Rule {
 	rules := getResRules(res)
 	ret := make([]Rule, 0, len(rules))
@@ -147,6 +151,7 @@ func GetResRules(res string) []Rule {
 	return ret
 }
 
+// ClearRules clears all the rules in flow module.
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
