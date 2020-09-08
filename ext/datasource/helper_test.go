@@ -50,7 +50,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 			Resource:         "abc",
 			MetricType:       flow.Concurrency,
 			Count:            100,
-			RelationStrategy: flow.DirectResource,
+			RelationStrategy: flow.CurrentResource,
 			ControlStrategy: flow.ControlStrategy{
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
@@ -80,7 +80,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 			Resource:         "abc",
 			MetricType:       flow.QPS,
 			Count:            300,
-			RelationStrategy: flow.DirectResource,
+			RelationStrategy: flow.CurrentResource,
 			ControlStrategy: flow.ControlStrategy{
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Throttling,

@@ -30,16 +30,16 @@ func (s MetricType) String() string {
 type RelationStrategy int32
 
 const (
-	// DirectResource means flow control by current resource directly.
-	DirectResource RelationStrategy = iota
+	// CurrentResource means flow control by current resource directly.
+	CurrentResource RelationStrategy = iota
 	// AssociatedResource means flow control by the associated resource rather than current resource.
 	AssociatedResource
 )
 
 func (s RelationStrategy) String() string {
 	switch s {
-	case DirectResource:
-		return "DirectResource"
+	case CurrentResource:
+		return "CurrentResource"
 	case AssociatedResource:
 		return "AssociatedResource"
 	default:
