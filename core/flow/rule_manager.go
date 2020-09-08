@@ -170,7 +170,7 @@ func rulesFrom(m TrafficControllerMap) []*Rule {
 	return rules
 }
 
-// SetTrafficShapingGenerator sets the traffic controller generator for the given control strategy.
+// SetTrafficShapingGenerator sets the traffic controller generator for the given TokenCalculateStrategy and ControlBehavior.
 // Note that modifying the generator of default control strategy is not allowed.
 func SetTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy, controlBehavior ControlBehavior, generator TrafficControllerGenFunc) error {
 	if generator == nil {
@@ -278,20 +278,13 @@ func IsValidRule(rule *Rule) error {
 		return errors.New("Bad flow rule: invalid control behavior")
 	}
 
-	return checkControlStrategyField(rule)
-}
-
-func checkControlStrategyField(rule *Rule) error {
-	switch rule.TokenCalculateStrategy {
-	case WarmUp:
+	if rule.TokenCalculateStrategy == WarmUp {
 		if rule.WarmUpPeriodSec <= 0 {
 			return errors.New("invalid warmUpPeriodSec")
 		}
 		if rule.WarmUpColdFactor == 1 {
 			return errors.New("WarmUpColdFactor must be great than 1")
 		}
-		return nil
-	default:
 	}
 	return nil
 }
