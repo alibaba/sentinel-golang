@@ -1,5 +1,4 @@
-// Package api is the topmost API interface package for users using sentinel-golang.
-//
+// Package api provides the topmost fundamental APIs for users using sentinel-golang.
 // Users must initialize Sentinel before loading Sentinel rules. Sentinel support three ways to perform initialization:
 //
 //  1. api.InitDefault(), using default config to initialize.
