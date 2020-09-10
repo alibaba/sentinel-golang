@@ -4,14 +4,14 @@
 package proto
 
 import (
-	context "context"
-	fmt "fmt"
-	math "math"
+	"context"
+	"fmt"
+	"math"
 
-	proto "github.com/golang/protobuf/proto"
-	api "github.com/micro/go-micro/v2/api"
-	client "github.com/micro/go-micro/v2/client"
-	server "github.com/micro/go-micro/v2/server"
+	"github.com/golang/protobuf/proto"
+	"github.com/micro/go-micro/v2/api"
+	"github.com/micro/go-micro/v2/client"
+	"github.com/micro/go-micro/v2/server"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

@@ -10,10 +10,10 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/stat"
-	"github.com/alibaba/sentinel-golang/tests/adapter/micro/proto"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/client/selector"
 	"github.com/micro/go-micro/v2/registry/memory"
+	"github.com/sentinel-group/sentinel-go-adapter-micro/proto"
 	"github.com/stretchr/testify/assert"
 )
 
