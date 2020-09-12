@@ -157,3 +157,150 @@ func TestGetRules(t *testing.T) {
 		}
 	})
 }
+
+func TestAppendRule(t *testing.T) {
+	t.Run("appendRuleByDifferentResource", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule",
+				ControlBehavior: Reject,
+			},
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule1",
+				ControlBehavior: Reject,
+			},
+		})
+		assert.Nil(t, err)
+		err = AppendRule(&Rule{
+			ID:              11,
+			Count:           20,
+			MetricType:      QPS,
+			Resource:        "test-append-rule3",
+			ControlBehavior: Reject,
+		})
+		assert.Nil(t, err)
+		assert.True(t, tcMap["test-append-rule3"][0].rule.ID == 11)
+	})
+
+	t.Run("appendRuleBySameResource", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule",
+				ControlBehavior: Reject,
+			},
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule1",
+				ControlBehavior: Reject,
+			},
+		})
+		assert.Nil(t, err)
+		err = AppendRule(&Rule{
+			ID:              11,
+			Count:           20,
+			MetricType:      QPS,
+			Resource:        "test-append-rule1",
+			ControlBehavior: Reject,
+		})
+		assert.Nil(t, err)
+		assert.True(t, tcMap["test-append-rule1"][1].rule.ID == 11)
+	})
+
+	t.Run("appendRuleBySameId", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule",
+				ControlBehavior: Reject,
+			},
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule1",
+				ControlBehavior: Reject,
+			},
+		})
+		assert.Nil(t, err)
+		err = AppendRule(&Rule{
+			ID:              10,
+			Count:           20,
+			MetricType:      QPS,
+			Resource:        "test-append-rule1",
+			ControlBehavior: Reject,
+		})
+		assert.NotNil(t, err)
+	})
+}
+
+func TestUpdateRule(t *testing.T) {
+	t.Run("updateRule", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule",
+				ControlBehavior: Reject,
+			},
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule1",
+				ControlBehavior: Reject,
+			},
+		})
+		assert.Nil(t, err)
+		err = UpdateRule(&Rule{
+			ID:              10,
+			Count:           30,
+			MetricType:      Concurrency,
+			Resource:        "test-append-rule1",
+			ControlBehavior: Reject,
+		})
+		assert.Nil(t, err)
+		assert.True(t, tcMap["test-append-rule1"][0].rule.Count == 30)
+	})
+
+	t.Run("updateRuleByNotExistId", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule",
+				ControlBehavior: Reject,
+			},
+			{
+				ID:              10,
+				Count:           20,
+				MetricType:      QPS,
+				Resource:        "test-append-rule1",
+				ControlBehavior: Reject,
+			},
+		})
+		assert.Nil(t, err)
+		err = UpdateRule(&Rule{
+			ID:              15,
+			Count:           30,
+			MetricType:      Concurrency,
+			Resource:        "test-append-rule1",
+			ControlBehavior: Reject,
+		})
+		assert.NotNil(t, err)
+	})
+}
