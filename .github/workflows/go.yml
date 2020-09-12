@@ -33,7 +33,7 @@ jobs:
     - name: Install go ci lint
       run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
 
-    -name Test CI
+    - name: Test CI
       run: golangci-lint run -v --disable-all --enable=govet --enable=staticcheck --enable=ineffassign --enable=misspell
 
     - name: Test
