@@ -253,8 +253,8 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 		}
 
 		rulesOfRes, exists := m[rule.Resource]
-		if err := isAppend(rulesOfRes, tsc.rule); err != nil {
-			logging.Warn(err)
+		if !checkRuleIdCompliance(rulesOfRes, rule) {
+			logging.Warnf("repeat rule id: %d", rule.ID)
 			continue
 		}
 		if !exists {
@@ -267,40 +267,43 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 	return m
 }
 
-//Check for duplicate rule ids
-func isAppend(rulesOfRes []*TrafficShapingController, rule *Rule) error {
-	if rule != nil {
-		for _, v := range rulesOfRes {
-			if v.rule.ID == rule.ID {
-				return errors.New(fmt.Sprintf("Rule id:%d duplicate , current rule cannot be loaded", rule.ID))
-			}
+func checkRuleIdCompliance(resRules []*TrafficShapingController, rule *Rule) bool {
+	if rule == nil || len(resRules) == 0 {
+		return true
+	}
+	for _, r := range resRules {
+		if r.Rule().ID == 0 || rule.ID == 0 {
+			continue
+		}
+		if r.Rule().ID == rule.ID {
+			return false
 		}
 	}
-	return nil
+	return true
 }
 
-//Update Rule
 func UpdateRule(rule *Rule) error {
-	if err := IsValidFlowRule(rule); err != nil {
+	if err := IsValidRule(rule); err != nil {
 		return err
 	}
 	if rule.ID == 0 {
-		return errors.New("Update rule id cannot be 0")
+		return errors.New("Update rule's id can't be 0")
 	}
-	if rule.LimitOrigin == "" {
-		rule.LimitOrigin = LimitOriginDefault
-	}
-	defer tcMux.RUnlock()
-	tcMux.RLock()
-	rulesOfRes, exists := tcMap[rule.Resource]
+	tcMux.Lock()
+	defer tcMux.Unlock()
 
+	resTcs, exists := tcMap[rule.Resource]
 	if !exists {
-		return errors.New("Cannot be updated ,because not loaded flow rule")
+		return errors.New("Can't update not existed rule")
 	}
-	updateFlag := false
-	for k, v := range rulesOfRes {
-		if v.rule.ID == rule.ID {
-			generator, supported := tcGenFuncMap[rule.ControlBehavior]
+
+	updateRuleExist := false
+	for idx, tc := range resTcs {
+		if tc.Rule().ID == rule.ID {
+			generator, supported := tcGenFuncMap[trafficControllerGenKey{
+				tokenCalculateStrategy: rule.TokenCalculateStrategy,
+				controlBehavior:        rule.ControlBehavior,
+			}]
 			if !supported {
 				return errors.New("Ignoring the rule due to unsupported control behavior")
 			}
@@ -308,43 +311,56 @@ func UpdateRule(rule *Rule) error {
 			if tsc == nil {
 				return errors.New("Ignoring the rule due to bad generated traffic controller")
 			}
-			rulesOfRes[k] = tsc
-			updateFlag = true
+			resTcs[idx] = tsc
+			tcMap[rule.Resource] = resTcs
+			updateRuleExist = true
+			break
 		}
 	}
 
-	if !updateFlag {
+	if !updateRuleExist {
 		return errors.New(fmt.Sprintf("No rule to update was found based on rule id:%d", rule.ID))
 	}
 	return nil
 }
 
-//Append Rule
 func AppendRule(rule *Rule) error {
-	if err := IsValidFlowRule(rule); err != nil {
+	if err := IsValidRule(rule); err != nil {
 		return err
 	}
-	if rule.LimitOrigin == "" {
-		rule.LimitOrigin = LimitOriginDefault
+	// ruleId is unique in level <resource, module>
+	appendRuleId := rule.ID
+	tcMux.Lock()
+	defer tcMux.Unlock()
+
+	// check rule id availability
+	resTcs, ok := tcMap[rule.Resource]
+	if ok {
+		for _, tc := range resTcs {
+			if tc.Rule().ID > 0 && tc.Rule().ID == appendRuleId {
+				return errors.New("Valid rule id existed.")
+			}
+			if isEquivalentRule(rule, tc.Rule()) {
+				return errors.New("Equivalent Rule existed.")
+			}
+		}
 	}
-	defer tcMux.RUnlock()
-	tcMux.RLock()
-	generator, supported := tcGenFuncMap[rule.ControlBehavior]
+
+	generator, supported := tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: rule.TokenCalculateStrategy,
+		controlBehavior:        rule.ControlBehavior,
+	}]
 	if !supported {
-		return errors.New("Unsupported control behavior")
+		return errors.New("Unsupported control strategy")
 	}
 	tsc := generator(rule)
 	if tsc == nil {
 		return errors.New("Bad generated traffic controller")
 	}
-	rulesOfRes, exists := tcMap[rule.Resource]
-	if err := isAppend(rulesOfRes, tsc.rule); err != nil {
-		return err
-	}
-	if !exists {
+	if !ok {
 		tcMap[rule.Resource] = []*TrafficShapingController{tsc}
 	} else {
-		tcMap[rule.Resource] = append(rulesOfRes, tsc)
+		tcMap[rule.Resource] = append(resTcs, tsc)
 	}
 	return nil
 }
@@ -383,4 +399,23 @@ func IsValidRule(rule *Rule) error {
 		}
 	}
 	return nil
+}
+
+func isEquivalentRule(rule1 *Rule, rule2 *Rule) bool {
+	if !(rule1.Resource == rule2.Resource && rule1.TokenCalculateStrategy == rule2.TokenCalculateStrategy &&
+		rule1.ControlBehavior == rule2.ControlBehavior && rule1.RelationStrategy == rule2.RelationStrategy &&
+		rule1.RefResource == rule2.RefResource && rule1.MetricType == rule2.MetricType &&
+		util.Float64Equals(rule1.Count, rule2.Count)) {
+		return false
+	}
+	if rule1.TokenCalculateStrategy == WarmUp && !(rule1.WarmUpPeriodSec == rule2.WarmUpPeriodSec &&
+		rule1.WarmUpColdFactor == rule2.WarmUpColdFactor) {
+		return false
+	}
+
+	if rule1.ControlBehavior == Throttling && !(rule1.MaxQueueingTimeMs == rule2.MaxQueueingTimeMs) {
+		return false
+	}
+
+	return true
 }

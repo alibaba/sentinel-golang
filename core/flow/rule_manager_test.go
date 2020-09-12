@@ -186,6 +186,7 @@ func TestAppendRule(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.True(t, tcMap["test-append-rule3"][0].rule.ID == 11)
+		tcMap = make(TrafficControllerMap)
 	})
 
 	t.Run("appendRuleBySameResource", func(t *testing.T) {
@@ -213,8 +214,9 @@ func TestAppendRule(t *testing.T) {
 			Resource:        "test-append-rule1",
 			ControlBehavior: Reject,
 		})
-		assert.Nil(t, err)
-		assert.True(t, tcMap["test-append-rule1"][1].rule.ID == 11)
+		assert.NotNil(t, err)
+		assert.True(t, tcMap["test-append-rule1"][0].rule.ID == 10)
+		tcMap = make(TrafficControllerMap)
 	})
 
 	t.Run("appendRuleBySameId", func(t *testing.T) {
@@ -243,6 +245,7 @@ func TestAppendRule(t *testing.T) {
 			ControlBehavior: Reject,
 		})
 		assert.NotNil(t, err)
+		tcMap = make(TrafficControllerMap)
 	})
 }
 
