@@ -311,9 +311,9 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 	assert.True(t, err == nil)
 
 	rules := cb.GetResRules("abc")
-	assert.True(t, reflect.DeepEqual(rules[0], r1))
-	assert.True(t, reflect.DeepEqual(rules[1], r2))
-	assert.True(t, reflect.DeepEqual(rules[2], r3))
+	assert.True(t, reflect.DeepEqual(rules[0], *r1))
+	assert.True(t, reflect.DeepEqual(rules[1], *r2))
+	assert.True(t, reflect.DeepEqual(rules[2], *r3))
 }
 
 func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
@@ -439,9 +439,9 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 	err := HotSpotParamRulesUpdater([]*hotspot.Rule{r1, r2, r3, r4})
 	assert.True(t, err == nil)
 
-	rules := hotspot.GetRules("abc")
-	assert.True(t, rules[0].Equals(r1))
-	assert.True(t, rules[1].Equals(r2))
-	assert.True(t, rules[2].Equals(r3))
-	assert.True(t, rules[3].Equals(r4))
+	rules := hotspot.GetResRules("abc")
+	assert.True(t, reflect.DeepEqual(rules[0], *r1))
+	assert.True(t, reflect.DeepEqual(rules[1], *r2))
+	assert.True(t, reflect.DeepEqual(rules[2], *r3))
+	assert.True(t, reflect.DeepEqual(rules[3], *r4))
 }
