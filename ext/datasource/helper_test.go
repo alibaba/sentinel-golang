@@ -19,7 +19,11 @@ import (
 func TestFlowRulesJsonConverter(t *testing.T) {
 	// Prepare test data
 	f, err := os.Open("../../tests/testdata/extension/helper/FlowRule.json")
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
 	}
@@ -145,7 +149,11 @@ func TestFlowRulesUpdater(t *testing.T) {
 func TestSystemRulesJsonConvert(t *testing.T) {
 	// Prepare test data
 	f, err := os.Open("../../tests/testdata/extension/helper/SystemRule.json")
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
 	}
@@ -238,7 +246,11 @@ func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 	t.Run("TestCircuitBreakerRulesJsonConverter_Succeed", func(t *testing.T) {
 		// Prepare test data
 		f, err := os.Open("../../tests/testdata/extension/helper/CircuitBreakerRule.json")
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
 		if err != nil {
 			t.Errorf("The rules file is not existed, err:%+v.", err)
 		}
@@ -326,7 +338,11 @@ func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 	t.Run("TestHotSpotParamRuleListJsonConverter_normal", func(t *testing.T) {
 		// Prepare test data
 		f, err := os.Open("../../tests/testdata/extension/helper/HotSpotParamFlowRule.json")
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
 		if err != nil {
 			t.Errorf("The rules file is not existed, err:%+v.", err)
 		}

@@ -30,10 +30,14 @@ jobs:
     - name: Install goimports
       run: go get golang.org/x/tools/cmd/goimports
 
+    - name: Install go ci lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
+
     - name: Test
       run: |
         diff -u <(echo -n) <(gofmt -d -s .)
         diff -u <(echo -n) <(goimports -d .)
+        golangci-lint run -v --disable-all --enable=govet --enable=staticcheck --enable=ineffassign --enable=misspell
         go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
 
     - name: Coverage
