@@ -61,7 +61,7 @@ func (c *consulClientMock) Get(key string, q *api.QueryOptions) (*api.KVPair, *a
 	}, nil
 }
 
-func (c consulClientMock) List(prefix string, q *api.QueryOptions) (api.KVPairs, *api.QueryMeta, error) {
+func (c *consulClientMock) List(prefix string, q *api.QueryOptions) (api.KVPairs, *api.QueryMeta, error) {
 	panic("implement me")
 }
 

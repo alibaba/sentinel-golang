@@ -50,7 +50,7 @@ func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *b
 }
 
 func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
-	var size = 0
+	size := 0
 	if r.ParamsMaxCapacity > 0 {
 		size = int(r.ParamsMaxCapacity)
 	} else {
