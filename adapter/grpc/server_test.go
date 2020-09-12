@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
@@ -16,6 +17,7 @@ import (
 func TestMain(m *testing.M) {
 	_ = sentinel.InitDefault()
 	m.Run()
+	os.Exit(0)
 }
 
 func TestStreamServerIntercept(t *testing.T) {
