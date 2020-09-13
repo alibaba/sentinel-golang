@@ -22,10 +22,10 @@ jobs:
 
     steps:
 
-    - name: Set up Go ${{ matrix.config.go_version }}
+    - name: Set up Go ${{ matrix.go_version }}
       uses: actions/setup-go@v2
       with:
-        go-version: ${{ matrix.config.go_version }}
+        go-version: ${{ matrix.go_version }}
       id: go
 
     - name: Check out code into the Go module directory
