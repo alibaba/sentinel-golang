@@ -8,11 +8,10 @@ import (
 	"github.com/alibaba/sentinel-golang/logging"
 )
 
-// FlowSlot
-type FlowSlot struct {
+type Slot struct {
 }
 
-func (s *FlowSlot) Check(ctx *base.EntryContext) *base.TokenResult {
+func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	res := ctx.Resource.Name()
 	tcs := getTrafficControllerListFor(res)
 	result := ctx.RuleCheckResult

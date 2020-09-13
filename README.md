@@ -8,6 +8,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/alibaba/sentinel-golang)](https://goreportcard.com/report/github.com/alibaba/sentinel-golang)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Gitter](https://badges.gitter.im/alibaba/Sentinel.svg)](https://gitter.im/alibaba/Sentinel)
+[![GitHub last commit](https://img.shields.io/github/last-commit/alibaba/sentinel-golang.svg?style=flat-square)](https://github.com/alibaba/sentinel-golang/commits/dev)
+[![GitHub repo size](https://img.shields.io/github/repo-size/alibaba/sentinel-golang)](https://github.com/alibaba/sentinel-golang)
+[![GitHub closed issues](https://img.shields.io/github/issues-closed/alibaba/sentinel-golang.svg?style=flat-square)](alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aclosed)
 
 ## Introduction
 

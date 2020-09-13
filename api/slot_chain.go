@@ -27,13 +27,13 @@ func GlobalSlotChain() *base.SlotChain {
 
 func BuildDefaultSlotChain() *base.SlotChain {
 	sc := base.NewSlotChain()
-	sc.AddStatPrepareSlotLast(&stat.StatNodePrepareSlot{})
-	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
-	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
+	sc.AddStatPrepareSlotLast(&stat.ResourceNodePrepareSlot{})
+	sc.AddRuleCheckSlotLast(&system.AdaptiveSlot{})
+	sc.AddRuleCheckSlotLast(&flow.Slot{})
 	sc.AddRuleCheckSlotLast(&circuitbreaker.Slot{})
 	sc.AddRuleCheckSlotLast(&hotspot.Slot{})
-	sc.AddStatSlotLast(&stat.StatisticSlot{})
-	sc.AddStatSlotLast(&log.LogSlot{})
+	sc.AddStatSlotLast(&stat.Slot{})
+	sc.AddStatSlotLast(&log.Slot{})
 	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
 	sc.AddStatSlotLast(&hotspot.ConcurrencyStatSlot{})
 	return sc

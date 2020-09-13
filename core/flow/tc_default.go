@@ -4,15 +4,15 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
-type DefaultTrafficShapingCalculator struct {
+type DirectTrafficShapingCalculator struct {
 	threshold float64
 }
 
-func NewDefaultTrafficShapingCalculator(threshold float64) *DefaultTrafficShapingCalculator {
-	return &DefaultTrafficShapingCalculator{threshold: threshold}
+func NewDirectTrafficShapingCalculator(threshold float64) *DirectTrafficShapingCalculator {
+	return &DirectTrafficShapingCalculator{threshold: threshold}
 }
 
-func (d *DefaultTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, uint32, int32) float64 {
+func (d *DirectTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, uint32, int32) float64 {
 	return d.threshold
 }
 

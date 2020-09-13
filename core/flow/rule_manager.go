@@ -13,34 +13,62 @@ import (
 // TrafficControllerGenFunc represents the TrafficShapingController generator function of a specific control behavior.
 type TrafficControllerGenFunc func(*Rule) *TrafficShapingController
 
+type trafficControllerGenKey struct {
+	tokenCalculateStrategy TokenCalculateStrategy
+	controlBehavior        ControlBehavior
+}
+
 // TrafficControllerMap represents the map storage for TrafficShapingController.
 type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
+	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
 )
 
 func init() {
 	// Initialize the traffic shaping controller generator map for existing control behaviors.
-	tcGenFuncMap[Reject] = func(rule *Rule) *TrafficShapingController {
-		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule), rule)
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: Direct,
+		controlBehavior:        Reject,
+	}] = func(rule *Rule) *TrafficShapingController {
+		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule), rule)
 	}
-	tcGenFuncMap[Throttling] = func(rule *Rule) *TrafficShapingController {
-		return NewTrafficShapingController(NewDefaultTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: Direct,
+		controlBehavior:        Throttling,
+	}] = func(rule *Rule) *TrafficShapingController {
+		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
-	tcGenFuncMap[WarmUp] = func(rule *Rule) *TrafficShapingController {
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: WarmUp,
+		controlBehavior:        Reject,
+	}] = func(rule *Rule) *TrafficShapingController {
 		return NewTrafficShapingController(NewWarmUpTrafficShapingCalculator(rule), NewDefaultTrafficShapingChecker(rule), rule)
+	}
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: WarmUp,
+		controlBehavior:        Throttling,
+	}] = func(rule *Rule) *TrafficShapingController {
+		return NewTrafficShapingController(NewWarmUpTrafficShapingCalculator(rule), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
 }
 
 func logRuleUpdate(m TrafficControllerMap) {
 	bs, err := json.Marshal(rulesFrom(m))
 	if err != nil {
-		logging.Info("[FlowRuleManager] Flow rules loaded")
+		if len(m) == 0 {
+			logging.Info("[FlowRuleManager] Flow rules were cleared")
+		} else {
+			logging.Info("[FlowRuleManager] Flow rules were loaded")
+		}
 	} else {
-		logging.Infof("[FlowRuleManager] Flow rules loaded: %s", bs)
+		if len(m) == 0 {
+			logging.Info("[FlowRuleManager] Flow rules were cleared")
+		} else {
+			logging.Infof("[FlowRuleManager] Flow rules were loaded: %s", bs)
+		}
 	}
 }
 
@@ -79,13 +107,55 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
-func GetRules() []*Rule {
+// getRules returns all the rules。Any changes of rules take effect for flow module
+// getRules is an internal interface.
+func getRules() []*Rule {
 	tcMux.RLock()
 	defer tcMux.RUnlock()
 
 	return rulesFrom(tcMap)
 }
 
+// getResRules returns specific resource's rules。Any changes of rules take effect for flow module
+// getResRules is an internal interface.
+func getResRules(res string) []*Rule {
+	tcMux.RLock()
+	defer tcMux.RUnlock()
+
+	resTcs, exist := tcMap[res]
+	if !exist {
+		return nil
+	}
+	ret := make([]*Rule, 0, len(resTcs))
+	for _, tc := range resTcs {
+		ret = append(ret, tc.Rule())
+	}
+	return ret
+}
+
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for flow module if user changes the rule.
+func GetRules() []Rule {
+	rules := getRules()
+	ret := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		ret = append(ret, *rule)
+	}
+	return ret
+}
+
+// GetResRules returns specific resource's rules based on copy.
+// It doesn't take effect for flow module if user changes the rule.
+func GetResRules(res string) []Rule {
+	rules := getResRules(res)
+	ret := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		ret = append(ret, *rule)
+	}
+	return ret
+}
+
+// ClearRules clears all the rules in flow module.
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
@@ -109,30 +179,43 @@ func rulesFrom(m TrafficControllerMap) []*Rule {
 	return rules
 }
 
-// SetTrafficShapingGenerator sets the traffic controller generator for the given control behavior.
-// Note that modifying the generator of default control behaviors is not allowed.
-func SetTrafficShapingGenerator(cb ControlBehavior, generator TrafficControllerGenFunc) error {
+// SetTrafficShapingGenerator sets the traffic controller generator for the given TokenCalculateStrategy and ControlBehavior.
+// Note that modifying the generator of default control strategy is not allowed.
+func SetTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy, controlBehavior ControlBehavior, generator TrafficControllerGenFunc) error {
 	if generator == nil {
 		return errors.New("nil generator")
 	}
-	if cb >= Reject && cb <= WarmUpThrottling {
-		return errors.New("not allowed to replace the generator for default control behaviors")
+
+	if tokenCalculateStrategy >= Direct && tokenCalculateStrategy <= WarmUp {
+		return errors.New("not allowed to replace the generator for default control strategy")
+	}
+	if controlBehavior >= Reject && controlBehavior <= Throttling {
+		return errors.New("not allowed to replace the generator for default control strategy")
 	}
 	tcMux.Lock()
 	defer tcMux.Unlock()
 
-	tcGenFuncMap[cb] = generator
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: tokenCalculateStrategy,
+		controlBehavior:        controlBehavior,
+	}] = generator
 	return nil
 }
 
-func RemoveTrafficShapingGenerator(cb ControlBehavior) error {
-	if cb >= Reject && cb <= WarmUpThrottling {
-		return errors.New("not allowed to replace the generator for default control behaviors")
+func RemoveTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy, controlBehavior ControlBehavior) error {
+	if tokenCalculateStrategy >= Direct && tokenCalculateStrategy <= WarmUp {
+		return errors.New("not allowed to replace the generator for default control strategy")
+	}
+	if controlBehavior >= Reject && controlBehavior <= Throttling {
+		return errors.New("not allowed to replace the generator for default control strategy")
 	}
 	tcMux.Lock()
 	defer tcMux.Unlock()
 
-	delete(tcGenFuncMap, cb)
+	delete(tcGenFuncMap, trafficControllerGenKey{
+		tokenCalculateStrategy: tokenCalculateStrategy,
+		controlBehavior:        controlBehavior,
+	})
 	return nil
 }
 
@@ -151,14 +234,14 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 	}
 
 	for _, rule := range rules {
-		if err := IsValidFlowRule(rule); err != nil {
+		if err := IsValidRule(rule); err != nil {
 			logging.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
 			continue
 		}
-		if rule.LimitOrigin == "" {
-			rule.LimitOrigin = LimitOriginDefault
-		}
-		generator, supported := tcGenFuncMap[rule.ControlBehavior]
+		generator, supported := tcGenFuncMap[trafficControllerGenKey{
+			tokenCalculateStrategy: rule.TokenCalculateStrategy,
+			controlBehavior:        rule.ControlBehavior,
+		}]
 		if !supported {
 			logging.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
 			continue
@@ -170,8 +253,8 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 		}
 
 		rulesOfRes, exists := m[rule.Resource]
-		if err := isAppend(rulesOfRes, tsc.rule); err != nil {
-			logging.Warn(err)
+		if !checkRuleIdCompliance(rulesOfRes, rule) {
+			logging.Warnf("repeat rule id: %d", rule.ID)
 			continue
 		}
 		if !exists {
@@ -184,40 +267,47 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 	return m
 }
 
-//Check for duplicate rule ids
-func isAppend(rulesOfRes []*TrafficShapingController, rule *Rule) error {
-	if rule != nil {
-		for _, v := range rulesOfRes {
-			if v.rule.ID == rule.ID {
-				return errors.New(fmt.Sprintf("Rule id:%d duplicate , current rule cannot be loaded", rule.ID))
-			}
+//Check RuleId for compliance.
+//If ruleId already exists in the global flow rule, it is considered not in compliance.
+func checkRuleIdCompliance(resRules []*TrafficShapingController, rule *Rule) bool {
+	if rule == nil || len(resRules) == 0 {
+		return true
+	}
+	for _, r := range resRules {
+		if r.Rule().ID == 0 || rule.ID == 0 {
+			continue
+		}
+		if r.Rule().ID == rule.ID {
+			return false
 		}
 	}
-	return nil
+	return true
 }
 
-//Update Rule
+//Dynamically update the global flow rule according to the rule id.
+//The id attribute of the rule parameter is required.
 func UpdateRule(rule *Rule) error {
-	if err := IsValidFlowRule(rule); err != nil {
+	if err := IsValidRule(rule); err != nil {
 		return err
 	}
 	if rule.ID == 0 {
-		return errors.New("Update rule id cannot be 0")
+		return errors.New("Update rule's id can't be 0")
 	}
-	if rule.LimitOrigin == "" {
-		rule.LimitOrigin = LimitOriginDefault
-	}
-	defer tcMux.RUnlock()
-	tcMux.RLock()
-	rulesOfRes, exists := tcMap[rule.Resource]
+	tcMux.Lock()
+	defer tcMux.Unlock()
 
+	resTcs, exists := tcMap[rule.Resource]
 	if !exists {
-		return errors.New("Cannot be updated ,because not loaded flow rule")
+		return errors.New("Can't update not existed rule")
 	}
-	updateFlag := false
-	for k, v := range rulesOfRes {
-		if v.rule.ID == rule.ID {
-			generator, supported := tcGenFuncMap[rule.ControlBehavior]
+
+	updateRuleExist := false
+	for idx, tc := range resTcs {
+		if tc.Rule().ID == rule.ID {
+			generator, supported := tcGenFuncMap[trafficControllerGenKey{
+				tokenCalculateStrategy: rule.TokenCalculateStrategy,
+				controlBehavior:        rule.ControlBehavior,
+			}]
 			if !supported {
 				return errors.New("Ignoring the rule due to unsupported control behavior")
 			}
@@ -225,50 +315,63 @@ func UpdateRule(rule *Rule) error {
 			if tsc == nil {
 				return errors.New("Ignoring the rule due to bad generated traffic controller")
 			}
-			rulesOfRes[k] = tsc
-			updateFlag = true
+			resTcs[idx] = tsc
+			tcMap[rule.Resource] = resTcs
+			updateRuleExist = true
+			break
 		}
 	}
 
-	if !updateFlag {
+	if !updateRuleExist {
 		return errors.New(fmt.Sprintf("No rule to update was found based on rule id:%d", rule.ID))
 	}
 	return nil
 }
 
-//Append Rule
+//Dynamically add the flow rule to the global flow rule.
 func AppendRule(rule *Rule) error {
-	if err := IsValidFlowRule(rule); err != nil {
+	if err := IsValidRule(rule); err != nil {
 		return err
 	}
-	if rule.LimitOrigin == "" {
-		rule.LimitOrigin = LimitOriginDefault
+	// ruleId is unique in level <resource, module>
+	appendRuleId := rule.ID
+	tcMux.Lock()
+	defer tcMux.Unlock()
+
+	// check rule id availability
+	resTcs, ok := tcMap[rule.Resource]
+	if ok {
+		for _, tc := range resTcs {
+			if tc.Rule().ID > 0 && tc.Rule().ID == appendRuleId {
+				return errors.New("Valid rule id existed.")
+			}
+			if isEquivalentRule(rule, tc.Rule()) {
+				return errors.New("Equivalent Rule existed.")
+			}
+		}
 	}
-	defer tcMux.RUnlock()
-	tcMux.RLock()
-	generator, supported := tcGenFuncMap[rule.ControlBehavior]
+
+	generator, supported := tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: rule.TokenCalculateStrategy,
+		controlBehavior:        rule.ControlBehavior,
+	}]
 	if !supported {
-		return errors.New("Unsupported control behavior")
+		return errors.New("Unsupported control strategy")
 	}
 	tsc := generator(rule)
 	if tsc == nil {
 		return errors.New("Bad generated traffic controller")
 	}
-	rulesOfRes, exists := tcMap[rule.Resource]
-	if err := isAppend(rulesOfRes, tsc.rule); err != nil {
-		return err
-	}
-	if !exists {
+	if !ok {
 		tcMap[rule.Resource] = []*TrafficShapingController{tsc}
 	} else {
-		tcMap[rule.Resource] = append(rulesOfRes, tsc)
+		tcMap[rule.Resource] = append(resTcs, tsc)
 	}
 	return nil
 }
 
-// IsValidFlowRule checks whether the given Rule is valid.
-func IsValidFlowRule(rule *Rule) error {
-
+// IsValidRule checks whether the given Rule is valid.
+func IsValidRule(rule *Rule) error {
 	if rule == nil {
 		return errors.New("nil Rule")
 	}
@@ -284,33 +387,41 @@ func IsValidFlowRule(rule *Rule) error {
 	if rule.RelationStrategy < 0 {
 		return errors.New("invalid relation strategy")
 	}
-	if rule.ControlBehavior < 0 {
-		return errors.New("invalid control behavior")
+	if rule.TokenCalculateStrategy < 0 || rule.ControlBehavior < 0 {
+		return errors.New("invalid control strategy")
 	}
 
 	if rule.RelationStrategy == AssociatedResource && rule.RefResource == "" {
 		return errors.New("Bad flow rule: invalid control behavior")
 	}
 
-	return checkControlBehaviorField(rule)
-}
-
-func checkControlBehaviorField(rule *Rule) error {
-	switch rule.ControlBehavior {
-	case WarmUp:
+	if rule.TokenCalculateStrategy == WarmUp {
 		if rule.WarmUpPeriodSec <= 0 {
 			return errors.New("invalid warmUpPeriodSec")
 		}
 		if rule.WarmUpColdFactor == 1 {
 			return errors.New("WarmUpColdFactor must be great than 1")
 		}
-		return nil
-	case WarmUpThrottling:
-		if rule.WarmUpPeriodSec <= 0 {
-			return errors.New("invalid warmUpPeriodSec")
-		}
-		return nil
-	default:
 	}
 	return nil
+}
+
+//Compare whether the rules are equivalent.
+func isEquivalentRule(rule1 *Rule, rule2 *Rule) bool {
+	if !(rule1.Resource == rule2.Resource && rule1.TokenCalculateStrategy == rule2.TokenCalculateStrategy &&
+		rule1.ControlBehavior == rule2.ControlBehavior && rule1.RelationStrategy == rule2.RelationStrategy &&
+		rule1.RefResource == rule2.RefResource && rule1.MetricType == rule2.MetricType &&
+		util.Float64Equals(rule1.Count, rule2.Count)) {
+		return false
+	}
+	if rule1.TokenCalculateStrategy == WarmUp && !(rule1.WarmUpPeriodSec == rule2.WarmUpPeriodSec &&
+		rule1.WarmUpColdFactor == rule2.WarmUpColdFactor) {
+		return false
+	}
+
+	if rule1.ControlBehavior == Throttling && !(rule1.MaxQueueingTimeMs == rule2.MaxQueueingTimeMs) {
+		return false
+	}
+
+	return true
 }
