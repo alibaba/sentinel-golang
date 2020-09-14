@@ -72,11 +72,11 @@ func init() {
 // GetResRules returns specific resource's rules based on copy.
 // It doesn't take effect for circuit breaker module if user changes the rule.
 // GetResRules need to compete circuit breaker module's global lock and the high performance losses of copy,
-// 		avoid or do not call GetResRules frequently if possible
+// 		reduce or do not call GetResRules frequently if possible
 func GetResRules(resource string) []Rule {
 	updateMux.RLock()
-	defer updateMux.RUnlock()
 	resRules, ok := breakerRules[resource]
+	updateMux.RUnlock()
 	if !ok {
 		return nil
 	}
@@ -93,9 +93,8 @@ func GetResRules(resource string) []Rule {
 // 		reduce or do not call GetRules if possible
 func GetRules() []Rule {
 	updateMux.RLock()
-	defer updateMux.RUnlock()
-
 	rules := rulesFrom(breakerRules)
+	updateMux.RUnlock()
 	ret := make([]Rule, 0, len(rules))
 	for _, rule := range rules {
 		ret = append(ret, *rule)
