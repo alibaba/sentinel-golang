@@ -69,12 +69,35 @@ func init() {
 	}
 }
 
-func GetResRules(resource string) []*Rule {
+// GetRulesOfResource returns specific resource's rules based on copy.
+// It doesn't take effect for circuit breaker module if user changes the rule.
+// GetRulesOfResource need to compete circuit breaker module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRulesOfResource frequently if possible
+func GetRulesOfResource(resource string) []Rule {
 	updateMux.RLock()
-	ret, ok := breakerRules[resource]
+	resRules, ok := breakerRules[resource]
 	updateMux.RUnlock()
 	if !ok {
-		ret = make([]*Rule, 0)
+		return nil
+	}
+	ret := make([]Rule, 0, len(resRules))
+	for _, rule := range resRules {
+		ret = append(ret, *rule)
+	}
+	return ret
+}
+
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for circuit breaker module if user changes the rule.
+// GetRules need to compete circuit breaker module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRules if possible
+func GetRules() []Rule {
+	updateMux.RLock()
+	rules := rulesFrom(breakerRules)
+	updateMux.RUnlock()
+	ret := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		ret = append(ret, *rule)
 	}
 	return ret
 }
@@ -97,7 +120,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
-func getResBreakers(resource string) []CircuitBreaker {
+func getBreakersOfResource(resource string) []CircuitBreaker {
 	ret := make([]CircuitBreaker, 0)
 	updateMux.RLock()
 	resCBs := breakers[resource]

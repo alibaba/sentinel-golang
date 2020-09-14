@@ -12,7 +12,7 @@ func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if ctx == nil || ctx.Resource == nil || ctx.Resource.FlowType() != base.Inbound {
 		return nil
 	}
-	rules := GetRules()
+	rules := getRules()
 	result := ctx.RuleCheckResult
 	for _, rule := range rules {
 		passed, snapshotValue := s.doCheckRule(rule)

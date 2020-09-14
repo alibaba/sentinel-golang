@@ -68,14 +68,34 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
-// GetRules returns existing rules of the given resource.
-func GetRules(res string) []*Rule {
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for hotspot module if user changes the rule.
+// GetRules need to compete hotspot module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRules if possible
+func GetRules() []Rule {
 	tcMux.RLock()
-	defer tcMux.RUnlock()
+	rules := rulesFrom(tcMap)
+	tcMux.RUnlock()
+
+	ret := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		ret = append(ret, *rule)
+	}
+	return ret
+}
+
+// GetRulesOfResource returns specific resource's rules based on copy.
+// It doesn't take effect for hotspot module if user changes the rule.
+// GetRulesOfResource need to compete hotspot module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRulesOfResource frequently if possible
+func GetRulesOfResource(res string) []Rule {
+	tcMux.RLock()
 	resTcs := tcMap[res]
-	ret := make([]*Rule, 0, len(resTcs))
+	tcMux.RUnlock()
+
+	ret := make([]Rule, 0, len(resTcs))
 	for _, tc := range resTcs {
-		ret = append(ret, tc.BoundRule())
+		ret = append(ret, *tc.BoundRule())
 	}
 	return ret
 }

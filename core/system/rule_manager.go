@@ -16,8 +16,28 @@ var (
 	ruleMapMux = new(sync.RWMutex)
 )
 
-// GetRules return all the rules
-func GetRules() []*Rule {
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for system module if user changes the rule.
+// GetRules need to compete system module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRules if possible
+func GetRules() []Rule {
+	rules := make([]*Rule, 0, len(ruleMap))
+	ruleMapMux.RLock()
+	for _, rs := range ruleMap {
+		rules = append(rules, rs...)
+	}
+	ruleMapMux.RUnlock()
+
+	ret := make([]Rule, 0, len(rules))
+	for _, r := range rules {
+		ret = append(ret, *r)
+	}
+	return ret
+}
+
+// getRules returns all the rules。Any changes of rules take effect for system module
+// getRules is an internal interface.
+func getRules() []*Rule {
 	ruleMapMux.RLock()
 	defer ruleMapMux.RUnlock()
 
