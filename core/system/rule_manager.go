@@ -21,16 +21,18 @@ var (
 // GetRules need to compete system module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRules if possible
 func GetRules() []Rule {
+	rules := make([]*Rule, 0, len(ruleMap))
 	ruleMapMux.RLock()
-	defer ruleMapMux.RUnlock()
-
-	rules := make([]Rule, 0, len(ruleMap))
 	for _, rs := range ruleMap {
-		for _, r := range rs {
-			rules = append(rules, *r)
-		}
+		rules = append(rules, rs...)
 	}
-	return rules
+	ruleMapMux.RUnlock()
+
+	ret := make([]Rule, 0, len(rules))
+	for _, r := range rules {
+		ret = append(ret, *r)
+	}
+	return ret
 }
 
 // getRules returns all the rules。Any changes of rules take effect for system module
