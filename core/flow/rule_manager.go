@@ -116,9 +116,9 @@ func getRules() []*Rule {
 	return rulesFrom(tcMap)
 }
 
-// getResRules returns specific resource's rules。Any changes of rules take effect for flow module
-// getResRules is an internal interface.
-func getResRules(res string) []*Rule {
+// getRulesOfResource returns specific resource's rules。Any changes of rules take effect for flow module
+// getRulesOfResource is an internal interface.
+func getRulesOfResource(res string) []*Rule {
 	tcMux.RLock()
 	defer tcMux.RUnlock()
 
@@ -144,10 +144,10 @@ func GetRules() []Rule {
 	return ret
 }
 
-// GetResRules returns specific resource's rules based on copy.
+// GetRulesOfResource returns specific resource's rules based on copy.
 // It doesn't take effect for flow module if user changes the rule.
-func GetResRules(res string) []Rule {
-	rules := getResRules(res)
+func GetRulesOfResource(res string) []Rule {
+	rules := getRulesOfResource(res)
 	ret := make([]Rule, 0, len(rules))
 	for _, rule := range rules {
 		ret = append(ret, *rule)
