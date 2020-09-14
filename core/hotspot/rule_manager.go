@@ -84,11 +84,11 @@ func GetRules() []Rule {
 	return ret
 }
 
-// GetResRules returns specific resource's rules based on copy.
+// GetRulesOfResource returns specific resource's rules based on copy.
 // It doesn't take effect for hotspot module if user changes the rule.
-// GetResRules need to compete hotspot module's global lock and the high performance losses of copy,
-// 		reduce or do not call GetResRules frequently if possible
-func GetResRules(res string) []Rule {
+// GetRulesOfResource need to compete hotspot module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRulesOfResource frequently if possible
+func GetRulesOfResource(res string) []Rule {
 	tcMux.RLock()
 	resTcs := tcMap[res]
 	tcMux.RUnlock()

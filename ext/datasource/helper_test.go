@@ -310,7 +310,7 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 	err := CircuitBreakerRulesUpdater([]*cb.Rule{r1, r2, r3})
 	assert.True(t, err == nil)
 
-	rules := cb.GetResRules("abc")
+	rules := cb.GetRulesOfResource("abc")
 	assert.True(t, reflect.DeepEqual(rules[0], *r1))
 	assert.True(t, reflect.DeepEqual(rules[1], *r2))
 	assert.True(t, reflect.DeepEqual(rules[2], *r3))
@@ -439,7 +439,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 	err := HotSpotParamRulesUpdater([]*hotspot.Rule{r1, r2, r3, r4})
 	assert.True(t, err == nil)
 
-	rules := hotspot.GetResRules("abc")
+	rules := hotspot.GetRulesOfResource("abc")
 	assert.True(t, reflect.DeepEqual(rules[0], *r1))
 	assert.True(t, reflect.DeepEqual(rules[1], *r2))
 	assert.True(t, reflect.DeepEqual(rules[2], *r3))
