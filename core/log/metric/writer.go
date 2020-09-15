@@ -281,9 +281,10 @@ func NewDefaultMetricLogWriterOfApp(maxSize uint64, maxFileAmount uint32, appNam
 		return nil, errors.New("invalid maxSize or maxFileAmount")
 	}
 	_, offset := time.Now().Zone()
-	logDir := config.GetDefaultLogDir()
-	if len(config.LogBaseDir()) > 0 {
-		logDir = config.LogBaseDir()
+
+	logDir := config.LogBaseDir()
+	if len(logDir) == 0 {
+		logDir = config.GetDefaultLogDir()
 	}
 	baseDir := util.AddPathSeparatorIfAbsent(logDir)
 	baseFilename := FormMetricFileName(appName, config.LogUsePid())
