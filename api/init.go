@@ -9,6 +9,10 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 )
 
+// Initialization func initialize the Sentinel's runtime environment, including:
+// 		1. override global config, from manually config or yaml file or env variable
+//		2. override global logger
+// 		3. initiate core component async task, including: metric log, system statistic...
 // InitDefault initializes Sentinel using the configuration from system
 // environment and the default value.
 func InitDefault() error {
@@ -47,11 +51,16 @@ func InitWithConfigFile(configPath string) error {
 // initCoreComponents init core components with default config
 // it's better SetDefaultConfig before initCoreComponents
 func initCoreComponents() error {
-	if err := metric.InitTask(); err != nil {
-		return err
+	if config.MetricLogFlushIntervalSec() > 0 {
+		if err := metric.InitTask(); err != nil {
+			return err
+		}
 	}
 
-	system.InitCollector(config.SystemStatCollectIntervalMs())
+	if config.SystemStatCollectIntervalMs() > 0 {
+		system.InitCollector(config.SystemStatCollectIntervalMs())
+	}
+
 	if config.UseCacheTime() {
 		util.StartTimeTicker()
 	}

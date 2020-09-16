@@ -20,7 +20,7 @@ const (
 )
 
 const (
-	DefaultNamespace = "default"
+	defaultNamespace = "sentinel-go"
 	// RecordLogFileName represents the default file name of the record log.
 	RecordLogFileName = "sentinel-record.log"
 	DefaultDirName    = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
@@ -28,7 +28,7 @@ const (
 
 var (
 	globalLogLevel = InfoLevel
-	globalLogger   = NewConsoleLogger(DefaultNamespace)
+	globalLogger   = NewConsoleLogger(defaultNamespace)
 )
 
 func GetGlobalLoggerLevel() Level {
@@ -64,7 +64,7 @@ func NewSimpleFileLogger(filepath, namespace string, flag int) (Logger, error) {
 	return &DefaultLogger{
 		log:       log.New(logFile, "", flag),
 		namespace: namespace,
-	}, err
+	}, nil
 }
 
 type Logger interface {

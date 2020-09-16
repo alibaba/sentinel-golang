@@ -51,6 +51,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 		return err
 	}
 
+	defer logging.Infof("effective global config: %+v", *globalCfg)
 	// Configured Logger is the highest priority
 	if configLogger := Logger(); configLogger != nil {
 		err = logging.ResetGlobalLogger(configLogger)
@@ -59,8 +60,12 @@ func OverrideConfigFromEnvAndInitLog() error {
 		}
 		return nil
 	}
-	err = initializeLogConfig(LogBaseDir(), LogUsePid())
-	if err != nil {
+
+	logDir := LogBaseDir()
+	if len(logDir) == 0 {
+		logDir = GetDefaultLogDir()
+	}
+	if err := initializeLogConfig(logDir, LogUsePid()); err != nil {
 		return err
 	}
 	logging.Infof("App name resolved: %s", AppName())
