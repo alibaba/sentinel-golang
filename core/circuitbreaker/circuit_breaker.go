@@ -151,7 +151,7 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen(ctx *base.EntryContext) bool {
 
 		entry := ctx.Entry()
 		if entry == nil {
-			logging.Errorf("nil entry when probing, rule: %+v", b.rule)
+			logging.Error("nil entry when probing", "rule", b.rule)
 		} else {
 			// add hook for entry exit
 			// if the current circuit breaker performs the probe through this entry, but the entry was blocked,
@@ -342,7 +342,7 @@ func (s *slowRequestLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime uin
 func (s *slowRequestLeapArray) currentCounter() *slowRequestCounter {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logging.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", util.CurrentTimeMillis(), err)
+		logging.Error("Failed to get current bucket", "err", err)
 		return nil
 	}
 	if curBucket == nil {
@@ -522,7 +522,7 @@ func (s *errorCounterLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime ui
 func (s *errorCounterLeapArray) currentCounter() *errorCounter {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logging.Errorf("Failed to get current bucket, current ts=%d, err: %+v.", util.CurrentTimeMillis(), err)
+		logging.Error("Failed to get current bucket", "err", err)
 		return nil
 	}
 	if curBucket == nil {

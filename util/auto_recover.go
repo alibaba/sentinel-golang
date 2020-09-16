@@ -8,7 +8,7 @@ import (
 func RunWithRecover(f func()) {
 	defer func() {
 		if err := recover(); err != nil {
-			logging.Panicf("Unexpected panic: %+v", errors.Errorf("%+v", err))
+			logging.Error("Unexpected panic", "err", errors.Errorf("%+v", err))
 		}
 	}()
 	f()

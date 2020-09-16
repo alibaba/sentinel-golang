@@ -149,7 +149,7 @@ func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 		case KindInt:
 			realVal, err := strconv.Atoi(item.ValStr)
 			if err != nil {
-				logging.Errorf("Failed to parse value for int specific item. paramKind: %+v, value: %s, err: %+v", item.ValKind, item.ValStr, err)
+				logging.Error("Failed to parse value for int specific item", "itemValKind", item.ValKind, "itemValStr", item.ValStr, "err", err)
 				continue
 			}
 			ret[realVal] = item.Threshold
@@ -160,7 +160,7 @@ func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 		case KindBool:
 			realVal, err := strconv.ParseBool(item.ValStr)
 			if err != nil {
-				logging.Errorf("Failed to parse value for bool specific item. value: %s, err: %+v", item.ValStr, err)
+				logging.Error("Failed to parse value for bool specific item", "itemValStr", item.ValStr, "err", err)
 				continue
 			}
 			ret[realVal] = item.Threshold
@@ -168,17 +168,17 @@ func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 		case KindFloat64:
 			realVal, err := strconv.ParseFloat(item.ValStr, 64)
 			if err != nil {
-				logging.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
+				logging.Error("Failed to parse value for float specific item", "itemValStr", item.ValStr, "err", err)
 				continue
 			}
 			realVal, err = strconv.ParseFloat(fmt.Sprintf("%.5f", realVal), 64)
 			if err != nil {
-				logging.Errorf("Failed to parse value for float specific item. value: %s, err: %+v", item.ValStr, err)
+				logging.Error("Failed to parse value for float specific item", "itemValStr", item.ValStr, "err", err)
 				continue
 			}
 			ret[realVal] = item.Threshold
 		default:
-			logging.Errorf("Unsupported kind for specific item: %d", item.ValKind)
+			logging.Error("Unsupported kind for specific item", "itemValKind", item.ValKind)
 		}
 	}
 	return ret

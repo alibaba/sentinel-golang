@@ -1,10 +1,14 @@
 package logging
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"runtime"
+	"strings"
+	"time"
 )
 
 // Level represents the level of logging.
@@ -16,19 +20,18 @@ const (
 	WarnLevel
 	ErrorLevel
 	FatalLevel
-	PanicLevel
 )
 
 const (
-	defaultNamespace = "sentinel-go"
 	// RecordLogFileName represents the default file name of the record log.
 	RecordLogFileName = "sentinel-record.log"
 	DefaultDirName    = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
 )
 
 var (
-	globalLogLevel = InfoLevel
-	globalLogger   = NewConsoleLogger(defaultNamespace)
+	globalLogLevel    = InfoLevel
+	globalCallerDepth = 4
+	globalLogger      = NewConsoleLogger()
 )
 
 func GetGlobalLoggerLevel() Level {
@@ -48,185 +51,149 @@ func ResetGlobalLogger(log Logger) error {
 	return nil
 }
 
-func NewConsoleLogger(namespace string) Logger {
+func NewConsoleLogger() Logger {
 	return &DefaultLogger{
-		log:       log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
-		namespace: namespace,
+		log: log.New(os.Stdout, "", 0),
 	}
 }
 
 // outputFile is the full path(absolute path)
-func NewSimpleFileLogger(filepath, namespace string, flag int) (Logger, error) {
+func NewSimpleFileLogger(filepath string) (Logger, error) {
 	logFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 	if err != nil {
 		return nil, err
 	}
 	return &DefaultLogger{
-		log:       log.New(logFile, "", flag),
-		namespace: namespace,
+		log: log.New(logFile, "", 0),
 	}, nil
 }
 
 type Logger interface {
-	Debug(v ...interface{})
-	Debugf(format string, v ...interface{})
+	Debug(msg string, keysAndValues ...interface{})
 
-	Info(v ...interface{})
-	Infof(format string, v ...interface{})
+	// Info logs a non-error message with the given key/value pairs as context.
+	//
+	// The msg argument should be used to add some constant description to
+	// the log line.  The key/value pairs can then be used to add additional
+	// variable information.  The key/value pairs should alternate string
+	// keys and arbitrary values.
+	Info(msg string, keysAndValues ...interface{})
 
-	Warn(v ...interface{})
-	Warnf(format string, v ...interface{})
+	Warn(msg string, keysAndValues ...interface{})
 
-	Error(v ...interface{})
-	Errorf(format string, v ...interface{})
+	Error(msg string, keysAndValues ...interface{})
 
-	Fatal(v ...interface{})
-	Fatalf(format string, v ...interface{})
-
-	Panic(v ...interface{})
-	Panicf(format string, v ...interface{})
+	Fatal(msg string, keysAndValues ...interface{})
 }
 
 // sentinel general logger
 type DefaultLogger struct {
 	// entity to log
 	log *log.Logger
-	// namespace
-	namespace string
 }
 
-func merge(namespace, logLevel, msg string) string {
-	return fmt.Sprintf("[%s] [%s] %s", namespace, logLevel, msg)
-}
-
-func (l *DefaultLogger) Debug(v ...interface{}) {
-	if DebugLevel < globalLogLevel || len(v) == 0 {
-		return
+func handleKV(k, v interface{}) (string, string) {
+	if kStr, isStr := k.(string); !isStr {
+		return fmt.Sprintf("%+v", k), fmt.Sprintf("%+v", v)
+	} else {
+		return kStr, fmt.Sprintf("%+v", v)
 	}
-	l.log.Print(merge(l.namespace, "DEBUG", fmt.Sprint(v...)))
 }
 
-func (l *DefaultLogger) Debugf(format string, v ...interface{}) {
+func caller(depth int) (file string, line int) {
+	_, file, line, ok := runtime.Caller(depth)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	return
+}
+
+func AssembleMsg(depth int, logLevel, msg string, keysAndValues ...interface{}) string {
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("%s    ", time.Now().Format("2006-01-02T15:04:05.000")))
+	file, line := caller(depth)
+	sb.WriteString(fmt.Sprintf("%s:%d    %s    %s    ", file, line, logLevel, msg))
+
+	if len(keysAndValues) == 0 {
+		return sb.String()
+	}
+	// length of kvs is odd
+	if len(keysAndValues)&1 != 0 {
+		sb.WriteString(fmt.Sprintf("%+v", keysAndValues))
+		return sb.String()
+	}
+
+	// length of kvs is even
+	kvsMap := make(map[string]string, 0)
+	for i := 0; i < len(keysAndValues); {
+		k := keysAndValues[i]
+		v := keysAndValues[i+1]
+		kStr, vStr := handleKV(k, v)
+		kvsMap[kStr] = vStr
+		i = i + 2
+	}
+	msgs, err := json.Marshal(kvsMap)
+	if err != nil {
+		sb.WriteString(fmt.Sprintf("%+v", keysAndValues))
+		return sb.String()
+	}
+	sb.Write(msgs)
+	return sb.String()
+}
+
+func (l *DefaultLogger) Debug(msg string, keysAndValues ...interface{}) {
 	if DebugLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(merge(l.namespace, "DEBUG", fmt.Sprintf(format, v...)))
+	l.log.Print(AssembleMsg(globalCallerDepth, "DEBUG", msg, keysAndValues...))
 }
 
-func (l *DefaultLogger) Info(v ...interface{}) {
+func (l *DefaultLogger) Info(msg string, keysAndValues ...interface{}) {
 	if InfoLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(merge(l.namespace, "INFO", fmt.Sprint(v...)))
+	l.log.Print(AssembleMsg(globalCallerDepth, "INFO", msg, keysAndValues...))
 }
 
-func (l *DefaultLogger) Infof(format string, v ...interface{}) {
-	if InfoLevel < globalLogLevel {
-		return
-	}
-	l.log.Print(merge(l.namespace, "INFO", fmt.Sprintf(format, v...)))
-}
-
-func (l *DefaultLogger) Warn(v ...interface{}) {
+func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
 	if WarnLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(merge(l.namespace, "WARNING", fmt.Sprint(v...)))
+
+	l.log.Print(AssembleMsg(globalCallerDepth, "WARNING", msg, keysAndValues...))
 }
 
-func (l *DefaultLogger) Warnf(format string, v ...interface{}) {
-	if WarnLevel < globalLogLevel {
-		return
-	}
-	l.log.Print(merge(l.namespace, "WARNING", fmt.Sprintf(format, v...)))
-}
-
-func (l *DefaultLogger) Error(v ...interface{}) {
+func (l *DefaultLogger) Error(msg string, keysAndValues ...interface{}) {
 	if ErrorLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(merge(l.namespace, "ERROR", fmt.Sprint(v...)))
+	l.log.Print(AssembleMsg(globalCallerDepth, "ERROR", msg, keysAndValues...))
 }
 
-func (l *DefaultLogger) Errorf(format string, v ...interface{}) {
-	if ErrorLevel < globalLogLevel {
-		return
-	}
-	l.log.Print(merge(l.namespace, "ERROR", fmt.Sprintf(format, v...)))
-}
-
-func (l *DefaultLogger) Fatal(v ...interface{}) {
+func (l *DefaultLogger) Fatal(msg string, keysAndValues ...interface{}) {
 	if FatalLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(merge(l.namespace, "FATAL", fmt.Sprint(v...)))
+	l.log.Print(AssembleMsg(globalCallerDepth, "FATAL", msg, keysAndValues...))
 }
 
-func (l *DefaultLogger) Fatalf(format string, v ...interface{}) {
-	if FatalLevel < globalLogLevel {
-		return
-	}
-	l.log.Print(merge(l.namespace, "FATAL", fmt.Sprintf(format, v...)))
+func Debug(msg string, keysAndValues ...interface{}) {
+	globalLogger.Debug(msg, keysAndValues...)
 }
 
-func (l *DefaultLogger) Panic(v ...interface{}) {
-	if PanicLevel < globalLogLevel {
-		return
-	}
-	l.log.Print(merge(l.namespace, "PANIC", fmt.Sprint(v...)))
+func Info(msg string, keysAndValues ...interface{}) {
+	globalLogger.Info(msg, keysAndValues...)
 }
 
-func (l *DefaultLogger) Panicf(format string, v ...interface{}) {
-	if PanicLevel < globalLogLevel {
-		return
-	}
-	l.log.Print(merge(l.namespace, "PANIC", fmt.Sprintf(format, v...)))
+func Warn(msg string, keysAndValues ...interface{}) {
+	globalLogger.Warn(msg, keysAndValues...)
 }
 
-func Debug(v ...interface{}) {
-	globalLogger.Debug(v...)
+func Error(msg string, keysAndValues ...interface{}) {
+	globalLogger.Error(msg, keysAndValues...)
 }
 
-func Debugf(format string, v ...interface{}) {
-	globalLogger.Debugf(format, v...)
-}
-
-func Info(v ...interface{}) {
-	globalLogger.Info(v...)
-}
-
-func Infof(format string, v ...interface{}) {
-	globalLogger.Infof(format, v...)
-}
-
-func Warn(v ...interface{}) {
-	globalLogger.Warn(v...)
-}
-
-func Warnf(format string, v ...interface{}) {
-	globalLogger.Warnf(format, v...)
-}
-
-func Error(v ...interface{}) {
-	globalLogger.Error(v...)
-}
-
-func Errorf(format string, v ...interface{}) {
-	globalLogger.Errorf(format, v...)
-}
-
-func Fatal(v ...interface{}) {
-	globalLogger.Fatal(v...)
-}
-
-func Fatalf(format string, v ...interface{}) {
-	globalLogger.Fatalf(format, v...)
-}
-
-func Panic(v ...interface{}) {
-	globalLogger.Panic(v...)
-}
-
-func Panicf(format string, v ...interface{}) {
-	globalLogger.Panicf(format, v...)
+func Fatal(msg string, keysAndValues ...interface{}) {
+	globalLogger.Fatal(msg, keysAndValues...)
 }

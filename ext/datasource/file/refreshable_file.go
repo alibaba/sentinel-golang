@@ -51,7 +51,7 @@ func (s *RefreshableFileDataSource) Initialize() error {
 
 	err := s.doReadAndUpdate()
 	if err != nil {
-		logging.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
+		logging.Error("Fail to execute doReadAndUpdate", "err", err)
 	}
 
 	w, err := fsnotify.NewWatcher()
@@ -72,19 +72,19 @@ func (s *RefreshableFileDataSource) Initialize() error {
 				if ev.Op&fsnotify.Write == fsnotify.Write {
 					err := s.doReadAndUpdate()
 					if err != nil {
-						logging.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
+						logging.Error("Fail to execute doReadAndUpdate", "err", err)
 					}
 				}
 
 				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
-					logging.Warnf("The file source [%s] was removed or renamed.", s.sourceFilePath)
+					logging.Warn("The file source was removed or renamed.", "sourceFilePath", s.sourceFilePath)
 					updateErr := s.Handle(nil)
 					if updateErr != nil {
-						logging.Errorf("Fail to update nil property, err: %+v", updateErr)
+						logging.Error("Fail to update nil property", "err", updateErr)
 					}
 				}
 			case err := <-s.watcher.Errors:
-				logging.Errorf("Watch err on file[%s], err: %+v", s.sourceFilePath, err)
+				logging.Error("Watch err on file", "sourceFilePath", s.sourceFilePath, "err", err)
 			case <-s.closeChan:
 				return
 			}
@@ -104,6 +104,6 @@ func (s *RefreshableFileDataSource) doReadAndUpdate() (err error) {
 
 func (s *RefreshableFileDataSource) Close() error {
 	s.closeChan <- struct{}{}
-	logging.Infof("The RefreshableFileDataSource for [%s] had been closed.", s.sourceFilePath)
+	logging.Info("The RefreshableFileDataSource for file had been closed.", "sourceFilePath", s.sourceFilePath)
 	return nil
 }

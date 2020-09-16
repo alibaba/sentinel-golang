@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"reflect"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -77,7 +78,7 @@ func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*BucketWrap
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Fail to cast data Value(%+v) to MetricBucket type", mb)
+			logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		ret += counter.Get(event)
@@ -124,7 +125,7 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
+			logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.Get(event)
@@ -150,7 +151,7 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
+			logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.MinRt()
@@ -209,7 +210,7 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 		}
 		mb, ok := mi.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast to MetricBucket type, bucket startTime: %d", w.BucketStart)
+			logging.Error("Fail to do type assert, expect: MetricBucket", "bucketStartTime", w.BucketStart, "type", reflect.TypeOf(mb).Name())
 			return nil
 		}
 		item.PassQps += uint64(mb.Get(base.MetricEventPass))
@@ -234,7 +235,7 @@ func (m *SlidingWindowMetric) metricItemFromBucket(w *BucketWrap) *base.MetricIt
 	}
 	mb, ok := mi.(*MetricBucket)
 	if !ok {
-		logging.Errorf("Fail to cast data Value to MetricBucket type, bucket startTime: %d", w.BucketStart)
+		logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 		return nil
 	}
 	completeQps := mb.Get(base.MetricEventComplete)

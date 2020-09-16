@@ -76,7 +76,7 @@ func (e *SentinelEntry) Exit(exitOps ...ExitOption) {
 	e.exitCtl.Do(func() {
 		defer func() {
 			if err := recover(); err != nil {
-				logging.Panicf("Sentinel internal panic in entry exit func, err: %+v", err)
+				logging.Error("Sentinel internal panic in entry exit func", "err", err)
 			}
 			if e.sc != nil {
 				e.sc.RefurbishContext(ctx)
@@ -84,7 +84,7 @@ func (e *SentinelEntry) Exit(exitOps ...ExitOption) {
 		}()
 		for _, handler := range e.exitHandlers {
 			if err := handler(e, ctx); err != nil {
-				logging.Errorf("Fail to execute exitHandler for resource: %s, err: %+v", e.Resource().Name(), err)
+				logging.Error("Fail to execute exitHandler", "resource", e.Resource().Name(), "err", err)
 			}
 		}
 		if e.sc != nil {
