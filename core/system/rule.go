@@ -57,8 +57,7 @@ func (t AdaptiveStrategy) String() string {
 }
 
 type Rule struct {
-	ID uint64 `json:"id,omitempty"`
-
+	ID           string           `json:"id,omitempty"`
 	MetricType   MetricType       `json:"metricType"`
 	TriggerCount float64          `json:"triggerCount"`
 	Strategy     AdaptiveStrategy `json:"strategy"`

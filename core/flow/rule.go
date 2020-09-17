@@ -86,7 +86,7 @@ func (s ControlBehavior) String() string {
 // Rule describes the strategy of flow control.
 type Rule struct {
 	// ID represents the unique ID of the rule (optional).
-	ID uint64 `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// Resource represents the resource name.
 	Resource               string                 `json:"resource"`
