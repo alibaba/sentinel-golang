@@ -25,7 +25,6 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	resource := "test-customized-tc"
 	_, err = LoadRules([]*Rule{
 		{
-			ID:                     10,
 			Count:                  20,
 			MetricType:             QPS,
 			Resource:               resource,
@@ -51,8 +50,8 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 }
 
 func TestIsValidFlowRule(t *testing.T) {
-	badRule1 := &Rule{ID: 1, Count: 1, MetricType: QPS, Resource: ""}
-	badRule2 := &Rule{ID: 1, Count: -1.9, MetricType: QPS, Resource: "test"}
+	badRule1 := &Rule{Count: 1, MetricType: QPS, Resource: ""}
+	badRule2 := &Rule{Count: -1.9, MetricType: QPS, Resource: "test"}
 	badRule3 := &Rule{Count: 5, MetricType: QPS, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject}
 	goodRule1 := &Rule{Count: 10, MetricType: QPS, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10}
 
@@ -68,7 +67,6 @@ func TestGetRules(t *testing.T) {
 			t.Fatal(err)
 		}
 		r1 := &Rule{
-			ID:                     0,
 			Resource:               "abc1",
 			MetricType:             0,
 			Count:                  0,
@@ -80,7 +78,6 @@ func TestGetRules(t *testing.T) {
 			MaxQueueingTimeMs:      0,
 		}
 		r2 := &Rule{
-			ID:                     1,
 			Resource:               "abc2",
 			MetricType:             0,
 			Count:                  0,
@@ -114,7 +111,6 @@ func TestGetRules(t *testing.T) {
 
 	t.Run("getRules", func(t *testing.T) {
 		r1 := &Rule{
-			ID:                     0,
 			Resource:               "abc1",
 			MetricType:             0,
 			Count:                  0,
@@ -126,7 +122,6 @@ func TestGetRules(t *testing.T) {
 			MaxQueueingTimeMs:      0,
 		}
 		r2 := &Rule{
-			ID:                     1,
 			Resource:               "abc2",
 			MetricType:             0,
 			Count:                  0,

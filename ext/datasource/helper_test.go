@@ -96,7 +96,6 @@ func TestFlowRulesUpdater(t *testing.T) {
 		flow.ClearRules()
 		flow.LoadRules([]*flow.Rule{
 			{
-				ID:                     0,
 				Resource:               "abc",
 				MetricType:             0,
 				Count:                  0,
@@ -129,7 +128,6 @@ func TestFlowRulesUpdater(t *testing.T) {
 		flow.ClearRules()
 		p := make([]flow.Rule, 0)
 		fw := flow.Rule{
-			ID:                     0,
 			Resource:               "aaaa",
 			MetricType:             0,
 			Count:                  0,
@@ -198,7 +196,6 @@ func TestSystemRulesUpdater(t *testing.T) {
 		system.ClearRules()
 		system.LoadRules([]*system.Rule{
 			{
-				ID:           0,
 				MetricType:   0,
 				TriggerCount: 0,
 				Strategy:     0,
@@ -226,7 +223,6 @@ func TestSystemRulesUpdater(t *testing.T) {
 		system.ClearRules()
 		p := make([]system.Rule, 0)
 		sr := system.Rule{
-			ID:           0,
 			MetricType:   0,
 			TriggerCount: 0,
 			Strategy:     0,
