@@ -343,7 +343,7 @@ func (s *slowRequestLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime uin
 func (s *slowRequestLeapArray) currentCounter() *slowRequestCounter {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket", "err", err)
+		logging.Error(err, "failed to get current bucket")
 		return nil
 	}
 	if curBucket == nil {

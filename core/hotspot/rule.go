@@ -179,7 +179,7 @@ func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 			}
 			ret[realVal] = item.Threshold
 		default:
-			logging.Error(errors.New("Unsupported kind for specific item"), "itemValKind", item.ValKind)
+			logging.Error(errors.New("Unsupported kind for specific item"), "", item.ValKind)
 		}
 	}
 	return ret

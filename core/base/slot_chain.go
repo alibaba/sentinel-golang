@@ -186,7 +186,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 
 func (sc *SlotChain) exit(ctx *EntryContext) {
 	if ctx == nil || ctx.Entry() == nil {
-		logging.Error(errors.New("nil EntryContext or SentinelEntry"), "nil ctx or nil associated entry")
+		logging.Error(errors.New("nil EntryContext or SentinelEntry"), "")
 		return
 	}
 	// The OnCompleted is called only when entry passed
