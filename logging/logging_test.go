@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,6 +24,14 @@ func TestNewSimpleFileLogger(t *testing.T) {
 
 	time.Sleep(time.Second * 1)
 	_ = os.Remove(fileName)
+}
+
+func throwError() error {
+	return errors.New("test error with caller stack")
+}
+
+func Test_caller_path(t *testing.T) {
+	Error(throwError(), "test error", "k1", "v1")
 }
 
 func Test_caller(t *testing.T) {

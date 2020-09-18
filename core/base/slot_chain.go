@@ -130,7 +130,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	// If happened, need to add TokenResult in EntryContext
 	defer func() {
 		if err := recover(); err != nil {
-			logging.Error("Sentinel internal panic in SlotChain", "err", err)
+			logging.Error(errors.Errorf("%+v", err), "Sentinel internal panic in SlotChain")
 			ctx.SetError(errors.Errorf("%+v", err))
 			return
 		}
@@ -186,7 +186,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 
 func (sc *SlotChain) exit(ctx *EntryContext) {
 	if ctx == nil || ctx.Entry() == nil {
-		logging.Error("nil ctx or nil associated entry")
+		logging.Error(errors.New("nil EntryContext or SentinelEntry"), "nil ctx or nil associated entry")
 		return
 	}
 	// The OnCompleted is called only when entry passed

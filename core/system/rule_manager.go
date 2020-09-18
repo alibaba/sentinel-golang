@@ -53,7 +53,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 	m := buildRuleMap(rules)
 
 	if err := onRuleUpdate(m); err != nil {
-		logging.Error("Fail to load rules", "rules", rules, "err", err)
+		logging.Error(err, "Fail to load rules", "rules", rules)
 		return false, err
 	}
 

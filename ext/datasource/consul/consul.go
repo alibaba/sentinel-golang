@@ -83,7 +83,7 @@ func (c *consulDataSource) Initialize() error {
 	}
 	if err := c.doReadAndUpdate(); err != nil {
 		// Failed to read default should't block initialization
-		logging.Error("[Consul] Failed to read initial data for key", "propertyKey", c.propertyKey, "err", err)
+		logging.Error(err, "[Consul] Failed to read initial data for key", "propertyKey", c.propertyKey)
 	}
 
 	go util.RunWithRecover(c.watch)
@@ -108,7 +108,7 @@ func (c *consulDataSource) watch() {
 				continue
 			}
 
-			logging.Error("[Consul] Failed to update data", "propertyKey", c.propertyKey, "err", err)
+			logging.Error(err, "[Consul] Failed to update data", "propertyKey", c.propertyKey)
 		}
 	}
 }

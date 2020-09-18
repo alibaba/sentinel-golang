@@ -81,7 +81,7 @@ func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error)
 			logging.Info("receive listened property", "namespace", namespace, "group", group, "dataId", dataId, "data", data)
 			err := s.doUpdate([]byte(data))
 			if err != nil {
-				logging.Error("fail to update data source", "err", err)
+				logging.Error(err, "fail to update data source")
 			}
 		},
 	}

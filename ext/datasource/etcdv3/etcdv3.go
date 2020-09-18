@@ -42,7 +42,7 @@ func NewDatasource(client *clientv3.Client, key string, handlers ...datasource.P
 func (s *Etcdv3DataSource) Initialize() error {
 	err := s.doReadAndUpdate()
 	if err != nil {
-		logging.Error("Fail to update data for key when execute Initialize function", "propertyKey", s.propertyKey, "err", err)
+		logging.Error(err, "Fail to update data for key when execute Initialize function", "propertyKey", s.propertyKey)
 	}
 	go util.RunWithRecover(s.watch)
 	return nil
@@ -81,7 +81,7 @@ func (s *Etcdv3DataSource) processWatchResponse(resp *clientv3.WatchResponse) {
 	}
 
 	if err := resp.Err(); err != nil {
-		logging.Error("Watch on etcd endpoints occur error", "endpointd", s.client.Endpoints(), "err", err)
+		logging.Error(err, "Watch on etcd endpoints occur error", "endpointd", s.client.Endpoints())
 		return
 	}
 
@@ -89,13 +89,13 @@ func (s *Etcdv3DataSource) processWatchResponse(resp *clientv3.WatchResponse) {
 		if ev.Type == mvccpb.PUT {
 			err := s.doReadAndUpdate()
 			if err != nil {
-				logging.Error("Fail to execute doReadAndUpdate for PUT event", "err", err)
+				logging.Error(err, "Fail to execute doReadAndUpdate for PUT event")
 			}
 		}
 		if ev.Type == mvccpb.DELETE {
 			updateErr := s.Handle(nil)
 			if updateErr != nil {
-				logging.Error("Fail to execute doReadAndUpdate for DELETE event", "err", updateErr)
+				logging.Error(updateErr, "Fail to execute doReadAndUpdate for DELETE event")
 			}
 		}
 	}

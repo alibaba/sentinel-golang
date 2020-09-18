@@ -19,7 +19,6 @@ const (
 	InfoLevel
 	WarnLevel
 	ErrorLevel
-	FatalLevel
 )
 
 const (
@@ -81,23 +80,12 @@ type Logger interface {
 
 	Warn(msg string, keysAndValues ...interface{})
 
-	Error(msg string, keysAndValues ...interface{})
-
-	Fatal(msg string, keysAndValues ...interface{})
+	Error(err error, msg string, keysAndValues ...interface{})
 }
 
 // sentinel general logger
 type DefaultLogger struct {
-	// entity to log
 	log *log.Logger
-}
-
-func handleKV(k, v interface{}) (string, string) {
-	if kStr, isStr := k.(string); !isStr {
-		return fmt.Sprintf("%+v", k), fmt.Sprintf("%+v", v)
-	} else {
-		return kStr, fmt.Sprintf("%+v", v)
-	}
 }
 
 func caller(depth int) (file string, line int) {
@@ -109,36 +97,50 @@ func caller(depth int) (file string, line int) {
 	return
 }
 
-func AssembleMsg(depth int, logLevel, msg string, keysAndValues ...interface{}) string {
-	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("%s    ", time.Now().Format("2006-01-02T15:04:05.000")))
+func assembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...interface{}) string {
+	type logEntity struct {
+		Timestamp string                 `json:"timestamp"`
+		Caller    string                 `json:"caller"`
+		LogLevel  string                 `json:"logLevel"`
+		Msg       string                 `json:"msg"`
+		Params    map[string]interface{} `json:"params"`
+	}
 	file, line := caller(depth)
-	sb.WriteString(fmt.Sprintf("%s:%d    %s    %s    ", file, line, logLevel, msg))
-
-	if len(keysAndValues) == 0 {
-		return sb.String()
+	timeStr := time.Now().Format("2006-01-02 15:04:05.520")
+	caller := fmt.Sprintf("%s:%d", file, line)
+	logE := &logEntity{
+		Timestamp: timeStr,
+		Caller:    caller,
+		LogLevel:  logLevel,
+		Msg:       msg,
+		Params:    make(map[string]interface{}),
 	}
-	// length of kvs is odd
+
 	if len(keysAndValues)&1 != 0 {
-		sb.WriteString(fmt.Sprintf("%+v", keysAndValues))
-		return sb.String()
+		logE.Params["params"] = fmt.Sprintf("%+v", keysAndValues)
+	} else if len(keysAndValues) != 0 {
+		for i := 0; i < len(keysAndValues); {
+			k := keysAndValues[i]
+			v := keysAndValues[i+1]
+			kStr, kIsStr := k.(string)
+			if !kIsStr {
+				logE.Params[fmt.Sprintf("%+v", k)] = v
+			} else {
+				logE.Params[kStr] = v
+			}
+			i = i + 2
+		}
 	}
-
-	// length of kvs is even
-	kvsMap := make(map[string]string, 0)
-	for i := 0; i < len(keysAndValues); {
-		k := keysAndValues[i]
-		v := keysAndValues[i+1]
-		kStr, vStr := handleKV(k, v)
-		kvsMap[kStr] = vStr
-		i = i + 2
+	msgs, e := json.Marshal(logE)
+	if e != nil {
+		return fmt.Sprintf("%s %s %s %s %+v %+v", timeStr, caller, logLevel, msg, e, keysAndValues)
 	}
-	msgs, err := json.Marshal(kvsMap)
-	if err != nil {
-		sb.WriteString(fmt.Sprintf("%+v", keysAndValues))
-		return sb.String()
-	}
+	sb := strings.Builder{}
 	sb.Write(msgs)
+	if err != nil {
+		sb.WriteString("\n")
+		sb.WriteString(fmt.Sprintf("%+v", err))
+	}
 	return sb.String()
 }
 
@@ -146,14 +148,14 @@ func (l *DefaultLogger) Debug(msg string, keysAndValues ...interface{}) {
 	if DebugLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(AssembleMsg(globalCallerDepth, "DEBUG", msg, keysAndValues...))
+	l.log.Print(assembleMsg(globalCallerDepth, "DEBUG", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Info(msg string, keysAndValues ...interface{}) {
 	if InfoLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(AssembleMsg(globalCallerDepth, "INFO", msg, keysAndValues...))
+	l.log.Print(assembleMsg(globalCallerDepth, "INFO", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
@@ -161,21 +163,14 @@ func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
 		return
 	}
 
-	l.log.Print(AssembleMsg(globalCallerDepth, "WARNING", msg, keysAndValues...))
+	l.log.Print(assembleMsg(globalCallerDepth, "WARNING", msg, nil, keysAndValues...))
 }
 
-func (l *DefaultLogger) Error(msg string, keysAndValues ...interface{}) {
+func (l *DefaultLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	if ErrorLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(AssembleMsg(globalCallerDepth, "ERROR", msg, keysAndValues...))
-}
-
-func (l *DefaultLogger) Fatal(msg string, keysAndValues ...interface{}) {
-	if FatalLevel < globalLogLevel {
-		return
-	}
-	l.log.Print(AssembleMsg(globalCallerDepth, "FATAL", msg, keysAndValues...))
+	l.log.Print(assembleMsg(globalCallerDepth, "ERROR", msg, err, keysAndValues...))
 }
 
 func Debug(msg string, keysAndValues ...interface{}) {
@@ -190,10 +185,6 @@ func Warn(msg string, keysAndValues ...interface{}) {
 	globalLogger.Warn(msg, keysAndValues...)
 }
 
-func Error(msg string, keysAndValues ...interface{}) {
-	globalLogger.Error(msg, keysAndValues...)
-}
-
-func Fatal(msg string, keysAndValues ...interface{}) {
-	globalLogger.Fatal(msg, keysAndValues...)
+func Error(err error, msg string, keysAndValues ...interface{}) {
+	globalLogger.Error(err, msg, keysAndValues...)
 }

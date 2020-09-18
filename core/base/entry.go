@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/pkg/errors"
 )
 
 type ExitHandler func(entry *SentinelEntry, ctx *EntryContext) error
@@ -76,7 +77,7 @@ func (e *SentinelEntry) Exit(exitOps ...ExitOption) {
 	e.exitCtl.Do(func() {
 		defer func() {
 			if err := recover(); err != nil {
-				logging.Error("Sentinel internal panic in entry exit func", "err", err)
+				logging.Error(errors.Errorf("%+v", err), "Sentinel internal panic in entry exit func")
 			}
 			if e.sc != nil {
 				e.sc.RefurbishContext(ctx)
@@ -84,7 +85,7 @@ func (e *SentinelEntry) Exit(exitOps ...ExitOption) {
 		}()
 		for _, handler := range e.exitHandlers {
 			if err := handler(e, ctx); err != nil {
-				logging.Error("Fail to execute exitHandler", "resource", e.Resource().Name(), "err", err)
+				logging.Error(err, "Fail to execute exitHandler", "resource", e.Resource().Name())
 			}
 		}
 		if e.sc != nil {

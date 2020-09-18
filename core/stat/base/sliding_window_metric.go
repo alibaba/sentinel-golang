@@ -8,6 +8,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 // SlidingWindowMetric represents the sliding window metric wrapper.
@@ -73,12 +74,12 @@ func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*BucketWrap
 	for _, ww := range values {
 		mb := ww.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when summing count")
+			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when summing count")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		ret += counter.Get(event)
@@ -120,12 +121,12 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when GetMaxOfSingleBucket")
+			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when GetMaxOfSingleBucket")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.Get(event)
@@ -146,12 +147,12 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when calculating minRT")
+			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when calculating minRT")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.MinRt()
@@ -205,12 +206,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 	for _, w := range ws {
 		mi := w.Value.Load()
 		if mi == nil {
-			logging.Error("Get nil bucket when generating MetricItem from buckets")
+			logging.Error(errors.New("nil BucketWrap"), "Get nil bucket when generating MetricItem from buckets")
 			return nil
 		}
 		mb, ok := mi.(*MetricBucket)
 		if !ok {
-			logging.Error("Fail to do type assert, expect: MetricBucket", "bucketStartTime", w.BucketStart, "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "bucketStartTime", w.BucketStart, "type", reflect.TypeOf(mb).Name())
 			return nil
 		}
 		item.PassQps += uint64(mb.Get(base.MetricEventPass))
@@ -230,12 +231,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 func (m *SlidingWindowMetric) metricItemFromBucket(w *BucketWrap) *base.MetricItem {
 	mi := w.Value.Load()
 	if mi == nil {
-		logging.Error("Get nil bucket when generating MetricItem from buckets")
+		logging.Error(errors.New("nil BucketWrap"), "Get nil bucket when generating MetricItem from buckets")
 		return nil
 	}
 	mb, ok := mi.(*MetricBucket)
 	if !ok {
-		logging.Error("Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+		logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 		return nil
 	}
 	completeQps := mb.Get(base.MetricEventComplete)

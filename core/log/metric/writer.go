@@ -170,14 +170,14 @@ func (d *DefaultMetricLogWriter) removeDeprecatedFiles() error {
 		idxFilename := formMetricIdxFileName(filename)
 		err = os.Remove(filename)
 		if err != nil {
-			logging.Error("[MetricWriter] Failed to remove metric log file", "filename", filename, "err", err)
+			logging.Error(err, "[MetricWriter] Failed to remove metric log file", "filename", filename)
 		} else {
 			logging.Info("[MetricWriter] Metric log file removed", "filename", filename)
 		}
 
 		err = os.Remove(idxFilename)
 		if err != nil {
-			logging.Error("[MetricWriter] Failed to remove metric log file", "idxFilename", idxFilename, "err", err)
+			logging.Error(err, "[MetricWriter] Failed to remove metric log file", "idxFilename", idxFilename)
 		} else {
 			logging.Info("[MetricWriter] Metric index file removed", "idxFilename", idxFilename)
 		}
@@ -217,12 +217,12 @@ func (d *DefaultMetricLogWriter) closeCurAndNewFile(filename string) error {
 
 	if d.curMetricFile != nil {
 		if err = d.curMetricFile.Close(); err != nil {
-			logging.Error("[MetricWriter] Failed to close metric log file", "curMetricFile", d.curMetricFile.Name(), "err", err)
+			logging.Error(err, "[MetricWriter] Failed to close metric log file", "curMetricFile", d.curMetricFile.Name())
 		}
 	}
 	if d.curMetricIdxFile != nil {
 		if err = d.curMetricIdxFile.Close(); err != nil {
-			logging.Error("[MetricWriter] Failed to close metric index file", "curMetricIdxFile", d.curMetricIdxFile.Name(), "err", err)
+			logging.Error(err, "[MetricWriter] Failed to close metric index file", "curMetricIdxFile", d.curMetricIdxFile.Name())
 		}
 	}
 	// Create new metric log file, whether it exists or not.
