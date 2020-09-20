@@ -3,7 +3,6 @@ package cache
 import (
 	"container/list"
 
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
@@ -193,12 +192,10 @@ func (c *LRU) removeOldest() {
 func (c *LRU) removeElement(e *list.Element) {
 	c.evictList.Remove(e)
 	if e.Value == nil {
-		logging.Errorf("The Value of evictList's Element is nil.")
 		return
 	}
 	kv, ok := e.Value.(*entry)
 	if !ok {
-		logging.Errorf("Fail to assert the Value of evictList's Element as *entry.")
 		return
 	}
 	delete(c.items, kv.key)

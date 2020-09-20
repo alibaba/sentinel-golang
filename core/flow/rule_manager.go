@@ -67,7 +67,7 @@ func logRuleUpdate(m TrafficControllerMap) {
 		if len(m) == 0 {
 			logging.Info("[FlowRuleManager] Flow rules were cleared")
 		} else {
-			logging.Infof("[FlowRuleManager] Flow rules were loaded: %s", bs)
+			logging.Info("[FlowRuleManager] Flow rules were loaded", "rules", string(bs))
 		}
 	}
 }
@@ -92,7 +92,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debugf("Updating flow rule spends %d ns.", util.CurrentTimeNano()-start)
+		logging.Debug("time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
@@ -235,7 +235,7 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warnf("Ignoring invalid flow rule: %v, reason: %s", rule, err.Error())
+			logging.Warn("Ignoring invalid flow rule", "rule", rule, "err", err)
 			continue
 		}
 		generator, supported := tcGenFuncMap[trafficControllerGenKey{
@@ -243,12 +243,12 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 			controlBehavior:        rule.ControlBehavior,
 		}]
 		if !supported {
-			logging.Warnf("Ignoring the rule due to unsupported control behavior: %v", rule)
+			logging.Warn("Ignoring the rule due to unsupported control behavior", "rule", rule)
 			continue
 		}
 		tsc := generator(rule)
 		if tsc == nil {
-			logging.Warnf("Ignoring the rule due to bad generated traffic controller: %v", rule)
+			logging.Warn("Ignoring the rule due to bad generated traffic controller.", "rule", rule)
 			continue
 		}
 

@@ -23,11 +23,11 @@ func matchArg(tc TrafficShapingController, args []interface{}) interface{} {
 		idx = len(args) + idx
 	}
 	if idx < 0 {
-		logging.Debugf("The param index in tc(%+v) is invalid for args(%+v)", tc, args)
+		logging.Debug("The param index of hotspot traffic shaping controller is invalid", "args", args, "paramIndex", tc.BoundParamIndex())
 		return nil
 	}
 	if idx >= len(args) {
-		logging.Debugf("The argument doesn't exist for index(%d) of tc(%+v), args: %+v", idx, tc, args)
+		logging.Debug("The argument in index doesn't exist", "args", args, "paramIndex", tc.BoundParamIndex())
 		return nil
 	}
 	arg := args[idx]

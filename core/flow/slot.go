@@ -22,7 +22,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	// Check rules in order
 	for _, tc := range tcs {
 		if tc == nil {
-			logging.Warnf("nil traffic controller found, res: %s", res)
+			logging.Warn("nil traffic controller found", "resourceName", res)
 			continue
 		}
 		r := canPassCheck(tc, ctx.StatNode, ctx.Input.AcquireCount)

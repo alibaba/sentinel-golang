@@ -37,7 +37,7 @@ func InitTask() (err error) {
 
 		metricWriter, err = NewDefaultMetricLogWriter(config.MetricLogSingleFileMaxSize(), config.MetricLogMaxFileAmount())
 		if err != nil {
-			logging.Errorf("Failed to initialize the MetricLogWriter: %+v", err)
+			logging.Error(err, "Failed to initialize the MetricLogWriter")
 			return
 		}
 
@@ -76,7 +76,7 @@ func writeTaskLoop() {
 			for _, t := range keys {
 				err := metricWriter.Write(t, m[t])
 				if err != nil {
-					logging.Errorf("[MetricAggregatorTask] Write metric error: %+v", err)
+					logging.Error(err, "[MetricAggregatorTask] fail tp write metric")
 				}
 			}
 		}
