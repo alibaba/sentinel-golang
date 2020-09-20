@@ -7,6 +7,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 )
 
@@ -83,7 +84,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	m := buildFlowMap(rules)
+	m := buildRulesMap(rules)
 
 	start := util.CurrentTimeNano()
 	tcMux.Lock()
@@ -105,6 +106,44 @@ func LoadRules(rules []*Rule) (bool, error) {
 	// TODO: rethink the design
 	err := onRuleUpdate(rules)
 	return true, err
+}
+
+// LoadRulesOfResource replaces all the rules of resource level
+// First returned value indicates whether replaces
+// Second returned value indicates the errors when loads rules
+func LoadRulesOfResource(res string, rulesOfRes []*Rule) (bool, error) {
+	var loadErr error
+	validResRules := make([]*Rule, 0, len(rulesOfRes))
+	for _, r := range rulesOfRes {
+		if err := IsValidRule(r); err != nil {
+			loadErr = multierror.Append(loadErr, err)
+			logging.Error(err, "invalid rule.", "rule", r)
+			continue
+		}
+		if r.Resource != res {
+			loadErr = multierror.Append(loadErr, errors.Errorf("resource name unmatched, expect: %s, actual: %s", res, r.Resource))
+			logging.Error(errors.Errorf("resource name unmatched, expect: %s, actual: %s", res, r.Resource), "unmatched rule.", "rule", r)
+			continue
+		}
+		validResRules = append(validResRules, r)
+	}
+
+	resTcs := buildRulesOfRes(res, validResRules)
+	loadedRulesMap := make(TrafficControllerMap)
+	loadedRulesMap[res] = resTcs
+	start := util.CurrentTimeNano()
+	tcMux.Lock()
+	defer func() {
+		tcMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+		logging.Debug("time statistic(ns) for loading resource's flow rules", "timeCost", util.CurrentTimeNano()-start)
+		logRuleUpdate(loadedRulesMap)
+	}()
+	tcMap[res] = resTcs
+	return true, loadErr
+
 }
 
 // getRules returns all the rules。Any changes of rules take effect for flow module
@@ -227,22 +266,45 @@ func getTrafficControllerListFor(name string) []*TrafficShapingController {
 }
 
 // NotThreadSafe (should be guarded by the lock)
-func buildFlowMap(rules []*Rule) TrafficControllerMap {
+func buildRulesMap(rules []*Rule) TrafficControllerMap {
 	m := make(TrafficControllerMap)
 	if len(rules) == 0 {
 		return m
 	}
 
+	resRulesMap := make(map[string][]*Rule)
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
 			logging.Warn("Ignoring invalid flow rule", "rule", rule, "err", err)
+			continue
+		}
+		resRules, exist := resRulesMap[rule.Resource]
+		if !exist {
+			resRules = make([]*Rule, 0, 1)
+		}
+		resRules = append(resRules, rule)
+		resRulesMap[rule.Resource] = resRules
+	}
+
+	for res, rulesOfRes := range resRulesMap {
+		m[res] = buildRulesOfRes(res, rulesOfRes)
+	}
+	return m
+}
+
+// buildRulesOfRes builds TrafficShapingController slice from rules. the resource of rules must be equals to res
+func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController {
+	resTcs := make([]*TrafficShapingController, 0, len(rulesOfRes))
+	for _, rule := range rulesOfRes {
+		if res != rule.Resource {
+			logging.Error(errors.Errorf("unmatched resource name, expect: %s, actual: %s", res, rule.Resource), "FlowManager: unmatched resource name ", "rule", rule)
 			continue
 		}
 		generator, supported := tcGenFuncMap[trafficControllerGenKey{
 			tokenCalculateStrategy: rule.TokenCalculateStrategy,
 			controlBehavior:        rule.ControlBehavior,
 		}]
-		if !supported {
+		if !supported || generator == nil {
 			logging.Warn("Ignoring the rule due to unsupported control behavior", "rule", rule)
 			continue
 		}
@@ -251,15 +313,9 @@ func buildFlowMap(rules []*Rule) TrafficControllerMap {
 			logging.Warn("Ignoring the rule due to bad generated traffic controller.", "rule", rule)
 			continue
 		}
-
-		rulesOfRes, exists := m[rule.Resource]
-		if !exists {
-			m[rule.Resource] = []*TrafficShapingController{tsc}
-		} else {
-			m[rule.Resource] = append(rulesOfRes, tsc)
-		}
+		resTcs = append(resTcs, tsc)
 	}
-	return m
+	return resTcs
 }
 
 // IsValidRule checks whether the given Rule is valid.

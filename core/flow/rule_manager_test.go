@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/logging"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -150,5 +152,71 @@ func TestGetRules(t *testing.T) {
 		if err := ClearRules(); err != nil {
 			t.Fatal(err)
 		}
+	})
+}
+
+func TestLoadRules(t *testing.T) {
+	t.Run("Test_LoadRules_buildRulesOfRes", func(t *testing.T) {
+		res := "abc1"
+		r1 := &Rule{
+			Resource:               res,
+			MetricType:             QPS,
+			Count:                  100,
+			RelationStrategy:       CurrentResource,
+			TokenCalculateStrategy: Direct,
+			ControlBehavior:        Reject,
+			RefResource:            "",
+			WarmUpPeriodSec:        0,
+			MaxQueueingTimeMs:      0,
+		}
+		r2 := &Rule{
+			Resource:               res,
+			MetricType:             Concurrency,
+			Count:                  20,
+			RelationStrategy:       CurrentResource,
+			TokenCalculateStrategy: Direct,
+			ControlBehavior:        Reject,
+			RefResource:            "",
+			WarmUpPeriodSec:        0,
+			MaxQueueingTimeMs:      0,
+		}
+		resTcs := buildRulesOfRes(res, []*Rule{r1, r2})
+		assert.True(t, len(resTcs) == 2)
+		assert.True(t, reflect.DeepEqual(resTcs[0].rule, r1))
+		assert.True(t, reflect.DeepEqual(resTcs[1].rule, r2))
+	})
+
+	t.Run("Test_LoadRulesOfResource", func(t *testing.T) {
+		logging.SetGlobalLoggerLevel(logging.DebugLevel)
+		res := "abc1"
+		r1 := &Rule{
+			Resource:               res,
+			MetricType:             QPS,
+			Count:                  100,
+			RelationStrategy:       CurrentResource,
+			TokenCalculateStrategy: Direct,
+			ControlBehavior:        Reject,
+			RefResource:            "",
+			WarmUpPeriodSec:        0,
+			MaxQueueingTimeMs:      0,
+		}
+		r2 := &Rule{
+			Resource:               res,
+			MetricType:             Concurrency,
+			Count:                  20,
+			RelationStrategy:       CurrentResource,
+			TokenCalculateStrategy: Direct,
+			ControlBehavior:        Reject,
+			RefResource:            "",
+			WarmUpPeriodSec:        0,
+			MaxQueueingTimeMs:      0,
+		}
+		updated, err := LoadRulesOfResource(res, []*Rule{r1, r2})
+		assert.True(t, updated && err == nil)
+		assert.True(t, len(tcMap[res]) == 2)
+		assert.True(t, reflect.DeepEqual(tcMap[res][0].rule, r1))
+		assert.True(t, reflect.DeepEqual(tcMap[res][1].rule, r2))
+		assert.True(t, ClearRules() == nil)
+		logging.SetGlobalLoggerLevel(logging.InfoLevel)
 	})
 }
