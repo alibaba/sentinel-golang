@@ -23,7 +23,7 @@ func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
 	err := ctx.Err()
 	rt := ctx.Rt()
-	for _, cb := range getResBreakers(res) {
+	for _, cb := range getBreakersOfResource(res) {
 		cb.OnRequestComplete(rt, err)
 	}
 }

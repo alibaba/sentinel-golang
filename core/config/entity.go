@@ -1,6 +1,9 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
@@ -30,7 +33,7 @@ type SentinelConfig struct {
 
 // LogConfig represent the configuration of logging in Sentinel.
 type LogConfig struct {
-	// logger indicates that using logger to replace default logging.
+	// Logger indicates that using logger to replace default logging.
 	Logger logging.Logger
 	// Dir represents the log directory path.
 	Dir string
@@ -114,10 +117,15 @@ func checkConfValid(conf *SentinelConfig) error {
 	if mc.SingleFileMaxSize <= 0 {
 		return errors.New("Illegal metric log globalCfg: singleFileMaxSize <= 0")
 	}
-	if conf.Stat.System.CollectIntervalMs == 0 {
-		return errors.New("Bad system stat globalCfg: collectIntervalMs = 0")
-	}
 	return nil
+}
+
+func (entity *Entity) String() string {
+	e, err := json.Marshal(entity)
+	if err != nil {
+		return fmt.Sprintf("%+v", *entity)
+	}
+	return string(e)
 }
 
 func (entity *Entity) AppName() string {

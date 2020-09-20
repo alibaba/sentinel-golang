@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// For testing
-	if err := logging.ResetGlobalLogger(logging.NewConsoleLogger("nacos-datasource-example")); err != nil {
+	if err := logging.ResetGlobalLogger(logging.NewConsoleLogger()); err != nil {
 		fmt.Println(err)
 		return
 	}

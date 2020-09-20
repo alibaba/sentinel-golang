@@ -34,7 +34,9 @@ func Test_tcGenFuncMap(t *testing.T) {
 		tc := generator(r1, nil)
 		assert.True(t, tc.BoundMetric() != nil && tc.BoundRule() == r1 && tc.BoundParamIndex() == 0)
 		rejectTC := tc.(*rejectTrafficShapingController)
-		assert.True(t, rejectTC != nil)
+		if rejectTC == nil {
+			t.Fatal("nil traffic shaping controller")
+		}
 		assert.True(t, rejectTC.res == r1.Resource && rejectTC.metricType == r1.MetricType && rejectTC.paramIndex == r1.ParamIndex && rejectTC.burstCount == r1.BurstCount)
 		assert.True(t, rejectTC.threshold == r1.Threshold && rejectTC.durationInSec == r1.DurationInSec)
 	})
@@ -75,7 +77,9 @@ func Test_tcGenFuncMap(t *testing.T) {
 		tc := generator(r1, metric)
 		assert.True(t, tc.BoundMetric() != nil && tc.BoundRule() == r1 && tc.BoundParamIndex() == 0)
 		rejectTC := tc.(*rejectTrafficShapingController)
-		assert.True(t, rejectTC != nil)
+		if rejectTC == nil {
+			t.Fatal("nil traffic shaping controller")
+		}
 		assert.True(t, rejectTC.metric == metric)
 		assert.True(t, rejectTC.res == r1.Resource && rejectTC.metricType == r1.MetricType && rejectTC.paramIndex == r1.ParamIndex && rejectTC.burstCount == r1.BurstCount)
 		assert.True(t, rejectTC.threshold == r1.Threshold && rejectTC.durationInSec == r1.DurationInSec)

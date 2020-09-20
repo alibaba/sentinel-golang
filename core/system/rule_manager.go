@@ -16,8 +16,28 @@ var (
 	ruleMapMux = new(sync.RWMutex)
 )
 
-// GetRules return all the rules
-func GetRules() []*Rule {
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for system module if user changes the rule.
+// GetRules need to compete system module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRules if possible
+func GetRules() []Rule {
+	rules := make([]*Rule, 0, len(ruleMap))
+	ruleMapMux.RLock()
+	for _, rs := range ruleMap {
+		rules = append(rules, rs...)
+	}
+	ruleMapMux.RUnlock()
+
+	ret := make([]Rule, 0, len(rules))
+	for _, r := range rules {
+		ret = append(ret, *r)
+	}
+	return ret
+}
+
+// getRules returns all the rules。Any changes of rules take effect for system module
+// getRules is an internal interface.
+func getRules() []*Rule {
 	ruleMapMux.RLock()
 	defer ruleMapMux.RUnlock()
 
@@ -33,7 +53,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 	m := buildRuleMap(rules)
 
 	if err := onRuleUpdate(m); err != nil {
-		logging.Errorf("Fail to load rules %+v, err: %+v", rules, err)
+		logging.Error(err, "Fail to load rules", "rules", rules)
 		return false, err
 	}
 
@@ -51,9 +71,9 @@ func onRuleUpdate(r RuleMap) error {
 	ruleMapMux.Lock()
 	defer func() {
 		ruleMapMux.Unlock()
-		logging.Debugf("Updating system rule spends %d ns.", util.CurrentTimeNano()-start)
+		logging.Debug("time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
 		if len(r) > 0 {
-			logging.Infof("[SystemRuleManager] System rules loaded: %v", r)
+			logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
 		} else {
 			logging.Info("[SystemRuleManager] System rules were cleared")
 		}
@@ -71,7 +91,7 @@ func buildRuleMap(rules []*Rule) RuleMap {
 
 	for _, rule := range rules {
 		if err := IsValidSystemRule(rule); err != nil {
-			logging.Warnf("Ignoring invalid system rule: %v, reason: %s", rule, err.Error())
+			logging.Warn("Ignoring invalid system rule", "rule", rule, "err", err)
 			continue
 		}
 		rulesOfRes, exists := m[rule.MetricType]

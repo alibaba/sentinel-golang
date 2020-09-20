@@ -50,14 +50,15 @@ func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *b
 }
 
 func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
-	var size = 0
+	size := 0
 	if r.ParamsMaxCapacity > 0 {
 		size = int(r.ParamsMaxCapacity)
 	} else {
 		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
 	}
 	if size <= 0 {
-		logging.Warnf("The size of cache is not more than 0, ParamsMaxCapacity: %d, ParamsCapacityBase: %d", ParamsMaxCapacity, ParamsCapacityBase)
+		logging.Warn("invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
+			"ParamsMaxCapacity", ParamsMaxCapacity, "ParamsCapacityBase", ParamsCapacityBase)
 		size = ParamsMaxCapacity
 	}
 	metric := &ParamsMetric{

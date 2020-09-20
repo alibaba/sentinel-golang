@@ -155,7 +155,7 @@ func (la *LeapArray) CurrentBucket(bg BucketGenerator) (*BucketWrap, error) {
 }
 
 func (la *LeapArray) currentBucketOfTime(now uint64, bg BucketGenerator) (*BucketWrap, error) {
-	if now < 0 {
+	if now <= 0 {
 		return nil, errors.New("Current time is less than 0.")
 	}
 

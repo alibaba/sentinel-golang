@@ -19,7 +19,11 @@ import (
 func TestFlowRulesJsonConverter(t *testing.T) {
 	// Prepare test data
 	f, err := os.Open("../../tests/testdata/extension/helper/FlowRule.json")
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
 	}
@@ -47,41 +51,41 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		flowRules := got.([]*flow.Rule)
 		assert.True(t, len(flowRules) == 3)
 		r1 := &flow.Rule{
-			Resource:          "abc",
-			LimitOrigin:       "default",
-			MetricType:        flow.Concurrency,
-			Count:             100,
-			RelationStrategy:  flow.Direct,
-			ControlBehavior:   flow.Reject,
-			RefResource:       "refDefault",
-			WarmUpPeriodSec:   10,
-			MaxQueueingTimeMs: 1000,
+			Resource:               "abc",
+			MetricType:             flow.Concurrency,
+			Count:                  100,
+			RelationStrategy:       flow.CurrentResource,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			RefResource:            "refDefault",
+			WarmUpPeriodSec:        10,
+			MaxQueueingTimeMs:      1000,
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[0], r1))
 
 		r2 := &flow.Rule{
-			Resource:          "abc",
-			LimitOrigin:       "default",
-			MetricType:        flow.QPS,
-			Count:             200,
-			RelationStrategy:  flow.AssociatedResource,
-			ControlBehavior:   flow.WarmUp,
-			RefResource:       "refDefault",
-			WarmUpPeriodSec:   20,
-			MaxQueueingTimeMs: 2000,
+			Resource:               "abc",
+			MetricType:             flow.QPS,
+			Count:                  200,
+			RelationStrategy:       flow.AssociatedResource,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Throttling,
+			RefResource:            "refDefault",
+			WarmUpPeriodSec:        20,
+			MaxQueueingTimeMs:      2000,
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[1], r2))
 
 		r3 := &flow.Rule{
-			Resource:          "abc",
-			LimitOrigin:       "default",
-			MetricType:        flow.QPS,
-			Count:             300,
-			RelationStrategy:  flow.Direct,
-			ControlBehavior:   flow.WarmUp,
-			RefResource:       "refDefault",
-			WarmUpPeriodSec:   30,
-			MaxQueueingTimeMs: 3000,
+			Resource:               "abc",
+			MetricType:             flow.QPS,
+			Count:                  300,
+			RelationStrategy:       flow.CurrentResource,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Throttling,
+			RefResource:            "refDefault",
+			WarmUpPeriodSec:        30,
+			MaxQueueingTimeMs:      3000,
 		}
 		assert.True(t, reflect.DeepEqual(flowRules[2], r3))
 	})
@@ -92,16 +96,15 @@ func TestFlowRulesUpdater(t *testing.T) {
 		flow.ClearRules()
 		flow.LoadRules([]*flow.Rule{
 			{
-				ID:                0,
-				Resource:          "abc",
-				LimitOrigin:       "default",
-				MetricType:        0,
-				Count:             0,
-				RelationStrategy:  0,
-				ControlBehavior:   0,
-				RefResource:       "",
-				WarmUpPeriodSec:   0,
-				MaxQueueingTimeMs: 0,
+				Resource:               "abc",
+				MetricType:             0,
+				Count:                  0,
+				RelationStrategy:       0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
+				RefResource:            "",
+				WarmUpPeriodSec:        0,
+				MaxQueueingTimeMs:      0,
 			}})
 		assert.True(t, len(flow.GetRules()) == 1, "Fail to prepare test data.")
 		err := FlowRulesUpdater(nil)
@@ -125,16 +128,15 @@ func TestFlowRulesUpdater(t *testing.T) {
 		flow.ClearRules()
 		p := make([]flow.Rule, 0)
 		fw := flow.Rule{
-			ID:                0,
-			Resource:          "aaaa",
-			LimitOrigin:       "aaa",
-			MetricType:        0,
-			Count:             0,
-			RelationStrategy:  0,
-			ControlBehavior:   0,
-			RefResource:       "",
-			WarmUpPeriodSec:   0,
-			MaxQueueingTimeMs: 0,
+			Resource:               "aaaa",
+			MetricType:             0,
+			Count:                  0,
+			RelationStrategy:       0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			RefResource:            "",
+			WarmUpPeriodSec:        0,
+			MaxQueueingTimeMs:      0,
 		}
 		p = append(p, fw)
 		err := FlowRulesUpdater(p)
@@ -145,7 +147,11 @@ func TestFlowRulesUpdater(t *testing.T) {
 func TestSystemRulesJsonConvert(t *testing.T) {
 	// Prepare test data
 	f, err := os.Open("../../tests/testdata/extension/helper/SystemRule.json")
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	if err != nil {
 		t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
 	}
@@ -190,7 +196,6 @@ func TestSystemRulesUpdater(t *testing.T) {
 		system.ClearRules()
 		system.LoadRules([]*system.Rule{
 			{
-				ID:           0,
 				MetricType:   0,
 				TriggerCount: 0,
 				Strategy:     0,
@@ -218,7 +223,6 @@ func TestSystemRulesUpdater(t *testing.T) {
 		system.ClearRules()
 		p := make([]system.Rule, 0)
 		sr := system.Rule{
-			ID:           0,
 			MetricType:   0,
 			TriggerCount: 0,
 			Strategy:     0,
@@ -238,7 +242,11 @@ func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
 	t.Run("TestCircuitBreakerRulesJsonConverter_Succeed", func(t *testing.T) {
 		// Prepare test data
 		f, err := os.Open("../../tests/testdata/extension/helper/CircuitBreakerRule.json")
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
 		if err != nil {
 			t.Errorf("The rules file is not existed, err:%+v.", err)
 		}
@@ -310,10 +318,10 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 	err := CircuitBreakerRulesUpdater([]*cb.Rule{r1, r2, r3})
 	assert.True(t, err == nil)
 
-	rules := cb.GetResRules("abc")
-	assert.True(t, reflect.DeepEqual(rules[0], r1))
-	assert.True(t, reflect.DeepEqual(rules[1], r2))
-	assert.True(t, reflect.DeepEqual(rules[2], r3))
+	rules := cb.GetRulesOfResource("abc")
+	assert.True(t, reflect.DeepEqual(rules[0], *r1))
+	assert.True(t, reflect.DeepEqual(rules[1], *r2))
+	assert.True(t, reflect.DeepEqual(rules[2], *r3))
 }
 
 func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
@@ -326,7 +334,11 @@ func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 	t.Run("TestHotSpotParamRuleListJsonConverter_normal", func(t *testing.T) {
 		// Prepare test data
 		f, err := os.Open("../../tests/testdata/extension/helper/HotSpotParamFlowRule.json")
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
 		if err != nil {
 			t.Errorf("The rules file is not existed, err:%+v.", err)
 		}
@@ -439,9 +451,9 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 	err := HotSpotParamRulesUpdater([]*hotspot.Rule{r1, r2, r3, r4})
 	assert.True(t, err == nil)
 
-	rules := hotspot.GetRules("abc")
-	assert.True(t, rules[0].Equals(r1))
-	assert.True(t, rules[1].Equals(r2))
-	assert.True(t, rules[2].Equals(r3))
-	assert.True(t, rules[3].Equals(r4))
+	rules := hotspot.GetRulesOfResource("abc")
+	assert.True(t, reflect.DeepEqual(rules[0], *r1))
+	assert.True(t, reflect.DeepEqual(rules[1], *r2))
+	assert.True(t, reflect.DeepEqual(rules[2], *r3))
+	assert.True(t, reflect.DeepEqual(rules[3], *r4))
 }
