@@ -25,7 +25,7 @@ type WarmUpTrafficShapingCalculator struct {
 func NewWarmUpTrafficShapingCalculator(rule *Rule) *WarmUpTrafficShapingCalculator {
 	if rule.WarmUpColdFactor <= 1 {
 		rule.WarmUpColdFactor = config.DefaultWarmUpColdFactor
-		logging.Warnf("[NewWarmUpTrafficShapingCalculator] invalid WarmUpColdFactor,use default values: %d", config.DefaultWarmUpColdFactor)
+		logging.Warn("[NewWarmUpTrafficShapingCalculator] No set WarmUpColdFactor,use default warm up cold factor value", "defaultWarmUpColdFactor", config.DefaultWarmUpColdFactor)
 	}
 
 	warningToken := uint64((float64(rule.WarmUpPeriodSec) * rule.Count) / float64(rule.WarmUpColdFactor-1))

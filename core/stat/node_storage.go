@@ -54,7 +54,7 @@ func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *R
 	}
 
 	if len(resNodeMap) >= int(base.DefaultMaxResourceAmount) {
-		logging.Warnf("Resource amount exceeds the threshold: %d.", base.DefaultMaxResourceAmount)
+		logging.Warn("Resource amount exceeds the threshold", "maxResourceAmount", base.DefaultMaxResourceAmount)
 	}
 	node = NewResourceNode(resource, resourceType)
 	resNodeMap[resource] = node

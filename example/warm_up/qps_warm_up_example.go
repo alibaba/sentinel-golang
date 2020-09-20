@@ -26,7 +26,7 @@ func main() {
 	counter := Counter{pass: new(int64), block: new(int64), total: new(int64)}
 	// We should initialize Sentinel first.
 	err := sentinel.InitDefault()
-	logging.ResetGlobalLogger(logging.NewConsoleLogger("flow-warmup-test"))
+	logging.ResetGlobalLogger(logging.NewConsoleLogger())
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
