@@ -94,49 +94,92 @@ func caller(depth int) (file string, line int) {
 		file = "???"
 		line = 0
 	}
+
+	// extract
+	if osType := runtime.GOOS; osType == "windows" {
+		file = strings.ReplaceAll(file, "\\", "/")
+	}
+	idx := strings.LastIndex(file, "/")
+	file = file[idx+1:]
 	return
 }
 
-func assembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...interface{}) string {
-	type logEntity struct {
-		Timestamp string                 `json:"timestamp"`
-		Caller    string                 `json:"caller"`
-		LogLevel  string                 `json:"logLevel"`
-		Msg       string                 `json:"msg"`
-		Params    map[string]interface{} `json:"params"`
-	}
+func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...interface{}) string {
+	sb := strings.Builder{}
 	file, line := caller(depth)
 	timeStr := time.Now().Format("2006-01-02 15:04:05.520")
 	caller := fmt.Sprintf("%s:%d", file, line)
-	logE := &logEntity{
-		Timestamp: timeStr,
-		Caller:    caller,
-		LogLevel:  logLevel,
-		Msg:       msg,
-		Params:    make(map[string]interface{}),
-	}
+	sb.WriteString("{")
 
-	if len(keysAndValues)&1 != 0 {
-		logE.Params["params"] = fmt.Sprintf("%+v", keysAndValues)
-	} else if len(keysAndValues) != 0 {
-		for i := 0; i < len(keysAndValues); {
+	sb.WriteByte('"')
+	sb.WriteString("timestamp")
+	sb.WriteByte('"')
+	sb.WriteByte(':')
+	sb.WriteByte('"')
+	sb.WriteString(timeStr)
+	sb.WriteByte('"')
+	sb.WriteByte(',')
+
+	sb.WriteByte('"')
+	sb.WriteString("caller")
+	sb.WriteByte('"')
+	sb.WriteByte(':')
+	sb.WriteByte('"')
+	sb.WriteString(caller)
+	sb.WriteByte('"')
+	sb.WriteByte(',')
+
+	sb.WriteByte('"')
+	sb.WriteString("logLevel")
+	sb.WriteByte('"')
+	sb.WriteByte(':')
+	sb.WriteByte('"')
+	sb.WriteString(logLevel)
+	sb.WriteByte('"')
+	sb.WriteByte(',')
+
+	sb.WriteByte('"')
+	sb.WriteString("msg")
+	sb.WriteByte('"')
+	sb.WriteByte(':')
+	sb.WriteByte('"')
+	sb.WriteString(msg)
+	sb.WriteByte('"')
+
+	kvLen := len(keysAndValues)
+	if kvLen&1 != 0 {
+		sb.WriteByte(',')
+		sb.WriteByte('"')
+		sb.WriteString("kvs")
+		sb.WriteByte('"')
+		sb.WriteByte(':')
+		sb.WriteByte('"')
+		sb.WriteString(fmt.Sprintf("%+v", keysAndValues))
+		sb.WriteByte('"')
+	} else if kvLen != 0 {
+		for i := 0; i < kvLen; {
 			k := keysAndValues[i]
 			v := keysAndValues[i+1]
 			kStr, kIsStr := k.(string)
 			if !kIsStr {
-				logE.Params[fmt.Sprintf("%+v", k)] = v
+				kStr = fmt.Sprintf("%+v", k)
+			}
+			sb.WriteByte(',')
+			sb.WriteByte('"')
+			sb.WriteString(kStr)
+			sb.WriteByte('"')
+			sb.WriteByte(':')
+			if vbs, err := json.Marshal(v); err != nil {
+				sb.WriteByte('"')
+				sb.WriteString(fmt.Sprintf("%+v", v))
+				sb.WriteByte('"')
 			} else {
-				logE.Params[kStr] = v
+				sb.WriteString(string(vbs))
 			}
 			i = i + 2
 		}
 	}
-	msgs, e := json.Marshal(logE)
-	if e != nil {
-		return fmt.Sprintf("%s %s %s %s %+v %+v", timeStr, caller, logLevel, msg, e, keysAndValues)
-	}
-	sb := strings.Builder{}
-	sb.Write(msgs)
+	sb.WriteByte('}')
 	if err != nil {
 		sb.WriteString("\n")
 		sb.WriteString(fmt.Sprintf("%+v", err))
@@ -148,14 +191,14 @@ func (l *DefaultLogger) Debug(msg string, keysAndValues ...interface{}) {
 	if DebugLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(assembleMsg(globalCallerDepth, "DEBUG", msg, nil, keysAndValues...))
+	l.log.Print(AssembleMsg(globalCallerDepth, "DEBUG", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Info(msg string, keysAndValues ...interface{}) {
 	if InfoLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(assembleMsg(globalCallerDepth, "INFO", msg, nil, keysAndValues...))
+	l.log.Print(AssembleMsg(globalCallerDepth, "INFO", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
@@ -163,14 +206,14 @@ func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
 		return
 	}
 
-	l.log.Print(assembleMsg(globalCallerDepth, "WARNING", msg, nil, keysAndValues...))
+	l.log.Print(AssembleMsg(globalCallerDepth, "WARNING", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	if ErrorLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(assembleMsg(globalCallerDepth, "ERROR", msg, err, keysAndValues...))
+	l.log.Print(AssembleMsg(globalCallerDepth, "ERROR", msg, err, keysAndValues...))
 }
 
 func Debug(msg string, keysAndValues ...interface{}) {
