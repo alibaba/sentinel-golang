@@ -6,8 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
@@ -159,16 +160,6 @@ func calculateReuseIndexFor(r *Rule, oldResCbs []CircuitBreaker) (equalIdx, reus
 	return equalIdx, reuseStatIdx
 }
 
-func insertCbToCbMap(cb CircuitBreaker, res string, m map[string][]CircuitBreaker) {
-	cbsOfRes, exists := m[res]
-	if !exists {
-		cbsOfRes = make([]CircuitBreaker, 0, 1)
-		m[res] = append(cbsOfRes, cb)
-	} else {
-		m[res] = append(cbsOfRes, cb)
-	}
-}
-
 // Concurrent safe to update rules
 func onRuleUpdate(rules []*Rule) (err error) {
 	defer func() {
@@ -180,7 +171,26 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			}
 		}
 	}()
+	newBreakerRules := buildBreakerRulesMap(rules)
 
+	start := util.CurrentTimeNano()
+	updateMux.Lock()
+	defer func() {
+		updateMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+		logging.Debug("Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
+		logRuleUpdate(newBreakerRules)
+	}()
+	newBreakers := buildBreakersMap(newBreakerRules)
+
+	breakerRules = newBreakerRules
+	breakers = newBreakers
+	return nil
+}
+
+func buildBreakerRulesMap(rules []*Rule) map[string][]*Rule {
 	newBreakerRules := make(map[string][]*Rule)
 	for _, rule := range rules {
 		if rule == nil {
@@ -199,30 +209,17 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		ruleSet = append(ruleSet, rule)
 		newBreakerRules[classification] = ruleSet
 	}
+	return newBreakerRules
+}
 
+func buildBreakersMap(newBreakerRules map[string][]*Rule) map[string][]CircuitBreaker {
 	newBreakers := make(map[string][]CircuitBreaker)
-	// in order to avoid growing, build newBreakers in advance
-	for res, rules := range newBreakerRules {
-		newBreakers[res] = make([]CircuitBreaker, 0, len(rules))
-	}
-
-	start := util.CurrentTimeNano()
-	updateMux.Lock()
-	defer func() {
-		updateMux.Unlock()
-		if r := recover(); r != nil {
-			return
-		}
-		logging.Debug("Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(newBreakerRules)
-	}()
-
 	for res, resRules := range newBreakerRules {
-		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
+		newCircuitBreakerList := make([]CircuitBreaker, 0, 0)
 		for _, r := range resRules {
 			oldResCbs := breakers[res]
 			if oldResCbs == nil {
-				oldResCbs = emptyCircuitBreakerList
+				oldResCbs = newCircuitBreakerList
 			}
 			equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResCbs)
 
@@ -230,7 +227,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			if equalIdx >= 0 {
 				// reuse the old cb
 				equalOldCb := oldResCbs[equalIdx]
-				insertCbToCbMap(equalOldCb, res, newBreakers)
+				newCircuitBreakerList = append(newCircuitBreakerList, equalOldCb)
 				// remove old cb from oldResCbs
 				breakers[res] = append(oldResCbs[:equalIdx], oldResCbs[equalIdx+1:]...)
 				continue
@@ -257,13 +254,11 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			if reuseStatIdx >= 0 {
 				breakers[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
 			}
-			insertCbToCbMap(cb, res, newBreakers)
+			newCircuitBreakerList = append(newCircuitBreakerList, cb)
 		}
+		newBreakers[res] = newCircuitBreakerList
 	}
-
-	breakerRules = newBreakerRules
-	breakers = newBreakers
-	return nil
+	return newBreakers
 }
 
 func rulesFrom(rm map[string][]*Rule) []*Rule {
