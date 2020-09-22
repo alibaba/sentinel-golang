@@ -14,6 +14,7 @@ var (
 	rwMux   = &sync.RWMutex{}
 )
 
+// LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
 func LoadRules(rules []*Rule) (updated bool, err error) {
 	updated = true
 	err = nil
@@ -42,11 +43,14 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	return
 }
 
+// ClearRules clears all the rules in isolation module.
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
 }
 
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for isolation module if user changes the rule.
 func GetRules() []Rule {
 	rules := getRules()
 	ret := make([]Rule, 0, len(rules))
@@ -56,6 +60,8 @@ func GetRules() []Rule {
 	return ret
 }
 
+// GetRulesOfResource returns specific resource's rules based on copy.
+// It doesn't take effect for isolation module if user changes the rule.
 func GetRulesOfResource(res string) []Rule {
 	rules := getRulesOfResource(res)
 	ret := make([]Rule, 0, len(rules))
@@ -65,6 +71,8 @@ func GetRulesOfResource(res string) []Rule {
 	return ret
 }
 
+// getRules returns all the rules。Any changes of rules take effect for isolation module
+// getRules is an internal interface.
 func getRules() []*Rule {
 	rwMux.RLock()
 	defer rwMux.RUnlock()
@@ -72,6 +80,8 @@ func getRules() []*Rule {
 	return rulesFrom(ruleMap)
 }
 
+// getRulesOfResource returns specific resource's rules。Any changes of rules take effect for isolation module
+// getRulesOfResource is an internal interface.
 func getRulesOfResource(res string) []*Rule {
 	rwMux.RLock()
 	defer rwMux.RUnlock()
@@ -119,6 +129,7 @@ func logRuleUpdate(m map[string][]*Rule) {
 	}
 }
 
+// IsValidRule checks whether the given Rule is valid.
 func IsValid(r *Rule) error {
 	if r == nil {
 		return errors.New("nil isolation rule")
