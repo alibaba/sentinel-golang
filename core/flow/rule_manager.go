@@ -33,13 +33,13 @@ func init() {
 		tokenCalculateStrategy: Direct,
 		controlBehavior:        Reject,
 	}] = func(rule *Rule) *TrafficShapingController {
-		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Count), NewDefaultTrafficShapingChecker(rule), rule)
+		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Threshold), NewDefaultTrafficShapingChecker(rule), rule)
 	}
 	tcGenFuncMap[trafficControllerGenKey{
 		tokenCalculateStrategy: Direct,
 		controlBehavior:        Throttling,
 	}] = func(rule *Rule) *TrafficShapingController {
-		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Count), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
+		return NewTrafficShapingController(NewDirectTrafficShapingCalculator(rule.Threshold), NewThrottlingChecker(rule.MaxQueueingTimeMs), rule)
 	}
 	tcGenFuncMap[trafficControllerGenKey{
 		tokenCalculateStrategy: WarmUp,
@@ -270,11 +270,8 @@ func IsValidRule(rule *Rule) error {
 	if rule.Resource == "" {
 		return errors.New("empty resource name")
 	}
-	if rule.Count < 0 {
+	if rule.Threshold < 0 {
 		return errors.New("negative threshold")
-	}
-	if rule.MetricType < 0 {
-		return errors.New("invalid metric type")
 	}
 	if rule.RelationStrategy < 0 {
 		return errors.New("invalid relation strategy")
