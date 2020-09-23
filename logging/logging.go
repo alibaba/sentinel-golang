@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,12 +26,14 @@ const (
 	// RecordLogFileName represents the default file name of the record log.
 	RecordLogFileName = "sentinel-record.log"
 	DefaultDirName    = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
+	GlobalCallerDepth = 4
 )
 
 var (
-	globalLogLevel    = InfoLevel
-	globalCallerDepth = 4
-	globalLogger      = NewConsoleLogger()
+	globalLogLevel = InfoLevel
+	globalLogger   = NewConsoleLogger()
+
+	FrequentErrorOnce = &sync.Once{}
 )
 
 func GetGlobalLoggerLevel() Level {
@@ -169,12 +172,19 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 			sb.WriteString(kStr)
 			sb.WriteByte('"')
 			sb.WriteByte(':')
-			if vbs, err := json.Marshal(v); err != nil {
-				sb.WriteByte('"')
-				sb.WriteString(fmt.Sprintf("%+v", v))
-				sb.WriteByte('"')
+			vStr, vIsStr := v.(string)
+			if !vIsStr {
+				if vbs, err := json.Marshal(v); err != nil {
+					sb.WriteByte('"')
+					sb.WriteString(fmt.Sprintf("%+v", v))
+					sb.WriteByte('"')
+				} else {
+					sb.WriteString(string(vbs))
+				}
 			} else {
-				sb.WriteString(string(vbs))
+				sb.WriteByte('"')
+				sb.WriteString(vStr)
+				sb.WriteByte('"')
 			}
 			i = i + 2
 		}
@@ -191,14 +201,14 @@ func (l *DefaultLogger) Debug(msg string, keysAndValues ...interface{}) {
 	if DebugLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(AssembleMsg(globalCallerDepth, "DEBUG", msg, nil, keysAndValues...))
+	l.log.Print(AssembleMsg(GlobalCallerDepth, "DEBUG", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Info(msg string, keysAndValues ...interface{}) {
 	if InfoLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(AssembleMsg(globalCallerDepth, "INFO", msg, nil, keysAndValues...))
+	l.log.Print(AssembleMsg(GlobalCallerDepth, "INFO", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
@@ -206,14 +216,14 @@ func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
 		return
 	}
 
-	l.log.Print(AssembleMsg(globalCallerDepth, "WARNING", msg, nil, keysAndValues...))
+	l.log.Print(AssembleMsg(GlobalCallerDepth, "WARNING", msg, nil, keysAndValues...))
 }
 
 func (l *DefaultLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	if ErrorLevel < globalLogLevel {
 		return
 	}
-	l.log.Print(AssembleMsg(globalCallerDepth, "ERROR", msg, err, keysAndValues...))
+	l.log.Print(AssembleMsg(GlobalCallerDepth, "ERROR", msg, err, keysAndValues...))
 }
 
 func Debug(msg string, keysAndValues ...interface{}) {

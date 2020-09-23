@@ -3,7 +3,6 @@ package circuitbreaker
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -284,15 +283,13 @@ func rulesFrom(rm map[string][]*Rule) []*Rule {
 	return rules
 }
 
-func logRuleUpdate(rules map[string][]*Rule) {
-	sb := strings.Builder{}
-	sb.WriteString("Circuit breaking rules loaded: [")
-
-	for _, r := range rulesFrom(rules) {
-		sb.WriteString(r.String() + ",")
+func logRuleUpdate(m map[string][]*Rule) {
+	rs := rulesFrom(m)
+	if len(rs) == 0 {
+		logging.Info("[CircuitBreakerRuleManager] Circuit breaking rules were cleared")
+	} else {
+		logging.Info("[CircuitBreakerRuleManager] Circuit breaking rules were loaded", "rules", rs)
 	}
-	sb.WriteString("]")
-	logging.Info(sb.String())
 }
 
 // Note: this function is not thread-safe.

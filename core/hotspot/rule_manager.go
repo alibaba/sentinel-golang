@@ -2,7 +2,6 @@ package hotspot
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -197,14 +196,12 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 func logRuleUpdate(m trafficControllerMap) {
-	sb := strings.Builder{}
-	sb.WriteString("Hotspot parameter flow control rules loaded: [")
-
-	for _, r := range rulesFrom(m) {
-		sb.WriteString(r.String() + ",")
+	rs := rulesFrom(m)
+	if len(rs) == 0 {
+		logging.Info("[HotspotRuleManager] Hotspot rules were cleared")
+	} else {
+		logging.Info("[HotspotRuleManager] Hotspot rules were loaded", "rules", rs)
 	}
-	sb.WriteString("]")
-	logging.Info(sb.String())
 }
 
 func rulesFrom(m trafficControllerMap) []*Rule {
