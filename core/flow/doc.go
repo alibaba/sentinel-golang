@@ -1,6 +1,6 @@
 // Package flow implements the flow shaping control.
 //
-// flow module supports two statistic metric: QPS and Concurrency.
+// flow module is based on QPS statistic metric
 //
 // The TrafficShapingController consists of two part: TrafficShapingCalculator and TrafficShapingChecker
 //

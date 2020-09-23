@@ -1,8 +1,7 @@
 [
     {
         "resource": "abc",
-        "metricType": 0,
-        "count": 100.0,
+        "threshold": 100.0,
         "relationStrategy": 0,
         "tokenCalculateStrategy": 0,
         "controlBehavior": 0,
@@ -12,8 +11,7 @@
     },
     {
         "resource": "abc",
-        "metricType": 1,
-        "count": 200.0,
+        "threshold": 200.0,
         "relationStrategy": 1,
         "tokenCalculateStrategy": 0,
         "controlBehavior": 1,
@@ -23,8 +21,7 @@
     },
     {
         "resource": "abc",
-        "metricType": 1,
-        "count": 300.0,
+        "threshold": 300.0,
         "relationStrategy": 0,
         "tokenCalculateStrategy": 0,
         "controlBehavior": 1,

@@ -25,8 +25,7 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	resource := "test-customized-tc"
 	_, err = LoadRules([]*Rule{
 		{
-			Count:                  20,
-			MetricType:             QPS,
+			Threshold:              20,
 			Resource:               resource,
 			TokenCalculateStrategy: TokenCalculateStrategy(111),
 			ControlBehavior:        ControlBehavior(112),
@@ -50,10 +49,10 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 }
 
 func TestIsValidFlowRule(t *testing.T) {
-	badRule1 := &Rule{Count: 1, MetricType: QPS, Resource: ""}
-	badRule2 := &Rule{Count: -1.9, MetricType: QPS, Resource: "test"}
-	badRule3 := &Rule{Count: 5, MetricType: QPS, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject}
-	goodRule1 := &Rule{Count: 10, MetricType: QPS, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10}
+	badRule1 := &Rule{Threshold: 1, Resource: ""}
+	badRule2 := &Rule{Threshold: -1.9, Resource: "test"}
+	badRule3 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject}
+	goodRule1 := &Rule{Threshold: 10, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10}
 
 	assert.Error(t, IsValidRule(badRule1))
 	assert.Error(t, IsValidRule(badRule2))
@@ -68,8 +67,7 @@ func TestGetRules(t *testing.T) {
 		}
 		r1 := &Rule{
 			Resource:               "abc1",
-			MetricType:             0,
-			Count:                  0,
+			Threshold:              0,
 			RelationStrategy:       0,
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
@@ -79,8 +77,7 @@ func TestGetRules(t *testing.T) {
 		}
 		r2 := &Rule{
 			Resource:               "abc2",
-			MetricType:             0,
-			Count:                  0,
+			Threshold:              0,
 			RelationStrategy:       0,
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Throttling,
@@ -112,8 +109,7 @@ func TestGetRules(t *testing.T) {
 	t.Run("getRules", func(t *testing.T) {
 		r1 := &Rule{
 			Resource:               "abc1",
-			MetricType:             0,
-			Count:                  0,
+			Threshold:              0,
 			RelationStrategy:       0,
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
@@ -123,8 +119,7 @@ func TestGetRules(t *testing.T) {
 		}
 		r2 := &Rule{
 			Resource:               "abc2",
-			MetricType:             0,
-			Count:                  0,
+			Threshold:              0,
 			RelationStrategy:       0,
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Throttling,

@@ -5,27 +5,6 @@ import (
 	"fmt"
 )
 
-// MetricType represents the target metric type.
-type MetricType int32
-
-const (
-	// Concurrency represents concurrency count.
-	Concurrency MetricType = iota
-	// QPS represents request count per second.
-	QPS
-)
-
-func (s MetricType) String() string {
-	switch s {
-	case Concurrency:
-		return "Concurrency"
-	case QPS:
-		return "QPS"
-	default:
-		return "Undefined"
-	}
-}
-
 // RelationStrategy indicates the flow control strategy based on the relation of invocations.
 type RelationStrategy int32
 
@@ -83,17 +62,15 @@ func (s ControlBehavior) String() string {
 	}
 }
 
-// Rule describes the strategy of flow control.
+// Rule describes the strategy of flow control, the flow control strategy is based on QPS statistic metric
 type Rule struct {
 	// ID represents the unique ID of the rule (optional).
 	ID string `json:"id,omitempty"`
-
 	// Resource represents the resource name.
 	Resource               string                 `json:"resource"`
-	MetricType             MetricType             `json:"metricType"`
 	TokenCalculateStrategy TokenCalculateStrategy `json:"tokenCalculateStrategy"`
 	ControlBehavior        ControlBehavior        `json:"controlBehavior"`
-	Count                  float64                `json:"count"`
+	Threshold              float64                `json:"threshold"`
 	RelationStrategy       RelationStrategy       `json:"relationStrategy"`
 	RefResource            string                 `json:"refResource"`
 	MaxQueueingTimeMs      uint32                 `json:"maxQueueingTimeMs"`
@@ -105,9 +82,10 @@ func (r *Rule) String() string {
 	b, err := json.Marshal(r)
 	if err != nil {
 		// Return the fallback string
-		return fmt.Sprintf("Rule{Resource=%s, MetricType=%s, TokenCalculateStrategy=%s, ControlBehavior=%s, "+
-			"Count=%.2f, RelationStrategy=%s, WarmUpPeriodSec=%d, WarmUpColdFactor=%d, MaxQueueingTimeMs=%d}",
-			r.Resource, r.MetricType, r.TokenCalculateStrategy, r.ControlBehavior, r.Count, r.RelationStrategy, r.WarmUpPeriodSec, r.WarmUpColdFactor, r.MaxQueueingTimeMs)
+		return fmt.Sprintf("Rule{Resource=%s, TokenCalculateStrategy=%s, ControlBehavior=%s, "+
+			"Threshold=%.2f, RelationStrategy=%s, RefResource=%s, MaxQueueingTimeMs=%d, WarmUpPeriodSec=%d, WarmUpColdFactor=%d}",
+			r.Resource, r.TokenCalculateStrategy, r.ControlBehavior, r.Threshold, r.RelationStrategy,
+			r.RefResource, r.MaxQueueingTimeMs, r.WarmUpPeriodSec, r.WarmUpColdFactor)
 	}
 	return string(b)
 }
