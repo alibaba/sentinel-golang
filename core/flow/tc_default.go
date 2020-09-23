@@ -45,7 +45,7 @@ func (d *RejectTrafficShapingChecker) DoCheck(resStat base.StatNode, acquireCoun
 	if metricReadonlyStat == nil {
 		return nil
 	}
-	curCount := metricReadonlyStat.GetQPS(base.MetricEventPass)
+	curCount := float64(metricReadonlyStat.GetSum(base.MetricEventPass))
 	if curCount+float64(acquireCount) > threshold {
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, "", d.rule, curCount)
 	}
