@@ -1,7 +1,6 @@
 package isolation
 
 import (
-	"encoding/json"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -113,19 +112,11 @@ func rulesFrom(m map[string][]*Rule) []*Rule {
 }
 
 func logRuleUpdate(m map[string][]*Rule) {
-	bs, err := json.Marshal(rulesFrom(m))
-	if err != nil {
-		if len(m) == 0 {
-			logging.Info("[IsolationRuleManager] Isolation rules were cleared")
-		} else {
-			logging.Info("[IsolationRuleManager] Isolation rules were loaded")
-		}
+	rs := rulesFrom(m)
+	if len(rs) == 0 {
+		logging.Info("[IsolationRuleManager] Isolation rules were cleared")
 	} else {
-		if len(m) == 0 {
-			logging.Info("[IsolationRuleManager] Isolation rules were cleared")
-		} else {
-			logging.Info("[IsolationRuleManager] Isolation rules were loaded", "rules", string(bs))
-		}
+		logging.Info("[IsolationRuleManager] Isolation rules were loaded", "rules", rs)
 	}
 }
 

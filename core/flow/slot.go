@@ -60,7 +60,9 @@ func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
 func checkInLocal(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
 	actual := selectNodeByRelStrategy(tc.rule, node)
 	if actual == nil {
-		logging.Error(errors.Errorf("nil resource node"), "no resource node for flow rule", "rule", tc.rule)
+		logging.FrequentErrorOnce.Do(func() {
+			logging.Error(errors.Errorf("nil resource node"), "no resource node for flow rule", "rule", tc.rule)
+		})
 		return base.NewTokenResultPass()
 	}
 	return tc.PerformChecking(node, acquireCount, flag)

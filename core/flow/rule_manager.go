@@ -1,7 +1,6 @@
 package flow
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -56,19 +55,11 @@ func init() {
 }
 
 func logRuleUpdate(m TrafficControllerMap) {
-	bs, err := json.Marshal(rulesFrom(m))
-	if err != nil {
-		if len(m) == 0 {
-			logging.Info("[FlowRuleManager] Flow rules were cleared")
-		} else {
-			logging.Info("[FlowRuleManager] Flow rules were loaded")
-		}
+	rs := rulesFrom(m)
+	if len(rs) == 0 {
+		logging.Info("[FlowRuleManager] Flow rules were cleared")
 	} else {
-		if len(m) == 0 {
-			logging.Info("[FlowRuleManager] Flow rules were cleared")
-		} else {
-			logging.Info("[FlowRuleManager] Flow rules were loaded", "rules", string(bs))
-		}
+		logging.Info("[FlowRuleManager] Flow rules were loaded", "rules", rs)
 	}
 }
 
