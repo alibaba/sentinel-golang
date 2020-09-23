@@ -263,7 +263,7 @@ func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
 	sampleCount := uint32(0)
 	intervalInMs := intervalInSecond * 1000
 	//calculate the sample count
-	if intervalInSecond <= 10 {
+	if intervalInMs <= config.GlobalStatisticIntervalMsTotal() {
 		sampleCount = intervalInSecond
 	} else {
 		sampleCount = 1
@@ -457,7 +457,7 @@ func IsValidRule(rule *Rule) error {
 	if rule.ControlBehavior == Throttling && rule.MaxQueueingTimeMs == 0 {
 		return errors.New("invalid MaxQueueingTimeMs")
 	}
-	if rule.StatIntervalInSecond > 10*60 {
+	if rule.StatIntervalInSecond*1000 > config.GlobalStatisticIntervalMsTotal()*60 {
 		return errors.New("StatIntervalInSecond must be less than 10 minutes")
 	}
 	return nil
