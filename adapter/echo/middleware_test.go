@@ -24,12 +24,14 @@ func initSentinel(t *testing.T) {
 			Threshold:              1,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
+			StatIntervalInSecond:   1,
 		},
 		{
 			Resource:               "/api/:uid",
 			Threshold:              0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
+			StatIntervalInSecond:   1,
 		},
 	})
 	if err != nil {

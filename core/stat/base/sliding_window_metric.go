@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"reflect"
 	"sync/atomic"
 
@@ -23,37 +22,21 @@ type SlidingWindowMetric struct {
 }
 
 // It must pass the parameter point to the real storage entity
-func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapArray) *SlidingWindowMetric {
-	if real == nil || intervalInMs <= 0 || sampleCount <= 0 {
-		panic(fmt.Sprintf("Illegal parameters,intervalInMs=%d,sampleCount=%d,real=%+v.", intervalInMs, sampleCount, real))
+func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapArray) (*SlidingWindowMetric, error) {
+	if real == nil {
+		return nil, errors.New("Nil BucketLeapArray")
 	}
-
-	if intervalInMs%sampleCount != 0 {
-		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
+	if err := base.CheckValidityForReuseStatistic(sampleCount, intervalInMs, real.SampleCount(), real.IntervalInMs()); err != nil {
+		return nil, err
 	}
 	bucketLengthInMs := intervalInMs / sampleCount
-
-	parentIntervalInMs := real.IntervalInMs()
-	parentBucketLengthInMs := real.BucketLengthInMs()
-
-	// bucketLengthInMs of BucketLeapArray must be divisible by bucketLengthInMs of SlidingWindowMetric
-	// for example: bucketLengthInMs of BucketLeapArray is 500ms, and bucketLengthInMs of SlidingWindowMetric is 2000ms
-	// for example: bucketLengthInMs of BucketLeapArray is 500ms, and bucketLengthInMs of SlidingWindowMetric is 500ms
-	if bucketLengthInMs%parentBucketLengthInMs != 0 {
-		panic(fmt.Sprintf("BucketLeapArray's BucketLengthInMs(%d) is not divisible by SlidingWindowMetric's BucketLengthInMs(%d).", parentBucketLengthInMs, bucketLengthInMs))
-	}
-
-	if intervalInMs > parentIntervalInMs {
-		// todo if SlidingWindowMetric's intervalInMs is greater than BucketLeapArray.
-		panic(fmt.Sprintf("The interval(%d) of SlidingWindowMetric is greater than parent BucketLeapArray(%d).", intervalInMs, parentIntervalInMs))
-	}
 
 	return &SlidingWindowMetric{
 		bucketLengthInMs: bucketLengthInMs,
 		sampleCount:      sampleCount,
 		intervalInMs:     intervalInMs,
 		real:             real,
-	}
+	}, nil
 }
 
 // Get the start time range of the bucket for the provided time.

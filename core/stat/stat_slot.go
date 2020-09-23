@@ -36,14 +36,14 @@ func (s *Slot) recordPassFor(sn base.StatNode, count uint32) {
 		return
 	}
 	sn.IncreaseGoroutineNum()
-	sn.AddMetric(base.MetricEventPass, uint64(count))
+	sn.AddCount(base.MetricEventPass, int64(count))
 }
 
 func (s *Slot) recordBlockFor(sn base.StatNode, count uint32) {
 	if sn == nil {
 		return
 	}
-	sn.AddMetric(base.MetricEventBlock, uint64(count))
+	sn.AddCount(base.MetricEventBlock, int64(count))
 }
 
 func (s *Slot) recordCompleteFor(sn base.StatNode, count uint32, rt uint64, err error) {
@@ -51,9 +51,9 @@ func (s *Slot) recordCompleteFor(sn base.StatNode, count uint32, rt uint64, err 
 		return
 	}
 	if err != nil {
-		sn.AddMetric(base.MetricEventError, uint64(count))
+		sn.AddCount(base.MetricEventError, int64(count))
 	}
-	sn.AddMetric(base.MetricEventRt, rt)
-	sn.AddMetric(base.MetricEventComplete, uint64(count))
+	sn.AddCount(base.MetricEventRt, int64(rt))
+	sn.AddCount(base.MetricEventComplete, int64(count))
 	sn.DecreaseGoroutineNum()
 }

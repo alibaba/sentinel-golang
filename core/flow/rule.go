@@ -76,6 +76,37 @@ type Rule struct {
 	MaxQueueingTimeMs      uint32                 `json:"maxQueueingTimeMs"`
 	WarmUpPeriodSec        uint32                 `json:"warmUpPeriodSec"`
 	WarmUpColdFactor       uint32                 `json:"warmUpColdFactor"`
+
+	// StatIntervalInSecond indicates the statistic interval and it's the optional setting for flow control.
+	// If user doesn't set StatIntervalInSecond, that means using default metric statistic of resource.
+	// If the  StatIntervalInSecond user specifies can not reuse the global statistic of resource,
+	// 		sentinel will generate independent statistic structure for this rule.
+	StatIntervalInSecond uint32 `json:"statIntervalInSecond"`
+}
+
+func (r *Rule) isEqualsTo(newRule *Rule) bool {
+	if newRule == nil {
+		return false
+	}
+	if !(r.Resource == newRule.Resource && r.RelationStrategy == newRule.RelationStrategy &&
+		r.RefResource == newRule.RefResource && r.StatIntervalInSecond == newRule.StatIntervalInSecond &&
+		r.TokenCalculateStrategy == newRule.TokenCalculateStrategy && r.ControlBehavior == newRule.ControlBehavior && r.Threshold == newRule.Threshold &&
+		r.MaxQueueingTimeMs == newRule.MaxQueueingTimeMs && r.WarmUpPeriodSec == newRule.WarmUpPeriodSec && r.WarmUpColdFactor == newRule.WarmUpColdFactor) {
+		return false
+	}
+	return true
+}
+
+func (r *Rule) isStatReusable(newRule *Rule) bool {
+	if newRule == nil {
+		return false
+	}
+	return r.Resource == newRule.Resource && r.RelationStrategy == newRule.RelationStrategy &&
+		r.RefResource == newRule.RefResource && r.StatIntervalInSecond == newRule.StatIntervalInSecond
+}
+
+func (r *Rule) needStatistic() bool {
+	return !(r.TokenCalculateStrategy == Direct && r.ControlBehavior == Throttling)
 }
 
 func (r *Rule) String() string {
@@ -83,9 +114,9 @@ func (r *Rule) String() string {
 	if err != nil {
 		// Return the fallback string
 		return fmt.Sprintf("Rule{Resource=%s, TokenCalculateStrategy=%s, ControlBehavior=%s, "+
-			"Threshold=%.2f, RelationStrategy=%s, RefResource=%s, MaxQueueingTimeMs=%d, WarmUpPeriodSec=%d, WarmUpColdFactor=%d}",
-			r.Resource, r.TokenCalculateStrategy, r.ControlBehavior, r.Threshold, r.RelationStrategy,
-			r.RefResource, r.MaxQueueingTimeMs, r.WarmUpPeriodSec, r.WarmUpColdFactor)
+			"Threshold=%.2f, RelationStrategy=%s, RefResource=%s, MaxQueueingTimeMs=%d, WarmUpPeriodSec=%d, WarmUpColdFactor=%d, StatIntervalInSecond=%d}",
+			r.Resource, r.TokenCalculateStrategy, r.ControlBehavior, r.Threshold, r.RelationStrategy, r.RefResource,
+			r.MaxQueueingTimeMs, r.WarmUpPeriodSec, r.WarmUpColdFactor, r.StatIntervalInSecond)
 	}
 	return string(b)
 }

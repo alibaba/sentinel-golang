@@ -7,13 +7,29 @@ import (
 // TrafficShapingCalculator calculates the actual traffic shaping threshold
 // based on the threshold of rule and the traffic shaping strategy.
 type TrafficShapingCalculator interface {
-	CalculateAllowedTokens(node base.StatNode, acquireCount uint32, flag int32) float64
+	BoundOwner() *TrafficShapingController
+	CalculateAllowedTokens(acquireCount uint32, flag int32) float64
 }
 
 // TrafficShapingChecker performs checking according to current metrics and the traffic
 // shaping strategy, then yield the token result.
 type TrafficShapingChecker interface {
-	DoCheck(node base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult
+	BoundOwner() *TrafficShapingController
+	DoCheck(resStat base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult
+}
+
+// standaloneStatistic indicates the independent statistic for each TrafficShapingController
+type standaloneStatistic struct {
+	// reuseResourceStat indicates whether current standaloneStatistic reuse the current resource's global statistic
+	reuseResourceStat bool
+	// readOnlyMetric is the readonly metric statistic.
+	// if reuseResourceStat is true, it would be the reused SlidingWindowMetric
+	// if reuseResourceStat is false, it would be the BucketLeapArray
+	readOnlyMetric base.ReadStat
+	// writeOnlyMetric is the write only metric statistic.
+	// if reuseResourceStat is true, it would be nil
+	// if reuseResourceStat is false, it would be the BucketLeapArray
+	writeOnlyMetric base.WriteStat
 }
 
 type TrafficShapingController struct {
@@ -21,14 +37,15 @@ type TrafficShapingController struct {
 	flowChecker    TrafficShapingChecker
 
 	rule *Rule
+	// boundStat is the statistic of current TrafficShapingController
+	boundStat standaloneStatistic
 }
 
-// NewTrafficShapingController creates a TrafficShapingController wrapped with the given checker and flow rule.
-func NewTrafficShapingController(flowCalculator TrafficShapingCalculator, flowChecker TrafficShapingChecker, rule *Rule) *TrafficShapingController {
-	return &TrafficShapingController{flowCalculator: flowCalculator, flowChecker: flowChecker, rule: rule}
+func NewTrafficShapingController(rule *Rule, boundStat *standaloneStatistic) (*TrafficShapingController, error) {
+	return &TrafficShapingController{rule: rule, boundStat: *boundStat}, nil
 }
 
-func (t *TrafficShapingController) Rule() *Rule {
+func (t *TrafficShapingController) BoundRule() *Rule {
 	return t.rule
 }
 
@@ -40,7 +57,7 @@ func (t *TrafficShapingController) FlowCalculator() TrafficShapingCalculator {
 	return t.flowCalculator
 }
 
-func (t *TrafficShapingController) PerformChecking(node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
-	allowedTokens := t.flowCalculator.CalculateAllowedTokens(node, acquireCount, flag)
-	return t.flowChecker.DoCheck(node, acquireCount, allowedTokens)
+func (t *TrafficShapingController) PerformChecking(resStat base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
+	allowedTokens := t.flowCalculator.CalculateAllowedTokens(acquireCount, flag)
+	return t.flowChecker.DoCheck(resStat, acquireCount, allowedTokens)
 }

@@ -205,3 +205,18 @@ func SystemStatCollectIntervalMs() uint32 {
 func UseCacheTime() bool {
 	return globalCfg.UseCacheTime()
 }
+
+func GlobalStatisticIntervalMsTotal() uint32 {
+	return globalCfg.GlobalStatisticIntervalMsTotal()
+}
+
+func GlobalStatisticSampleCountTotal() uint32 {
+	return globalCfg.GlobalStatisticSampleCountTotal()
+}
+
+func MetricStatisticIntervalMs() uint32 {
+	return globalCfg.MetricStatisticIntervalMs()
+}
+func MetricStatisticSampleCount() uint32 {
+	return globalCfg.MetricStatisticSampleCount()
+}

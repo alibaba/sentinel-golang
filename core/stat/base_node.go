@@ -4,6 +4,7 @@ import (
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 )
 
@@ -18,8 +19,8 @@ type BaseStatNode struct {
 }
 
 func NewBaseStatNode(sampleCount uint32, intervalInMs uint32) *BaseStatNode {
-	la := sbase.NewBucketLeapArray(base.DefaultSampleCountTotal, base.DefaultIntervalMsTotal)
-	metric := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, la)
+	la := sbase.NewBucketLeapArray(config.GlobalStatisticSampleCountTotal(), config.GlobalStatisticIntervalMsTotal())
+	metric, _ := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, la)
 	return &BaseStatNode{
 		goroutineNum: 0,
 		sampleCount:  sampleCount,
@@ -49,7 +50,7 @@ func (n *BaseStatNode) GetMaxAvg(event base.MetricEvent) float64 {
 	return float64(n.metric.GetMaxOfSingleBucket(event)) * float64(n.sampleCount) / float64(n.intervalMs) * 1000
 }
 
-func (n *BaseStatNode) AddMetric(event base.MetricEvent, count uint64) {
+func (n *BaseStatNode) AddCount(event base.MetricEvent, count int64) {
 	n.arr.AddCount(event, int64(count))
 }
 
@@ -80,4 +81,12 @@ func (n *BaseStatNode) DecreaseGoroutineNum() {
 func (n *BaseStatNode) Reset() {
 	// TODO: this should be thread-safe, or error may occur
 	panic("to be implemented")
+}
+
+func (n *BaseStatNode) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (base.ReadStat, error) {
+	return sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, n.arr)
+}
+
+func (n *BaseStatNode) DefaultMetric() base.ReadStat {
+	return n.metric
 }

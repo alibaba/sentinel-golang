@@ -2,6 +2,7 @@ package stat
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
 )
 
 type ResourceNode struct {
@@ -14,8 +15,7 @@ type ResourceNode struct {
 // NewResourceNode creates a new resource node with given name and classification.
 func NewResourceNode(resourceName string, resourceType base.ResourceType) *ResourceNode {
 	return &ResourceNode{
-		// TODO: make this configurable
-		BaseStatNode: *NewBaseStatNode(base.DefaultSampleCount, base.DefaultIntervalMs),
+		BaseStatNode: *NewBaseStatNode(config.MetricStatisticSampleCount(), config.MetricStatisticIntervalMs()),
 		resourceName: resourceName,
 		resourceType: resourceType,
 	}
