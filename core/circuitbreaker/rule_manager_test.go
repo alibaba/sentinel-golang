@@ -141,7 +141,7 @@ func Test_onUpdateRules(t *testing.T) {
 			Threshold:        10,
 		}
 		rules = append(rules, r1, r2, r3)
-		err := onRuleUpdate(rules)
+		_, err := LoadRules(rules)
 		if err != nil {
 			t.Fatal(err)
 		}

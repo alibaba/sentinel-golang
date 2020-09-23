@@ -6,20 +6,35 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
 type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
 
+type actionType int8
+
+type ruleAction struct {
+	action actionType
+	rules  []*Rule
+	wait   *sync.WaitGroup
+}
+
+const (
+	Load actionType = iota
+
+	Clear
+)
+
 var (
 	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc)
 
-	breakerRules = make(map[string][]*Rule)
-	breakers     = make(map[string][]CircuitBreaker)
-	updateMux    = &sync.RWMutex{}
-
+	breakerRules         = make(map[string][]*Rule)
+	breakers             = make(map[string][]CircuitBreaker)
+	updateMux            = &sync.RWMutex{}
+	ruleChan             = make(chan *ruleAction, 0)
 	stateChangeListeners = make([]StateChangeListener, 0)
 )
 
@@ -68,6 +83,19 @@ func init() {
 		}
 		return newErrorCountCircuitBreakerWithStat(r, stat), nil
 	}
+	go listen()
+}
+
+func listen() {
+	for {
+		ruleAction := <-ruleChan
+		switch ruleAction.action {
+		case Load:
+			onRuleUpdate(ruleAction.rules, ruleAction.wait)
+		case Clear:
+			onRuleUpdate(nil, ruleAction.wait)
+		}
+	}
 }
 
 // GetRulesOfResource returns specific resource's rules based on copy.
@@ -105,8 +133,15 @@ func GetRules() []Rule {
 
 // ClearRules clear all the previous rules.
 func ClearRules() error {
-	_, err := LoadRules(nil)
-	return err
+	wait := &sync.WaitGroup{}
+	wait.Add(1)
+	ruleChan <- &ruleAction{
+		action: Clear,
+		rules:  nil,
+		wait:   wait,
+	}
+	wait.Wait()
+	return nil
 }
 
 // LoadRules replaces old rules with the given circuit breaking rules.
@@ -117,8 +152,15 @@ func ClearRules() error {
 // error: was designed to indicate whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO in order to avoid invalid update, should check consistent with last update rules
-	err := onRuleUpdate(rules)
-	return true, err
+	wait := &sync.WaitGroup{}
+	wait.Add(1)
+	ruleChan <- &ruleAction{
+		action: Load,
+		rules:  rules,
+		wait:   wait,
+	}
+	wait.Wait()
+	return true, nil
 }
 
 func getBreakersOfResource(resource string) []CircuitBreaker {
@@ -170,7 +212,7 @@ func insertCbToCbMap(cb CircuitBreaker, res string, m map[string][]CircuitBreake
 }
 
 // Concurrent safe to update rules
-func onRuleUpdate(rules []*Rule) (err error) {
+func onRuleUpdate(rules []*Rule, wait *sync.WaitGroup) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -179,6 +221,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				err = fmt.Errorf("%+v", r)
 			}
 		}
+		wait.Done()
 	}()
 
 	newBreakerRules := make(map[string][]*Rule)
@@ -205,17 +248,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	for res, rules := range newBreakerRules {
 		newBreakers[res] = make([]CircuitBreaker, 0, len(rules))
 	}
-
-	start := util.CurrentTimeNano()
-	updateMux.Lock()
-	defer func() {
-		updateMux.Unlock()
-		if r := recover(); r != nil {
-			return
-		}
-		logging.Debug("Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(newBreakerRules)
-	}()
 
 	for res, resRules := range newBreakerRules {
 		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
@@ -260,7 +292,16 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			insertCbToCbMap(cb, res, newBreakers)
 		}
 	}
-
+	start := util.CurrentTimeNano()
+	updateMux.Lock()
+	defer func() {
+		updateMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+		logging.Debug("Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
+		logRuleUpdate(newBreakerRules)
+	}()
 	breakerRules = newBreakerRules
 	breakers = newBreakers
 	return nil
