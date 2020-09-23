@@ -28,11 +28,11 @@ func NewWarmUpTrafficShapingCalculator(rule *Rule) *WarmUpTrafficShapingCalculat
 		logging.Warn("[NewWarmUpTrafficShapingCalculator] No set WarmUpColdFactor,use default warm up cold factor value", "defaultWarmUpColdFactor", config.DefaultWarmUpColdFactor)
 	}
 
-	warningToken := uint64((float64(rule.WarmUpPeriodSec) * rule.Count) / float64(rule.WarmUpColdFactor-1))
+	warningToken := uint64((float64(rule.WarmUpPeriodSec) * rule.Threshold) / float64(rule.WarmUpColdFactor-1))
 
-	maxToken := warningToken + uint64(2*float64(rule.WarmUpPeriodSec)*rule.Count/float64(1.0+rule.WarmUpColdFactor))
+	maxToken := warningToken + uint64(2*float64(rule.WarmUpPeriodSec)*rule.Threshold/float64(1.0+rule.WarmUpColdFactor))
 
-	slope := float64(rule.WarmUpColdFactor-1.0) / rule.Count / float64(maxToken-warningToken)
+	slope := float64(rule.WarmUpColdFactor-1.0) / rule.Threshold / float64(maxToken-warningToken)
 
 	warmUpTrafficShapingCalculator := &WarmUpTrafficShapingCalculator{
 		warmUpPeriodInSec: rule.WarmUpPeriodSec,
@@ -40,7 +40,7 @@ func NewWarmUpTrafficShapingCalculator(rule *Rule) *WarmUpTrafficShapingCalculat
 		warningToken:      warningToken,
 		maxToken:          maxToken,
 		slope:             slope,
-		threshold:         rule.Count,
+		threshold:         rule.Threshold,
 		storedTokens:      0,
 		lastFilledTime:    0,
 	}

@@ -19,7 +19,7 @@
 //      {
 //          Resource:        "some-test",
 //          MetricType:      flow.QPS,
-//          Count:           10,
+//          Threshold:           10,
 //          ControlBehavior: flow.Reject,
 //      },
 //  })

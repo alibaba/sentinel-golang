@@ -48,8 +48,7 @@ func TestClientLimiter(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               req.Method(),
-				MetricType:             flow.QPS,
-				Count:                  1,
+				Threshold:              1,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
