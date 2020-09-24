@@ -17,14 +17,18 @@ type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker,
 type actionType int8
 
 type ruleAction struct {
+	//The type of action associated with a rule.
 	action actionType
-	rules  []*Rule
-	wait   *sync.WaitGroup
+	//A set of rules for an operation.
+	rules []*Rule
+
+	wait *sync.WaitGroup
 }
 
 const (
+	//Load rule set
 	Load actionType = iota
-
+	//Clear rule set
 	Clear
 )
 
@@ -83,10 +87,13 @@ func init() {
 		}
 		return newErrorCountCircuitBreakerWithStat(r, stat), nil
 	}
-	go listen()
+
+	go listenRules()
 }
 
-func listen() {
+//Listening ruleChan
+//Depending on the action type, the relevant function is called.
+func listenRules() {
 	for {
 		ruleAction := <-ruleChan
 		switch ruleAction.action {
