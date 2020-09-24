@@ -52,8 +52,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		assert.True(t, len(flowRules) == 3)
 		r1 := &flow.Rule{
 			Resource:               "abc",
-			MetricType:             flow.Concurrency,
-			Count:                  100,
+			Threshold:              100,
 			RelationStrategy:       flow.CurrentResource,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
@@ -65,8 +64,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 
 		r2 := &flow.Rule{
 			Resource:               "abc",
-			MetricType:             flow.QPS,
-			Count:                  200,
+			Threshold:              200,
 			RelationStrategy:       flow.AssociatedResource,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Throttling,
@@ -78,8 +76,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 
 		r3 := &flow.Rule{
 			Resource:               "abc",
-			MetricType:             flow.QPS,
-			Count:                  300,
+			Threshold:              300,
 			RelationStrategy:       flow.CurrentResource,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Throttling,
@@ -97,8 +94,7 @@ func TestFlowRulesUpdater(t *testing.T) {
 		flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "abc",
-				MetricType:             0,
-				Count:                  0,
+				Threshold:              0,
 				RelationStrategy:       0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
@@ -129,8 +125,7 @@ func TestFlowRulesUpdater(t *testing.T) {
 		p := make([]flow.Rule, 0)
 		fw := flow.Rule{
 			Resource:               "aaaa",
-			MetricType:             0,
-			Count:                  0,
+			Threshold:              0,
 			RelationStrategy:       0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,

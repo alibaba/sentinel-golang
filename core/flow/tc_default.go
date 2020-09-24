@@ -28,12 +28,7 @@ func (d *DefaultTrafficShapingChecker) DoCheck(node base.StatNode, acquireCount 
 	if node == nil {
 		return nil
 	}
-	var curCount float64
-	if d.rule.MetricType == Concurrency {
-		curCount = float64(node.CurrentGoroutineNum())
-	} else {
-		curCount = node.GetQPS(base.MetricEventPass)
-	}
+	curCount := node.GetQPS(base.MetricEventPass)
 	if curCount+float64(acquireCount) > threshold {
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, "", d.rule, curCount)
 	}
