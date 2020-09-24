@@ -58,7 +58,7 @@ func TestServerLimiter(t *testing.T) {
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:               req.Method(),
-			Threshold:              1,
+			Threshold:              0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
 		},
