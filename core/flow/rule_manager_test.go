@@ -147,3 +147,26 @@ func TestGetRules(t *testing.T) {
 		}
 	})
 }
+
+func TestLoadRules(t *testing.T) {
+	t.Run("loadSameRules", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				Resource:               "some-test",
+				Threshold:              10,
+				TokenCalculateStrategy: Direct,
+				ControlBehavior:        Reject,
+			},
+		})
+		assert.Nil(t, err)
+		_, err = LoadRules([]*Rule{
+			{
+				Resource:               "some-test",
+				Threshold:              10,
+				TokenCalculateStrategy: Direct,
+				ControlBehavior:        Reject,
+			},
+		})
+		assert.Error(t, err, "The current Rules is the same as the rules to be loaded")
+	})
+}
