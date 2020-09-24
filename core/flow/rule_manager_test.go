@@ -6,7 +6,6 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,7 +55,7 @@ func TestIsValidFlowRule(t *testing.T) {
 	badRule2 := &Rule{Threshold: -1.9, Resource: "test"}
 	badRule3 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject}
 	goodRule1 := &Rule{Threshold: 10, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10, MaxQueueingTimeMs: 10}
-	badRule4 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject, StatIntervalInSecond: 6000}
+	badRule4 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject, StatIntervalInMs: 6000000}
 
 	assert.Error(t, IsValidRule(badRule1))
 	assert.Error(t, IsValidRule(badRule2))
@@ -159,7 +158,7 @@ func Test_generateStatFor(t *testing.T) {
 			Resource:               "abc",
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
-			StatIntervalInSecond:   0,
+			StatIntervalInMs:       0,
 			Threshold:              100,
 			RelationStrategy:       CurrentResource,
 		}
@@ -184,7 +183,7 @@ func Test_generateStatFor(t *testing.T) {
 			Resource:               "abc",
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
-			StatIntervalInSecond:   5,
+			StatIntervalInMs:       5000,
 			Threshold:              100,
 			RelationStrategy:       CurrentResource,
 			RefResource:            "",
@@ -209,7 +208,7 @@ func Test_generateStatFor(t *testing.T) {
 			Resource:               "abc",
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
-			StatIntervalInSecond:   5000,
+			StatIntervalInMs:       50000,
 			Threshold:              100,
 			RelationStrategy:       CurrentResource,
 		}
@@ -257,7 +256,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			RelationStrategy:       CurrentResource,
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
-			StatIntervalInSecond:   1,
+			StatIntervalInMs:       1000,
 		}
 		// reuse
 		r2 := &Rule{
@@ -267,7 +266,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Throttling,
 			MaxQueueingTimeMs:      10,
-			StatIntervalInSecond:   2,
+			StatIntervalInMs:       2000,
 		}
 		// reuse
 		r3 := &Rule{
@@ -277,7 +276,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
 			MaxQueueingTimeMs:      10,
-			StatIntervalInSecond:   5,
+			StatIntervalInMs:       5000,
 		}
 		// independent statistic
 		r4 := &Rule{
@@ -287,7 +286,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
 			MaxQueueingTimeMs:      10,
-			StatIntervalInSecond:   50,
+			StatIntervalInMs:       50000,
 		}
 
 		s1, err := generateStatFor(r1)
@@ -326,7 +325,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			RelationStrategy:       CurrentResource,
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
-			StatIntervalInSecond:   1,
+			StatIntervalInMs:       1000,
 		}
 		// not reusable, generate from resource's global statistic
 		r22 := &Rule{
@@ -336,7 +335,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Throttling,
 			MaxQueueingTimeMs:      10,
-			StatIntervalInSecond:   10,
+			StatIntervalInMs:       10000,
 		}
 		// equals
 		r32 := &Rule{
@@ -346,7 +345,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
 			MaxQueueingTimeMs:      10,
-			StatIntervalInSecond:   5,
+			StatIntervalInMs:       5000,
 		}
 		// reuse independent stat
 		r42 := &Rule{
@@ -356,7 +355,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			TokenCalculateStrategy: Direct,
 			ControlBehavior:        Reject,
 			MaxQueueingTimeMs:      10,
-			StatIntervalInSecond:   50,
+			StatIntervalInMs:       50000,
 		}
 		tcs := buildRulesOfRes("abc1", []*Rule{r12, r22, r32, r42})
 		assert.True(t, len(tcs) == 4)

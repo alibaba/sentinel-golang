@@ -214,6 +214,10 @@ func GlobalStatisticSampleCountTotal() uint32 {
 	return globalCfg.GlobalStatisticSampleCountTotal()
 }
 
+func GlobalStatisticBucketLengthInMs() uint32 {
+	return globalCfg.GlobalStatisticIntervalMsTotal() / GlobalStatisticSampleCountTotal()
+}
+
 func MetricStatisticIntervalMs() uint32 {
 	return globalCfg.MetricStatisticIntervalMs()
 }

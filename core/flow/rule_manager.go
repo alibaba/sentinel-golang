@@ -240,7 +240,7 @@ func rulesFrom(m TrafficControllerMap) []*Rule {
 }
 
 func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
-	intervalInSecond := rule.StatIntervalInSecond
+	intervalInMs := rule.StatIntervalInMs
 
 	var retStat standaloneStatistic
 
@@ -251,7 +251,7 @@ func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
 	} else {
 		resNode = stat.GetOrCreateResourceNode(rule.Resource, base.ResTypeCommon)
 	}
-	if intervalInSecond == 0 {
+	if intervalInMs == 0 || intervalInMs == config.MetricStatisticIntervalMs() {
 		// default case, use the resource's default statistic
 		readStat := resNode.DefaultMetric()
 		retStat.reuseResourceStat = true
@@ -261,14 +261,18 @@ func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
 	}
 
 	sampleCount := uint32(0)
-	intervalInMs := intervalInSecond * 1000
 	//calculate the sample count
-	if intervalInMs <= config.GlobalStatisticIntervalMsTotal() {
-		sampleCount = intervalInSecond
-	} else {
+	if intervalInMs > config.GlobalStatisticIntervalMsTotal() {
 		sampleCount = 1
+	} else if intervalInMs < config.GlobalStatisticBucketLengthInMs() {
+		sampleCount = 1
+	} else {
+		if intervalInMs%config.GlobalStatisticBucketLengthInMs() == 0 {
+			sampleCount = intervalInMs / config.GlobalStatisticBucketLengthInMs()
+		} else {
+			sampleCount = 1
+		}
 	}
-
 	err := base.CheckValidityForReuseStatistic(sampleCount, intervalInMs, config.GlobalStatisticSampleCountTotal(), config.GlobalStatisticIntervalMsTotal())
 	if err == nil {
 		// global statistic reusable
@@ -292,7 +296,7 @@ func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
 		retStat.writeOnlyMetric = realLeapArray
 		return &retStat, nil
 	}
-	return nil, errors.Wrap(err, "fail to new standalone statistic for flow rule.")
+	return nil, errors.Wrapf(err, "fail to new standalone statistic because of invalid StatIntervalInMs in flow.Rule, StatIntervalInMs: %d", intervalInMs)
 }
 
 // SetTrafficShapingGenerator sets the traffic controller generator for the given TokenCalculateStrategy and ControlBehavior.
@@ -457,8 +461,8 @@ func IsValidRule(rule *Rule) error {
 	if rule.ControlBehavior == Throttling && rule.MaxQueueingTimeMs == 0 {
 		return errors.New("invalid MaxQueueingTimeMs")
 	}
-	if rule.StatIntervalInSecond*1000 > config.GlobalStatisticIntervalMsTotal()*60 {
-		return errors.New("StatIntervalInSecond must be less than 10 minutes")
+	if rule.StatIntervalInMs > config.GlobalStatisticIntervalMsTotal()*60 {
+		return errors.New("StatIntervalInMs must be less than 10 minutes")
 	}
 	return nil
 }

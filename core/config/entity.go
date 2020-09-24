@@ -131,9 +131,6 @@ func checkConfValid(conf *SentinelConfig) error {
 	if mc.SingleFileMaxSize <= 0 {
 		return errors.New("Illegal metric log globalCfg: singleFileMaxSize <= 0")
 	}
-	if conf.Stat.System.CollectIntervalMs == 0 {
-		return errors.New("Bad system stat globalCfg: collectIntervalMs = 0")
-	}
 	if err := base.CheckValidityForReuseStatistic(conf.Stat.MetricStatisticSampleCount, conf.Stat.MetricStatisticIntervalMs,
 		conf.Stat.GlobalStatisticSampleCountTotal, conf.Stat.GlobalStatisticIntervalMsTotal); err != nil {
 		return err

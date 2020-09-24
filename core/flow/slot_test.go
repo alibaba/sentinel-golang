@@ -31,9 +31,9 @@ func Test_FlowSlot_StandaloneStat(t *testing.T) {
 		TokenCalculateStrategy: Direct,
 		ControlBehavior:        Reject,
 		// Use standalone statistic, using single-bucket-sliding-windows
-		StatIntervalInSecond: 20,
-		Threshold:            100,
-		RelationStrategy:     CurrentResource,
+		StatIntervalInMs: 20000,
+		Threshold:        100,
+		RelationStrategy: CurrentResource,
 	}
 	_, e := LoadRules([]*Rule{r1})
 	if e != nil {
