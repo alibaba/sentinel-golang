@@ -96,8 +96,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO: rethink the design
+	//check the current rules is the same as the rules to be loaded
 	if isEqual := reflect.DeepEqual(currentRules, rules); isEqual {
-		return isEqual, errors.New("The current Rules is the same as the rules to be loaded")
+		return false, nil
 	}
 	err := onRuleUpdate(rules)
 	return true, err

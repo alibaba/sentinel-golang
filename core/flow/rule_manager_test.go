@@ -159,7 +159,7 @@ func TestLoadRules(t *testing.T) {
 			},
 		})
 		assert.Nil(t, err)
-		_, err = LoadRules([]*Rule{
+		ok, err := LoadRules([]*Rule{
 			{
 				Resource:               "some-test",
 				Threshold:              10,
@@ -167,6 +167,7 @@ func TestLoadRules(t *testing.T) {
 				ControlBehavior:        Reject,
 			},
 		})
-		assert.Error(t, err, "The current Rules is the same as the rules to be loaded")
+		assert.Nil(t, err)
+		assert.False(t, ok)
 	})
 }
