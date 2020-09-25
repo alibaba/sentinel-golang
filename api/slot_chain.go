@@ -38,5 +38,6 @@ func BuildDefaultSlotChain() *base.SlotChain {
 	sc.AddStatSlotLast(&log.Slot{})
 	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
 	sc.AddStatSlotLast(&hotspot.ConcurrencyStatSlot{})
+	sc.AddStatSlotLast(&flow.StandaloneStatSlot{})
 	return sc
 }

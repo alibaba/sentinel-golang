@@ -4,14 +4,14 @@ import (
 	"math"
 	"sync/atomic"
 
-	"github.com/alibaba/sentinel-golang/logging"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
 type WarmUpTrafficShapingCalculator struct {
+	owner             *TrafficShapingController
 	threshold         float64
 	warmUpPeriodInSec uint32
 	coldFactor        uint32
@@ -22,7 +22,11 @@ type WarmUpTrafficShapingCalculator struct {
 	lastFilledTime    uint64
 }
 
-func NewWarmUpTrafficShapingCalculator(rule *Rule) *WarmUpTrafficShapingCalculator {
+func (c *WarmUpTrafficShapingCalculator) BoundOwner() *TrafficShapingController {
+	return c.owner
+}
+
+func NewWarmUpTrafficShapingCalculator(owner *TrafficShapingController, rule *Rule) TrafficShapingCalculator {
 	if rule.WarmUpColdFactor <= 1 {
 		rule.WarmUpColdFactor = config.DefaultWarmUpColdFactor
 		logging.Warn("[NewWarmUpTrafficShapingCalculator] No set WarmUpColdFactor,use default warm up cold factor value", "defaultWarmUpColdFactor", config.DefaultWarmUpColdFactor)
@@ -35,6 +39,7 @@ func NewWarmUpTrafficShapingCalculator(rule *Rule) *WarmUpTrafficShapingCalculat
 	slope := float64(rule.WarmUpColdFactor-1.0) / rule.Threshold / float64(maxToken-warningToken)
 
 	warmUpTrafficShapingCalculator := &WarmUpTrafficShapingCalculator{
+		owner:             owner,
 		warmUpPeriodInSec: rule.WarmUpPeriodSec,
 		coldFactor:        rule.WarmUpColdFactor,
 		warningToken:      warningToken,
@@ -48,8 +53,9 @@ func NewWarmUpTrafficShapingCalculator(rule *Rule) *WarmUpTrafficShapingCalculat
 	return warmUpTrafficShapingCalculator
 }
 
-func (c *WarmUpTrafficShapingCalculator) CalculateAllowedTokens(node base.StatNode, acquireCount uint32, flag int32) float64 {
-	previousQps := node.GetPreviousQPS(base.MetricEventPass)
+func (c *WarmUpTrafficShapingCalculator) CalculateAllowedTokens(_ uint32, _ int32) float64 {
+	metricReadonlyStat := c.BoundOwner().boundStat.readOnlyMetric
+	previousQps := metricReadonlyStat.GetPreviousQPS(base.MetricEventPass)
 	c.syncToken(previousQps)
 
 	restToken := atomic.LoadInt64(&c.storedTokens)

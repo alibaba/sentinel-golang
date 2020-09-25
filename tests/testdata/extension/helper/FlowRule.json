@@ -7,7 +7,8 @@
         "controlBehavior": 0,
         "refResource": "refDefault",
         "warmUpPeriodSec": 10,
-        "maxQueueingTimeMs": 1000
+        "maxQueueingTimeMs": 1000,
+        "statIntervalInMs": 0
     },
     {
         "resource": "abc",
@@ -17,7 +18,8 @@
         "controlBehavior": 1,
         "refResource": "refDefault",
         "warmUpPeriodSec": 20,
-        "maxQueueingTimeMs": 2000
+        "maxQueueingTimeMs": 2000,
+        "statIntervalInMs": 0
     },
     {
         "resource": "abc",
@@ -27,6 +29,7 @@
         "controlBehavior": 1,
         "refResource": "refDefault",
         "warmUpPeriodSec": 30,
-        "maxQueueingTimeMs": 3000
+        "maxQueueingTimeMs": 3000,
+        "statIntervalInMs": 0
     }
 ]

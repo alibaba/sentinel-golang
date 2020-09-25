@@ -13,19 +13,20 @@ const nanoUnitOffset = time.Second / time.Nanosecond
 
 // ThrottlingChecker limits the time interval between two requests.
 type ThrottlingChecker struct {
+	owner             *TrafficShapingController
 	maxQueueingTimeNs uint64
-
-	lastPassedTime uint64
-
-	// TODO: support strict mode
-	strict bool
+	lastPassedTime    uint64
 }
 
-func NewThrottlingChecker(timeoutMs uint32) *ThrottlingChecker {
+func NewThrottlingChecker(owner *TrafficShapingController, timeoutMs uint32) *ThrottlingChecker {
 	return &ThrottlingChecker{
+		owner:             owner,
 		maxQueueingTimeNs: uint64(timeoutMs) * util.UnixTimeUnitOffset,
 		lastPassedTime:    0,
 	}
+}
+func (c *ThrottlingChecker) BoundOwner() *TrafficShapingController {
+	return c.owner
 }
 
 func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
