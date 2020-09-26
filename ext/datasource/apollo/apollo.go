@@ -19,6 +19,10 @@ type apolloDataSource struct {
 
 func NewDatasource(client agollo.Agollo, namespace string, handlers ...datasource.PropertyHandler) (datasource.DataSource, error) {
 
+	if namespace == "" {
+		return nil, errors.New("The namespace is empty.")
+	}
+
 	if client == nil {
 		return nil, errors.New("The agollo client is nil.")
 	}
