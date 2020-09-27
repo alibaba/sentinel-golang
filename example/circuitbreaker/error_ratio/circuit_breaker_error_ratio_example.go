@@ -9,6 +9,8 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -16,19 +18,25 @@ type stateChangeTestListener struct {
 }
 
 func (s *stateChangeTestListener) OnTransformToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
-	fmt.Printf("rule.steategy: %+v, From %s to Closed, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
+	logging.Warn(fmt.Sprintf("circuit breaker status changes from %s to Closed.", prev.String()), "timestamp", util.CurrentTimeMillis(),
+		"strategy", rule.Strategy.String(), "rule", rule)
 }
 
 func (s *stateChangeTestListener) OnTransformToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
-	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
+	logging.Warn(fmt.Sprintf("circuit breaker status changes from %s to Open.", prev.String()), "timestamp", util.CurrentTimeMillis(),
+		"strategy", rule.Strategy.String(), "snapshot", snapshot, "rule", rule)
 }
 
 func (s *stateChangeTestListener) OnTransformToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
-	fmt.Printf("rule.steategy: %+v, From %s to Half-Open, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
+	logging.Warn(fmt.Sprintf("circuit breaker status changes from %s to HalfOpen.", prev.String()), "timestamp", util.CurrentTimeMillis(), "strategy",
+		rule.Strategy.String(), "rule", rule)
 }
 
 func main() {
-	err := sentinel.InitDefault()
+	conf := config.NewDefaultConfig()
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
+	conf.Sentinel.Stat.System.CollectIntervalMs = 0
+	err := sentinel.InitWithConfig(conf)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,43 +45,33 @@ func main() {
 	circuitbreaker.RegisterStateChangeListeners(&stateChangeTestListener{})
 
 	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
-		// Statistic time span=10s, recoveryTimeout=3s, slowRtUpperBound=50ms, maxSlowRequestRatio=50%
-		{
-			Resource:         "abc",
-			Strategy:         circuitbreaker.SlowRequestRatio,
-			RetryTimeoutMs:   3000,
-			MinRequestAmount: 10,
-			StatIntervalMs:   10000,
-			MaxAllowedRtMs:   50,
-			Threshold:        0.5,
-		},
 		// Statistic time span=10s, recoveryTimeout=3s, maxErrorRatio=50%
 		{
 			Resource:         "abc",
 			Strategy:         circuitbreaker.ErrorRatio,
 			RetryTimeoutMs:   3000,
 			MinRequestAmount: 10,
-			StatIntervalMs:   10000,
-			Threshold:        0.5,
+			StatIntervalMs:   5000,
+			Threshold:        0.4,
 		},
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
+	logging.Info("Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
 	go func() {
 		for {
 			e, b := sentinel.Entry("abc")
 			if b != nil {
-				//fmt.Println("g1blocked")
+				// g1 blocked
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
-				if rand.Uint64()%20 > 9 {
+				if rand.Uint64()%20 > 6 {
 					// Record current invocation as error.
 					sentinel.TraceError(e, errors.New("biz error"))
 				}
-				//fmt.Println("g1passed")
+				// g1 passed
 				time.Sleep(time.Duration(rand.Uint64()%80+10) * time.Millisecond)
 				e.Exit()
 			}
@@ -83,15 +81,14 @@ func main() {
 		for {
 			e, b := sentinel.Entry("abc")
 			if b != nil {
-				//fmt.Println("g2blocked")
+				// g2 blocked
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
-				//fmt.Println("g2passed")
+				// g2 passed
 				time.Sleep(time.Duration(rand.Uint64()%80) * time.Millisecond)
 				e.Exit()
 			}
 		}
 	}()
-
 	<-ch
 }
