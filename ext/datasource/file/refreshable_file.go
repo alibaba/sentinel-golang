@@ -18,6 +18,7 @@ type RefreshableFileDataSource struct {
 	isInitialized  util.AtomicBool
 	closeChan      chan struct{}
 	watcher        *fsnotify.Watcher
+	closed         util.AtomicBool
 }
 
 func NewFileDataSource(sourceFilePath string, handlers ...datasource.PropertyHandler) *RefreshableFileDataSource {
@@ -83,7 +84,8 @@ func (s *RefreshableFileDataSource) Initialize() error {
 					for {
 						if retryCount > 5 {
 							logging.Error(errors.New("retry failed"), "Fail to retry watch", "sourceFilePath", s.sourceFilePath)
-							break
+							s.Close()
+							return
 						}
 						e := s.watcher.Add(s.sourceFilePath)
 						if e == nil {
@@ -100,6 +102,8 @@ func (s *RefreshableFileDataSource) Initialize() error {
 					if updateErr != nil {
 						logging.Error(updateErr, "Fail to update nil property")
 					}
+					s.Close()
+					return
 				}
 
 				err := s.doReadAndUpdate()
@@ -126,6 +130,9 @@ func (s *RefreshableFileDataSource) doReadAndUpdate() (err error) {
 }
 
 func (s *RefreshableFileDataSource) Close() error {
+	if !s.closed.CompareAndSet(false, true) {
+		return nil
+	}
 	s.closeChan <- struct{}{}
 	logging.Info("The RefreshableFileDataSource for file had been closed.", "sourceFilePath", s.sourceFilePath)
 	return nil
