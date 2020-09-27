@@ -277,7 +277,7 @@ func TestNewFileDataSource_ALL_For_SystemRule(t *testing.T) {
 		ds.Close()
 		time.Sleep(1 * time.Second)
 		e := ds.watcher.Add(TestSystemRulesFile)
-		assert.True(t, e != nil && strings.Contains(e.Error(), "lstat SystemRules.json: no such file or directory"))
+		assert.True(t, e != nil)
 	})
 
 }
