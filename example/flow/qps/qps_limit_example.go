@@ -8,23 +8,29 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
 func main() {
 	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
+	conf := config.NewDefaultConfig()
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
+	conf.Sentinel.Stat.System.CollectIntervalMs = 0
+	err := sentinel.InitWithConfig(conf)
 	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
+		log.Fatal(err)
 	}
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:               "some-test",
-			Threshold:              10,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
+			Threshold:              10,
+			StatIntervalInMs:       1000,
 		},
 	})
 	if err != nil {
