@@ -2,6 +2,7 @@ package apollo
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -42,8 +43,7 @@ func (s *apolloDataSource) Initialize() error {
 		return errors.New("Apollo datasource had been initialized")
 	}
 	if err := s.doReadAndUpdate(); err != nil {
-		// Failed to read default should't block initialization
-		logging.Error(err, "[Apollo] Failed to read initial data for namespace", "namespace", s.namespace)
+		return fmt.Errorf("Failed to read initial data: %v", err)
 	}
 
 	go util.RunWithRecover(s.watch)
