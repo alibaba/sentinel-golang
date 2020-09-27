@@ -277,7 +277,7 @@ func IsValidRule(rule *Rule) error {
 	if rule.ParamIndex < 0 {
 		return errors.New("invalid param index")
 	}
-	if rule.DurationInSec < 0 {
+	if rule.MetricType == QPS && rule.DurationInSec <= 0 {
 		return errors.New("invalid duration")
 	}
 	return checkControlBehaviorField(rule)

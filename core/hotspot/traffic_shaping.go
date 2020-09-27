@@ -53,6 +53,8 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 	size := 0
 	if r.ParamsMaxCapacity > 0 {
 		size = int(r.ParamsMaxCapacity)
+	} else if r.DurationInSec == 0 {
+		size = ParamsMaxCapacity
 	} else {
 		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
 	}
@@ -271,4 +273,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ac
 				fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 		}
 	}
+
+	// The QPS of abc is about: 15000
+	// The QPS of def is less than 1000 but close to 1000
 }
