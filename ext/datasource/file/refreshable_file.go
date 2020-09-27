@@ -3,6 +3,7 @@ package file
 import (
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -69,19 +70,29 @@ func (s *RefreshableFileDataSource) Initialize() error {
 		for {
 			select {
 			case ev := <-s.watcher.Events:
-				if ev.Op&fsnotify.Write == fsnotify.Write {
-					err := s.doReadAndUpdate()
-					if err != nil {
-						logging.Error(err, "Fail to execute doReadAndUpdate")
-					}
-				}
-
 				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
 					logging.Warn("The file source was removed or renamed.", "sourceFilePath", s.sourceFilePath)
 					updateErr := s.Handle(nil)
 					if updateErr != nil {
 						logging.Error(updateErr, "Fail to update nil property")
 					}
+
+					// try to watch sourceFile
+					_ = s.watcher.Remove(s.sourceFilePath)
+					for {
+						e := s.watcher.Add(s.sourceFilePath)
+						if e == nil {
+							break
+						}
+						logging.Error(e, "Failed to add to watcher")
+						time.Sleep(time.Second)
+					}
+				}
+
+				//load data
+				err := s.doReadAndUpdate()
+				if err != nil {
+					logging.Error(err, "Fail to execute doReadAndUpdate")
 				}
 			case err := <-s.watcher.Errors:
 				logging.Error(err, "Watch err on file", "sourceFilePath", s.sourceFilePath)
