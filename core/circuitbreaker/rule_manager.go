@@ -104,7 +104,7 @@ func GetRules() []Rule {
 
 // ClearRules clear all the previous rules.
 func ClearRules() error {
-	_, err := LoadRules(nil)
+	_, err, _ := LoadRules(nil)
 	return err
 }
 
@@ -114,10 +114,10 @@ func ClearRules() error {
 //
 // bool: was designed to indicate whether the internal map has been changed
 // error: was designed to indicate whether occurs the error.
-func LoadRules(rules []*Rule) (bool, error) {
-	// TODO in order to avoid invalid update, should check consistent with last update rules
-	err := onRuleUpdate(rules)
-	return true, err
+// []*Rule: was designed to return failed rules. If there is an error, it returns input rules.
+func LoadRules(rules []*Rule) (bool, error, []*Rule) {
+	ret, err, failedRules := onRuleUpdate(rules)
+	return ret, err, failedRules
 }
 
 func getBreakersOfResource(resource string) []CircuitBreaker {
@@ -140,7 +140,7 @@ func calculateReuseIndexFor(r *Rule, oldResCbs []CircuitBreaker) (equalIdx, reus
 
 	for idx, oldTc := range oldResCbs {
 		oldRule := oldTc.BoundRule()
-		if oldRule.isEqualsTo(r) {
+		if oldRule.equalsTo(r) {
 			// break if there is equivalent rule
 			equalIdx = idx
 			break
@@ -169,23 +169,35 @@ func insertCbToCbMap(cb CircuitBreaker, res string, m map[string][]CircuitBreake
 }
 
 // Concurrent safe to update rules
-func onRuleUpdate(rules []*Rule) (err error) {
+func onRuleUpdate(rules []*Rule) (ret bool, err error, failedRules []*Rule) {
+	var start uint64
+	newBreakerRules := make(map[string][]*Rule)
+
 	defer func() {
 		if r := recover(); r != nil {
+			// Set to false since rules are not updated due to panic
 			var ok bool
+
+			ret = false
 			err, ok = r.(error)
 			if !ok {
 				err = fmt.Errorf("%+v", r)
 			}
+			failedRules = rules
+			return
 		}
+		logging.Debug("Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
+		logRuleUpdate(newBreakerRules)
 	}()
 
-	newBreakerRules := make(map[string][]*Rule)
+	// Preset slice capacity to avoid dynamic allocation
+	failedRules = make([]*Rule, 0, len(rules))
 	for _, rule := range rules {
 		if rule == nil {
 			continue
 		}
 		if err := IsValid(rule); err != nil {
+			failedRules = append(failedRules, rule)
 			logging.Warn("Ignoring invalid circuit breaking rule when loading new rules", "rule", rule, "err", err)
 			continue
 		}
@@ -195,26 +207,35 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if !ok {
 			ruleSet = make([]*Rule, 0, 1)
 		}
+
+		// Deduplicate loading rules
+		for _, cmpRule := range ruleSet {
+			if rule.equalsTo(cmpRule) {
+				rule = nil
+				break
+			}
+		}
+		if rule == nil {
+			continue
+		}
+
 		ruleSet = append(ruleSet, rule)
 		newBreakerRules[classification] = ruleSet
 	}
 
 	newBreakers := make(map[string][]CircuitBreaker)
-	// in order to avoid growing, build newBreakers in advance
+	// Preset slice capacity to avoid dynamic allocation
 	for res, rules := range newBreakerRules {
 		newBreakers[res] = make([]CircuitBreaker, 0, len(rules))
 	}
+	toAddBreakerRules := make(map[string][]*Rule)
+	for res, rules := range toAddBreakerRules {
+		toAddBreakerRules[res] = make([]*Rule, 0, len(rules))
+	}
 
-	start := util.CurrentTimeNano()
+	start = util.CurrentTimeNano()
 	updateMux.Lock()
-	defer func() {
-		updateMux.Unlock()
-		if r := recover(); r != nil {
-			return
-		}
-		logging.Debug("Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(newBreakerRules)
-	}()
+	defer updateMux.Unlock()
 
 	for res, resRules := range newBreakerRules {
 		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
@@ -227,6 +248,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 			// First check equals scenario
 			if equalIdx >= 0 {
+				newRuleSet := toAddBreakerRules[res]
+				newRuleSet = append(newRuleSet, r)
+				toAddBreakerRules[res] = newRuleSet
 				// reuse the old cb
 				equalOldCb := oldResCbs[equalIdx]
 				insertCbToCbMap(equalOldCb, res, newBreakers)
@@ -237,6 +261,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 			generator := cbGenFuncMap[r.Strategy]
 			if generator == nil {
+				failedRules = append(failedRules, r)
 				logging.Warn("Ignoring the rule due to unsupported circuit breaking strategy", "rule", r)
 				continue
 			}
@@ -249,20 +274,41 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				cb, e = generator(r, nil)
 			}
 			if cb == nil || e != nil {
+				failedRules = append(failedRules, r)
 				logging.Warn("Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e)
 				continue
 			}
 
-			if reuseStatIdx >= 0 {
-				breakers[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
+			newRuleSet, ok := toAddBreakerRules[res]
+			if !ok {
+				newRuleSet = make([]*Rule, 0, 1)
 			}
+			newRuleSet = append(newRuleSet, r)
+			toAddBreakerRules[res] = newRuleSet
 			insertCbToCbMap(cb, res, newBreakers)
+			// Set to true since a new rule was just added
+			ret = true
 		}
 	}
 
-	breakerRules = newBreakerRules
+	// Instead of adding more new rules, the rule set could also have been reduced to less rules.
+	// In this case, we compare the added rules with old ones on their sizes.
+	if len(toAddBreakerRules) != len(breakerRules) {
+		ret = true
+	}
+	if ret == false {
+		for res, addRules := range toAddBreakerRules {
+			originRules, ok := breakerRules[res]
+			if !ok || (len(addRules) != len(originRules)) {
+				ret = true
+				break
+			}
+		}
+	}
+
+	breakerRules = toAddBreakerRules
 	breakers = newBreakers
-	return nil
+	return
 }
 
 func rulesFrom(rm map[string][]*Rule) []*Rule {
@@ -338,7 +384,7 @@ func IsValid(r *Rule) error {
 	if len(r.Resource) == 0 {
 		return errors.New("empty resource name")
 	}
-	if int(r.Strategy) < int(SlowRequestRatio) || int(r.Strategy) > int(ErrorCount) {
+	if uint(r.Strategy) >= uint(UnsupportedStrategy) {
 		return errors.New("invalid Strategy")
 	}
 	if r.StatIntervalMs <= 0 {
