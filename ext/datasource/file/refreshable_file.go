@@ -70,8 +70,8 @@ func (s *RefreshableFileDataSource) Initialize() error {
 		for {
 			select {
 			case ev := <-s.watcher.Events:
-				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
-					logging.Warn("The file source was removed or renamed.", "sourceFilePath", s.sourceFilePath)
+				if ev.Op&fsnotify.Rename == fsnotify.Rename {
+					logging.Warn("The file source was renamed.", "sourceFilePath", s.sourceFilePath)
 					updateErr := s.Handle(nil)
 					if updateErr != nil {
 						logging.Error(updateErr, "Fail to update nil property")
@@ -79,17 +79,28 @@ func (s *RefreshableFileDataSource) Initialize() error {
 
 					// try to watch sourceFile
 					_ = s.watcher.Remove(s.sourceFilePath)
+					retryCount := 0
 					for {
+						if retryCount > 5 {
+							break
+						}
 						e := s.watcher.Add(s.sourceFilePath)
 						if e == nil {
 							break
 						}
-						logging.Error(e, "Failed to add to watcher")
+						retryCount++
+						logging.Error(e, "Failed to add to watcher", "sourceFilePath", s.sourceFilePath)
 						time.Sleep(time.Second)
 					}
 				}
+				if ev.Op&fsnotify.Remove == fsnotify.Remove {
+					logging.Warn("The file source was removed.", "sourceFilePath", s.sourceFilePath)
+					updateErr := s.Handle(nil)
+					if updateErr != nil {
+						logging.Error(updateErr, "Fail to update nil property")
+					}
+				}
 
-				//load data
 				err := s.doReadAndUpdate()
 				if err != nil {
 					logging.Error(err, "Fail to execute doReadAndUpdate")
