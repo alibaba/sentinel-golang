@@ -15,6 +15,7 @@ import (
 type RefreshableFileDataSource struct {
 	datasource.Base
 	sourceFilePath string
+	isClosed       bool
 	isInitialized  util.AtomicBool
 	closeChan      chan struct{}
 	watcher        *fsnotify.Watcher
@@ -24,6 +25,7 @@ func NewFileDataSource(sourceFilePath string, handlers ...datasource.PropertyHan
 	var ds = &RefreshableFileDataSource{
 		sourceFilePath: sourceFilePath,
 		closeChan:      make(chan struct{}),
+		isClosed:       false,
 	}
 	for _, h := range handlers {
 		ds.AddPropertyHandler(h)
@@ -85,7 +87,7 @@ func (s *RefreshableFileDataSource) Initialize() error {
 							break
 						}
 						e := s.watcher.Add(s.sourceFilePath)
-						if e == nil {
+						if e == nil || s.isClosed {
 							break
 						}
 						retryCount++
@@ -126,6 +128,7 @@ func (s *RefreshableFileDataSource) doReadAndUpdate() (err error) {
 
 func (s *RefreshableFileDataSource) Close() error {
 	s.closeChan <- struct{}{}
+	s.isClosed = true
 	logging.Info("The RefreshableFileDataSource for file had been closed.", "sourceFilePath", s.sourceFilePath)
 	return nil
 }
