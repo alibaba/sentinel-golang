@@ -118,9 +118,9 @@ func (s *Etcdv3DataSource) watch() {
 		ctx, cancel = context.WithCancel(context.Background())
 		s.cancel = cancel
 		if s.lastUpdatedRevision > 0 {
-			rch = s.client.Watch(ctx, s.propertyKey, clientv3.WithCreatedNotify(), clientv3.WithRev(s.lastUpdatedRevision))
+			rch = s.client.Watch(ctx, s.propertyKey, clientv3.WithRev(s.lastUpdatedRevision+1))
 		} else {
-			rch = s.client.Watch(ctx, s.propertyKey, clientv3.WithCreatedNotify())
+			rch = s.client.Watch(ctx, s.propertyKey)
 		}
 	}
 }
