@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFlowRulesJsonConverter(t *testing.T) {
+func TestFlowRuleJsonArrayParser(t *testing.T) {
 	// Prepare test data
 	f, err := os.Open("../../tests/testdata/extension/helper/FlowRule.json")
 	defer func() {
@@ -32,7 +32,7 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
 	}
 
-	t.Run("TestFlowRulesJsonConverter_nil", func(t *testing.T) {
+	t.Run("TestFlowRuleJsonArrayParser_nil", func(t *testing.T) {
 		got, err := FlowRuleJsonArrayParser(nil)
 		assert.True(t, got == nil && err == nil)
 
@@ -40,12 +40,12 @@ func TestFlowRulesJsonConverter(t *testing.T) {
 		assert.True(t, got == nil && err == nil)
 	})
 
-	t.Run("TestFlowRulesJsonConverter_error", func(t *testing.T) {
+	t.Run("TestFlowRuleJsonArrayParser_error", func(t *testing.T) {
 		_, err := FlowRuleJsonArrayParser([]byte{'x', 'i', 'm', 'u'})
 		assert.True(t, err != nil)
 	})
 
-	t.Run("TestFlowRulesJsonConverter_normal", func(t *testing.T) {
+	t.Run("TestFlowRuleJsonArrayParser_normal", func(t *testing.T) {
 		got, err := FlowRuleJsonArrayParser(normalSrc)
 		assert.True(t, got != nil && err == nil)
 		flowRules := got.([]*flow.Rule)
@@ -139,51 +139,57 @@ func TestFlowRulesUpdater(t *testing.T) {
 	})
 }
 
-func TestSystemRulesJsonConvert(t *testing.T) {
-	// Prepare test data
-	f, err := os.Open("../../tests/testdata/extension/helper/SystemRule.json")
-	defer func() {
-		if err := f.Close(); err != nil {
-			t.Fatal(err)
+func TestSystemRuleJsonArrayParser(t *testing.T) {
+	t.Run("TestSystemRuleJsonArrayParser_Normal", func(t *testing.T) {
+		// Prepare test data
+		f, err := os.Open("../../tests/testdata/extension/helper/SystemRule.json")
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		if err != nil {
+			t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
 		}
-	}()
-	if err != nil {
-		t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
-	}
-	normalSrc, err := ioutil.ReadAll(f)
-	if err != nil {
-		t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
-	}
+		normalSrc, err := ioutil.ReadAll(f)
+		if err != nil {
+			t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
+		}
 
-	got, err := SystemRuleJsonArrayParser(normalSrc)
-	systemRules := got.([]*system.Rule)
-	assert.True(t, err == nil && len(systemRules) == 4)
+		got, err := SystemRuleJsonArrayParser(normalSrc)
+		systemRules := got.([]*system.Rule)
+		assert.True(t, err == nil && len(systemRules) == 4)
 
-	r0 := &system.Rule{
-		MetricType:   system.Load,
-		TriggerCount: 0.5,
-		Strategy:     system.BBR,
-	}
-	r1 := &system.Rule{
-		MetricType:   system.AvgRT,
-		TriggerCount: 0.6,
-		Strategy:     system.BBR,
-	}
-	r2 := &system.Rule{
-		MetricType:   system.Concurrency,
-		TriggerCount: 0.7,
-		Strategy:     system.BBR,
-	}
-	r3 := &system.Rule{
-		MetricType:   system.InboundQPS,
-		TriggerCount: 0.8,
-		Strategy:     system.BBR,
-	}
+		r0 := &system.Rule{
+			MetricType:   system.Load,
+			TriggerCount: 0.5,
+			Strategy:     system.BBR,
+		}
+		r1 := &system.Rule{
+			MetricType:   system.AvgRT,
+			TriggerCount: 0.6,
+			Strategy:     system.BBR,
+		}
+		r2 := &system.Rule{
+			MetricType:   system.Concurrency,
+			TriggerCount: 0.7,
+			Strategy:     system.BBR,
+		}
+		r3 := &system.Rule{
+			MetricType:   system.InboundQPS,
+			TriggerCount: 0.8,
+			Strategy:     system.BBR,
+		}
 
-	assert.True(t, reflect.DeepEqual(r0, systemRules[0]))
-	assert.True(t, reflect.DeepEqual(r1, systemRules[1]))
-	assert.True(t, reflect.DeepEqual(r2, systemRules[2]))
-	assert.True(t, reflect.DeepEqual(r3, systemRules[3]))
+		assert.True(t, reflect.DeepEqual(r0, systemRules[0]))
+		assert.True(t, reflect.DeepEqual(r1, systemRules[1]))
+		assert.True(t, reflect.DeepEqual(r2, systemRules[2]))
+		assert.True(t, reflect.DeepEqual(r3, systemRules[3]))
+	})
+
+	t.Run("TestSystemRuleJsonArrayParser_CheckErr", func(t *testing.T) {
+
+	})
 }
 
 func TestSystemRulesUpdater(t *testing.T) {
@@ -228,7 +234,7 @@ func TestSystemRulesUpdater(t *testing.T) {
 	})
 }
 
-func TestCircuitBreakerRulesJsonConverter(t *testing.T) {
+func TestCircuitBreakerRuleJsonArrayParser(t *testing.T) {
 	t.Run("TestCircuitBreakerRulesJsonConverter_failed", func(t *testing.T) {
 		_, err := CircuitBreakerRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, err != nil)
@@ -319,7 +325,7 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(rules[2], *r3))
 }
 
-func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
+func TestHotSpotParamRuleJsonArrayParser(t *testing.T) {
 	t.Run("TestHotSpotParamRuleListJsonConverter_invalid", func(t *testing.T) {
 		properties, err := HotSpotParamRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, properties == nil)

@@ -7,6 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	systemRule = `[
+    {
+        "metricType": 0,
+        "triggerCount": 0.5,
+        "strategy": 1
+    }
+]`
+	systemRuleErr = "[test]"
+)
+
 func TestBase_AddPropertyHandler(t *testing.T) {
 	t.Run("AddPropertyHandler_nil", func(t *testing.T) {
 		b := &Base{
@@ -61,5 +72,26 @@ func TestBase_indexOfHandler(t *testing.T) {
 		b.handlers = append(b.handlers, h3)
 
 		assert.True(t, b.indexOfHandler(h2) == 1, "Fail to execute the case TestBase_indexOfHandler.")
+	})
+}
+
+func TestBase_Handle(t *testing.T) {
+	t.Run("TestBase_handle", func(t *testing.T) {
+		b := &Base{
+			handlers: make([]PropertyHandler, 0),
+		}
+		h := NewSystemRulesHandler(SystemRuleJsonArrayParser)
+		b.handlers = append(b.handlers, h)
+		err := b.Handle([]byte(systemRule))
+		assert.Nil(t, err)
+	})
+	t.Run("TestBase_handleErr", func(t *testing.T) {
+		b := &Base{
+			handlers: make([]PropertyHandler, 0),
+		}
+		h := NewSystemRulesHandler(SystemRuleJsonArrayParser)
+		b.handlers = append(b.handlers, h)
+		err := b.Handle([]byte(systemRuleErr))
+		assert.NotNil(t, err)
 	})
 }

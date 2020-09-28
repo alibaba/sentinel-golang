@@ -1,11 +1,10 @@
 package base
 
 import (
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSlidingWindowMetric_getBucketStartRange(t *testing.T) {
@@ -95,7 +94,9 @@ func TestSlidingWindowMetric_getBucketStartRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := NewSlidingWindowMetric(tt.args.sampleCount, tt.args.intervalInMs, NewBucketLeapArray(tt.args.realSampleCount, tt.args.realIntervalInMs))
+			m, err := NewSlidingWindowMetric(tt.args.sampleCount, tt.args.intervalInMs, NewBucketLeapArray(tt.args.realSampleCount, tt.args.realIntervalInMs))
+			assert.True(t, err == nil)
+
 			gotStart, gotEnd := m.getBucketStartRange(tt.args.now)
 			if gotStart != tt.wantStart {
 				t.Errorf("SlidingWindowMetric.getBucketStartRange() gotStart = %v, want %v", gotStart, tt.wantStart)
@@ -108,81 +109,16 @@ func TestSlidingWindowMetric_getBucketStartRange(t *testing.T) {
 }
 
 func Test_NewSlidingWindowMetric(t *testing.T) {
-	type args struct {
-		sampleCount  uint32
-		intervalInMs uint32
-		real         *BucketLeapArray
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "Test_NewSlidingWindowMetric-1",
-			args: args{
-				intervalInMs: 2000,
-				sampleCount:  4,
-				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
-			},
-			want: "",
-		},
-		{
-			name: "Test_NewSlidingWindowMetric-2",
-			args: args{
-				intervalInMs: 0,
-				sampleCount:  0,
-				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
-			},
-			want: "Illegal parameters,intervalInMs=0,sampleCount=0,real=",
-		},
-		{
-			name: "Test_NewSlidingWindowMetric-3",
-			args: args{
-				intervalInMs: 2001,
-				sampleCount:  4,
-				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
-			},
-			want: "Invalid parameters, intervalInMs is 2001, sampleCount is 4.",
-		},
-		{
-			name: "Test_NewSlidingWindowMetric-4",
-			args: args{
-				intervalInMs: 2002,
-				sampleCount:  2,
-				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
-			},
-			want: "BucketLeapArray's BucketLengthInMs(500) is not divisible by SlidingWindowMetric's BucketLengthInMs(1001).",
-		},
-		{
-			name: "Test_NewSlidingWindowMetric-5",
-			args: args{
-				intervalInMs: 200000,
-				sampleCount:  4,
-				real:         NewBucketLeapArray(SampleCount, IntervalInMs),
-			},
-			want: "The interval(200000) of SlidingWindowMetric is greater than parent BucketLeapArray(10000).",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			defer func() {
-				if err := recover(); err != nil {
-					errContent, ok := err.(string)
-					if !ok {
-						t.Errorf("Fail to assert err, except string, in fact:%+v", reflect.TypeOf(err))
-					}
-					if !strings.Contains(errContent, tt.want) {
-						t.Errorf("Failed, except [%s],in fact:[%s]", tt.want, errContent)
-					}
-				}
-			}()
-			got := NewSlidingWindowMetric(tt.args.sampleCount, tt.args.intervalInMs, tt.args.real)
-			if got == nil || "" != tt.want {
-				t.Errorf("NewSlidingWindowMetric() = %v", got)
-			}
-		})
-	}
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	got, err = NewSlidingWindowMetric(0, 0, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, got == nil && err != nil)
+	got, err = NewSlidingWindowMetric(4, 2001, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, got == nil && err != nil)
+	got, err = NewSlidingWindowMetric(2, 2002, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, got == nil && err != nil)
+	got, err = NewSlidingWindowMetric(4, 200000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, got == nil && err != nil)
 }
 
 func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
@@ -223,7 +159,7 @@ func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 			for i := 0; i < int(tt.fields.intervalInMs); i++ {
 				tt.fields.real.addCountWithTime(tt.args.now-100-uint64(i), tt.args.event, 1)
 			}
-			m := NewSlidingWindowMetric(tt.fields.sampleCount, tt.fields.intervalInMs, tt.fields.real)
+			m, _ := NewSlidingWindowMetric(tt.fields.sampleCount, tt.fields.intervalInMs, tt.fields.real)
 			if got := m.getSumWithTime(tt.args.now, tt.args.event); got != tt.want {
 				t.Errorf("SlidingWindowMetric.getSumWithTime() = %v, want %v", got, tt.want)
 			}
