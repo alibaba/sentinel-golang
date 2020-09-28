@@ -13,9 +13,8 @@ import (
 
 func main() {
 	cfg := config.NewDefaultConfig()
+	// for testing, logging output to console
 	cfg.Sentinel.Log.Logger = logging.NewConsoleLogger()
-	cfg.Sentinel.Log.Metric.FlushIntervalSec = 0
-	cfg.Sentinel.Stat.System.CollectIntervalMs = 0
 	err := sentinel.InitWithConfig(cfg)
 	if err != nil {
 		logging.Error(err, "fail")
