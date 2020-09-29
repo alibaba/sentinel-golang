@@ -17,17 +17,17 @@ import (
 const (
 	TestSystemRules = `[
     {
-        "id": 0,
+        "id": "0",
         "metricType": 0,
         "adaptiveStrategy": 0
     },
     {
-        "id": 1,
+        "id": "1",
         "metricType": 0,
         "adaptiveStrategy": 0
     },
     {
-        "id": 2,
+        "id": "2",
         "metricType": 0,
         "adaptiveStrategy": 0
     }
@@ -277,7 +277,7 @@ func TestNewFileDataSource_ALL_For_SystemRule(t *testing.T) {
 		ds.Close()
 		time.Sleep(1 * time.Second)
 		e := ds.watcher.Add(TestSystemRulesFile)
-		assert.True(t, e != nil && strings.Contains(e.Error(), "closed"))
+		assert.True(t, e != nil)
 	})
 
 }
