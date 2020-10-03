@@ -201,7 +201,7 @@ func (la *LeapArray) calculateTimeIdx(now uint64) int {
 	return int(timeId) % la.array.length
 }
 
-//  Get all BucketWrap between [current time -1000ms, current time]
+//  Get all BucketWrap between [current time - leap array interval, current time]
 func (la *LeapArray) Values() []*BucketWrap {
 	return la.valuesWithTime(util.CurrentTimeMillis())
 }
