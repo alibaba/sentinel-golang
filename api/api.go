@@ -11,7 +11,7 @@ var entryOptsPool = sync.Pool{
 		return &EntryOptions{
 			resourceType: base.ResTypeCommon,
 			entryType:    base.Outbound,
-			acquireCount: 1,
+			batchCount:   1,
 			flag:         0,
 			slotChain:    nil,
 			args:         nil,
@@ -24,7 +24,7 @@ var entryOptsPool = sync.Pool{
 type EntryOptions struct {
 	resourceType base.ResourceType
 	entryType    base.TrafficType
-	acquireCount uint32
+	batchCount   uint32
 	flag         int32
 	slotChain    *base.SlotChain
 	args         []interface{}
@@ -34,7 +34,7 @@ type EntryOptions struct {
 func (o *EntryOptions) Reset() {
 	o.resourceType = base.ResTypeCommon
 	o.entryType = base.Outbound
-	o.acquireCount = 1
+	o.batchCount = 1
 	o.flag = 0
 	o.slotChain = nil
 	o.args = nil
@@ -57,10 +57,18 @@ func WithTrafficType(entryType base.TrafficType) EntryOption {
 	}
 }
 
+// DEPRECATED: use WithBatchCount instead.
 // WithAcquireCount sets the resource entry with the given batch count (by default 1).
 func WithAcquireCount(acquireCount uint32) EntryOption {
 	return func(opts *EntryOptions) {
-		opts.acquireCount = acquireCount
+		opts.batchCount = acquireCount
+	}
+}
+
+// WithBatchCount sets the resource entry with the given batch count (by default 1).
+func WithBatchCount(batchCount uint32) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.batchCount = batchCount
 	}
 }
 
@@ -129,7 +137,7 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 	// Get context from pool.
 	ctx := sc.GetPooledContext()
 	ctx.Resource = rw
-	ctx.Input.AcquireCount = options.acquireCount
+	ctx.Input.BatchCount = options.batchCount
 	ctx.Input.Flag = options.flag
 	if len(options.args) != 0 {
 		ctx.Input.Args = options.args

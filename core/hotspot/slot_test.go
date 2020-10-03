@@ -15,8 +15,8 @@ type TrafficShapingControllerMock struct {
 	mock.Mock
 }
 
-func (m *TrafficShapingControllerMock) PerformChecking(arg interface{}, acquireCount int64) *base.TokenResult {
-	retArgs := m.Called(arg, acquireCount)
+func (m *TrafficShapingControllerMock) PerformChecking(arg interface{}, batchCount int64) *base.TokenResult {
+	retArgs := m.Called(arg, batchCount)
 	return retArgs.Get(0).(*base.TokenResult)
 }
 
