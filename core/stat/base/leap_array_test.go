@@ -28,7 +28,7 @@ func Test_bucketWrapper_Size(t *testing.T) {
 		t.Errorf("the size of BucketWrap is not equal 24.\n")
 	}
 	if unsafe.Sizeof(ww) != 8 {
-		t.Errorf("the size of BucketWrap is not equal 24.\n")
+		t.Errorf("the size of BucketWrap pointer is not equal 8.\n")
 	}
 }
 
