@@ -61,11 +61,11 @@ type SlotChain struct {
 	ruleChecks []RuleCheckSlot
 	stats      []StatSlot
 	// EntryContext Pool, used for reuse EntryContext object
-	ctxPool sync.Pool
+	ctxPool *sync.Pool
 }
 
 var (
-	ctxPool = sync.Pool{
+	ctxPool = &sync.Pool{
 		New: func() interface{} {
 			ctx := NewEmptyEntryContext()
 			ctx.RuleCheckResult = NewTokenResultPass()
