@@ -6,7 +6,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	RuleCheckSlotName = "sentinel-isolation-rule-check-slot"
+)
+
+var (
+	DefaultSlot = &Slot{}
+)
+
 type Slot struct {
+}
+
+func (s *Slot) Name() string {
+	return RuleCheckSlotName
 }
 
 func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {

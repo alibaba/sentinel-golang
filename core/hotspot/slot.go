@@ -9,7 +9,19 @@ import (
 	"github.com/alibaba/sentinel-golang/logging"
 )
 
+const (
+	RuleCheckSlotName = "sentinel-hotspot-rule-check-slot"
+)
+
+var (
+	DefaultSlot = &Slot{}
+)
+
 type Slot struct {
+}
+
+func (s *Slot) Name() string {
+	return RuleCheckSlotName
 }
 
 // matchArg matches the arg from args based on TrafficShapingController

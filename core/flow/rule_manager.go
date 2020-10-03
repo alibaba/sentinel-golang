@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 )
 
 // TrafficControllerGenFunc represents the TrafficShapingController generator function of a specific control behavior.
@@ -141,6 +143,10 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			resRules = make([]*Rule, 0, 1)
 		}
 		resRulesMap[rule.Resource] = append(resRules, rule)
+
+		// update resource slot chain
+		misc.RegisterResourceRuleCheckSlot(rule.Resource, DefaultSlot)
+		misc.RegisterResourceStatSlot(rule.Resource, DefaultStandaloneStatSlot)
 	}
 	m := make(TrafficControllerMap, len(resRulesMap))
 	start := util.CurrentTimeNano()

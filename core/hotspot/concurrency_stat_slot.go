@@ -6,8 +6,20 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 )
 
+const (
+	StatSlotName = "sentinel-concurrency-stat-slot"
+)
+
+var (
+	DefaultConcurrencyStatSlot = &ConcurrencyStatSlot{}
+)
+
 // ConcurrencyStatSlot is to record the Concurrency statistic for all arguments
 type ConcurrencyStatSlot struct {
+}
+
+func (s *ConcurrencyStatSlot) Name() string {
+	return StatSlotName
 }
 
 func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {

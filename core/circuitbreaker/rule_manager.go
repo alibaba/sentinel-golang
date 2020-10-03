@@ -5,9 +5,11 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/pkg/errors"
+
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 )
 
 type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
@@ -197,6 +199,10 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 		ruleSet = append(ruleSet, rule)
 		newBreakerRules[classification] = ruleSet
+
+		// update resource slot chain
+		misc.RegisterResourceRuleCheckSlot(rule.Resource, DefaultSlot)
+		misc.RegisterResourceStatSlot(rule.Resource, DefaultMetricStatSlot)
 	}
 
 	newBreakers := make(map[string][]CircuitBreaker)

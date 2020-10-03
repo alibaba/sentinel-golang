@@ -5,7 +5,19 @@ import (
 	"github.com/alibaba/sentinel-golang/core/stat"
 )
 
+const (
+	RuleCheckSlotName = "sentinel-adaptive-rule-check-slot"
+)
+
+var (
+	DefaultAdaptiveSlot = &AdaptiveSlot{}
+)
+
 type AdaptiveSlot struct {
+}
+
+func (s *AdaptiveSlot) Name() string {
+	return RuleCheckSlotName
 }
 
 func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {

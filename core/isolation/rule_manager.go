@@ -3,9 +3,11 @@ package isolation
 import (
 	"sync"
 
+	"github.com/pkg/errors"
+
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -29,6 +31,9 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 			resRules = make([]*Rule, 0, 1)
 		}
 		m[r.Resource] = append(resRules, r)
+
+		// update resource slot chain
+		misc.RegisterResourceRuleCheckSlot(r.Resource, DefaultSlot)
 	}
 
 	start := util.CurrentTimeNano()

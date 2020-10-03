@@ -6,7 +6,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	StatSlotName = "sentinel-standalone-stat-slot"
+)
+
+var (
+	DefaultStandaloneStatSlot = &StandaloneStatSlot{}
+)
+
 type StandaloneStatSlot struct {
+}
+
+func (s *StandaloneStatSlot) Name() string {
+	return StatSlotName
 }
 
 func (s StandaloneStatSlot) OnEntryPassed(ctx *base.EntryContext) {
