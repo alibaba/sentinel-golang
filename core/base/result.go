@@ -13,6 +13,7 @@ const (
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
 	BlockTypeHotSpotParamFlow
+	BlockTypeNoSlotChain
 )
 
 func (t BlockType) String() string {
