@@ -47,6 +47,9 @@ func RegisterResourceRuleCheckSlot(rsName string, slot base.RuleCheckSlot) {
 	if !validateRuleCheckSlot(sc, slot) {
 		sc.AddRuleCheckSlotLast(slot)
 	}
+	if !ok {
+		rsSlotChain[rsName] = sc
+	}
 }
 
 func validateStatSlot(sc *base.SlotChain, s base.StatSlot) bool {
@@ -73,11 +76,14 @@ func RegisterResourceStatSlot(rsName string, slot base.StatSlot) {
 	if !validateStatSlot(sc, slot) {
 		sc.AddStatSlotLast(slot)
 	}
+	if !ok {
+		rsSlotChain[rsName] = sc
+	}
 }
 
 func GetResourceSlotChain(rsName string) *base.SlotChain {
 	rsSlotChainLock.RLock()
-	defer rsSlotChainLock.Unlock()
+	defer rsSlotChainLock.RUnlock()
 
 	sc, ok := rsSlotChain[rsName]
 	if !ok {
