@@ -12,6 +12,10 @@ type prepareSlotMock struct {
 	mock.Mock
 }
 
+func (m *prepareSlotMock) Name() string {
+	return "mocck-sentinel-prepare-slot"
+}
+
 func (m *prepareSlotMock) Prepare(ctx *base.EntryContext) {
 	m.Called(ctx)
 	return
@@ -19,6 +23,10 @@ func (m *prepareSlotMock) Prepare(ctx *base.EntryContext) {
 
 type mockRuleCheckSlot1 struct {
 	mock.Mock
+}
+
+func (m *mockRuleCheckSlot1) Name() string {
+	return "mocck-sentinel-rule-check-slot1"
 }
 
 func (m *mockRuleCheckSlot1) Check(ctx *base.EntryContext) *base.TokenResult {
@@ -30,6 +38,10 @@ type mockRuleCheckSlot2 struct {
 	mock.Mock
 }
 
+func (m *mockRuleCheckSlot2) Name() string {
+	return "mocck-sentinel-rule-check-slot2"
+}
+
 func (m *mockRuleCheckSlot2) Check(ctx *base.EntryContext) *base.TokenResult {
 	arg := m.Called(ctx)
 	return arg.Get(0).(*base.TokenResult)
@@ -37,6 +49,10 @@ func (m *mockRuleCheckSlot2) Check(ctx *base.EntryContext) *base.TokenResult {
 
 type statisticSlotMock struct {
 	mock.Mock
+}
+
+func (m *statisticSlotMock) Name() string {
+	return "mocck-sentinel-stat-check-slot"
 }
 
 func (m *statisticSlotMock) OnEntryPassed(ctx *base.EntryContext) {
