@@ -150,7 +150,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+		if logging.DebugEnabled() {
+			logging.Debug("time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+		}
 		logRuleUpdate(m)
 	}()
 	for res, rulesOfRes := range resRulesMap {

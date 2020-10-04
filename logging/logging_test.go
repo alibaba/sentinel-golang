@@ -63,3 +63,23 @@ func Test_caller(t *testing.T) {
 		assert.True(t, strings.Contains(file, "logging_test.go"))
 	})
 }
+
+func Benchmark_LoggingDebug_Without_Precheck(b *testing.B) {
+	b.ReportAllocs()
+	b.ResetTimer()
+	SetGlobalLoggerLevel(InfoLevel)
+	for i := 0; i < b.N; i++ {
+		Debug("log test", "k1", "v1", "k2", "v2")
+	}
+}
+
+func Benchmark_LoggingDebug_With_Precheck(b *testing.B) {
+	b.ReportAllocs()
+	b.ResetTimer()
+	SetGlobalLoggerLevel(InfoLevel)
+	for i := 0; i < b.N; i++ {
+		if DebugEnabled() {
+			Debug("log test", "k1", "v1", "k2", "v2")
+		}
+	}
+}

@@ -35,7 +35,9 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	rwMux.Lock()
 	defer func() {
 		rwMux.Unlock()
-		logging.Debug("time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
+		if logging.DebugEnabled() {
+			logging.Debug("time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
+		}
 		logRuleUpdate(m)
 	}()
 	ruleMap = m
