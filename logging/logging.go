@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -25,8 +26,11 @@ const (
 const (
 	// RecordLogFileName represents the default file name of the record log.
 	RecordLogFileName = "sentinel-record.log"
-	DefaultDirName    = "logs" + string(os.PathSeparator) + "csp" + string(os.PathSeparator)
 	GlobalCallerDepth = 4
+)
+
+var (
+	DefaultDirName = filepath.Join("logs", "csp")
 )
 
 var (

@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 
@@ -137,8 +138,7 @@ func initializeLogConfig(logDir string, usePid bool) (err error) {
 }
 
 func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
-	logDir := util.AddPathSeparatorIfAbsent(logBaseDir)
-	filePath := logDir + logging.RecordLogFileName
+	filePath := filepath.Join(logBaseDir, logging.RecordLogFileName)
 	if withPid {
 		filePath = filePath + ".pid" + strconv.Itoa(os.Getpid())
 	}
@@ -152,7 +152,7 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 		return err
 	}
 
-	logging.Info("INFO: log base directory is: " + logDir)
+	logging.Info("INFO: log base directory is: " + logBaseDir)
 
 	return nil
 }
@@ -162,7 +162,7 @@ func GetDefaultLogDir() string {
 	if err != nil {
 		return ""
 	}
-	return util.AddPathSeparatorIfAbsent(home) + logging.DefaultDirName
+	return filepath.Join(home, logging.DefaultDirName)
 }
 
 func AppName() string {
