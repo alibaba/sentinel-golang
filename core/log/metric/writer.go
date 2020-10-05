@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -195,7 +196,7 @@ func (d *DefaultMetricLogWriter) nextFileNameOfTime(time uint64) (string, error)
 		return "", err
 	}
 	if len(list) == 0 {
-		return d.baseDir + filePattern, nil
+		return filepath.Join(d.baseDir, filePattern), nil
 	}
 	last := list[len(list)-1]
 	var n uint32 = 0
@@ -206,7 +207,7 @@ func (d *DefaultMetricLogWriter) nextFileNameOfTime(time uint64) (string, error)
 			n = uint32(v)
 		}
 	}
-	return fmt.Sprintf("%s%s.%d", d.baseDir, filePattern, n+1), nil
+	return filepath.Join(d.baseDir, fmt.Sprintf("%s.%d", filePattern, n+1)), nil
 }
 
 func (d *DefaultMetricLogWriter) closeCurAndNewFile(filename string) error {
@@ -286,7 +287,7 @@ func NewDefaultMetricLogWriterOfApp(maxSize uint64, maxFileAmount uint32, appNam
 	if len(logDir) == 0 {
 		logDir = config.GetDefaultLogDir()
 	}
-	baseDir := util.AddPathSeparatorIfAbsent(logDir)
+	baseDir := logDir
 	baseFilename := FormMetricFileName(appName, config.LogUsePid())
 
 	writer := &DefaultMetricLogWriter{
