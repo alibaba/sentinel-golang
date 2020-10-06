@@ -36,7 +36,7 @@ func main() {
 	// Register a state change listener so that we could observer the state change of the internal circuit breaker.
 	circuitbreaker.RegisterStateChangeListeners(&stateChangeTestListener{})
 
-	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
+	_, err, _ = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
 		// Statistic time span=10s, recoveryTimeout=3s, slowRtUpperBound=50ms, maxSlowRequestRatio=50%
 		{
 			Resource:         "abc",

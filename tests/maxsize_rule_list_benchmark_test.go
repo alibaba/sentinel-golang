@@ -28,7 +28,7 @@ func Test_Size_1000_Circuit_Breaker_Rules_Update(t *testing.T) {
 		})
 	}
 
-	_, err := cb.LoadRules(rs)
+	_, err, _ := cb.LoadRules(rs)
 	if err != nil {
 		t.Errorf("error")
 	}
@@ -56,7 +56,7 @@ func Benchmark_Size_1000_Circuit_Breaker_Rules_Update(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := cb.LoadRules(rs)
+		_, err, _ := cb.LoadRules(rs)
 		if err != nil {
 			b.Errorf("error")
 		}
@@ -80,7 +80,7 @@ func Test_Size_10000_Circuit_Breaker_Rules_Update(t *testing.T) {
 		})
 	}
 
-	_, err := cb.LoadRules(rs)
+	_, err, _ := cb.LoadRules(rs)
 	if err != nil {
 		t.Errorf("error")
 	}
@@ -107,7 +107,7 @@ func Benchmark_Size_10000_Circuit_Breaker_Rules_Update(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := cb.LoadRules(rs)
+		_, err, _ := cb.LoadRules(rs)
 		if err != nil {
 			b.Errorf("error")
 		}
