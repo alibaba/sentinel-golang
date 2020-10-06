@@ -67,10 +67,10 @@ func NewSlotChain() *SlotChain {
 				ctx.RuleCheckResult = NewTokenResultPass()
 				ctx.Data = make(map[interface{}]interface{})
 				ctx.Input = &SentinelInput{
-					AcquireCount: 1,
-					Flag:         0,
-					Args:         make([]interface{}, 0),
-					Attachments:  make(map[interface{}]interface{}),
+					BatchCount:  1,
+					Flag:        0,
+					Args:        make([]interface{}, 0),
+					Attachments: make(map[interface{}]interface{}),
 				}
 				return ctx
 			},

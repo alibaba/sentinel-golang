@@ -88,7 +88,7 @@ func matchArg(tc TrafficShapingController, args []interface{}) interface{} {
 func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	res := ctx.Resource.Name()
 	args := ctx.Input.Args
-	acquire := int64(ctx.Input.AcquireCount)
+	batch := int64(ctx.Input.BatchCount)
 
 	result := ctx.RuleCheckResult
 	tcs := getTrafficControllersFor(res)
@@ -101,7 +101,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		if arg == nil {
 			continue
 		}
-		r := canPassCheck(tc, arg, acquire)
+		r := canPassCheck(tc, arg, batch)
 		if r == nil {
 			continue
 		}
@@ -119,10 +119,10 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func canPassCheck(tc TrafficShapingController, arg interface{}, acquire int64) *base.TokenResult {
-	return canPassLocalCheck(tc, arg, acquire)
+func canPassCheck(tc TrafficShapingController, arg interface{}, batch int64) *base.TokenResult {
+	return canPassLocalCheck(tc, arg, batch)
 }
 
-func canPassLocalCheck(tc TrafficShapingController, arg interface{}, acquire int64) *base.TokenResult {
-	return tc.PerformChecking(arg, acquire)
+func canPassLocalCheck(tc TrafficShapingController, arg interface{}, batch int64) *base.TokenResult {
+	return tc.PerformChecking(arg, batch)
 }

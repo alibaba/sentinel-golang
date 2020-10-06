@@ -40,13 +40,13 @@ func (d *RejectTrafficShapingChecker) BoundOwner() *TrafficShapingController {
 	return d.owner
 }
 
-func (d *RejectTrafficShapingChecker) DoCheck(resStat base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
+func (d *RejectTrafficShapingChecker) DoCheck(resStat base.StatNode, batchCount uint32, threshold float64) *base.TokenResult {
 	metricReadonlyStat := d.BoundOwner().boundStat.readOnlyMetric
 	if metricReadonlyStat == nil {
 		return nil
 	}
 	curCount := float64(metricReadonlyStat.GetSum(base.MetricEventPass))
-	if curCount+float64(acquireCount) > threshold {
+	if curCount+float64(batchCount) > threshold {
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, "", d.rule, curCount)
 	}
 	return nil

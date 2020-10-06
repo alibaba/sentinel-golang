@@ -72,7 +72,7 @@ func Test_entryWithArgsAndChainPass(t *testing.T) {
 	entry, b := entry("abc", &EntryOptions{
 		resourceType: base.ResTypeCommon,
 		entryType:    base.Inbound,
-		acquireCount: 1,
+		batchCount:   1,
 		flag:         0,
 		slotChain:    sc,
 	})
@@ -112,7 +112,7 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	entry, b := entry("abc", &EntryOptions{
 		resourceType: base.ResTypeCommon,
 		entryType:    base.Inbound,
-		acquireCount: 1,
+		batchCount:   1,
 		flag:         0,
 		slotChain:    sc,
 	})
