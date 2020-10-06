@@ -29,9 +29,9 @@ func (c *ThrottlingChecker) BoundOwner() *TrafficShapingController {
 	return c.owner
 }
 
-func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
-	// Pass when acquire count is less or equal than 0.
-	if acquireCount <= 0 {
+func (c *ThrottlingChecker) DoCheck(_ base.StatNode, batchCount uint32, threshold float64) *base.TokenResult {
+	// Pass when batch count is less or equal than 0.
+	if batchCount <= 0 {
 		return nil
 	}
 	if threshold <= 0 {
@@ -40,7 +40,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, acquireCount uint32, thresh
 	// Here we use nanosecond so that we could control the queueing time more accurately.
 	curNano := util.CurrentTimeNano()
 	// The interval between two requests (in nanoseconds).
-	interval := uint64(math.Ceil(float64(acquireCount) / threshold * float64(nanoUnitOffset)))
+	interval := uint64(math.Ceil(float64(batchCount) / threshold * float64(nanoUnitOffset)))
 
 	// Expected pass time of this request.
 	expectedTime := atomic.LoadUint64(&c.lastPassedTime) + interval

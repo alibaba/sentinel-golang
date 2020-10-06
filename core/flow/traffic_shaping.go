@@ -8,14 +8,14 @@ import (
 // based on the threshold of rule and the traffic shaping strategy.
 type TrafficShapingCalculator interface {
 	BoundOwner() *TrafficShapingController
-	CalculateAllowedTokens(acquireCount uint32, flag int32) float64
+	CalculateAllowedTokens(batchCount uint32, flag int32) float64
 }
 
 // TrafficShapingChecker performs checking according to current metrics and the traffic
 // shaping strategy, then yield the token result.
 type TrafficShapingChecker interface {
 	BoundOwner() *TrafficShapingController
-	DoCheck(resStat base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult
+	DoCheck(resStat base.StatNode, batchCount uint32, threshold float64) *base.TokenResult
 }
 
 // standaloneStatistic indicates the independent statistic for each TrafficShapingController
@@ -57,7 +57,7 @@ func (t *TrafficShapingController) FlowCalculator() TrafficShapingCalculator {
 	return t.flowCalculator
 }
 
-func (t *TrafficShapingController) PerformChecking(resStat base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
-	allowedTokens := t.flowCalculator.CalculateAllowedTokens(acquireCount, flag)
-	return t.flowChecker.DoCheck(resStat, acquireCount, allowedTokens)
+func (t *TrafficShapingController) PerformChecking(resStat base.StatNode, batchCount uint32, flag int32) *base.TokenResult {
+	allowedTokens := t.flowCalculator.CalculateAllowedTokens(batchCount, flag)
+	return t.flowChecker.DoCheck(resStat, batchCount, allowedTokens)
 }
