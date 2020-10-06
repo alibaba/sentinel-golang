@@ -149,7 +149,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 	}
 	maxCount := tokenCount + c.burstCount
 	if batchCount > maxCount {
-		// return blocked because the batchd number is more than max count of rejectTrafficShapingController
+		// return blocked because the batch number is more than max count of rejectTrafficShapingController
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
 			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
