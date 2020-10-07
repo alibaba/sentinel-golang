@@ -27,7 +27,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 
 func checkPass(ctx *base.EntryContext) (bool, *Rule, uint32) {
 	statNode := ctx.StatNode
-	batchCount := ctx.Input.BatchCount
+	acquireCount := ctx.Input.AcquireCount
 	curCount := uint32(0)
 	for _, rule := range getRulesOfResource(ctx.Resource.Name()) {
 		threshold := rule.Threshold
@@ -38,7 +38,7 @@ func checkPass(ctx *base.EntryContext) (bool, *Rule, uint32) {
 				curCount = 0
 				logging.Error(errors.New("negative concurrency"), "", "rule", rule)
 			}
-			if curCount+batchCount > threshold {
+			if curCount+acquireCount > threshold {
 				return false, rule, curCount
 			}
 		}

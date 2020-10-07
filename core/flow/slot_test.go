@@ -18,7 +18,7 @@ func Test_FlowSlot_StandaloneStat(t *testing.T) {
 		Resource: res,
 		StatNode: resNode,
 		Input: &base.SentinelInput{
-			BatchCount: 1,
+			AcquireCount: 1,
 		},
 		RuleCheckResult: nil,
 		Data:            nil,

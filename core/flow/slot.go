@@ -23,7 +23,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 			logging.Warn("nil traffic controller found", "resourceName", res)
 			continue
 		}
-		r := canPassCheck(tc, ctx.StatNode, ctx.Input.BatchCount)
+		r := canPassCheck(tc, ctx.StatNode, ctx.Input.AcquireCount)
 		if r == nil {
 			// nil means pass
 			continue
@@ -42,12 +42,12 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func canPassCheck(tc *TrafficShapingController, node base.StatNode, batchCount uint32) *base.TokenResult {
-	return canPassCheckWithFlag(tc, node, batchCount, 0)
+func canPassCheck(tc *TrafficShapingController, node base.StatNode, acquireCount uint32) *base.TokenResult {
+	return canPassCheckWithFlag(tc, node, acquireCount, 0)
 }
 
-func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, batchCount uint32, flag int32) *base.TokenResult {
-	return checkInLocal(tc, node, batchCount, flag)
+func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
+	return checkInLocal(tc, node, acquireCount, flag)
 }
 
 func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
@@ -57,7 +57,7 @@ func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
 	return node
 }
 
-func checkInLocal(tc *TrafficShapingController, resStat base.StatNode, batchCount uint32, flag int32) *base.TokenResult {
+func checkInLocal(tc *TrafficShapingController, resStat base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
 	actual := selectNodeByRelStrategy(tc.rule, resStat)
 	if actual == nil {
 		logging.FrequentErrorOnce.Do(func() {
@@ -65,5 +65,5 @@ func checkInLocal(tc *TrafficShapingController, resStat base.StatNode, batchCoun
 		})
 		return base.NewTokenResultPass()
 	}
-	return tc.PerformChecking(actual, batchCount, flag)
+	return tc.PerformChecking(actual, acquireCount, flag)
 }

@@ -38,7 +38,7 @@ func main() {
 	for i := 0; i < 15; i++ {
 		go func() {
 			for {
-				e, b := sentinel.Entry("abc", sentinel.WithBatchCount(1))
+				e, b := sentinel.Entry("abc", sentinel.WithAcquireCount(1))
 				if b != nil {
 					logging.Info("blocked", "reason", b.BlockType().String(), "rule", b.TriggeredRule(), "snapshot", b.TriggeredValue())
 					time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)

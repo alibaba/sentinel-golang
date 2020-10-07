@@ -9,25 +9,25 @@ type Slot struct {
 }
 
 func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {
-	s.recordPassFor(ctx.StatNode, ctx.Input.BatchCount)
+	s.recordPassFor(ctx.StatNode, ctx.Input.AcquireCount)
 	if ctx.Resource.FlowType() == base.Inbound {
-		s.recordPassFor(InboundNode(), ctx.Input.BatchCount)
+		s.recordPassFor(InboundNode(), ctx.Input.AcquireCount)
 	}
 }
 
 func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
-	s.recordBlockFor(ctx.StatNode, ctx.Input.BatchCount)
+	s.recordBlockFor(ctx.StatNode, ctx.Input.AcquireCount)
 	if ctx.Resource.FlowType() == base.Inbound {
-		s.recordBlockFor(InboundNode(), ctx.Input.BatchCount)
+		s.recordBlockFor(InboundNode(), ctx.Input.AcquireCount)
 	}
 }
 
 func (s *Slot) OnCompleted(ctx *base.EntryContext) {
 	rt := util.CurrentTimeMillis() - ctx.StartTime()
 	ctx.PutRt(rt)
-	s.recordCompleteFor(ctx.StatNode, ctx.Input.BatchCount, rt, ctx.Err())
+	s.recordCompleteFor(ctx.StatNode, ctx.Input.AcquireCount, rt, ctx.Err())
 	if ctx.Resource.FlowType() == base.Inbound {
-		s.recordCompleteFor(InboundNode(), ctx.Input.BatchCount, rt, ctx.Err())
+		s.recordCompleteFor(InboundNode(), ctx.Input.AcquireCount, rt, ctx.Err())
 	}
 }
 
