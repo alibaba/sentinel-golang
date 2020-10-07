@@ -50,8 +50,8 @@ func FlowRulesUpdater(data interface{}) error {
 			fmt.Sprintf("Fail to type assert data to []flow.Rule or []*flow.Rule, in fact, data: %+v", data),
 		)
 	}
-	succ, err := flow.LoadRules(rules)
-	if succ && err == nil {
+	_, err := flow.LoadRules(rules)
+	if err == nil {
 		return nil
 	}
 	return NewError(
