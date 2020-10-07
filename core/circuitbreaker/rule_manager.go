@@ -313,7 +313,7 @@ func SetCircuitBreakerGenerator(s Strategy, generator CircuitBreakerGenFunc) err
 	if generator == nil {
 		return errors.New("nil generator")
 	}
-	if s >= SlowRequestRatio && s <= ErrorCount {
+	if s <= ErrorCount {
 		return errors.New("not allowed to replace the generator for default circuit breaking strategies")
 	}
 	updateMux.Lock()
@@ -324,8 +324,8 @@ func SetCircuitBreakerGenerator(s Strategy, generator CircuitBreakerGenFunc) err
 }
 
 func RemoveCircuitBreakerGenerator(s Strategy) error {
-	if s >= SlowRequestRatio && s <= ErrorCount {
-		return errors.New("not allowed to replace the generator for default circuit breaking strategies")
+	if s <= ErrorCount {
+		return errors.New("not allowed to remove the generator for default circuit breaking strategies")
 	}
 	updateMux.Lock()
 	defer updateMux.Unlock()
@@ -337,9 +337,6 @@ func RemoveCircuitBreakerGenerator(s Strategy) error {
 func IsValid(r *Rule) error {
 	if len(r.Resource) == 0 {
 		return errors.New("empty resource name")
-	}
-	if int(r.Strategy) < int(SlowRequestRatio) || int(r.Strategy) > int(ErrorCount) {
-		return errors.New("invalid Strategy")
 	}
 	if r.StatIntervalMs <= 0 {
 		return errors.New("invalid StatIntervalMs")
