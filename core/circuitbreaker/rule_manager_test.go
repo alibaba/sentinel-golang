@@ -150,6 +150,15 @@ func Test_onUpdateRules(t *testing.T) {
 		breakers = make(map[string][]CircuitBreaker)
 		breakerRules = make(map[string][]*Rule)
 	})
+
+	t.Run("Test_onUpdateRules_invalid", func(t *testing.T) {
+		r1 := &Rule{
+			Resource: "abc",
+		}
+		err := onRuleUpdate([]*Rule{r1})
+		assert.Nil(t, err)
+		assert.True(t, len(GetRules()) == 0)
+	})
 }
 
 func Test_onRuleUpdate(t *testing.T) {
@@ -230,5 +239,104 @@ func Test_onRuleUpdate(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(newCbs[1].BoundStat(), b2.BoundStat()))
 		assert.True(t, reflect.DeepEqual(newCbs[2].BoundRule(), r6))
 		assert.True(t, reflect.DeepEqual(newCbs[3].BoundRule(), r7))
+	})
+}
+
+func TestGeneratorCircuitBreaker(t *testing.T) {
+	r := &Rule{
+		Resource:         "abc01",
+		Strategy:         ErrorCount,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        10,
+	}
+	t.Run("SlowRequestRatio_Nil_Rule", func(t *testing.T) {
+		generator := cbGenFuncMap[SlowRequestRatio]
+		cb, err := generator(nil, nil)
+		assert.Nil(t, cb)
+		assert.Error(t, err, "nil rule")
+	})
+
+	t.Run("SlowRequestRatio_ReuseStat_Unmatched_Type", func(t *testing.T) {
+		generator := cbGenFuncMap[SlowRequestRatio]
+		_, err := generator(r, &errorCounterLeapArray{})
+		assert.Nil(t, err)
+	})
+
+	t.Run("ErrorRatio_ReuseStat_Unmatched_Type", func(t *testing.T) {
+		generator := cbGenFuncMap[ErrorRatio]
+		_, err := generator(r, &slowRequestLeapArray{})
+		assert.Nil(t, err)
+	})
+
+	t.Run("ErrorCount_ReuseStat_Unmatched_Type", func(t *testing.T) {
+		generator := cbGenFuncMap[ErrorCount]
+		_, err := generator(r, &slowRequestLeapArray{})
+		assert.Nil(t, err)
+	})
+}
+
+func TestGetRules(t *testing.T) {
+	t.Run("TestGetRules", func(t *testing.T) {
+		r1 := &Rule{
+			Resource:         "abc",
+			Strategy:         ErrorCount,
+			RetryTimeoutMs:   1000,
+			MinRequestAmount: 5,
+			StatIntervalMs:   1000,
+			Threshold:        10,
+		}
+
+		_, _ = LoadRules([]*Rule{r1})
+		rules := GetRules()
+		assert.True(t, len(rules) == 1 && rules[0].Resource == r1.Resource && rules[0].Strategy == r1.Strategy)
+		_ = ClearRules()
+	})
+}
+
+func TestGetBreakersOfResource(t *testing.T) {
+	r1 := &Rule{
+		Resource:         "abc",
+		Strategy:         SlowRequestRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		MaxAllowedRtMs:   20,
+		Threshold:        0.1,
+	}
+
+	_, _ = LoadRules([]*Rule{r1})
+
+	cbs := getBreakersOfResource("abc")
+	assert.True(t, len(cbs) == 1 && cbs[0].BoundRule() == r1)
+	_ = ClearRules()
+}
+
+func TestSetCircuitBreakerGenerator(t *testing.T) {
+	t.Run("TestSetCircuitBreakerGenerator_Normal", func(t *testing.T) {
+		err := SetCircuitBreakerGenerator(100, func(r *Rule, reuseStat interface{}) (CircuitBreaker, error) {
+			return newSlowRtCircuitBreakerWithStat(r, nil), nil
+		})
+		assert.Nil(t, err)
+	})
+
+	t.Run("TestSetCircuitBreakerGenerator_Err", func(t *testing.T) {
+		err := SetCircuitBreakerGenerator(SlowRequestRatio, func(r *Rule, reuseStat interface{}) (CircuitBreaker, error) {
+			return newSlowRtCircuitBreakerWithStat(r, nil), nil
+		})
+		assert.Error(t, err, "not allowed to replace the generator for default circuit breaking strategies")
+	})
+}
+
+func TestRemoveCircuitBreakerGenerator(t *testing.T) {
+	t.Run("TestRemoveCircuitBreakerGenerator_Normal", func(t *testing.T) {
+		err := RemoveCircuitBreakerGenerator(100)
+		assert.Nil(t, err)
+	})
+
+	t.Run("TestRemoveCircuitBreakerGenerator_Err", func(t *testing.T) {
+		err := RemoveCircuitBreakerGenerator(SlowRequestRatio)
+		assert.Error(t, err, "not allowed to remove the generator for default circuit breaking strategies")
 	})
 }

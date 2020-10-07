@@ -26,19 +26,19 @@ func main() {
 	counter := Counter{pass: new(int64), block: new(int64), total: new(int64)}
 	// We should initialize Sentinel first.
 	err := sentinel.InitDefault()
-	logging.ResetGlobalLogger(logging.NewConsoleLogger("flow-warmup-test"))
+	logging.ResetGlobalLogger(logging.NewConsoleLogger())
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
 
-	_, err = flow.LoadRules([]*flow.FlowRule{
+	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:         "some-test",
-			MetricType:       flow.QPS,
-			Count:            100,
-			ControlBehavior:  flow.WarmUp,
-			WarmUpPeriodSec:  10,
-			WarmUpColdFactor: 3,
+			Resource:               "some-test",
+			Threshold:              100,
+			TokenCalculateStrategy: flow.WarmUp,
+			ControlBehavior:        flow.Reject,
+			WarmUpPeriodSec:        10,
+			WarmUpColdFactor:       3,
 		},
 	})
 	if err != nil {

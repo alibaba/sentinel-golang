@@ -1,6 +1,10 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
@@ -30,7 +34,7 @@ type SentinelConfig struct {
 
 // LogConfig represent the configuration of logging in Sentinel.
 type LogConfig struct {
-	// logger indicates that using logger to replace default logging.
+	// Logger indicates that using logger to replace default logging.
 	Logger logging.Logger
 	// Dir represents the log directory path.
 	Dir string
@@ -49,6 +53,15 @@ type MetricLogConfig struct {
 
 // StatConfig represents the configuration items of statistics.
 type StatConfig struct {
+	// GlobalStatisticSampleCountTotal and GlobalStatisticIntervalMsTotal is the per resource's global default statistic sliding window config
+	GlobalStatisticSampleCountTotal uint32 `yaml:"globalStatisticSampleCountTotal"`
+	GlobalStatisticIntervalMsTotal  uint32 `yaml:"globalStatisticIntervalMsTotal"`
+
+	// MetricStatisticSampleCount and MetricStatisticIntervalMs is the per resource's default readonly metric statistic
+	// This default readonly metric statistic must be reusable based on global statistic.
+	MetricStatisticSampleCount uint32 `yaml:"metricStatisticSampleCount"`
+	MetricStatisticIntervalMs  uint32 `yaml:"metricStatisticIntervalMs"`
+
 	System SystemStatConfig `yaml:"system"`
 }
 
@@ -81,6 +94,10 @@ func NewDefaultConfig() *Entity {
 				},
 			},
 			Stat: StatConfig{
+				GlobalStatisticSampleCountTotal: base.DefaultSampleCountTotal,
+				GlobalStatisticIntervalMsTotal:  base.DefaultIntervalMsTotal,
+				MetricStatisticSampleCount:      base.DefaultSampleCount,
+				MetricStatisticIntervalMs:       base.DefaultIntervalMs,
 				System: SystemStatConfig{
 					CollectIntervalMs: DefaultSystemStatCollectIntervalMs,
 				},
@@ -114,10 +131,19 @@ func checkConfValid(conf *SentinelConfig) error {
 	if mc.SingleFileMaxSize <= 0 {
 		return errors.New("Illegal metric log globalCfg: singleFileMaxSize <= 0")
 	}
-	if conf.Stat.System.CollectIntervalMs == 0 {
-		return errors.New("Bad system stat globalCfg: collectIntervalMs = 0")
+	if err := base.CheckValidityForReuseStatistic(conf.Stat.MetricStatisticSampleCount, conf.Stat.MetricStatisticIntervalMs,
+		conf.Stat.GlobalStatisticSampleCountTotal, conf.Stat.GlobalStatisticIntervalMsTotal); err != nil {
+		return err
 	}
 	return nil
+}
+
+func (entity *Entity) String() string {
+	e, err := json.Marshal(entity)
+	if err != nil {
+		return fmt.Sprintf("%+v", *entity)
+	}
+	return string(e)
 }
 
 func (entity *Entity) AppName() string {
@@ -159,4 +185,19 @@ func (entity *Entity) SystemStatCollectIntervalMs() uint32 {
 
 func (entity *Entity) UseCacheTime() bool {
 	return entity.Sentinel.UseCacheTime
+}
+
+func (entity *Entity) GlobalStatisticIntervalMsTotal() uint32 {
+	return entity.Sentinel.Stat.GlobalStatisticIntervalMsTotal
+}
+
+func (entity *Entity) GlobalStatisticSampleCountTotal() uint32 {
+	return entity.Sentinel.Stat.GlobalStatisticSampleCountTotal
+}
+
+func (entity *Entity) MetricStatisticIntervalMs() uint32 {
+	return entity.Sentinel.Stat.MetricStatisticIntervalMs
+}
+func (entity *Entity) MetricStatisticSampleCount() uint32 {
+	return entity.Sentinel.Stat.MetricStatisticSampleCount
 }

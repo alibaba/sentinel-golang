@@ -2,7 +2,6 @@ package hotspot
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -68,14 +67,34 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
-// GetRules returns existing rules of the given resource.
-func GetRules(res string) []*Rule {
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for hotspot module if user changes the rule.
+// GetRules need to compete hotspot module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRules if possible
+func GetRules() []Rule {
 	tcMux.RLock()
-	defer tcMux.RUnlock()
+	rules := rulesFrom(tcMap)
+	tcMux.RUnlock()
+
+	ret := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		ret = append(ret, *rule)
+	}
+	return ret
+}
+
+// GetRulesOfResource returns specific resource's rules based on copy.
+// It doesn't take effect for hotspot module if user changes the rule.
+// GetRulesOfResource need to compete hotspot module's global lock and the high performance losses of copy,
+// 		reduce or do not call GetRulesOfResource frequently if possible
+func GetRulesOfResource(res string) []Rule {
+	tcMux.RLock()
 	resTcs := tcMap[res]
-	ret := make([]*Rule, 0, len(resTcs))
+	tcMux.RUnlock()
+
+	ret := make([]Rule, 0, len(resTcs))
 	for _, tc := range resTcs {
-		ret = append(ret, tc.BoundRule())
+		ret = append(ret, *tc.BoundRule())
 	}
 	return ret
 }
@@ -100,7 +119,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	newRuleMap := make(map[string][]*Rule)
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logging.Warnf("Ignoring invalid hotspot rule when loading new rules, rule: %s, reason: %s", r.String(), err.Error())
+			logging.Warn("Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err)
 			continue
 		}
 		res := r.ResourceName()
@@ -124,7 +143,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debugf("Updating hotspot rule spends %d ns.", util.CurrentTimeNano()-start)
+		logging.Debug("time statistic(ns) for updating hotspot rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
@@ -149,7 +168,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			// generate new traffic shaping controller
 			generator, supported := tcGenFuncMap[r.ControlBehavior]
 			if !supported {
-				logging.Warnf("Ignoring the frequent param flow rule due to unsupported control behavior: %v", r)
+				logging.Warn("Ignoring the frequent param flow rule due to unsupported control behavior", "rule", r)
 				continue
 			}
 			var tc TrafficShapingController
@@ -160,7 +179,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tc = generator(r, nil)
 			}
 			if tc == nil {
-				logging.Debugf("Ignoring the frequent param flow rule due to bad generated traffic controller: %v", r)
+				logging.Debug("Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
 				continue
 			}
 
@@ -177,14 +196,12 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 func logRuleUpdate(m trafficControllerMap) {
-	sb := strings.Builder{}
-	sb.WriteString("Hotspot parameter flow control rules loaded: [")
-
-	for _, r := range rulesFrom(m) {
-		sb.WriteString(r.String() + ",")
+	rs := rulesFrom(m)
+	if len(rs) == 0 {
+		logging.Info("[HotspotRuleManager] Hotspot rules were cleared")
+	} else {
+		logging.Info("[HotspotRuleManager] Hotspot rules were loaded", "rules", rs)
 	}
-	sb.WriteString("]")
-	logging.Info(sb.String())
 }
 
 func rulesFrom(m trafficControllerMap) []*Rule {

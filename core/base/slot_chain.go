@@ -67,10 +67,10 @@ func NewSlotChain() *SlotChain {
 				ctx.RuleCheckResult = NewTokenResultPass()
 				ctx.Data = make(map[interface{}]interface{})
 				ctx.Input = &SentinelInput{
-					AcquireCount: 1,
-					Flag:         0,
-					Args:         make([]interface{}, 0),
-					Attachments:  make(map[interface{}]interface{}),
+					BatchCount:  1,
+					Flag:        0,
+					Args:        make([]interface{}, 0),
+					Attachments: make(map[interface{}]interface{}),
 				}
 				return ctx
 			},
@@ -130,7 +130,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 	// If happened, need to add TokenResult in EntryContext
 	defer func() {
 		if err := recover(); err != nil {
-			logging.Panicf("Sentinel internal panic in SlotChain, err: %+v", err)
+			logging.Error(errors.Errorf("%+v", err), "Sentinel internal panic in SlotChain")
 			ctx.SetError(errors.Errorf("%+v", err))
 			return
 		}
@@ -186,7 +186,7 @@ func (sc *SlotChain) Entry(ctx *EntryContext) *TokenResult {
 
 func (sc *SlotChain) exit(ctx *EntryContext) {
 	if ctx == nil || ctx.Entry() == nil {
-		logging.Errorf("nil ctx or nil associated entry")
+		logging.Error(errors.New("nil EntryContext or SentinelEntry"), "")
 		return
 	}
 	// The OnCompleted is called only when entry passed

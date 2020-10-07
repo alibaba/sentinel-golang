@@ -13,7 +13,7 @@ import (
 )
 
 type TrafficShapingController interface {
-	PerformChecking(arg interface{}, acquireCount int64) *base.TokenResult
+	PerformChecking(arg interface{}, batchCount int64) *base.TokenResult
 
 	BoundParamIndex() int
 
@@ -50,14 +50,15 @@ func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *b
 }
 
 func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
-	var size = 0
+	size := 0
 	if r.ParamsMaxCapacity > 0 {
 		size = int(r.ParamsMaxCapacity)
 	} else {
 		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
 	}
 	if size <= 0 {
-		logging.Warnf("The size of cache is not more than 0, ParamsMaxCapacity: %d, ParamsCapacityBase: %d", ParamsMaxCapacity, ParamsCapacityBase)
+		logging.Warn("invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
+			"ParamsMaxCapacity", ParamsMaxCapacity, "ParamsCapacityBase", ParamsCapacityBase)
 		size = ParamsMaxCapacity
 	}
 	metric := &ParamsMetric{
@@ -118,7 +119,7 @@ func (c *baseTrafficShapingController) BoundParamIndex() int {
 	return c.paramIndex
 }
 
-func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquireCount int64) *base.TokenResult {
+func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchCount int64) *base.TokenResult {
 	metric := c.metric
 	if metric == nil {
 		return nil
@@ -147,8 +148,8 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
 	maxCount := tokenCount + c.burstCount
-	if acquireCount > maxCount {
-		// return blocked because the acquired number is more than max count of rejectTrafficShapingController
+	if batchCount > maxCount {
+		// return blocked because the batch number is more than max count of rejectTrafficShapingController
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
 			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
@@ -158,7 +159,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 		lastAddTokenTimePtr := timeCounter.AddIfAbsent(arg, &currentTimeInMs)
 		if lastAddTokenTimePtr == nil {
 			// First to fill token, and consume token immediately
-			leftCount := maxCount - acquireCount
+			leftCount := maxCount - batchCount
 			tokenCounter.AddIfAbsent(arg, &leftCount)
 			return nil
 		}
@@ -167,7 +168,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 		passTime := currentTimeInMs - atomic.LoadInt64(lastAddTokenTimePtr)
 		if passTime > c.durationInSec*1000 {
 			// Refill the tokens because statistic window has passed.
-			leftCount := maxCount - acquireCount
+			leftCount := maxCount - batchCount
 			oldQpsPtr := tokenCounter.AddIfAbsent(arg, &leftCount)
 			if oldQpsPtr == nil {
 				// Might not be accurate here.
@@ -179,9 +180,9 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 				toAddTokenNum := passTime * tokenCount / (c.durationInSec * 1000)
 				newQps := int64(0)
 				if toAddTokenNum+restQps > maxCount {
-					newQps = maxCount - acquireCount
+					newQps = maxCount - batchCount
 				} else {
-					newQps = toAddTokenNum + restQps - acquireCount
+					newQps = toAddTokenNum + restQps - batchCount
 				}
 				if newQps < 0 {
 					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
@@ -194,13 +195,13 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 				runtime.Gosched()
 			}
 		} else {
-			//check whether the rest of token is enough to acquire
+			//check whether the rest of token is enough to batch
 			oldQpsPtr, found := tokenCounter.Get(arg)
 			if found {
 				oldRestToken := atomic.LoadInt64(oldQpsPtr)
-				if oldRestToken-acquireCount >= 0 {
+				if oldRestToken-batchCount >= 0 {
 					//update
-					if atomic.CompareAndSwapInt64(oldQpsPtr, oldRestToken, oldRestToken-acquireCount) {
+					if atomic.CompareAndSwapInt64(oldQpsPtr, oldRestToken, oldRestToken-batchCount) {
 						return nil
 					}
 				} else {
@@ -213,7 +214,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, acquir
 	}
 }
 
-func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, acquireCount int64) *base.TokenResult {
+func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, batchCount int64) *base.TokenResult {
 	metric := c.metric
 	if metric == nil {
 		return nil
@@ -241,7 +242,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ac
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
 			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
 	}
-	intervalCostTime := int64(math.Round(float64(acquireCount * c.durationInSec * 1000 / tokenCount)))
+	intervalCostTime := int64(math.Round(float64(batchCount * c.durationInSec * 1000 / tokenCount)))
 	for {
 		currentTimeInMs := int64(util.CurrentTimeMillis())
 		lastPassTimePtr := timeCounter.AddIfAbsent(arg, &currentTimeInMs)

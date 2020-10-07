@@ -45,12 +45,12 @@ func TestClientLimiter(t *testing.T) {
 	rsp := &proto.Response{}
 
 	t.Run("success", func(t *testing.T) {
-		var _, err = flow.LoadRules([]*flow.FlowRule{
+		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:        req.Method(),
-				MetricType:      flow.QPS,
-				Count:           1,
-				ControlBehavior: flow.Reject,
+				Resource:               req.Method(),
+				Threshold:              1,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)

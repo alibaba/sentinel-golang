@@ -8,7 +8,7 @@ import (
 
 // Strategy represents the strategy of circuit breaker.
 // Each strategy is associated with one rule type.
-type Strategy int8
+type Strategy uint32
 
 const (
 	// SlowRequestRatio strategy changes the circuit breaker state based on slow request ratio

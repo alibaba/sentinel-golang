@@ -9,6 +9,7 @@ type BlockType uint8
 const (
 	BlockTypeUnknown BlockType = iota
 	BlockTypeFlow
+	BlockTypeIsolation
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
 	BlockTypeHotSpotParamFlow
@@ -20,6 +21,8 @@ func (t BlockType) String() string {
 		return "Unknown"
 	case BlockTypeFlow:
 		return "FlowControl"
+	case BlockTypeIsolation:
+		return "BlockTypeIsolation"
 	case BlockTypeCircuitBreaking:
 		return "CircuitBreaking"
 	case BlockTypeSystemFlow:

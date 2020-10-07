@@ -9,7 +9,7 @@ import (
 )
 
 func TestCheckNilInput(t *testing.T) {
-	var sas *SystemAdaptiveSlot
+	var sas *AdaptiveSlot
 
 	t.Run("NilInput", func(t *testing.T) {
 		r := sas.Check(nil)
@@ -29,7 +29,7 @@ func TestCheckNilInput(t *testing.T) {
 }
 
 func TestCheckEmptyRule(t *testing.T) {
-	var sas *SystemAdaptiveSlot
+	var sas *AdaptiveSlot
 	rw := base.NewResourceWrapper("test", base.ResTypeCommon, base.Inbound)
 	r := sas.Check(&base.EntryContext{
 		Resource:        rw,
@@ -39,8 +39,8 @@ func TestCheckEmptyRule(t *testing.T) {
 }
 
 func TestDoCheckRuleConcurrency(t *testing.T) {
-	var sas *SystemAdaptiveSlot
-	rule := &SystemRule{MetricType: Concurrency,
+	var sas *AdaptiveSlot
+	rule := &Rule{MetricType: Concurrency,
 		TriggerCount: 0.5}
 
 	t.Run("TrueConcurrency", func(t *testing.T) {
@@ -59,8 +59,8 @@ func TestDoCheckRuleConcurrency(t *testing.T) {
 }
 
 func TestDoCheckRuleLoad(t *testing.T) {
-	var sas *SystemAdaptiveSlot
-	rule := &SystemRule{MetricType: Load,
+	var sas *AdaptiveSlot
+	rule := &Rule{MetricType: Load,
 		TriggerCount: 0.5}
 
 	t.Run("TrueLoad", func(t *testing.T) {
@@ -80,8 +80,8 @@ func TestDoCheckRuleLoad(t *testing.T) {
 }
 
 func TestDoCheckRuleCpuUsage(t *testing.T) {
-	var sas *SystemAdaptiveSlot
-	rule := &SystemRule{MetricType: CpuUsage,
+	var sas *AdaptiveSlot
+	rule := &Rule{MetricType: CpuUsage,
 		TriggerCount: 0.5}
 
 	t.Run("TrueCpuUsage", func(t *testing.T) {
@@ -101,17 +101,11 @@ func TestDoCheckRuleCpuUsage(t *testing.T) {
 }
 
 func TestDoCheckRuleDefault(t *testing.T) {
-	var sas *SystemAdaptiveSlot
-	rule := &SystemRule{MetricType: MetricTypeSize,
+	var sas *AdaptiveSlot
+	rule := &Rule{MetricType: MetricTypeSize,
 		TriggerCount: 0.5}
 
 	isOK, v := sas.doCheckRule(rule)
 	assert.Equal(t, true, isOK)
 	assert.Equal(t, float64(0), v)
-}
-
-func TestString(t *testing.T) {
-	var sas *SystemAdaptiveSlot
-
-	assert.True(t, sas.String() == SlotName)
 }
