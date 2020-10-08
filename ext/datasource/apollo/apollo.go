@@ -15,7 +15,7 @@ type apolloDataSource struct {
 	namespace     string
 	client        agollo.Agollo
 	isInitialized util.AtomicBool
-	stop          chan bool
+	stopCh        chan struct{}
 }
 
 func NewDatasource(client agollo.Agollo, namespace string, handlers ...datasource.PropertyHandler) (datasource.DataSource, error) {
@@ -68,17 +68,17 @@ func (s *apolloDataSource) ReadSource() ([]byte, error) {
 
 func (s *apolloDataSource) Close() error {
 	s.client.Stop()
-	close(s.stop)
+	close(s.stopCh)
 	return nil
 }
 
 func (s *apolloDataSource) watch() {
 
 	errChan := s.client.Start()
-	watchNSCh := s.client.WatchNamespace(s.namespace, s.stop)
+	watchNSCh := s.client.WatchNamespace(s.namespace, nil)
 	for {
 		select {
-		case <-s.stop:
+		case <-s.stopCh:
 			return
 		case err := <-errChan:
 			logging.Error(err.Err, "ApolloDataSource: watch")
