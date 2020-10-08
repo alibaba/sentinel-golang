@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-func Example_consulDatasource_CustomizeClient() {
+func Example_consulDataSource_CustomizeClient() {
 	client, err := api.NewClient(&api.Config{
 		Address: "127.0.0.1:8500",
 	})
@@ -16,7 +16,7 @@ func Example_consulDatasource_CustomizeClient() {
 		fmt.Println("Failed to instance consul client")
 		os.Exit(1)
 	}
-	ds, err := NewDatasource("property_key",
+	ds, err := NewDataSource("property_key",
 		// customize consul client
 		WithConsulClient(client),
 		// preset property handlers
@@ -36,8 +36,8 @@ func Example_consulDatasource_CustomizeClient() {
 	}
 }
 
-func Example_consulDatasource_CustomizeConfig() {
-	ds, err := NewDatasource("property_key",
+func Example_consulDataSource_CustomizeConfig() {
+	ds, err := NewDataSource("property_key",
 		// customize consul config
 		WithConsulConfig(&api.Config{
 			Address: "127.0.0.1:8500",
