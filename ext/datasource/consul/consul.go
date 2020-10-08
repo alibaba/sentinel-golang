@@ -26,7 +26,7 @@ var (
 	ErrKeyDoesNotExist     = errors.New("key does not exist")
 )
 
-func NewDatasource(propertyKey string, opts ...Option) (datasource.DataSource, error) {
+func NewDataSource(propertyKey string, opts ...Option) (datasource.DataSource, error) {
 	var options = evaluateOptions(opts)
 	// if user don't specify the consul client, sentinel should initialize from the configuration
 	if options.consulClient == nil {
