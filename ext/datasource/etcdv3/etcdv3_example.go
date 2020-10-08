@@ -25,7 +25,7 @@ func Example_ClientWithOneDatasource() {
 	h := datasource.MockPropertyHandler{}
 	h.On("isPropertyConsistent", mock.Anything).Return(true)
 	h.On("Handle", mock.Anything).Return(nil)
-	ds, err := NewDatasource(cli, "foo", &h)
+	ds, err := NewDataSource(cli, "foo", &h)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,12 +53,12 @@ func Example_ClientWithMultiDatasource() {
 	h := datasource.MockPropertyHandler{}
 	h.On("isPropertyConsistent", mock.Anything).Return(true)
 	h.On("Handle", mock.Anything).Return(nil)
-	ds1, err := NewDatasource(cli, "foo", &h)
+	ds1, err := NewDataSource(cli, "foo", &h)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ds2, err := NewDatasource(cli, "aoo", &h)
+	ds2, err := NewDataSource(cli, "aoo", &h)
 	if err != nil {
 		log.Fatal(err)
 	}
