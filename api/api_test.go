@@ -13,7 +13,7 @@ type prepareSlotMock struct {
 }
 
 func (m *prepareSlotMock) Name() string {
-	return "mocck-sentinel-prepare-slot"
+	return "mock-sentinel-prepare-slot"
 }
 
 func (m *prepareSlotMock) Prepare(ctx *base.EntryContext) {

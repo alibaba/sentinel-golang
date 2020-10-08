@@ -127,7 +127,7 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 	options.slotChain = globalSlotChain
 	options.slotChain = misc.GetResourceSlotChain(resource)
 	if options.slotChain == nil {
-		return nil, base.NewBlockError(base.BlockTypeNoSlotChain)
+		options.slotChain = misc.GlobalSlotChain()
 	}
 
 	for _, opt := range opts {

@@ -1,6 +1,11 @@
 package misc
 
 import (
+	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/core/hotspot"
+	"github.com/alibaba/sentinel-golang/core/isolation"
+	"github.com/alibaba/sentinel-golang/core/system"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -9,9 +14,35 @@ import (
 )
 
 var (
+	globalSlotChain = BuildDefaultSlotChain()
+
 	rsSlotChainLock sync.RWMutex
 	rsSlotChain = make(map[string]*base.SlotChain, 8)
 )
+
+func GlobalSlotChain() *base.SlotChain {
+	return globalSlotChain
+}
+
+func BuildDefaultSlotChain() *base.SlotChain {
+	sc := base.NewSlotChain()
+	sc.AddStatPrepareSlotLast(stat.DefaultResourceNodePrepareSlot)
+
+	sc.AddRuleCheckSlotLast(system.DefaultAdaptiveSlot)
+	sc.AddRuleCheckSlotLast(flow.DefaultSlot)
+	sc.AddRuleCheckSlotLast(isolation.DefaultSlot)
+	sc.AddRuleCheckSlotLast(circuitbreaker.DefaultSlot)
+	sc.AddRuleCheckSlotLast(hotspot.DefaultSlot)
+
+	sc.AddStatSlotLast(stat.DefaultSlot)
+	sc.AddStatSlotLast(log.DefaultSlot)
+	sc.AddStatSlotLast(circuitbreaker.DefaultMetricStatSlot)
+	sc.AddStatSlotLast(hotspot.DefaultConcurrencyStatSlot)
+	sc.AddStatSlotLast(flow.DefaultStandaloneStatSlot)
+
+	return sc
+}
+
 
 func validateRuleCheckSlot(sc *base.SlotChain, s base.RuleCheckSlot) bool {
 	flag := false
