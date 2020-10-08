@@ -181,19 +181,19 @@ func HotSpotParamRulesUpdater(data interface{}) error {
 	} else if val, ok := data.([]*hotspot.Rule); ok {
 		rules = val
 	} else {
-		return Error{
-			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []hotspot.Rule or []*hotspot.Rule, in fact, data: %+v", data),
-		}
+		return NewError(
+			UpdatePropertyError,
+			fmt.Sprintf("Fail to type assert data to []hotspot.Rule or []*hotspot.Rule, in fact, data: %+v", data),
+		)
 	}
 	succ, err := hotspot.LoadRules(rules)
 	if succ && err == nil {
 		return nil
 	}
-	return Error{
-		code: UpdatePropertyError,
-		desc: fmt.Sprintf("%+v", err),
-	}
+	return NewError(
+		UpdatePropertyError,
+		fmt.Sprintf("%+v", err),
+	)
 }
 
 func NewHotSpotParamRulesHandler(converter PropertyConverter) PropertyHandler {
