@@ -23,9 +23,9 @@ type Etcdv3DataSource struct {
 	closed util.AtomicBool
 }
 
-// NewDatasource new a Etcdv3DataSource instance.
+// NewDataSource new a Etcdv3DataSource instance.
 // client is the etcdv3 client, it must be useful and should be release by User.
-func NewDatasource(client *clientv3.Client, key string, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error) {
+func NewDataSource(client *clientv3.Client, key string, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error) {
 	if client == nil {
 		return nil, errors.New("The etcdv3 client is nil.")
 	}
