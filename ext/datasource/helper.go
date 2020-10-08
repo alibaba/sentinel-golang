@@ -25,7 +25,7 @@ func FlowRuleJsonArrayParser(src []byte) (interface{}, error) {
 
 	rules := make([]*flow.Rule, 0)
 	if err := json.Unmarshal(src, &rules); err != nil {
-		desc := fmt.Sprintf("failed to convert source bytes to []*flow.Rule, err: %s", err.Error())
+		desc := fmt.Sprintf("Fail to convert source bytes to []*flow.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
 	}
 	return rules, nil
@@ -72,7 +72,7 @@ func SystemRuleJsonArrayParser(src []byte) (interface{}, error) {
 
 	rules := make([]*system.Rule, 0)
 	if err := json.Unmarshal(src, &rules); err != nil {
-		desc := fmt.Sprintf("failed to convert source bytes to []*system.Rule, err: %s", err.Error())
+		desc := fmt.Sprintf("Fail to convert source bytes to []*system.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
 	}
 	return rules, nil
@@ -118,7 +118,7 @@ func CircuitBreakerRuleJsonArrayParser(src []byte) (interface{}, error) {
 
 	rules := make([]*cb.Rule, 0)
 	if err := json.Unmarshal(src, &rules); err != nil {
-		desc := fmt.Sprintf("failed to convert source bytes to []*circuitbreaker.Rule, err: %s", err.Error())
+		desc := fmt.Sprintf("Fail to convert source bytes to []*circuitbreaker.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
 	}
 	return rules, nil
@@ -161,7 +161,7 @@ func HotSpotParamRuleJsonArrayParser(src []byte) (interface{}, error) {
 
 	rules := make([]*hotspot.Rule, 0)
 	if err := json.Unmarshal(src, &rules); err != nil {
-		desc := fmt.Sprintf("failed to convert source bytes to []*hotspot.Rule, err: %s", err.Error())
+		desc := fmt.Sprintf("Fail to convert source bytes to []*hotspot.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
 	}
 	return rules, nil
