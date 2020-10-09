@@ -8,8 +8,8 @@ on:
 
 jobs:
 
-  build:
-    name: ${{ matrix.os }} - Go ${{ matrix.go_version }}
+  test:
+    name: test-${{ matrix.os }} - Go ${{ matrix.go_version }}
     runs-on: ubuntu-latest
     strategy:
      # If you want to matrix build , you can append the following list.
@@ -54,7 +54,7 @@ jobs:
       run: bash <(curl -s https://codecov.io/bash)
   
   check:
-    name: ${{ matrix.os }} - Go ${{ matrix.go_version }}
+    name: check-${{ matrix.os }} - Go ${{ matrix.go_version }}
     runs-on: ubuntu-latest
     strategy:
      # If you want to matrix build , you can append the following list.
