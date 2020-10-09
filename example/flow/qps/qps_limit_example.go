@@ -4,40 +4,41 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"testing"
 	"time"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
-func Benchmark_qps(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		doTest()
-	}
-}
-
-func doTest() {
+func main() {
 	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
+	conf := config.NewDefaultConfig()
+	// for testing, logging output to console
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
+	err := sentinel.InitWithConfig(conf)
 	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
+		log.Fatal(err)
 	}
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:        "some-test",
-			MetricType:      flow.QPS,
-			Count:           100,
-			ControlBehavior: flow.Reject,
+			Resource:               "some-test",
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			Threshold:              10,
+			StatIntervalInMs:       1000,
 		},
 	})
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 		return
 	}
+
+	ch := make(chan struct{})
 
 	for i := 0; i < 10; i++ {
 		go func() {
@@ -58,5 +59,5 @@ func doTest() {
 			}
 		}()
 	}
-	time.Sleep(time.Second * 5)
+	<-ch
 }

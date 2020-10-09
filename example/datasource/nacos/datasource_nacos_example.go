@@ -2,9 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"sync/atomic"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/core/flow"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -23,19 +27,9 @@ type Counter struct {
 }
 
 func main() {
+	startFlowModule()
+
 	counter := Counter{pass: new(int64), block: new(int64), total: new(int64)}
-
-	if err := sentinel.InitDefault(); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// For testing
-	if err := logging.ResetGlobalLogger(logging.NewConsoleLogger("nacos-datasource-example")); err != nil {
-		fmt.Println(err)
-		return
-	}
-
 	//nacos server info
 	sc := []constant.ServerConfig{
 		{
@@ -76,19 +70,43 @@ func main() {
 
 	//Simulation of the request
 	ch := make(chan struct{})
+	<-ch
+}
+
+func startFlowModule() {
+	// We should initialize Sentinel first.
+	conf := config.NewDefaultConfig()
+	// for testing, logging output to console
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
+	err := sentinel.InitWithConfig(conf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = flow.LoadRules([]*flow.Rule{
+		{
+			Resource:               "some-test",
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			Threshold:              10,
+			StatIntervalInMs:       1000,
+		},
+	})
+	if err != nil {
+		log.Fatalf("Unexpected error: %+v", err)
+		return
+	}
+
 	for i := 0; i < 10; i++ {
 		go func() {
 			for {
-				atomic.AddInt64(counter.total, 1)
 				e, b := sentinel.Entry("some-test", sentinel.WithTrafficType(base.Inbound))
 				if b != nil {
-					atomic.AddInt64(counter.block, 1)
 					// Blocked. We could get the block reason from the BlockError.
 					time.Sleep(time.Duration(rand.Uint64()%10) * time.Millisecond)
 				} else {
-					atomic.AddInt64(counter.pass, 1)
+					// Passed, wrap the logic here.
 					time.Sleep(time.Duration(rand.Uint64()%10) * time.Millisecond)
-
 					// Be sure the entry is exited finally.
 					e.Exit()
 				}
@@ -96,7 +114,6 @@ func main() {
 			}
 		}()
 	}
-	<-ch
 }
 
 //statistic print

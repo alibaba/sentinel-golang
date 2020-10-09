@@ -3,6 +3,7 @@ package file
 import (
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -17,6 +18,7 @@ type RefreshableFileDataSource struct {
 	isInitialized  util.AtomicBool
 	closeChan      chan struct{}
 	watcher        *fsnotify.Watcher
+	closed         util.AtomicBool
 }
 
 func NewFileDataSource(sourceFilePath string, handlers ...datasource.PropertyHandler) *RefreshableFileDataSource {
@@ -51,7 +53,7 @@ func (s *RefreshableFileDataSource) Initialize() error {
 
 	err := s.doReadAndUpdate()
 	if err != nil {
-		logging.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
+		logging.Error(err, "Fail to execute doReadAndUpdate")
 	}
 
 	w, err := fsnotify.NewWatcher()
@@ -69,22 +71,47 @@ func (s *RefreshableFileDataSource) Initialize() error {
 		for {
 			select {
 			case ev := <-s.watcher.Events:
-				if ev.Op&fsnotify.Write == fsnotify.Write {
-					err := s.doReadAndUpdate()
-					if err != nil {
-						logging.Errorf("Fail to execute doReadAndUpdate, err: %+v", err)
-					}
-				}
-
-				if ev.Op&fsnotify.Remove == fsnotify.Remove || ev.Op&fsnotify.Rename == fsnotify.Rename {
-					logging.Warnf("The file source [%s] was removed or renamed.", s.sourceFilePath)
+				if ev.Op&fsnotify.Rename == fsnotify.Rename {
+					logging.Warn("The file source was renamed.", "sourceFilePath", s.sourceFilePath)
 					updateErr := s.Handle(nil)
 					if updateErr != nil {
-						logging.Errorf("Fail to update nil property, err: %+v", updateErr)
+						logging.Error(updateErr, "Fail to update nil property")
+					}
+
+					// try to watch sourceFile
+					_ = s.watcher.Remove(s.sourceFilePath)
+					retryCount := 0
+					for {
+						if retryCount > 5 {
+							logging.Error(errors.New("retry failed"), "Fail to retry watch", "sourceFilePath", s.sourceFilePath)
+							s.Close()
+							return
+						}
+						e := s.watcher.Add(s.sourceFilePath)
+						if e == nil {
+							break
+						}
+						retryCount++
+						logging.Error(e, "Failed to add to watcher", "sourceFilePath", s.sourceFilePath)
+						time.Sleep(time.Second)
 					}
 				}
+				if ev.Op&fsnotify.Remove == fsnotify.Remove {
+					logging.Warn("The file source was removed.", "sourceFilePath", s.sourceFilePath)
+					updateErr := s.Handle(nil)
+					if updateErr != nil {
+						logging.Error(updateErr, "Fail to update nil property")
+					}
+					s.Close()
+					return
+				}
+
+				err := s.doReadAndUpdate()
+				if err != nil {
+					logging.Error(err, "Fail to execute doReadAndUpdate")
+				}
 			case err := <-s.watcher.Errors:
-				logging.Errorf("Watch err on file[%s], err: %+v", s.sourceFilePath, err)
+				logging.Error(err, "Watch err on file", "sourceFilePath", s.sourceFilePath)
 			case <-s.closeChan:
 				return
 			}
@@ -103,7 +130,10 @@ func (s *RefreshableFileDataSource) doReadAndUpdate() (err error) {
 }
 
 func (s *RefreshableFileDataSource) Close() error {
+	if !s.closed.CompareAndSet(false, true) {
+		return nil
+	}
 	s.closeChan <- struct{}{}
-	logging.Infof("The RefreshableFileDataSource for [%s] had been closed.", s.sourceFilePath)
+	logging.Info("The RefreshableFileDataSource for file had been closed.", "sourceFilePath", s.sourceFilePath)
 	return nil
 }

@@ -9,6 +9,8 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -28,7 +30,10 @@ func (s *stateChangeTestListener) OnTransformToHalfOpen(prev circuitbreaker.Stat
 }
 
 func main() {
-	err := sentinel.InitDefault()
+	conf := config.NewDefaultConfig()
+	// for testing, logging output to console
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
+	err := sentinel.InitWithConfig(conf)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,17 +48,8 @@ func main() {
 			Strategy:         circuitbreaker.SlowRequestRatio,
 			RetryTimeoutMs:   3000,
 			MinRequestAmount: 10,
-			StatIntervalMs:   10000,
+			StatIntervalMs:   5000,
 			MaxAllowedRtMs:   50,
-			Threshold:        0.5,
-		},
-		// Statistic time span=10s, recoveryTimeout=3s, maxErrorRatio=50%
-		{
-			Resource:         "abc",
-			Strategy:         circuitbreaker.ErrorRatio,
-			RetryTimeoutMs:   3000,
-			MinRequestAmount: 10,
-			StatIntervalMs:   10000,
 			Threshold:        0.5,
 		},
 	})
@@ -61,19 +57,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
+	logging.Info("Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
 	go func() {
 		for {
 			e, b := sentinel.Entry("abc")
 			if b != nil {
-				//fmt.Println("g1blocked")
+				// g1 blocked
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
 				if rand.Uint64()%20 > 9 {
 					// Record current invocation as error.
 					sentinel.TraceError(e, errors.New("biz error"))
 				}
-				//fmt.Println("g1passed")
+				// g1 passed
 				time.Sleep(time.Duration(rand.Uint64()%80+10) * time.Millisecond)
 				e.Exit()
 			}
@@ -83,15 +79,14 @@ func main() {
 		for {
 			e, b := sentinel.Entry("abc")
 			if b != nil {
-				//fmt.Println("g2blocked")
+				// g2 blocked
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
-				//fmt.Println("g2passed")
+				// g2 passed
 				time.Sleep(time.Duration(rand.Uint64()%80) * time.Millisecond)
 				e.Exit()
 			}
 		}
 	}()
-
 	<-ch
 }

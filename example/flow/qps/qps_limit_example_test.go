@@ -7,12 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alibaba/sentinel-golang/util"
-
-	"github.com/alibaba/sentinel-golang/core/flow"
-
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 func Benchmark_qps(b *testing.B) {
@@ -30,17 +28,17 @@ func doTest() {
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:        "some-test",
-			MetricType:      flow.QPS,
-			Count:           100,
-			ControlBehavior: flow.WarmUp,
-			WarmUpPeriodSec: 10,
+			Resource:               "some-test",
+			Threshold:              100,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
 		},
 	})
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 		return
 	}
+
 	for i := 0; i < 10; i++ {
 		go func() {
 			for {

@@ -16,17 +16,17 @@ import (
 const (
 	TestSystemRules = `[
     {
-        "id": 0,
+        "id": "0",
         "metricType": 0,
         "adaptiveStrategy": 0
     },
     {
-        "id": 1,
+        "id": "1",
         "metricType": 0,
         "adaptiveStrategy": 0
     },
     {
-        "id": 2,
+        "id": "2",
         "metricType": 0,
         "adaptiveStrategy": 0
     }
@@ -83,7 +83,7 @@ func getNacosDataSource(client config_client.IConfigClient) (*NacosDataSource, e
 
 func TestNacosDataSource(t *testing.T) {
 
-	t.Run("NewNacosDataSource", func(t *testing.T) {
+	t.Run("TestNewNacosDataSource", func(t *testing.T) {
 		sc := []constant.ServerConfig{
 			{
 				ContextPath: "/nacos",
@@ -104,7 +104,7 @@ func TestNacosDataSource(t *testing.T) {
 		assert.True(t, nds != nil && err == nil)
 	})
 
-	t.Run("NacosDataSource_Initialize", func(t *testing.T) {
+	t.Run("TestNacosDataSourceInitialize", func(t *testing.T) {
 		mh1 := &datasource.MockPropertyHandler{}
 		mh1.On("Handle", mock.Anything).Return(nil)
 		mh1.On("isPropertyConsistent", mock.Anything).Return(false)
@@ -114,6 +114,19 @@ func TestNacosDataSource(t *testing.T) {
 		nds, err := getNacosDataSource(nacosClientMock)
 		assert.True(t, nds != nil && err == nil)
 		err = nds.Initialize()
+		assert.True(t, err == nil)
+	})
+
+	t.Run("TestNacosDataSourceClose", func(t *testing.T) {
+		mh1 := &datasource.MockPropertyHandler{}
+		mh1.On("Handle", mock.Anything).Return(nil)
+		mh1.On("isPropertyConsistent", mock.Anything).Return(false)
+		nacosClientMock := new(nacosClientMock)
+		nacosClientMock.On("CancelListenConfig", mock.Anything).Return(nil)
+		nds, err := getNacosDataSource(nacosClientMock)
+		assert.True(t, nds != nil && err == nil)
+		assert.True(t, nds != nil)
+		err = nds.Close()
 		assert.True(t, err == nil)
 	})
 }

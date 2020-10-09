@@ -14,7 +14,6 @@ import (
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -25,18 +24,18 @@ type StateChangeListenerMock struct {
 
 func (s *StateChangeListenerMock) OnTransformToClosed(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	_ = s.Called(prev, rule)
-	logging.Debugf("rule.strategy: %+v, From %s to Closed, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
+	logging.Debug("transform to closed", "strategy", rule.Strategy, "prevState", prev.String())
 	return
 }
 
 func (s *StateChangeListenerMock) OnTransformToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
 	_ = s.Called(prev, rule, snapshot)
-	logging.Debugf("rule.strategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
+	logging.Debug("transform to open", "strategy", rule.Strategy, "prevState", prev.String(), "snapshot", snapshot)
 }
 
 func (s *StateChangeListenerMock) OnTransformToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
 	_ = s.Called(prev, rule)
-	logging.Debugf("rule.strategy: %+v, From %s to Half-Open, time: %d\n", rule.Strategy, prev.String(), util.CurrentTimeMillis())
+	logging.Debug("transform to Half-Open", "strategy", rule.Strategy, "prevState", prev.String())
 }
 
 // Test scenario
@@ -53,7 +52,7 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	}
 
 	conf := config.NewDefaultConfig()
-	conf.Sentinel.Log.Logger = logging.NewConsoleLogger("cb-integration-normal")
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
 	err := sentinel.InitWithConfig(conf)
 	if err != nil {
 		t.Fatal(err)
@@ -112,7 +111,7 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	stateListener2.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
 	stateListener2.On("OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything).Return()
 	stateListener2.On("OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything).Return()
-	e, b = sentinel.Entry("abc", sentinel.WithSlotChain(sc))
+	_, b = sentinel.Entry("abc", sentinel.WithSlotChain(sc))
 	assert.True(t, b != nil && b.BlockType() == base.BlockTypeCircuitBreaking && b.TriggeredRule().(*circuitbreaker.Rule) == cbRule2)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToHalfOpen", 1)
 	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything)
@@ -127,7 +126,7 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	stateListener3.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
 	stateListener3.On("OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything).Return()
 	stateListener3.On("OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything).Return()
-	e, b = sentinel.Entry("abc", sentinel.WithSlotChain(sc))
+	_, b = sentinel.Entry("abc", sentinel.WithSlotChain(sc))
 	assert.True(t, b != nil && b.BlockType() == base.BlockTypeCircuitBreaking && b.TriggeredRule().(*circuitbreaker.Rule) == cbRule2)
 	stateListener3.AssertNumberOfCalls(t, "OnTransformToHalfOpen", 1)
 	stateListener3.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything)
@@ -147,7 +146,7 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 	}
 
 	conf := config.NewDefaultConfig()
-	conf.Sentinel.Log.Logger = logging.NewConsoleLogger("cb-integration-probe-succeed")
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
 	err := sentinel.InitWithConfig(conf)
 	if err != nil {
 		t.Fatal(err)
@@ -218,7 +217,7 @@ func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
 		t.Fatal(clearErr)
 	}
 	conf := config.NewDefaultConfig()
-	conf.Sentinel.Log.Logger = logging.NewConsoleLogger("cb-integration-concurrency")
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
 	err := sentinel.InitWithConfig(conf)
 	if err != nil {
 		t.Fatal(err)

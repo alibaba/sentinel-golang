@@ -5,6 +5,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
+	"github.com/alibaba/sentinel-golang/core/isolation"
 	"github.com/alibaba/sentinel-golang/core/log"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system"
@@ -27,14 +28,16 @@ func GlobalSlotChain() *base.SlotChain {
 
 func BuildDefaultSlotChain() *base.SlotChain {
 	sc := base.NewSlotChain()
-	sc.AddStatPrepareSlotLast(&stat.StatNodePrepareSlot{})
-	sc.AddRuleCheckSlotLast(&system.SystemAdaptiveSlot{})
-	sc.AddRuleCheckSlotLast(&flow.FlowSlot{})
+	sc.AddStatPrepareSlotLast(&stat.ResourceNodePrepareSlot{})
+	sc.AddRuleCheckSlotLast(&system.AdaptiveSlot{})
+	sc.AddRuleCheckSlotLast(&flow.Slot{})
+	sc.AddRuleCheckSlotLast(&isolation.Slot{})
 	sc.AddRuleCheckSlotLast(&circuitbreaker.Slot{})
 	sc.AddRuleCheckSlotLast(&hotspot.Slot{})
-	sc.AddStatSlotLast(&stat.StatisticSlot{})
-	sc.AddStatSlotLast(&log.LogSlot{})
+	sc.AddStatSlotLast(&stat.Slot{})
+	sc.AddStatSlotLast(&log.Slot{})
 	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
 	sc.AddStatSlotLast(&hotspot.ConcurrencyStatSlot{})
+	sc.AddStatSlotLast(&flow.StandaloneStatSlot{})
 	return sc
 }

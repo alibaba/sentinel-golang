@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
@@ -16,6 +17,7 @@ import (
 func TestMain(m *testing.M) {
 	_ = sentinel.InitDefault()
 	m.Run()
+	os.Exit(0)
 }
 
 func TestStreamServerIntercept(t *testing.T) {
@@ -31,10 +33,10 @@ func TestStreamServerIntercept(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:        "/grpc.testing.TestService/StreamingInputCall",
-				MetricType:      flow.QPS,
-				Count:           1,
-				ControlBehavior: flow.Reject,
+				Resource:               "/grpc.testing.TestService/StreamingInputCall",
+				Threshold:              1,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -49,10 +51,10 @@ func TestStreamServerIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:        "/grpc.testing.TestService/StreamingInputCall",
-				MetricType:      flow.QPS,
-				Count:           0,
-				ControlBehavior: flow.Reject,
+				Resource:               "/grpc.testing.TestService/StreamingInputCall",
+				Threshold:              0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -73,10 +75,10 @@ func TestUnaryServerIntercept(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:        "/grpc.testing.TestService/UnaryCall",
-				MetricType:      flow.QPS,
-				Count:           1,
-				ControlBehavior: flow.Reject,
+				Resource:               "/grpc.testing.TestService/UnaryCall",
+				Threshold:              1,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)
@@ -101,10 +103,10 @@ func TestUnaryServerIntercept(t *testing.T) {
 	t.Run("fail", func(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
-				Resource:        "/grpc.testing.TestService/UnaryCall",
-				MetricType:      flow.QPS,
-				Count:           0,
-				ControlBehavior: flow.Reject,
+				Resource:               "/grpc.testing.TestService/UnaryCall",
+				Threshold:              0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
 			},
 		})
 		assert.Nil(t, err)

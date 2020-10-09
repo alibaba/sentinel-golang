@@ -1,10 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 
@@ -51,6 +50,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 		return err
 	}
 
+	defer logging.Info("print effective global config", "globalConfig", *globalCfg)
 	// Configured Logger is the highest priority
 	if configLogger := Logger(); configLogger != nil {
 		err = logging.ResetGlobalLogger(configLogger)
@@ -59,11 +59,15 @@ func OverrideConfigFromEnvAndInitLog() error {
 		}
 		return nil
 	}
-	err = initializeLogConfig(LogBaseDir(), LogUsePid())
-	if err != nil {
+
+	logDir := LogBaseDir()
+	if len(logDir) == 0 {
+		logDir = GetDefaultLogDir()
+	}
+	if err := initializeLogConfig(logDir, LogUsePid()); err != nil {
 		return err
 	}
-	logging.Infof("App name resolved: %s", AppName())
+	logging.Info("App name resolved", "appName", AppName())
 	return nil
 }
 
@@ -86,7 +90,7 @@ func loadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	logging.Infof("Resolving Sentinel config from file: %s", filePath)
+	logging.Info("Resolving Sentinel config from file", "file", filePath)
 	return checkConfValid(&(globalCfg.Sentinel))
 }
 
@@ -134,13 +138,12 @@ func initializeLogConfig(logDir string, usePid bool) (err error) {
 }
 
 func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
-	logDir := util.AddPathSeparatorIfAbsent(logBaseDir)
-	filePath := logDir + logging.RecordLogFileName
+	filePath := filepath.Join(logBaseDir, logging.RecordLogFileName)
 	if withPid {
 		filePath = filePath + ".pid" + strconv.Itoa(os.Getpid())
 	}
 
-	fileLogger, err := logging.NewSimpleFileLogger(filePath, "", log.LstdFlags|log.Lshortfile)
+	fileLogger, err := logging.NewSimpleFileLogger(filePath)
 	if err != nil {
 		return err
 	}
@@ -149,7 +152,7 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 		return err
 	}
 
-	fmt.Println("INFO: log base directory is: " + logDir)
+	logging.Info("INFO: log base directory is: " + logBaseDir)
 
 	return nil
 }
@@ -159,7 +162,7 @@ func GetDefaultLogDir() string {
 	if err != nil {
 		return ""
 	}
-	return util.AddPathSeparatorIfAbsent(home) + logging.DefaultDirName
+	return filepath.Join(home, logging.DefaultDirName)
 }
 
 func AppName() string {
@@ -201,4 +204,23 @@ func SystemStatCollectIntervalMs() uint32 {
 
 func UseCacheTime() bool {
 	return globalCfg.UseCacheTime()
+}
+
+func GlobalStatisticIntervalMsTotal() uint32 {
+	return globalCfg.GlobalStatisticIntervalMsTotal()
+}
+
+func GlobalStatisticSampleCountTotal() uint32 {
+	return globalCfg.GlobalStatisticSampleCountTotal()
+}
+
+func GlobalStatisticBucketLengthInMs() uint32 {
+	return globalCfg.GlobalStatisticIntervalMsTotal() / GlobalStatisticSampleCountTotal()
+}
+
+func MetricStatisticIntervalMs() uint32 {
+	return globalCfg.MetricStatisticIntervalMs()
+}
+func MetricStatisticSampleCount() uint32 {
+	return globalCfg.MetricStatisticSampleCount()
 }

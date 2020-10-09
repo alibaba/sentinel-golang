@@ -1,35 +1,35 @@
 [
     {
         "resource": "abc",
-        "limitOrigin": "default",
-        "metricType": 0,
-        "count": 100.0,
+        "threshold": 100.0,
         "relationStrategy": 0,
+        "tokenCalculateStrategy": 0,
         "controlBehavior": 0,
         "refResource": "refDefault",
         "warmUpPeriodSec": 10,
-        "maxQueueingTimeMs": 1000
+        "maxQueueingTimeMs": 1000,
+        "statIntervalInMs": 0
     },
     {
         "resource": "abc",
-        "limitOrigin": "default",
-        "metricType": 1,
-        "count": 200.0,
+        "threshold": 200.0,
         "relationStrategy": 1,
+        "tokenCalculateStrategy": 0,
         "controlBehavior": 1,
         "refResource": "refDefault",
         "warmUpPeriodSec": 20,
-        "maxQueueingTimeMs": 2000
+        "maxQueueingTimeMs": 2000,
+        "statIntervalInMs": 0
     },
     {
         "resource": "abc",
-        "limitOrigin": "default",
-        "metricType": 1,
-        "count": 300.0,
+        "threshold": 300.0,
         "relationStrategy": 0,
+        "tokenCalculateStrategy": 0,
         "controlBehavior": 1,
         "refResource": "refDefault",
         "warmUpPeriodSec": 30,
-        "maxQueueingTimeMs": 3000
+        "maxQueueingTimeMs": 3000,
+        "statIntervalInMs": 0
     }
 ]

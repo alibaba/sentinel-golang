@@ -51,7 +51,7 @@ func (s *NacosDataSource) Initialize() error {
 	}
 	err = s.listen(s.client)
 	if err == nil {
-		logging.Infof("Nacos data source is successfully initialized, group: %s, dataId: %s", s.group, s.dataId)
+		logging.Info("nacos data source is successfully initialized", "group", s.group, "dataId", s.dataId)
 	}
 	return err
 }
@@ -65,7 +65,7 @@ func (s *NacosDataSource) ReadSource() ([]byte, error) {
 		return nil, errors.Errorf("Failed to read the nacos data source when initialization, err: %+v", err)
 	}
 
-	logging.Infof("Succeed to read source for group: %s, dataId: %s, data: %s", s.group, s.dataId, content)
+	logging.Info("succeed to read source", "group", s.group, "dataId", s.dataId, "content", content)
 	return []byte(content), err
 }
 
@@ -78,10 +78,10 @@ func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error)
 		DataId: s.dataId,
 		Group:  s.group,
 		OnChange: func(namespace, group, dataId, data string) {
-			logging.Infof("Receive listened property. namespace: %s, group: %s, dataId: %s, data: %s", namespace, group, dataId, data)
+			logging.Info("receive listened property", "namespace", namespace, "group", group, "dataId", dataId, "data", data)
 			err := s.doUpdate([]byte(data))
 			if err != nil {
-				logging.Errorf("Fail to update data source, err: %+v", err)
+				logging.Error(err, "fail to update data source")
 			}
 		},
 	}
@@ -100,6 +100,6 @@ func (s *NacosDataSource) Close() error {
 	if err != nil {
 		return errors.Errorf("Failed to cancel listen to the nacos data source, err: %+v", err)
 	}
-	logging.Infof("The nacos datasource had been closed, group: %s, dataId: %s", s.group, s.dataId)
+	logging.Info("the nacos datasource had been closed", "group", s.group, "dataId", s.dataId)
 	return nil
 }

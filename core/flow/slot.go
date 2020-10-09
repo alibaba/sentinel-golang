@@ -6,27 +6,24 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/pkg/errors"
 )
 
-// FlowSlot
-type FlowSlot struct {
+type Slot struct {
 }
 
-func (s *FlowSlot) Check(ctx *base.EntryContext) *base.TokenResult {
+func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	res := ctx.Resource.Name()
 	tcs := getTrafficControllerListFor(res)
 	result := ctx.RuleCheckResult
-	if len(tcs) == 0 {
-		return result
-	}
 
 	// Check rules in order
 	for _, tc := range tcs {
 		if tc == nil {
-			logging.Warnf("nil traffic controller found, res: %s", res)
+			logging.Warn("nil traffic controller found", "resourceName", res)
 			continue
 		}
-		r := canPassCheck(tc, ctx.StatNode, ctx.Input.AcquireCount)
+		r := canPassCheck(tc, ctx.StatNode, ctx.Input.BatchCount)
 		if r == nil {
 			// nil means pass
 			continue
@@ -45,12 +42,12 @@ func (s *FlowSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func canPassCheck(tc *TrafficShapingController, node base.StatNode, acquireCount uint32) *base.TokenResult {
-	return canPassCheckWithFlag(tc, node, acquireCount, 0)
+func canPassCheck(tc *TrafficShapingController, node base.StatNode, batchCount uint32) *base.TokenResult {
+	return canPassCheckWithFlag(tc, node, batchCount, 0)
 }
 
-func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
-	return checkInLocal(tc, node, acquireCount, flag)
+func canPassCheckWithFlag(tc *TrafficShapingController, node base.StatNode, batchCount uint32, flag int32) *base.TokenResult {
+	return checkInLocal(tc, node, batchCount, flag)
 }
 
 func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
@@ -60,10 +57,13 @@ func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
 	return node
 }
 
-func checkInLocal(tc *TrafficShapingController, node base.StatNode, acquireCount uint32, flag int32) *base.TokenResult {
-	actual := selectNodeByRelStrategy(tc.rule, node)
+func checkInLocal(tc *TrafficShapingController, resStat base.StatNode, batchCount uint32, flag int32) *base.TokenResult {
+	actual := selectNodeByRelStrategy(tc.rule, resStat)
 	if actual == nil {
+		logging.FrequentErrorOnce.Do(func() {
+			logging.Error(errors.Errorf("nil resource node"), "no resource node for flow rule", "rule", tc.rule)
+		})
 		return base.NewTokenResultPass()
 	}
-	return tc.PerformChecking(node, acquireCount, flag)
+	return tc.PerformChecking(actual, batchCount, flag)
 }

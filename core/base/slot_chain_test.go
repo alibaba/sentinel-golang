@@ -223,10 +223,10 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 	ctx.SetEntry(NewSentinelEntry(ctx, rw, sc))
 	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
-		AcquireCount: 1,
-		Flag:         0,
-		Args:         nil,
-		Attachments:  nil,
+		BatchCount:  1,
+		Flag:        0,
+		Args:        nil,
+		Attachments: nil,
 	}
 
 	ps1 := &prepareSlotMock{}
@@ -266,10 +266,10 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	ctx.Resource = rw
 	ctx.StatNode = &StatNodeMock{}
 	ctx.Input = &SentinelInput{
-		AcquireCount: 1,
-		Flag:         0,
-		Args:         nil,
-		Attachments:  nil,
+		BatchCount:  1,
+		Flag:        0,
+		Args:        nil,
+		Attachments: nil,
 	}
 
 	rbs := &prepareSlotMock{}
@@ -324,10 +324,10 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 	statNodeMock.On("AddErrorRequest", mock.Anything).Return()
 	ctx.StatNode = statNodeMock
 	ctx.Input = &SentinelInput{
-		AcquireCount: 1,
-		Flag:         0,
-		Args:         nil,
-		Attachments:  nil,
+		BatchCount:  1,
+		Flag:        0,
+		Args:        nil,
+		Attachments: nil,
 	}
 
 	rbs := &badPrepareSlotMock{}

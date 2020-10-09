@@ -8,7 +8,7 @@ import (
 
 func TestGetRules(t *testing.T) {
 	t.Run("EmptyRules", func(t *testing.T) {
-		rules := GetRules()
+		rules := getRules()
 		assert.Equal(t, 0, len(rules))
 	})
 
@@ -20,12 +20,12 @@ func TestGetRules(t *testing.T) {
 			Concurrency: {&Rule{MetricType: Concurrency, TriggerCount: 2}},
 		}
 		ruleMap = r
-		rules := GetRules()
+		rules := getRules()
 		assert.Equal(t, 2, len(rules))
 
 		r[InboundQPS] = append(r[InboundQPS], &Rule{MetricType: InboundQPS, TriggerCount: 2})
 		ruleMap = r
-		rules = GetRules()
+		rules = getRules()
 		assert.Equal(t, 3, len(rules))
 	})
 }

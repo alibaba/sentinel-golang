@@ -23,9 +23,9 @@ type Etcdv3DataSource struct {
 	closed util.AtomicBool
 }
 
-// NewDatasource new a Etcdv3DataSource instance.
+// NewDataSource new a Etcdv3DataSource instance.
 // client is the etcdv3 client, it must be useful and should be release by User.
-func NewDatasource(client *clientv3.Client, key string, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error) {
+func NewDataSource(client *clientv3.Client, key string, handlers ...datasource.PropertyHandler) (*Etcdv3DataSource, error) {
 	if client == nil {
 		return nil, errors.New("The etcdv3 client is nil.")
 	}
@@ -42,7 +42,7 @@ func NewDatasource(client *clientv3.Client, key string, handlers ...datasource.P
 func (s *Etcdv3DataSource) Initialize() error {
 	err := s.doReadAndUpdate()
 	if err != nil {
-		logging.Errorf("Fail to update data for key[%s] when execute Initialize function, err: %+v", s.propertyKey, err)
+		logging.Error(err, "Fail to update data for key when execute Initialize function", "propertyKey", s.propertyKey)
 	}
 	go util.RunWithRecover(s.watch)
 	return nil
@@ -59,7 +59,8 @@ func (s *Etcdv3DataSource) ReadSource() ([]byte, error) {
 		return nil, errors.Errorf("The key[%s] is not existed in etcd server.", s.propertyKey)
 	}
 	s.lastUpdatedRevision = resp.Header.GetRevision()
-	logging.Infof("Get the newest data for key:%s, revision: %d, value: %s", s.propertyKey, resp.Header.GetRevision(), resp.Kvs[0].Value)
+	logging.Info("Get the newest data for key", "propertyKey", s.propertyKey,
+		"revision", resp.Header.GetRevision(), "value", resp.Kvs[0].Value)
 	return resp.Kvs[0].Value, nil
 }
 
@@ -80,7 +81,7 @@ func (s *Etcdv3DataSource) processWatchResponse(resp *clientv3.WatchResponse) {
 	}
 
 	if err := resp.Err(); err != nil {
-		logging.Errorf("Watch on etcd endpoints(%+v) occur error, err: %+v", s.client.Endpoints(), err)
+		logging.Error(err, "Watch on etcd endpoints occur error", "endpointd", s.client.Endpoints())
 		return
 	}
 
@@ -88,13 +89,13 @@ func (s *Etcdv3DataSource) processWatchResponse(resp *clientv3.WatchResponse) {
 		if ev.Type == mvccpb.PUT {
 			err := s.doReadAndUpdate()
 			if err != nil {
-				logging.Errorf("Fail to execute doReadAndUpdate for PUT event, err: %+v", err)
+				logging.Error(err, "Fail to execute doReadAndUpdate for PUT event")
 			}
 		}
 		if ev.Type == mvccpb.DELETE {
 			updateErr := s.Handle(nil)
 			if updateErr != nil {
-				logging.Errorf("Fail to execute doReadAndUpdate for DELETE event, err: %+v", updateErr)
+				logging.Error(updateErr, "Fail to execute doReadAndUpdate for DELETE event")
 			}
 		}
 	}
@@ -117,9 +118,9 @@ func (s *Etcdv3DataSource) watch() {
 		ctx, cancel = context.WithCancel(context.Background())
 		s.cancel = cancel
 		if s.lastUpdatedRevision > 0 {
-			rch = s.client.Watch(ctx, s.propertyKey, clientv3.WithCreatedNotify(), clientv3.WithRev(s.lastUpdatedRevision))
+			rch = s.client.Watch(ctx, s.propertyKey, clientv3.WithRev(s.lastUpdatedRevision+1))
 		} else {
-			rch = s.client.Watch(ctx, s.propertyKey, clientv3.WithCreatedNotify())
+			rch = s.client.Watch(ctx, s.propertyKey)
 		}
 	}
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {
-	tc := NewThrottlingChecker(0)
+	tc := NewThrottlingChecker(nil, 0)
 	var qps float64 = 5
 
 	// The first request will pass.
@@ -28,7 +28,7 @@ func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {
 }
 
 func TestThrottlingChecker_DoCheckSingleThread(t *testing.T) {
-	tc := NewThrottlingChecker(1000)
+	tc := NewThrottlingChecker(nil, 1000)
 	var qps float64 = 5
 	resultList := make([]*base.TokenResult, 0)
 	for i := 0; i < 10; i++ {
@@ -48,7 +48,7 @@ func TestThrottlingChecker_DoCheckSingleThread(t *testing.T) {
 }
 
 func TestThrottlingChecker_DoCheckQueueingParallel(t *testing.T) {
-	tc := NewThrottlingChecker(1000)
+	tc := NewThrottlingChecker(nil, 1000)
 	var qps float64 = 5
 
 	assert.True(t, tc.DoCheck(nil, 1, qps) == nil)

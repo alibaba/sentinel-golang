@@ -20,16 +20,18 @@ func initSentinel(t *testing.T) {
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:        "GET:/ping",
-			MetricType:      flow.QPS,
-			Count:           1,
-			ControlBehavior: flow.Reject,
+			Resource:               "GET:/ping",
+			Threshold:              1,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			StatIntervalInMs:       1000,
 		},
 		{
-			Resource:        "/api/:uid",
-			MetricType:      flow.QPS,
-			Count:           0,
-			ControlBehavior: flow.Reject,
+			Resource:               "/api/:uid",
+			Threshold:              0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			StatIntervalInMs:       1000,
 		},
 	})
 	if err != nil {

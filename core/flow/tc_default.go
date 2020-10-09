@@ -4,37 +4,49 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
-type DefaultTrafficShapingCalculator struct {
+type DirectTrafficShapingCalculator struct {
+	owner     *TrafficShapingController
 	threshold float64
 }
 
-func NewDefaultTrafficShapingCalculator(threshold float64) *DefaultTrafficShapingCalculator {
-	return &DefaultTrafficShapingCalculator{threshold: threshold}
+func NewDirectTrafficShapingCalculator(owner *TrafficShapingController, threshold float64) *DirectTrafficShapingCalculator {
+	return &DirectTrafficShapingCalculator{
+		owner:     owner,
+		threshold: threshold,
+	}
 }
 
-func (d *DefaultTrafficShapingCalculator) CalculateAllowedTokens(base.StatNode, uint32, int32) float64 {
+func (d *DirectTrafficShapingCalculator) CalculateAllowedTokens(uint32, int32) float64 {
 	return d.threshold
 }
 
-type DefaultTrafficShapingChecker struct {
-	rule *Rule
+func (d *DirectTrafficShapingCalculator) BoundOwner() *TrafficShapingController {
+	return d.owner
 }
 
-func NewDefaultTrafficShapingChecker(rule *Rule) *DefaultTrafficShapingChecker {
-	return &DefaultTrafficShapingChecker{rule: rule}
+type RejectTrafficShapingChecker struct {
+	owner *TrafficShapingController
+	rule  *Rule
 }
 
-func (d *DefaultTrafficShapingChecker) DoCheck(node base.StatNode, acquireCount uint32, threshold float64) *base.TokenResult {
-	if node == nil {
+func NewRejectTrafficShapingChecker(owner *TrafficShapingController, rule *Rule) *RejectTrafficShapingChecker {
+	return &RejectTrafficShapingChecker{
+		owner: owner,
+		rule:  rule,
+	}
+}
+
+func (d *RejectTrafficShapingChecker) BoundOwner() *TrafficShapingController {
+	return d.owner
+}
+
+func (d *RejectTrafficShapingChecker) DoCheck(resStat base.StatNode, batchCount uint32, threshold float64) *base.TokenResult {
+	metricReadonlyStat := d.BoundOwner().boundStat.readOnlyMetric
+	if metricReadonlyStat == nil {
 		return nil
 	}
-	var curCount float64
-	if d.rule.MetricType == Concurrency {
-		curCount = float64(node.CurrentGoroutineNum())
-	} else {
-		curCount = node.GetQPS(base.MetricEventPass)
-	}
-	if curCount+float64(acquireCount) > threshold {
+	curCount := float64(metricReadonlyStat.GetSum(base.MetricEventPass))
+	if curCount+float64(batchCount) > threshold {
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, "", d.rule, curCount)
 	}
 	return nil

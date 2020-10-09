@@ -1,12 +1,13 @@
 package base
 
 import (
-	"fmt"
+	"reflect"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 // SlidingWindowMetric represents the sliding window metric wrapper.
@@ -21,37 +22,21 @@ type SlidingWindowMetric struct {
 }
 
 // It must pass the parameter point to the real storage entity
-func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapArray) *SlidingWindowMetric {
-	if real == nil || intervalInMs <= 0 || sampleCount <= 0 {
-		panic(fmt.Sprintf("Illegal parameters,intervalInMs=%d,sampleCount=%d,real=%+v.", intervalInMs, sampleCount, real))
+func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapArray) (*SlidingWindowMetric, error) {
+	if real == nil {
+		return nil, errors.New("Nil BucketLeapArray")
 	}
-
-	if intervalInMs%sampleCount != 0 {
-		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
+	if err := base.CheckValidityForReuseStatistic(sampleCount, intervalInMs, real.SampleCount(), real.IntervalInMs()); err != nil {
+		return nil, err
 	}
 	bucketLengthInMs := intervalInMs / sampleCount
-
-	parentIntervalInMs := real.IntervalInMs()
-	parentBucketLengthInMs := real.BucketLengthInMs()
-
-	// bucketLengthInMs of BucketLeapArray must be divisible by bucketLengthInMs of SlidingWindowMetric
-	// for example: bucketLengthInMs of BucketLeapArray is 500ms, and bucketLengthInMs of SlidingWindowMetric is 2000ms
-	// for example: bucketLengthInMs of BucketLeapArray is 500ms, and bucketLengthInMs of SlidingWindowMetric is 500ms
-	if bucketLengthInMs%parentBucketLengthInMs != 0 {
-		panic(fmt.Sprintf("BucketLeapArray's BucketLengthInMs(%d) is not divisible by SlidingWindowMetric's BucketLengthInMs(%d).", parentBucketLengthInMs, bucketLengthInMs))
-	}
-
-	if intervalInMs > parentIntervalInMs {
-		// todo if SlidingWindowMetric's intervalInMs is greater than BucketLeapArray.
-		panic(fmt.Sprintf("The interval(%d) of SlidingWindowMetric is greater than parent BucketLeapArray(%d).", intervalInMs, parentIntervalInMs))
-	}
 
 	return &SlidingWindowMetric{
 		bucketLengthInMs: bucketLengthInMs,
 		sampleCount:      sampleCount,
 		intervalInMs:     intervalInMs,
 		real:             real,
-	}
+	}, nil
 }
 
 // Get the start time range of the bucket for the provided time.
@@ -72,12 +57,12 @@ func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*BucketWrap
 	for _, ww := range values {
 		mb := ww.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when summing count")
+			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when summing count")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Fail to cast data Value(%+v) to MetricBucket type", mb)
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		ret += counter.Get(event)
@@ -119,12 +104,12 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when GetMaxOfSingleBucket")
+			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when GetMaxOfSingleBucket")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.Get(event)
@@ -145,12 +130,12 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error("Illegal state: current bucket Value is nil when calculating minRT")
+			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when calculating minRT")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast data Value(%+v) to MetricBucket type", mb)
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.MinRt()
@@ -204,12 +189,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 	for _, w := range ws {
 		mi := w.Value.Load()
 		if mi == nil {
-			logging.Error("Get nil bucket when generating MetricItem from buckets")
+			logging.Error(errors.New("nil BucketWrap"), "Get nil bucket when generating MetricItem from buckets")
 			return nil
 		}
 		mb, ok := mi.(*MetricBucket)
 		if !ok {
-			logging.Errorf("Failed to cast to MetricBucket type, bucket startTime: %d", w.BucketStart)
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "bucketStartTime", w.BucketStart, "type", reflect.TypeOf(mb).Name())
 			return nil
 		}
 		item.PassQps += uint64(mb.Get(base.MetricEventPass))
@@ -229,12 +214,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 func (m *SlidingWindowMetric) metricItemFromBucket(w *BucketWrap) *base.MetricItem {
 	mi := w.Value.Load()
 	if mi == nil {
-		logging.Error("Get nil bucket when generating MetricItem from buckets")
+		logging.Error(errors.New("nil BucketWrap"), "Get nil bucket when generating MetricItem from buckets")
 		return nil
 	}
 	mb, ok := mi.(*MetricBucket)
 	if !ok {
-		logging.Errorf("Fail to cast data Value to MetricBucket type, bucket startTime: %d", w.BucketStart)
+		logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
 		return nil
 	}
 	completeQps := mb.Get(base.MetricEventComplete)

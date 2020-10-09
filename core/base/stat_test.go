@@ -1,12 +1,17 @@
 package base
 
-import "github.com/stretchr/testify/mock"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
 
 type StatNodeMock struct {
 	mock.Mock
 }
 
-func (m *StatNodeMock) AddMetric(event MetricEvent, count uint64) {
+func (m *StatNodeMock) AddCount(event MetricEvent, count int64) {
 	m.Called(event, count)
 }
 
@@ -63,4 +68,20 @@ func (m *StatNodeMock) DecreaseGoroutineNum() {
 func (m *StatNodeMock) Reset() {
 	m.Called()
 	return
+}
+
+func (m *StatNodeMock) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (ReadStat, error) {
+	args := m.Called(sampleCount, intervalInMs)
+	return args.Get(0).(ReadStat), args.Error(1)
+}
+
+func TestCheckValidityForReuseStatistic(t *testing.T) {
+	assert.Equal(t, CheckValidityForReuseStatistic(3, 1000, 20, 10000), IllegalStatisticParamsError)
+	assert.Equal(t, CheckValidityForReuseStatistic(0, 1000, 20, 10000), IllegalStatisticParamsError)
+	assert.Equal(t, CheckValidityForReuseStatistic(2, 1000, 21, 10000), IllegalGlobalStatisticParamsError)
+	assert.Equal(t, CheckValidityForReuseStatistic(2, 1000, 0, 10000), IllegalGlobalStatisticParamsError)
+	assert.Equal(t, CheckValidityForReuseStatistic(2, 8000, 20, 10000), GlobalStatisticNonReusableError)
+	assert.Equal(t, CheckValidityForReuseStatistic(2, 1000, 10, 10000), GlobalStatisticNonReusableError)
+	assert.Equal(t, CheckValidityForReuseStatistic(1, 1000, 100, 10000), nil)
+	assert.Equal(t, CheckValidityForReuseStatistic(2, 1000, 20, 10000), nil)
 }

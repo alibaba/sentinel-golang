@@ -155,7 +155,7 @@ func (la *LeapArray) CurrentBucket(bg BucketGenerator) (*BucketWrap, error) {
 }
 
 func (la *LeapArray) currentBucketOfTime(now uint64, bg BucketGenerator) (*BucketWrap, error) {
-	if now < 0 {
+	if now <= 0 {
 		return nil, errors.New("Current time is less than 0.")
 	}
 
@@ -201,7 +201,7 @@ func (la *LeapArray) calculateTimeIdx(now uint64) int {
 	return int(timeId) % la.array.length
 }
 
-//  Get all BucketWrap between [current time -1000ms, current time]
+//  Get all BucketWrap between [current time - leap array interval, current time]
 func (la *LeapArray) Values() []*BucketWrap {
 	return la.valuesWithTime(util.CurrentTimeMillis())
 }
