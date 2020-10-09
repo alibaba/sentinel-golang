@@ -44,12 +44,6 @@ jobs:
     - name: Install goimports
       run: go get golang.org/x/tools/cmd/goimports
 
-    - name: Install go ci lint
-      run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
-
-    - name: Run Linter
-      run: golangci-lint run --timeout=10m -v --disable-all --enable=govet --enable=staticcheck --enable=ineffassign --enable=misspell
-
     - name: Test
       run: |
         diff -u <(echo -n) <(gofmt -d -s .)
@@ -58,3 +52,42 @@ jobs:
 
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)
+  
+  check:
+    name: ${{ matrix.os }} - Go ${{ matrix.go_version }}
+    runs-on: ubuntu-latest
+    strategy:
+     # If you want to matrix build , you can append the following list.
+      matrix:
+        go_version:
+          - 1.14
+        os:
+          - ubuntu-latest
+
+    steps:
+      - name: Set up Go ${{ matrix.go_version }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go_version }}
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: go
+          # If you wish to specify custom queries, you can do so here or in a config file.
+          # By default, queries listed here will override any specified in a config file.
+          # Prefix the list here with "+" to use these queries and those in the config file.
+          # queries: ./path/to/local/query, your-org/your-repo/queries@main
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
+      
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
+          version: v1.29
