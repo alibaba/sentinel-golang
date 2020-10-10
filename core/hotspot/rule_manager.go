@@ -148,7 +148,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}()
 
 	for res, resRules := range newRuleMap {
-		emptyTcList := make([]TrafficShapingController, 0, 0)
+		emptyTcList := make([]TrafficShapingController, 0)
 		for _, r := range resRules {
 			oldResTcs := tcMap[res]
 			if oldResTcs == nil {

@@ -43,7 +43,10 @@ func TestServerLimiter(t *testing.T) {
 
 	_ = proto.RegisterTestHandler(svr.Server(), &TestHandler{})
 
-	go svr.Run()
+	go func() {
+		err := svr.Run()
+		assert.True(t, err == nil, "Fail to Service.Run.")
+	}()
 
 	time.Sleep(time.Second)
 

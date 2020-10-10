@@ -205,13 +205,14 @@ func TestSystemRulesUpdater(t *testing.T) {
 	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
 		err := system.ClearRules()
 		assert.True(t, err == nil, "Fail to ClearRules.")
-		system.LoadRules([]*system.Rule{
+		_, err = system.LoadRules([]*system.Rule{
 			{
 				MetricType:   0,
 				TriggerCount: 0,
 				Strategy:     0,
 			},
 		})
+		assert.True(t, err == nil, "Fail to system.LoadRules.")
 		assert.True(t, len(system.GetRules()) == 1, "Fail to prepare data.")
 		err = SystemRulesUpdater(nil)
 		assert.True(t, err == nil && len(system.GetRules()) == 0, "Fail to test TestSystemRulesUpdater_Nil")
