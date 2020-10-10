@@ -74,17 +74,8 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
       
-      - name: Cache lint dependence
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/golangci-lint
-            ~/.cache/go-build
-            ~/go/pkg
-          # Cache key
-          key: ${{ runner.os }}-golangci-lint-${{ hashFiles('**/go.sum') }}
-          # An ordered list of keys to use for restoring the cache if no cache hit occurred for key
-          restore-keys: lint.cache-${{ runner.os }}-golangci-lint.cache
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v1
       
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v1
@@ -97,9 +88,3 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
-      
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.29
