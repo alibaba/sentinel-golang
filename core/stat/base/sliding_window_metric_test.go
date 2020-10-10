@@ -3,6 +3,8 @@ package base
 import (
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/util"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/stretchr/testify/assert"
 )
@@ -165,4 +167,84 @@ func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetSum(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	passSum := got.GetSum(base.MetricEventPass)
+	assert.True(t, passSum == 0)
+}
+
+func TestGetQPS(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	qps := got.GetQPS(base.MetricEventPass)
+	assert.True(t, qps == 0)
+}
+
+func TestGetPreviousQPS(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	previousQPS := got.GetPreviousQPS(base.MetricEventPass)
+	assert.True(t, previousQPS == 0)
+}
+
+func TestGetQPSWithTime(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	qps := got.getQPSWithTime(util.CurrentTimeMillis(), base.MetricEventPass)
+	assert.True(t, qps == 0)
+}
+
+func TestGetMaxOfSingleBucket(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	got.real.AddCount(base.MetricEventPass, 100)
+	max := got.GetMaxOfSingleBucket(base.MetricEventPass)
+	assert.True(t, max == 100)
+}
+
+func TestMinRT(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	minRt := got.MinRT()
+	assert.True(t, minRt == float64(base.DefaultStatisticMaxRt))
+}
+
+func TestAvgRT(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	got.real.AddCount(base.MetricEventRt, 100)
+	got.real.AddCount(base.MetricEventComplete, 100)
+	avgRT := got.AvgRT()
+	assert.True(t, avgRT == 1)
+}
+
+func TestMetricItemFromBuckets(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	got.real.AddCount(base.MetricEventPass, 100)
+	item := got.metricItemFromBuckets(util.CurrentTimeMillis(), got.real.data.array.data)
+	assert.True(t, item.PassQps == 100)
+}
+
+func TestMetricItemFromBucket(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	got.real.AddCount(base.MetricEventPass, 100)
+	currentBucket, err := got.real.data.CurrentBucket(&leapArrayMock{})
+	assert.Nil(t, err)
+	item := got.metricItemFromBucket(currentBucket)
+	assert.True(t, item.PassQps == 100)
+}
+
+func TestSecondMetricsOnCondition(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	start, end := got.getBucketStartRange(util.CurrentTimeMillis())
+	items := got.SecondMetricsOnCondition(func(ws uint64) bool {
+		return ws >= start && ws <= end
+	})
+	assert.True(t, len(items) == 1)
 }
