@@ -375,7 +375,7 @@ func calculateReuseIndexFor(r *Rule, oldResCbs []*TrafficShapingController) (equ
 // buildRulesOfRes builds TrafficShapingController slice from rules. the resource of rules must be equals to res
 func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController {
 	newTcsOfRes := make([]*TrafficShapingController, 0, len(rulesOfRes))
-	emptyTcs := make([]*TrafficShapingController, 0, 0)
+	emptyTcs := make([]*TrafficShapingController, 0)
 	for _, rule := range rulesOfRes {
 		if res != rule.Resource {
 			logging.Error(errors.Errorf("unmatched resource name, expect: %s, actual: %s", res, rule.Resource), "FlowManager: unmatched resource name ", "rule", rule)

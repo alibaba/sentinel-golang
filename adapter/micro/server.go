@@ -55,7 +55,8 @@ func NewStreamWrapper(sentinelOpts ...Option) server.StreamWrapper {
 				return opts.streamServerBlockFallback(stream, blockErr)
 			}
 
-			stream.Send(blockErr)
+			// WARN: error of ignore.
+			_ = stream.Send(blockErr)
 			return stream
 		}
 

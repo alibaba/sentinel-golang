@@ -217,7 +217,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}()
 
 	for res, resRules := range newBreakerRules {
-		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
+		emptyCircuitBreakerList := make([]CircuitBreaker, 0)
 		for _, r := range resRules {
 			oldResCbs := breakers[res]
 			if oldResCbs == nil {

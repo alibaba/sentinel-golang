@@ -232,8 +232,12 @@ func TestNewFileDataSource_ALL_For_SystemRule(t *testing.T) {
 		}
 		defer f.Close()
 
-		f.WriteString("\n" + TestSystemRules)
-		f.Sync()
+		_, err = f.WriteString("\n" + TestSystemRules)
+		assert.True(t, err == nil, "Fail to f.WriteString.")
+
+		err = f.Sync()
+		assert.True(t, err == nil, "Fail to written data to disk.")
+
 		time.Sleep(3 * time.Second)
 		mh1.AssertNumberOfCalls(t, "Handle", 2)
 

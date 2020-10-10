@@ -90,8 +90,9 @@ func TestFlowRuleJsonArrayParser(t *testing.T) {
 
 func TestFlowRulesUpdater(t *testing.T) {
 	t.Run("TestFlowRulesUpdater_Nil", func(t *testing.T) {
-		flow.ClearRules()
-		flow.LoadRules([]*flow.Rule{
+		err := flow.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
+		_, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "abc",
 				Threshold:              0,
@@ -102,26 +103,30 @@ func TestFlowRulesUpdater(t *testing.T) {
 				WarmUpPeriodSec:        0,
 				MaxQueueingTimeMs:      0,
 			}})
+		assert.True(t, err == nil, "Fail to flow.LoadRules.")
 		assert.True(t, len(flow.GetRules()) == 1, "Fail to prepare test data.")
-		err := FlowRulesUpdater(nil)
+		err = FlowRulesUpdater(nil)
 		assert.True(t, err == nil && len(flow.GetRules()) == 0, "Fail to test TestFlowRulesUpdater_Nil")
 	})
 
 	t.Run("TestFlowRulesUpdater_Assert_Failed", func(t *testing.T) {
-		flow.ClearRules()
-		err := FlowRulesUpdater("xxxxxxxx")
+		err := flow.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
+		err = FlowRulesUpdater("xxxxxxxx")
 		assert.True(t, err != nil && strings.Contains(err.Error(), "Fail to type assert data to []flow.Rule"))
 	})
 
 	t.Run("TestFlowRulesUpdater_Empty_Rules", func(t *testing.T) {
-		flow.ClearRules()
+		err := flow.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
 		p := make([]flow.Rule, 0)
-		err := FlowRulesUpdater(p)
+		err = FlowRulesUpdater(p)
 		assert.True(t, err == nil && len(flow.GetRules()) == 0)
 	})
 
 	t.Run("TestFlowRulesUpdater_Normal", func(t *testing.T) {
-		flow.ClearRules()
+		err := flow.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
 		p := make([]flow.Rule, 0)
 		fw := flow.Rule{
 			Resource:               "aaaa",
@@ -134,7 +139,7 @@ func TestFlowRulesUpdater(t *testing.T) {
 			MaxQueueingTimeMs:      0,
 		}
 		p = append(p, fw)
-		err := FlowRulesUpdater(p)
+		err = FlowRulesUpdater(p)
 		assert.True(t, err == nil && len(flow.GetRules()) == 1)
 	})
 }
@@ -198,34 +203,39 @@ func TestSystemRuleJsonArrayParser(t *testing.T) {
 
 func TestSystemRulesUpdater(t *testing.T) {
 	t.Run("TestSystemRulesUpdater_Nil", func(t *testing.T) {
-		system.ClearRules()
-		system.LoadRules([]*system.Rule{
+		err := system.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
+		_, err = system.LoadRules([]*system.Rule{
 			{
 				MetricType:   0,
 				TriggerCount: 0,
 				Strategy:     0,
 			},
 		})
+		assert.True(t, err == nil, "Fail to system.LoadRules.")
 		assert.True(t, len(system.GetRules()) == 1, "Fail to prepare data.")
-		err := SystemRulesUpdater(nil)
+		err = SystemRulesUpdater(nil)
 		assert.True(t, err == nil && len(system.GetRules()) == 0, "Fail to test TestSystemRulesUpdater_Nil")
 	})
 
 	t.Run("TestSystemRulesUpdater_Assert_Failed", func(t *testing.T) {
-		system.ClearRules()
-		err := SystemRulesUpdater("xxxxxxxx")
+		err := system.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
+		err = SystemRulesUpdater("xxxxxxxx")
 		assert.True(t, err != nil && strings.Contains(err.Error(), "Fail to type assert data to []system.Rule"))
 	})
 
 	t.Run("TestSystemRulesUpdater_Empty_Rules", func(t *testing.T) {
-		system.ClearRules()
+		err := system.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
 		p := make([]system.Rule, 0)
-		err := SystemRulesUpdater(p)
+		err = SystemRulesUpdater(p)
 		assert.True(t, err == nil && len(system.GetRules()) == 0)
 	})
 
 	t.Run("TestSystemRulesUpdater_Normal", func(t *testing.T) {
-		system.ClearRules()
+		err := system.ClearRules()
+		assert.True(t, err == nil, "Fail to ClearRules.")
 		p := make([]system.Rule, 0)
 		sr := system.Rule{
 			MetricType:   0,
@@ -233,7 +243,7 @@ func TestSystemRulesUpdater(t *testing.T) {
 			Strategy:     0,
 		}
 		p = append(p, sr)
-		err := SystemRulesUpdater(p)
+		err = SystemRulesUpdater(p)
 		assert.True(t, err == nil && len(system.GetRules()) == 1)
 	})
 }
