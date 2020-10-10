@@ -71,9 +71,7 @@ func onRuleUpdate(r RuleMap) error {
 	ruleMapMux.Lock()
 	defer func() {
 		ruleMapMux.Unlock()
-		if logging.DebugEnabled() {
-			logging.Debug("time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
-		}
+		logging.Debug("time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
 		if len(r) > 0 {
 			logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
 		} else {

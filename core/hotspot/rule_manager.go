@@ -143,9 +143,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		if logging.DebugEnabled() {
-			logging.Debug("time statistic(ns) for updating hotspot rule", "timeCost", util.CurrentTimeNano()-start)
-		}
+		logging.Debug("time statistic(ns) for updating hotspot rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
@@ -181,9 +179,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tc = generator(r, nil)
 			}
 			if tc == nil {
-				if logging.DebugEnabled() {
-					logging.Debug("Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
-				}
+				logging.Debug("Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
 				continue
 			}
 
