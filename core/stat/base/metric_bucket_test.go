@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_metricBucket_MemSize(t *testing.T) {
@@ -111,4 +112,12 @@ func Test_metricBucket_Concurrent(t *testing.T) {
 	if mb.Get(base.MetricEventRt) != int64(totalRt) {
 		t.Error("unexpect count MetricEventRt")
 	}
+}
+
+func Test_Reset(t *testing.T) {
+	mb := NewMetricBucket()
+	mb.AddRt(100)
+	mb.reset()
+	rt := mb.MinRt()
+	assert.True(t, rt == base.DefaultStatisticMaxRt)
 }
