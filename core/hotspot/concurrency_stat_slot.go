@@ -22,7 +22,9 @@ func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 		metric := tc.BoundMetric()
 		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
 		if !existed || concurrencyPtr == nil {
-			logging.Debug("Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+			if logging.DebugEnabled() {
+				logging.Debug("Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+			}
 			continue
 		}
 		util.IncrementAndGetInt64(concurrencyPtr)
@@ -45,7 +47,9 @@ func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 		metric := tc.BoundMetric()
 		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
 		if !existed || concurrencyPtr == nil {
-			logging.Debug("Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+			if logging.DebugEnabled() {
+				logging.Debug("Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+			}
 			continue
 		}
 		util.DecrementAndGetInt64(concurrencyPtr)
