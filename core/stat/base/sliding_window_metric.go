@@ -75,10 +75,7 @@ func (m *SlidingWindowMetric) GetSum(event base.MetricEvent) int64 {
 }
 
 func (m *SlidingWindowMetric) getSumWithTime(now uint64, event base.MetricEvent) int64 {
-	start, end := m.getBucketStartRange(now)
-	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
-		return ws >= start && ws <= end
-	})
+	satisfiedBuckets := m.getSatisfiedBuckets(now)
 	return m.count(event, satisfiedBuckets)
 }
 
@@ -94,12 +91,17 @@ func (m *SlidingWindowMetric) getQPSWithTime(now uint64, event base.MetricEvent)
 	return float64(m.getSumWithTime(now, event)) / m.getIntervalInSecond()
 }
 
-func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64 {
-	now := util.CurrentTimeMillis()
+func (m *SlidingWindowMetric) getSatisfiedBuckets(now uint64) []*BucketWrap {
 	start, end := m.getBucketStartRange(now)
 	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
 		return ws >= start && ws <= end
 	})
+	return satisfiedBuckets
+}
+
+func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64 {
+	now := util.CurrentTimeMillis()
+	satisfiedBuckets := m.getSatisfiedBuckets(now)
 	var curMax int64 = 0
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
@@ -122,10 +124,7 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 
 func (m *SlidingWindowMetric) MinRT() float64 {
 	now := util.CurrentTimeMillis()
-	start, end := m.getBucketStartRange(now)
-	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
-		return ws >= start && ws <= end
-	})
+	satisfiedBuckets := m.getSatisfiedBuckets(now)
 	minRt := base.DefaultStatisticMaxRt
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
