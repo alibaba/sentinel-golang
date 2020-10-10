@@ -76,6 +76,8 @@ jobs:
       
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
+        with:
+          level: warning # GitHub Status Check won't become failure with this level.
       
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v1
