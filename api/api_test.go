@@ -14,7 +14,6 @@ type prepareSlotMock struct {
 
 func (m *prepareSlotMock) Prepare(ctx *base.EntryContext) {
 	m.Called(ctx)
-	return
 }
 
 type mockRuleCheckSlot1 struct {
@@ -41,15 +40,12 @@ type statisticSlotMock struct {
 
 func (m *statisticSlotMock) OnEntryPassed(ctx *base.EntryContext) {
 	m.Called(ctx)
-	return
 }
 func (m *statisticSlotMock) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
 	m.Called(ctx, blockError)
-	return
 }
 func (m *statisticSlotMock) OnCompleted(ctx *base.EntryContext) {
 	m.Called(ctx)
-	return
 }
 
 func Test_entryWithArgsAndChainPass(t *testing.T) {
