@@ -76,6 +76,7 @@ func NewSimpleFileLogger(filepath string) (Logger, error) {
 
 type Logger interface {
 	Debug(msg string, keysAndValues ...interface{})
+	DebugEnabled() bool
 
 	// Info logs a non-error message with the given key/value pairs as context.
 	//
@@ -84,10 +85,13 @@ type Logger interface {
 	// variable information.  The key/value pairs should alternate string
 	// keys and arbitrary values.
 	Info(msg string, keysAndValues ...interface{})
+	InfoEnabled() bool
 
 	Warn(msg string, keysAndValues ...interface{})
+	WarnEnabled() bool
 
 	Error(err error, msg string, keysAndValues ...interface{})
+	ErrorEnabled() bool
 }
 
 // sentinel general logger
@@ -202,46 +206,78 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 }
 
 func (l *DefaultLogger) Debug(msg string, keysAndValues ...interface{}) {
-	if DebugLevel < globalLogLevel {
+	if !l.DebugEnabled() {
 		return
 	}
 	l.log.Print(AssembleMsg(GlobalCallerDepth, "DEBUG", msg, nil, keysAndValues...))
 }
 
+func (l *DefaultLogger) DebugEnabled() bool {
+	return DebugLevel >= globalLogLevel
+}
+
 func (l *DefaultLogger) Info(msg string, keysAndValues ...interface{}) {
-	if InfoLevel < globalLogLevel {
+	if !l.InfoEnabled() {
 		return
 	}
 	l.log.Print(AssembleMsg(GlobalCallerDepth, "INFO", msg, nil, keysAndValues...))
 }
 
+func (l *DefaultLogger) InfoEnabled() bool {
+	return InfoLevel >= globalLogLevel
+}
+
 func (l *DefaultLogger) Warn(msg string, keysAndValues ...interface{}) {
-	if WarnLevel < globalLogLevel {
+	if !l.WarnEnabled() {
 		return
 	}
 
 	l.log.Print(AssembleMsg(GlobalCallerDepth, "WARNING", msg, nil, keysAndValues...))
 }
 
+func (l *DefaultLogger) WarnEnabled() bool {
+	return WarnLevel >= globalLogLevel
+}
+
 func (l *DefaultLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	if ErrorLevel < globalLogLevel {
+	if !l.ErrorEnabled() {
 		return
 	}
 	l.log.Print(AssembleMsg(GlobalCallerDepth, "ERROR", msg, err, keysAndValues...))
+}
+
+func (l *DefaultLogger) ErrorEnabled() bool {
+	return ErrorLevel >= globalLogLevel
 }
 
 func Debug(msg string, keysAndValues ...interface{}) {
 	globalLogger.Debug(msg, keysAndValues...)
 }
 
+func DebugEnabled() bool {
+	return globalLogger.DebugEnabled()
+}
+
 func Info(msg string, keysAndValues ...interface{}) {
 	globalLogger.Info(msg, keysAndValues...)
+}
+
+func InfoEnabled() bool {
+	return globalLogger.InfoEnabled()
 }
 
 func Warn(msg string, keysAndValues ...interface{}) {
 	globalLogger.Warn(msg, keysAndValues...)
 }
 
+func WarnEnabled() bool {
+	return globalLogger.WarnEnabled()
+}
+
 func Error(err error, msg string, keysAndValues ...interface{}) {
 	globalLogger.Error(err, msg, keysAndValues...)
+}
+
+func ErrorEnabled() bool {
+	return globalLogger.ErrorEnabled()
 }
