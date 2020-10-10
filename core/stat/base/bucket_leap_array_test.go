@@ -125,3 +125,37 @@ func TestBucketLeapArray_resetBucketTo(t *testing.T) {
 		t.Errorf("BucketLeapArray.ResetBucketTo() execute fail.")
 	}
 }
+
+func TestAddCount(t *testing.T) {
+	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+	bla.AddCount(base.MetricEventPass, 1)
+	passCount := bla.Count(base.MetricEventPass)
+	assert.True(t, passCount == 1)
+}
+
+func TestMinRt(t *testing.T) {
+	t.Run("TestMinRt_Default", func(t *testing.T) {
+		bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+		minRt := bla.MinRt()
+		assert.True(t, minRt == base.DefaultStatisticMaxRt)
+	})
+
+	t.Run("TestMinRt", func(t *testing.T) {
+		bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+		bla.AddCount(base.MetricEventRt, 100)
+		minRt := bla.MinRt()
+		assert.True(t, minRt == 100)
+	})
+}
+
+func TestGetIntervalInSecond(t *testing.T) {
+	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+	second := bla.GetIntervalInSecond()
+	assert.True(t, float64(IntervalInMs)/1000.0 == second)
+}
+
+func TestDataType(t *testing.T) {
+	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+	dataType := bla.DataType()
+	assert.True(t, dataType == "MetricBucket")
+}

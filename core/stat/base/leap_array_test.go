@@ -6,6 +6,8 @@ import (
 	"testing"
 	"unsafe"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/mock"
 )
@@ -263,4 +265,23 @@ func Test_leapArray_isBucketDeprecated_normal(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewLeapArray(t *testing.T) {
+	t.Run("TestNewLeapArray_Normal", func(t *testing.T) {
+		_, err := NewLeapArray(SampleCount, IntervalInMs, &leapArrayMock{})
+		assert.Nil(t, err)
+	})
+
+	t.Run("TestNewLeapArray_Generator_Nil", func(t *testing.T) {
+		leapArray, err := NewLeapArray(SampleCount, IntervalInMs, nil)
+		assert.Nil(t, leapArray)
+		assert.Error(t, err, "Invalid parameters, BucketGenerator is nil")
+	})
+
+	t.Run("TestNewLeapArray_Invalid_Parameters", func(t *testing.T) {
+		leapArray, err := NewLeapArray(30, IntervalInMs, nil)
+		assert.Nil(t, leapArray)
+		assert.Error(t, err, "Invalid parameters, intervalInMs is 10000, sampleCount is 30")
+	})
 }
