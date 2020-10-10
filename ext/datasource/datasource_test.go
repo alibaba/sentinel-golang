@@ -4,7 +4,20 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/core/flow"
+	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	systemRule = `[
+    {
+        "metricType": 0,
+        "triggerCount": 0.5,
+        "strategy": 1
+    }
+]`
+	systemRuleErr = "[test]"
 )
 
 func TestBase_AddPropertyHandler(t *testing.T) {
@@ -61,5 +74,42 @@ func TestBase_indexOfHandler(t *testing.T) {
 		b.handlers = append(b.handlers, h3)
 
 		assert.True(t, b.indexOfHandler(h2) == 1, "Fail to execute the case TestBase_indexOfHandler.")
+	})
+}
+
+func TestBase_Handle(t *testing.T) {
+	t.Run("TestBase_handle", func(t *testing.T) {
+		b := &Base{
+			handlers: make([]PropertyHandler, 0),
+		}
+		h := NewSystemRulesHandler(SystemRuleJsonArrayParser)
+		b.handlers = append(b.handlers, h)
+		err := b.Handle([]byte(systemRule))
+		assert.Nil(t, err)
+		assert.True(t, len(system.GetRules()) == 1)
+	})
+
+	t.Run("TestBase_multipleHandle", func(t *testing.T) {
+		b := &Base{
+			handlers: make([]PropertyHandler, 0),
+		}
+		systemHandler := NewSystemRulesHandler(SystemRuleJsonArrayParser)
+		flowHandler := NewFlowRulesHandler(FlowRuleJsonArrayParser)
+		b.handlers = append(b.handlers, systemHandler)
+		b.handlers = append(b.handlers, flowHandler)
+		err := b.Handle([]byte(systemRule))
+		assert.Nil(t, err)
+		assert.True(t, len(system.GetRules()) == 1)
+		assert.True(t, len(flow.GetRules()) == 0)
+	})
+
+	t.Run("TestBase_handleErr", func(t *testing.T) {
+		b := &Base{
+			handlers: make([]PropertyHandler, 0),
+		}
+		h := NewSystemRulesHandler(SystemRuleJsonArrayParser)
+		b.handlers = append(b.handlers, h)
+		err := b.Handle([]byte(systemRuleErr))
+		assert.NotNil(t, err)
 	})
 }

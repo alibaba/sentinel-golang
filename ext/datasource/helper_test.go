@@ -360,14 +360,13 @@ func TestCircuitBreakerRulesUpdater(t *testing.T) {
 	})
 }
 
-func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
-	t.Run("TestHotSpotParamRuleListJsonConverter_Invalid", func(t *testing.T) {
-		properties, err := HotSpotParamRuleJsonArrayParser([]byte{'s', 'r', 'c'})
-		assert.True(t, properties == nil)
+func TestHotSpotParamRuleJsonArrayParser(t *testing.T) {
+	t.Run("TestHotSpotParamJsonArrayParser_Invalid", func(t *testing.T) {
+		_, err := HotSpotParamRuleJsonArrayParser([]byte{'s', 'r', 'c'})
 		assert.True(t, err != nil)
 	})
 
-	t.Run("TestHotSpotParamRuleListJsonConverter_Normal", func(t *testing.T) {
+	t.Run("TestHotSpotParamRuleJsonArrayParser_Normal", func(t *testing.T) {
 		// Prepare test data
 		f, err := os.Open("../../tests/testdata/extension/helper/HotSpotParamFlowRule.json")
 		defer func() {
@@ -396,7 +395,7 @@ func TestHotSpotParamRuleListJsonConverter(t *testing.T) {
 		assert.True(t, strings.Contains(rules[3].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Throttling, ParamIndex:3, Threshold:4000.000000, MaxQueueingTimeMs:4, BurstCount:40, DurationInSec:4, ParamsMaxCapacity:40000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:40001} {ValKind:KindString ValStr:ximu Threshold:40002} {ValKind:KindBool ValStr:true Threshold:40003}]}"))
 	})
 
-	t.Run("TestHotSpotParamRuleListJsonConverter_Nil", func(t *testing.T) {
+	t.Run("TestHotSpotParamRuleJsonArrayParser_Nil", func(t *testing.T) {
 		got, err := HotSpotParamRuleJsonArrayParser(nil)
 		assert.True(t, got == nil && err == nil)
 
