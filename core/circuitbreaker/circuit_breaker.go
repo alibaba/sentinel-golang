@@ -31,6 +31,13 @@ const (
 	Open
 )
 
+func newState() *State {
+	var state State
+	state = Closed
+
+	return &state
+}
+
 func (s *State) String() string {
 	switch s.get() {
 	case Closed:
@@ -198,14 +205,12 @@ type slowRtCircuitBreaker struct {
 }
 
 func newSlowRtCircuitBreakerWithStat(r *Rule, stat *slowRequestLeapArray) *slowRtCircuitBreaker {
-	var status State
-	status.set(Closed)
 	return &slowRtCircuitBreaker{
 		circuitBreakerBase: circuitBreakerBase{
 			rule:                 r,
 			retryTimeoutMs:       r.RetryTimeoutMs,
 			nextRetryTimestampMs: 0,
-			state:                &status,
+			state:                newState(),
 		},
 		stat:                stat,
 		maxAllowedRt:        r.MaxAllowedRtMs,
@@ -384,15 +389,12 @@ type errorRatioCircuitBreaker struct {
 }
 
 func newErrorRatioCircuitBreakerWithStat(r *Rule, stat *errorCounterLeapArray) *errorRatioCircuitBreaker {
-	var status State
-	status.set(Closed)
-
 	return &errorRatioCircuitBreaker{
 		circuitBreakerBase: circuitBreakerBase{
 			rule:                 r,
 			retryTimeoutMs:       r.RetryTimeoutMs,
 			nextRetryTimestampMs: 0,
-			state:                &status,
+			state:                newState(),
 		},
 		minRequestAmount:    r.MinRequestAmount,
 		errorRatioThreshold: r.Threshold,
@@ -564,15 +566,12 @@ type errorCountCircuitBreaker struct {
 }
 
 func newErrorCountCircuitBreakerWithStat(r *Rule, stat *errorCounterLeapArray) *errorCountCircuitBreaker {
-	var status State
-	status.set(Closed)
-
 	return &errorCountCircuitBreaker{
 		circuitBreakerBase: circuitBreakerBase{
 			rule:                 r,
 			retryTimeoutMs:       r.RetryTimeoutMs,
 			nextRetryTimestampMs: 0,
-			state:                &status,
+			state:                newState(),
 		},
 		minRequestAmount:    r.MinRequestAmount,
 		errorCountThreshold: uint64(r.Threshold),
