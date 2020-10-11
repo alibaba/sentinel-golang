@@ -118,6 +118,11 @@ func WithAttachments(data map[interface{}]interface{}) EntryOption {
 // Entry is the basic API of Sentinel.
 func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.BlockError) {
 	options := entryOptsPool.Get().(*EntryOptions)
+	defer func() {
+		options.Reset()
+		entryOptsPool.Put(options)
+	}()
+
 	options.slotChain = globalSlotChain
 
 	for _, opt := range opts {
@@ -145,8 +150,6 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 	if len(options.attachments) != 0 {
 		ctx.Input.Attachments = options.attachments
 	}
-	options.Reset()
-	entryOptsPool.Put(options)
 	e := base.NewSentinelEntry(ctx, rw, sc)
 	ctx.SetEntry(e)
 	r := sc.Entry(ctx)
