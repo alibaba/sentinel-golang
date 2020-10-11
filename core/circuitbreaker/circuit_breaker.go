@@ -3,12 +3,11 @@ package circuitbreaker
 import (
 	"sync/atomic"
 
-	"github.com/pkg/errors"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 //
@@ -58,7 +57,7 @@ func (s *State) get() State {
 }
 
 func (s *State) set(update State) {
-	atomic.StoreInt32((*int32)(s), (int32)(update))
+	atomic.StoreInt32((*int32)(s), int32(update))
 }
 
 func (s *State) cas(expect State, update State) bool {

@@ -5,10 +5,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
