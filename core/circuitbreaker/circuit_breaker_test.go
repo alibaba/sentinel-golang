@@ -64,7 +64,7 @@ func (s *StateChangeListenerMock) OnTransformToHalfOpen(prev State, rule Rule) {
 
 func TestStatus(t *testing.T) {
 	t.Run("get_set", func(t *testing.T) {
-        status := newState()
+		status := newState()
 		assert.True(t, status.get() == Closed)
 
 		status.set(Open)
@@ -72,7 +72,7 @@ func TestStatus(t *testing.T) {
 	})
 
 	t.Run("cas", func(t *testing.T) {
-        status := newState()
+		status := newState()
 		assert.True(t, status.get() == Closed)
 
 		assert.True(t, status.cas(Closed, Open))

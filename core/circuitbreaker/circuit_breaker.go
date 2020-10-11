@@ -1,12 +1,14 @@
 package circuitbreaker
 
 import (
+	"sync/atomic"
+
+	"github.com/pkg/errors"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
-	"sync/atomic"
 )
 
 //
