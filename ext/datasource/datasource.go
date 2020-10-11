@@ -40,7 +40,7 @@ func (b *Base) Handle(src []byte) (err error) {
 	if err == nil {
 		return nil
 	}
-	return Error{code: HandleSourceError, desc: fmt.Sprintf("%+v", err)}
+	return NewError(HandleSourceError, fmt.Sprintf("%+v", err))
 }
 
 // return idx if existed, else return -1

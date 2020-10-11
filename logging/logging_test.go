@@ -63,3 +63,49 @@ func Test_caller(t *testing.T) {
 		assert.True(t, strings.Contains(file, "logging_test.go"))
 	})
 }
+
+func TestLogLevelEnabled(t *testing.T) {
+	SetGlobalLoggerLevel(DebugLevel)
+	assert.True(t, DebugEnabled(), "Debug should be enabled when log level is DebugLevel")
+	assert.True(t, InfoEnabled(), "Info should be enabled when log level is DebugLevel")
+	assert.True(t, WarnEnabled(), "Warn should be enabled when log level is DebugLevel")
+	assert.True(t, ErrorEnabled(), "Error should be enabled when log level is DebugLevel")
+
+	SetGlobalLoggerLevel(InfoLevel)
+	assert.False(t, DebugEnabled(), "Debug should be disabled when log level is InfoLevel")
+	assert.True(t, InfoEnabled(), "Info should be enabled when log level is InfoLevel")
+	assert.True(t, WarnEnabled(), "Warn should be enabled when log level is InfoLevel")
+	assert.True(t, ErrorEnabled(), "Error should be enabled when log level is InfoLevel")
+
+	SetGlobalLoggerLevel(WarnLevel)
+	assert.False(t, DebugEnabled(), "Debug should be disabled when log level is WarnLevel")
+	assert.False(t, InfoEnabled(), "Info should be disabled when log level is WarnLevel")
+	assert.True(t, WarnEnabled(), "Warn should be enabled when log level is WarnLevel")
+	assert.True(t, ErrorEnabled(), "Error should be enabled when log level is WarnLevel")
+
+	SetGlobalLoggerLevel(ErrorLevel)
+	assert.False(t, DebugEnabled(), "Debug should be disabled when log level is ErrorLevel")
+	assert.False(t, InfoEnabled(), "Info should be disabled when log level is ErrorLevel")
+	assert.False(t, WarnEnabled(), "Warn should be disabled when log level is ErrorLevel")
+	assert.True(t, ErrorEnabled(), "Error should be enabled when log level is ErrorLevel")
+}
+
+func Benchmark_LoggingDebug_Without_Precheck(b *testing.B) {
+	b.ReportAllocs()
+	b.ResetTimer()
+	SetGlobalLoggerLevel(InfoLevel)
+	for i := 0; i < b.N; i++ {
+		Debug("log test", "k1", "v1", "k2", "v2")
+	}
+}
+
+func Benchmark_LoggingDebug_With_Precheck(b *testing.B) {
+	b.ReportAllocs()
+	b.ResetTimer()
+	SetGlobalLoggerLevel(InfoLevel)
+	for i := 0; i < b.N; i++ {
+		if DebugEnabled() {
+			Debug("log test", "k1", "v1", "k2", "v2")
+		}
+	}
+}

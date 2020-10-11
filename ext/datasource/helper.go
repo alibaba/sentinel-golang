@@ -24,8 +24,11 @@ func FlowRuleJsonArrayParser(src []byte) (interface{}, error) {
 	}
 
 	rules := make([]*flow.Rule, 0)
-	err := json.Unmarshal(src, &rules)
-	return rules, err
+	if err := json.Unmarshal(src, &rules); err != nil {
+		desc := fmt.Sprintf("Fail to convert source bytes to []*flow.Rule, err: %s", err.Error())
+		return nil, NewError(ConvertSourceError, desc)
+	}
+	return rules, nil
 }
 
 // FlowRulesUpdater load the newest []flow.Rule to downstream flow component.
@@ -42,19 +45,19 @@ func FlowRulesUpdater(data interface{}) error {
 	} else if val, ok := data.([]*flow.Rule); ok {
 		rules = val
 	} else {
-		return Error{
-			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []flow.Rule or []*flow.Rule, in fact, data: %+v", data),
-		}
+		return NewError(
+			UpdatePropertyError,
+			fmt.Sprintf("Fail to type assert data to []flow.Rule or []*flow.Rule, in fact, data: %+v", data),
+		)
 	}
 	succ, err := flow.LoadRules(rules)
 	if succ && err == nil {
 		return nil
 	}
-	return Error{
-		code: UpdatePropertyError,
-		desc: fmt.Sprintf("%+v", err),
-	}
+	return NewError(
+		UpdatePropertyError,
+		fmt.Sprintf("%+v", err),
+	)
 }
 
 func NewFlowRulesHandler(converter PropertyConverter) PropertyHandler {
@@ -68,8 +71,11 @@ func SystemRuleJsonArrayParser(src []byte) (interface{}, error) {
 	}
 
 	rules := make([]*system.Rule, 0)
-	err := json.Unmarshal(src, &rules)
-	return rules, err
+	if err := json.Unmarshal(src, &rules); err != nil {
+		desc := fmt.Sprintf("Fail to convert source bytes to []*system.Rule, err: %s", err.Error())
+		return nil, NewError(ConvertSourceError, desc)
+	}
+	return rules, nil
 }
 
 // SystemRulesUpdater load the newest []system.Rule to downstream system component.
@@ -86,19 +92,19 @@ func SystemRulesUpdater(data interface{}) error {
 	} else if val, ok := data.([]*system.Rule); ok {
 		rules = val
 	} else {
-		return Error{
-			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []system.Rule or []*system.Rule, in fact, data: %+v", data),
-		}
+		return NewError(
+			UpdatePropertyError,
+			fmt.Sprintf("Fail to type assert data to []system.Rule or []*system.Rule, in fact, data: %+v", data),
+		)
 	}
 	succ, err := system.LoadRules(rules)
 	if succ && err == nil {
 		return nil
 	}
-	return Error{
-		code: UpdatePropertyError,
-		desc: fmt.Sprintf("%+v", err),
-	}
+	return NewError(
+		UpdatePropertyError,
+		fmt.Sprintf("%+v", err),
+	)
 }
 
 func NewSystemRulesHandler(converter PropertyConverter) *DefaultPropertyHandler {
@@ -111,8 +117,11 @@ func CircuitBreakerRuleJsonArrayParser(src []byte) (interface{}, error) {
 	}
 
 	rules := make([]*cb.Rule, 0)
-	err := json.Unmarshal(src, &rules)
-	return rules, err
+	if err := json.Unmarshal(src, &rules); err != nil {
+		desc := fmt.Sprintf("Fail to convert source bytes to []*circuitbreaker.Rule, err: %s", err.Error())
+		return nil, NewError(ConvertSourceError, desc)
+	}
+	return rules, nil
 }
 
 // CircuitBreakerRulesUpdater load the newest []cb.Rule to downstream circuit breaker component.
@@ -125,19 +134,19 @@ func CircuitBreakerRulesUpdater(data interface{}) error {
 	if val, ok := data.([]*cb.Rule); ok {
 		rules = val
 	} else {
-		return Error{
-			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []circuitbreaker.Rule, in fact, data: %+v", data),
-		}
+		return NewError(
+			UpdatePropertyError,
+			fmt.Sprintf("Fail to type assert data to []*circuitbreaker.Rule, in fact, data: %+v", data),
+		)
 	}
 	succ, err := cb.LoadRules(rules)
 	if succ && err == nil {
 		return nil
 	}
-	return Error{
-		code: UpdatePropertyError,
-		desc: fmt.Sprintf("%+v", err),
-	}
+	return NewError(
+		UpdatePropertyError,
+		fmt.Sprintf("%+v", err),
+	)
 }
 
 func NewCircuitBreakerRulesHandler(converter PropertyConverter) *DefaultPropertyHandler {
@@ -151,9 +160,9 @@ func HotSpotParamRuleJsonArrayParser(src []byte) (interface{}, error) {
 	}
 
 	rules := make([]*hotspot.Rule, 0)
-	err := json.Unmarshal(src, &rules)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(src, &rules); err != nil {
+		desc := fmt.Sprintf("Fail to convert source bytes to []*hotspot.Rule, err: %s", err.Error())
+		return nil, NewError(ConvertSourceError, desc)
 	}
 	return rules, nil
 }
@@ -172,19 +181,19 @@ func HotSpotParamRulesUpdater(data interface{}) error {
 	} else if val, ok := data.([]*hotspot.Rule); ok {
 		rules = val
 	} else {
-		return Error{
-			code: UpdatePropertyError,
-			desc: fmt.Sprintf("Fail to type assert data to []hotspot.Rule or []*hotspot.Rule, in fact, data: %+v", data),
-		}
+		return NewError(
+			UpdatePropertyError,
+			fmt.Sprintf("Fail to type assert data to []hotspot.Rule or []*hotspot.Rule, in fact, data: %+v", data),
+		)
 	}
 	succ, err := hotspot.LoadRules(rules)
 	if succ && err == nil {
 		return nil
 	}
-	return Error{
-		code: UpdatePropertyError,
-		desc: fmt.Sprintf("%+v", err),
-	}
+	return NewError(
+		UpdatePropertyError,
+		fmt.Sprintf("%+v", err),
+	)
 }
 
 func NewHotSpotParamRulesHandler(converter PropertyConverter) PropertyHandler {
