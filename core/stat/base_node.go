@@ -66,21 +66,16 @@ func (n *BaseStatNode) MinRT() float64 {
 	return float64(n.metric.MinRT())
 }
 
-func (n *BaseStatNode) CurrentGoroutineNum() int32 {
+func (n *BaseStatNode) CurrentConcurrency() int32 {
 	return atomic.LoadInt32(&(n.goroutineNum))
 }
 
-func (n *BaseStatNode) IncreaseGoroutineNum() {
+func (n *BaseStatNode) IncreaseConcurrency() {
 	atomic.AddInt32(&(n.goroutineNum), 1)
 }
 
-func (n *BaseStatNode) DecreaseGoroutineNum() {
+func (n *BaseStatNode) DecreaseConcurrency() {
 	atomic.AddInt32(&(n.goroutineNum), -1)
-}
-
-func (n *BaseStatNode) Reset() {
-	// TODO: this should be thread-safe, or error may occur
-	panic("to be implemented")
 }
 
 func (n *BaseStatNode) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (base.ReadStat, error) {

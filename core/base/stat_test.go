@@ -50,22 +50,17 @@ func (m *StatNodeMock) MinRT() float64 {
 	return float64(args.Int(0))
 }
 
-func (m *StatNodeMock) CurrentGoroutineNum() int32 {
+func (m *StatNodeMock) CurrentConcurrency() int32 {
 	args := m.Called()
 	return int32(args.Int(0))
 }
 
-func (m *StatNodeMock) IncreaseGoroutineNum() {
+func (m *StatNodeMock) IncreaseConcurrency() {
 	m.Called()
 	return
 }
 
-func (m *StatNodeMock) DecreaseGoroutineNum() {
-	m.Called()
-	return
-}
-
-func (m *StatNodeMock) Reset() {
+func (m *StatNodeMock) DecreaseConcurrency() {
 	m.Called()
 	return
 }

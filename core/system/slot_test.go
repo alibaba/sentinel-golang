@@ -51,11 +51,11 @@ func TestDoCheckRuleConcurrency(t *testing.T) {
 	})
 
 	t.Run("FalseConcurrency", func(t *testing.T) {
-		stat.InboundNode().IncreaseGoroutineNum()
+		stat.InboundNode().IncreaseConcurrency()
 		isOK, v := sas.doCheckRule(rule)
 		assert.True(t, util.Float64Equals(float64(1.0), v))
 		assert.Equal(t, false, isOK)
-		stat.InboundNode().DecreaseGoroutineNum()
+		stat.InboundNode().DecreaseConcurrency()
 	})
 }
 
