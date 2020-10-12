@@ -39,7 +39,9 @@ func Test_atomicBucketWrapArray_elementOffset(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			now := uint64(1596199310000)
 			aa := NewAtomicBucketWrapArrayWithTime(tt.args.len, tt.args.bucketLengthInMs, now, tt.args.bg)
-			if got := uintptr(aa.elementOffset(tt.args.idx)) - uintptr(aa.base); got != tt.want {
+			offset, ok := aa.elementOffset(tt.args.idx)
+			assert.True(t, ok)
+			if got := uintptr(offset) - uintptr(aa.base); got != tt.want {
 				t.Errorf("AtomicBucketWrapArray.elementOffset() = %v, want %v \n", got, tt.want)
 			}
 		})
