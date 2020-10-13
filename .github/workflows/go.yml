@@ -8,9 +8,8 @@ on:
 
 jobs:
 
-  test:
-    name: test-${{ matrix.os }} - Go ${{ matrix.go_version }}
-    runs-on: ubuntu-latest
+  Test:
+    runs-on: ${{ matrix.os }}
     strategy:
      # If you want to matrix build , you can append the following list.
       matrix:
@@ -53,27 +52,17 @@ jobs:
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)
   
-  check:
-    name: check-${{ matrix.os }} - Go ${{ matrix.go_version }}
-    runs-on: ubuntu-latest
+  Linter:
+    runs-on: ${{ matrix.os }}
     strategy:
      # If you want to matrix build , you can append the following list.
       matrix:
-        go_version:
-          - 1.14
         os:
           - ubuntu-latest
 
     steps:
-      - name: Set up Go ${{ matrix.go_version }}
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ matrix.go_version }}
-        id: go
+      - uses: actions/checkout@v2
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-      
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
