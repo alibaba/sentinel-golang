@@ -10,6 +10,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
@@ -34,7 +35,7 @@ func TestStreamServerIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "/grpc.testing.TestService/StreamingInputCall",
-				Threshold:              1,
+				Threshold:              1.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
@@ -52,7 +53,7 @@ func TestStreamServerIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "/grpc.testing.TestService/StreamingInputCall",
-				Threshold:              0,
+				Threshold:              0.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
@@ -76,7 +77,7 @@ func TestUnaryServerIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "/grpc.testing.TestService/UnaryCall",
-				Threshold:              1,
+				Threshold:              1.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
@@ -86,14 +87,14 @@ func TestUnaryServerIntercept(t *testing.T) {
 		assert.EqualError(t, err, errMsgFake)
 		assert.Nil(t, rep)
 		// Test for recording the biz error.
-		assert.EqualValues(t, 1, int(stat.GetResourceNode(info.FullMethod).GetQPS(base.MetricEventError)))
+		assert.True(t, util.Float64Equals(1.0, stat.GetResourceNode(info.FullMethod).GetQPS(base.MetricEventError)))
 
 		t.Run("second fail", func(t *testing.T) {
 			rep, err := interceptor(nil, nil, info, handler)
 			assert.IsType(t, &base.BlockError{}, err)
 			assert.Nil(t, rep)
 
-			assert.EqualValues(t, 1, int(stat.GetResourceNode(info.FullMethod).GetQPS(base.MetricEventError)))
+			assert.True(t, util.Float64Equals(1.0, stat.GetResourceNode(info.FullMethod).GetQPS(base.MetricEventError)))
 		})
 	})
 
@@ -104,7 +105,7 @@ func TestUnaryServerIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "/grpc.testing.TestService/UnaryCall",
-				Threshold:              0,
+				Threshold:              0.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},

@@ -179,21 +179,21 @@ func TestGetQPS(t *testing.T) {
 	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
 	assert.True(t, err == nil && got != nil)
 	qps := got.GetQPS(base.MetricEventPass)
-	assert.True(t, qps == 0)
+	assert.True(t, util.Float64Equals(qps, 0.0))
 }
 
 func TestGetPreviousQPS(t *testing.T) {
 	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
 	assert.True(t, err == nil && got != nil)
 	previousQPS := got.GetPreviousQPS(base.MetricEventPass)
-	assert.True(t, previousQPS == 0)
+	assert.True(t, util.Float64Equals(previousQPS, 0.0))
 }
 
 func TestGetQPSWithTime(t *testing.T) {
 	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
 	assert.True(t, err == nil && got != nil)
 	qps := got.getQPSWithTime(util.CurrentTimeMillis(), base.MetricEventPass)
-	assert.True(t, qps == 0)
+	assert.True(t, util.Float64Equals(qps, 0.0))
 }
 
 func TestGetMaxOfSingleBucket(t *testing.T) {
@@ -208,7 +208,7 @@ func TestMinRT(t *testing.T) {
 	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
 	assert.True(t, err == nil && got != nil)
 	minRt := got.MinRT()
-	assert.True(t, minRt == float64(base.DefaultStatisticMaxRt))
+	assert.True(t, util.Float64Equals(minRt, float64(base.DefaultStatisticMaxRt)))
 }
 
 func TestAvgRT(t *testing.T) {
@@ -217,7 +217,7 @@ func TestAvgRT(t *testing.T) {
 	got.real.AddCount(base.MetricEventRt, 100)
 	got.real.AddCount(base.MetricEventComplete, 100)
 	avgRT := got.AvgRT()
-	assert.True(t, avgRT == 1)
+	assert.True(t, util.Float64Equals(avgRT, 1.0))
 }
 
 func TestMetricItemFromBuckets(t *testing.T) {

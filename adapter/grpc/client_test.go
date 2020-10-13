@@ -26,7 +26,7 @@ func TestUnaryClientIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "client:" + method,
-				Threshold:              1,
+				Threshold:              1.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
@@ -44,7 +44,7 @@ func TestUnaryClientIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "client:" + method,
-				Threshold:              0,
+				Threshold:              0.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
@@ -70,7 +70,7 @@ func TestStreamClientIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "client:/grpc.testing.TestService/StreamingOutputCall",
-				Threshold:              1,
+				Threshold:              1.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
@@ -90,7 +90,7 @@ func TestStreamClientIntercept(t *testing.T) {
 		var _, err = flow.LoadRules([]*flow.Rule{
 			{
 				Resource:               "client:/grpc.testing.TestService/StreamingOutputCall",
-				Threshold:              0,
+				Threshold:              0.0,
 				TokenCalculateStrategy: flow.Direct,
 				ControlBehavior:        flow.Reject,
 			},
