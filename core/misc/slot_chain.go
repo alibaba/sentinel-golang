@@ -17,18 +17,6 @@ var (
 	globalStatSlot         = make([]base.StatSlot, 0, 8)
 )
 
-func GlobalStatPrepareSlots() []base.StatPrepareSlot {
-	return globalStatPrepareSlots
-}
-
-func GlobalRuleCheckSlots() []base.RuleCheckSlot {
-	return globalRuleCheckSlots
-}
-
-func GlobalStatSlot() []base.StatSlot {
-	return globalStatSlot
-}
-
 func RegisterCustomGlobalSlotsToSc(sc *base.SlotChain) {
 	if sc == nil {
 		return
