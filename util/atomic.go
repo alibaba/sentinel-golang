@@ -58,8 +58,5 @@ func (b *AtomicBool) Set(value bool) {
 }
 
 func (b *AtomicBool) Get() bool {
-	if atomic.LoadInt32(&(b.flag)) != 0 {
-		return true
-	}
-	return false
+	return atomic.LoadInt32(&(b.flag)) != 0
 }

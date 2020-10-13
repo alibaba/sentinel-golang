@@ -176,7 +176,7 @@ func readLine(bufReader *bufio.Reader) (string, error) {
 }
 
 func getLatestSecond(items []*base.MetricItem) uint64 {
-	if items == nil || len(items) == 0 {
+	if len(items) == 0 || items == nil {
 		return 0
 	}
 	return items[len(items)-1].Timestamp / 1000

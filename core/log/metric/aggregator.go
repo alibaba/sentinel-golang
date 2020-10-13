@@ -62,22 +62,20 @@ func InitTask() (err error) {
 
 func writeTaskLoop() {
 	for {
-		select {
-		case m := <-writeChan:
-			keys := make([]uint64, 0, len(m))
-			for t := range m {
-				keys = append(keys, t)
-			}
-			// Sort the time
-			sort.Slice(keys, func(i, j int) bool {
-				return keys[i] < keys[j]
-			})
+		m := <-writeChan
+		keys := make([]uint64, 0, len(m))
+		for t := range m {
+			keys = append(keys, t)
+		}
+		// Sort the time
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		})
 
-			for _, t := range keys {
-				err := metricWriter.Write(t, m[t])
-				if err != nil {
-					logging.Error(err, "[MetricAggregatorTask] fail tp write metric")
-				}
+		for _, t := range keys {
+			err := metricWriter.Write(t, m[t])
+			if err != nil {
+				logging.Error(err, "[MetricAggregatorTask] fail tp write metric")
 			}
 		}
 	}

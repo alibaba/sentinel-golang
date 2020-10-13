@@ -204,15 +204,12 @@ type statisticSlotMock struct {
 
 func (m *statisticSlotMock) OnEntryPassed(ctx *EntryContext) {
 	m.Called(ctx)
-	return
 }
 func (m *statisticSlotMock) OnEntryBlocked(ctx *EntryContext, blockError *BlockError) {
 	m.Called(ctx, blockError)
-	return
 }
 func (m *statisticSlotMock) OnCompleted(ctx *EntryContext) {
 	m.Called(ctx)
-	return
 }
 
 func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
