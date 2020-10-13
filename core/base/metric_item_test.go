@@ -29,3 +29,25 @@ func TestMetricItemFromFatStringIllegal(t *testing.T) {
 	_, err = MetricItemFromFatString(line2)
 	assert.Error(t, err, "Error should occur when parsing malformed line")
 }
+
+func TestMetricItemToFatString(t *testing.T) {
+	line1 := "1564382218000|2019-07-29 14:36:58|/foo/*|4|9|3|0|25|0|2|1"
+	item1, err := MetricItemFromFatString(line1)
+	assert.NoError(t, err)
+	line2, err := item1.ToFatString()
+	assert.NoError(t, err)
+	item2, err := MetricItemFromFatString(line2)
+	assert.NoError(t, err)
+	assert.Equal(t, item1, item2)
+}
+
+func BenchmarkMetricItem_ToFatString(b *testing.B) {
+	line := "1564382218000|2019-07-29 14:36:58|/foo/*|4|9|3|0|25|0|2|1"
+	item, err := MetricItemFromFatString(line)
+	assert.NoError(b, err)
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		item.ToFatString()
+	}
+}
