@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	RuleCheckSlotName = "sentinel-hotspot-rule-check-slot"
+	RuleCheckSlotName = "sentinel-core-hotspot-rule-check-slot"
 )
 
 var (

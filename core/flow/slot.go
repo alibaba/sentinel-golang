@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	 RuleCheckSlotName = "sentinel-flow-rule-check-slot"
+	RuleCheckSlotName = "sentinel-core-flow-rule-check-slot"
 )
 
 var (

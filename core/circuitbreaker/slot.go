@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	RuleCheckSlotName = "sentinel-circuit-breaker-rule-check-slot"
+	RuleCheckSlotName = "sentinel-core-circuit-breaker-rule-check-slot"
 )
 
 var (

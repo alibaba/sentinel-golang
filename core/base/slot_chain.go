@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type BaseSlot interface {
+type NamedSlot interface {
 	// Name returns its slot name which should not be the same as other slots.
 	Name() string
 }
@@ -16,7 +16,7 @@ type BaseSlot interface {
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on
 type StatPrepareSlot interface {
-	BaseSlot
+	NamedSlot
 	// Prepare function do some initialization
 	// Such as: init statistic structure、node and etc
 	// The result of preparing would store in EntryContext
@@ -28,7 +28,7 @@ type StatPrepareSlot interface {
 // RuleCheckSlot is rule based checking strategy
 // All checking rule must implement this interface.
 type RuleCheckSlot interface {
-	BaseSlot
+	NamedSlot
 	// Check function do some validation
 	// It can break off the slot pipeline
 	// Each TokenResult will return check result
@@ -39,7 +39,7 @@ type RuleCheckSlot interface {
 // StatSlot is responsible for counting all custom biz metrics.
 // StatSlot would not handle any panic, and pass up all panic to slot chain
 type StatSlot interface {
-	BaseSlot
+	NamedSlot
 	// OnEntryPass function will be invoked when StatPrepareSlots and RuleCheckSlots execute pass
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	OnEntryPassed(ctx *EntryContext)

@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	PrepareSlotName = "sentinel-resource-node-prepare-slot"
+	PrepareSlotName = "sentinel-core-stat-resource-node-prepare-slot"
 )
 
 var (

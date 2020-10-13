@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-log-stat-slot"
+	StatSlotName = "sentinel-core-log-stat-slot"
 )
 
 var (

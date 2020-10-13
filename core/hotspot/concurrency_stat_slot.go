@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-concurrency-stat-slot"
+	StatSlotName = "sentinel-core-hotspot-concurrency-stat-slot"
 )
 
 var (

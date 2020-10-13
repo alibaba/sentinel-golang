@@ -26,7 +26,7 @@ type mockRuleCheckSlot1 struct {
 }
 
 func (m *mockRuleCheckSlot1) Name() string {
-	return "mocck-sentinel-rule-check-slot1"
+	return "mock-sentinel-rule-check-slot1"
 }
 
 func (m *mockRuleCheckSlot1) Check(ctx *base.EntryContext) *base.TokenResult {
@@ -39,7 +39,7 @@ type mockRuleCheckSlot2 struct {
 }
 
 func (m *mockRuleCheckSlot2) Name() string {
-	return "mocck-sentinel-rule-check-slot2"
+	return "mock-sentinel-rule-check-slot2"
 }
 
 func (m *mockRuleCheckSlot2) Check(ctx *base.EntryContext) *base.TokenResult {
@@ -52,7 +52,7 @@ type statisticSlotMock struct {
 }
 
 func (m *statisticSlotMock) Name() string {
-	return "mocck-sentinel-stat-check-slot"
+	return "mock-sentinel-stat-check-slot"
 }
 
 func (m *statisticSlotMock) OnEntryPassed(ctx *base.EntryContext) {

@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-standalone-stat-slot"
+	StatSlotName = "sentinel-core-flow-standalone-stat-slot"
 )
 
 var (

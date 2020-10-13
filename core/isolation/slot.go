@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	RuleCheckSlotName = "sentinel-isolation-rule-check-slot"
+	RuleCheckSlotName = "sentinel-core-isolation-rule-check-slot"
 )
 
 var (
