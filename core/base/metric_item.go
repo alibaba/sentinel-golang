@@ -2,7 +2,6 @@ package base
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -32,29 +31,64 @@ type MetricItemRetriever interface {
 
 func (m *MetricItem) ToFatString() (string, error) {
 	b := strings.Builder{}
+	b.Grow(128)
+
 	timeStr := util.FormatTimeMillis(m.Timestamp)
 	// All "|" in the resource name will be replaced with "_"
 	finalName := strings.ReplaceAll(m.Resource, "|", "_")
-	_, err := fmt.Fprintf(&b, "%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d",
-		m.Timestamp, timeStr, finalName, m.PassQps,
-		m.BlockQps, m.CompleteQps, m.ErrorQps, m.AvgRt,
-		m.OccupiedPassQps, m.Concurrency, m.Classification)
-	if err != nil {
-		return "", err
-	}
+
+	b.WriteString(strconv.FormatUint(m.Timestamp, 10))
+	b.WriteRune('|')
+	b.WriteString(timeStr)
+	b.WriteRune('|')
+	b.WriteString(finalName)
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.PassQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.BlockQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.CompleteQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.ErrorQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.AvgRt, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.OccupiedPassQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(uint64(m.Concurrency), 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatInt(int64(m.Classification), 10))
+
 	return b.String(), nil
 }
 
 func (m *MetricItem) ToThinString() (string, error) {
 	b := strings.Builder{}
+	b.Grow(128)
+
+	// All "|" in the resource name will be replaced with "_"
 	finalName := strings.ReplaceAll(m.Resource, "|", "_")
-	_, err := fmt.Fprintf(&b, "%d|%s|%d|%d|%d|%d|%d|%d|%d|%d",
-		m.Timestamp, finalName, m.PassQps,
-		m.BlockQps, m.CompleteQps, m.ErrorQps, m.AvgRt,
-		m.OccupiedPassQps, m.Concurrency, m.Classification)
-	if err != nil {
-		return "", err
-	}
+
+	b.WriteString(strconv.FormatUint(m.Timestamp, 10))
+	b.WriteRune('|')
+	b.WriteString(finalName)
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.PassQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.BlockQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.CompleteQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.ErrorQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.AvgRt, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(m.OccupiedPassQps, 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatUint(uint64(m.Concurrency), 10))
+	b.WriteRune('|')
+	b.WriteString(strconv.FormatInt(int64(m.Classification), 10))
+
 	return b.String(), nil
 }
 
