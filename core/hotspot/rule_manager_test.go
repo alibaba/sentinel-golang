@@ -69,9 +69,9 @@ func Test_tcGenFuncMap(t *testing.T) {
 			size = ParamsMaxCapacity
 		}
 		metric := &ParamsMetric{
-			RuleTimeCounter:    cache.NewLRUCacheMap(size),
-			RuleTokenCounter:   cache.NewLRUCacheMap(size),
-			ConcurrencyCounter: cache.NewLRUCacheMap(ConcurrencyMaxCount),
+			RuleTimeCounter:    cache.NewTinyLfuCacheMap(size),
+			RuleTokenCounter:   cache.NewTinyLfuCacheMap(size),
+			ConcurrencyCounter: cache.NewTinyLfuCacheMap(ConcurrencyMaxCount),
 		}
 
 		tc := generator(r1, metric)
