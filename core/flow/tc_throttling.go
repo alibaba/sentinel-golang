@@ -34,7 +34,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, batchCount uint32, threshol
 	if batchCount <= 0 {
 		return nil
 	}
-	if threshold <= 0 {
+	if threshold <= 0.0 {
 		return base.NewTokenResultBlocked(base.BlockTypeFlow)
 	}
 	// Here we use nanosecond so that we could control the queueing time more accurately.

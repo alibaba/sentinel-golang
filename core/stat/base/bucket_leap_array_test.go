@@ -151,7 +151,7 @@ func TestMinRt(t *testing.T) {
 func TestGetIntervalInSecond(t *testing.T) {
 	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
 	second := bla.GetIntervalInSecond()
-	assert.True(t, float64(IntervalInMs)/1000.0 == second)
+	assert.True(t, util.Float64Equals(float64(IntervalInMs)/1000.0, second))
 }
 
 func TestDataType(t *testing.T) {

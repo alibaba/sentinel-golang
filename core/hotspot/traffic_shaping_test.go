@@ -70,7 +70,7 @@ func Test_baseTrafficShapingController_performCheckingForConcurrencyMetric(t *te
 			res:           "res_a",
 			metricType:    Concurrency,
 			paramIndex:    0,
-			threshold:     100,
+			threshold:     100.0,
 			specificItems: make(map[interface{}]int64),
 			durationInSec: 1,
 			metric: &ParamsMetric{
@@ -107,7 +107,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{
@@ -139,7 +139,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 10,
 				metric: &ParamsMetric{
@@ -172,7 +172,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{
@@ -205,7 +205,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{
@@ -243,7 +243,7 @@ func Test_throttlingTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{

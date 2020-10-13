@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	notRetrievedValue float64 = -1
+	notRetrievedValue float64 = -1.0
 )
 
 var (

@@ -21,14 +21,14 @@ func initSentinel(t *testing.T) {
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:               "GET:/ping",
-			Threshold:              1,
+			Threshold:              1.0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
 			StatIntervalInMs:       1000,
 		},
 		{
 			Resource:               "/api/:uid",
-			Threshold:              0,
+			Threshold:              0.0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
 			StatIntervalInMs:       1000,

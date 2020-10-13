@@ -3,6 +3,7 @@ package system
 import (
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,10 +39,10 @@ func Test_recordCpuUsage(t *testing.T) {
 	expected := float64(1600+430-950-210) / (4180 - 2260)
 
 	recordCpuUsage(emptyStat, cur)
-	assert.Equal(t, notRetrievedValue, CurrentCpuUsage())
+	assert.True(t, util.Float64Equals(notRetrievedValue, CurrentCpuUsage()))
 
 	recordCpuUsage(prev, prev)
-	assert.Equal(t, 0.0, CurrentCpuUsage())
+	assert.True(t, util.Float64Equals(0.0, CurrentCpuUsage()))
 
 	recordCpuUsage(prev, cur)
 	assert.InEpsilon(t, expected, CurrentCpuUsage(), 0.001)
@@ -51,12 +52,12 @@ func TestCurrentLoad(t *testing.T) {
 	defer currentLoad.Store(notRetrievedValue)
 
 	cLoad := CurrentLoad()
-	assert.Equal(t, notRetrievedValue, cLoad)
+	assert.True(t, util.Float64Equals(notRetrievedValue, cLoad))
 
-	v := float64(1)
+	v := float64(1.0)
 	currentLoad.Store(v)
 	cLoad = CurrentLoad()
-	assert.Equal(t, v, cLoad)
+	assert.True(t, util.Float64Equals(v, cLoad))
 }
 
 func TestCurrentCpuUsage(t *testing.T) {
@@ -68,5 +69,5 @@ func TestCurrentCpuUsage(t *testing.T) {
 	v := float64(0.3)
 	currentCpuUsage.Store(v)
 	cpuUsage = CurrentCpuUsage()
-	assert.Equal(t, v, cpuUsage)
+	assert.True(t, util.Float64Equals(v, cpuUsage))
 }
