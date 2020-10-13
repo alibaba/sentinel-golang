@@ -47,7 +47,7 @@ func (n *BaseStatNode) GetSum(event base.MetricEvent) int64 {
 }
 
 func (n *BaseStatNode) GetMaxAvg(event base.MetricEvent) float64 {
-	return float64(n.metric.GetMaxOfSingleBucket(event)) * float64(n.sampleCount) / float64(n.intervalMs) * 1000
+	return float64(n.metric.GetMaxOfSingleBucket(event)) * float64(n.sampleCount) / float64(n.intervalMs) * 1000.0
 }
 
 func (n *BaseStatNode) AddCount(event base.MetricEvent, count int64) {
@@ -57,7 +57,7 @@ func (n *BaseStatNode) AddCount(event base.MetricEvent, count int64) {
 func (n *BaseStatNode) AvgRT() float64 {
 	complete := n.metric.GetSum(base.MetricEventComplete)
 	if complete <= 0 {
-		return float64(0)
+		return float64(0.0)
 	}
 	return float64(n.metric.GetSum(base.MetricEventRt) / complete)
 }

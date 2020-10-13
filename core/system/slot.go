@@ -69,7 +69,7 @@ func checkBbrSimple() bool {
 	concurrency := stat.InboundNode().CurrentGoroutineNum()
 	minRt := stat.InboundNode().MinRT()
 	maxComplete := stat.InboundNode().GetMaxAvg(base.MetricEventComplete)
-	if concurrency > 1 && float64(concurrency) > maxComplete*minRt/1000 {
+	if concurrency > 1 && float64(concurrency) > maxComplete*minRt/1000.0 {
 		return false
 	}
 	return true

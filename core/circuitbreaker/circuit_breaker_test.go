@@ -268,7 +268,7 @@ func TestErrorCountCircuitBreaker_TryPass(t *testing.T) {
 			RetryTimeoutMs:   3000,
 			MinRequestAmount: 10,
 			StatIntervalMs:   10000,
-			Threshold:        1,
+			Threshold:        1.0,
 		}
 		b, err := newErrorCountCircuitBreaker(r)
 		assert.Nil(t, err)
@@ -283,7 +283,7 @@ func TestErrorCountCircuitBreaker_TryPass(t *testing.T) {
 			RetryTimeoutMs:   3000,
 			MinRequestAmount: 10,
 			StatIntervalMs:   10000,
-			Threshold:        1,
+			Threshold:        1.0,
 		}
 		b, err := newErrorCountCircuitBreaker(r)
 		assert.Nil(t, err)
@@ -307,7 +307,7 @@ func TestErrorCount_OnRequestComplete(t *testing.T) {
 		RetryTimeoutMs:   3000,
 		MinRequestAmount: 10,
 		StatIntervalMs:   10000,
-		Threshold:        1,
+		Threshold:        1.0,
 	}
 	b, err := newErrorCountCircuitBreaker(r)
 	assert.Nil(t, err)
@@ -339,7 +339,7 @@ func TestFromClosedToOpen(t *testing.T) {
 			RetryTimeoutMs:   3000,
 			MinRequestAmount: 10,
 			StatIntervalMs:   10000,
-			Threshold:        1,
+			Threshold:        1.0,
 		}
 		b, err := newErrorCountCircuitBreaker(r)
 		assert.Nil(t, err)
@@ -361,7 +361,7 @@ func TestFromHalfOpenToOpen(t *testing.T) {
 			RetryTimeoutMs:   3000,
 			MinRequestAmount: 10,
 			StatIntervalMs:   10000,
-			Threshold:        1,
+			Threshold:        1.0,
 		}
 		b, err := newErrorCountCircuitBreaker(r)
 		assert.Nil(t, err)

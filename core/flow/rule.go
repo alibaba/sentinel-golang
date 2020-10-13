@@ -3,6 +3,8 @@ package flow
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 // RelationStrategy indicates the flow control strategy based on the relation of invocations.
@@ -91,7 +93,7 @@ func (r *Rule) isEqualsTo(newRule *Rule) bool {
 	}
 	if !(r.Resource == newRule.Resource && r.RelationStrategy == newRule.RelationStrategy &&
 		r.RefResource == newRule.RefResource && r.StatIntervalInMs == newRule.StatIntervalInMs &&
-		r.TokenCalculateStrategy == newRule.TokenCalculateStrategy && r.ControlBehavior == newRule.ControlBehavior && r.Threshold == newRule.Threshold &&
+		r.TokenCalculateStrategy == newRule.TokenCalculateStrategy && r.ControlBehavior == newRule.ControlBehavior && util.Float64Equals(r.Threshold, newRule.Threshold) &&
 		r.MaxQueueingTimeMs == newRule.MaxQueueingTimeMs && r.WarmUpPeriodSec == newRule.WarmUpPeriodSec && r.WarmUpColdFactor == newRule.WarmUpColdFactor) {
 		return false
 	}

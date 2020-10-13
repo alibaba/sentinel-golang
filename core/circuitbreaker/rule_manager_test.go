@@ -54,7 +54,7 @@ func Test_isApplicableRule_valid(t *testing.T) {
 					RetryTimeoutMs:   1000,
 					MinRequestAmount: 5,
 					StatIntervalMs:   1000,
-					Threshold:        10,
+					Threshold:        10.0,
 				},
 			},
 			want: nil,
@@ -104,7 +104,7 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 			RetryTimeoutMs:   1000,
 			MinRequestAmount: 5,
 			StatIntervalMs:   1000,
-			Threshold:        0,
+			Threshold:        0.0,
 		}
 		if got := IsValid(rule); got == nil {
 			t.Errorf("RuleManager.isApplicable() = %v", got)
@@ -138,7 +138,7 @@ func Test_onUpdateRules(t *testing.T) {
 			RetryTimeoutMs:   1000,
 			MinRequestAmount: 5,
 			StatIntervalMs:   1000,
-			Threshold:        10,
+			Threshold:        10.0,
 		}
 		rules = append(rules, r1, r2, r3)
 		err := onRuleUpdate(rules)
@@ -186,7 +186,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			RetryTimeoutMs:   1000,
 			MinRequestAmount: 5,
 			StatIntervalMs:   1000,
-			Threshold:        10,
+			Threshold:        10.0,
 		}
 
 		_, _ = LoadRules([]*Rule{r1, r2, r3})
@@ -221,7 +221,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			RetryTimeoutMs:   1000,
 			MinRequestAmount: 5,
 			StatIntervalMs:   100,
-			Threshold:        10,
+			Threshold:        10.0,
 		}
 		r7 := &Rule{
 			Resource:         "abc",
@@ -229,7 +229,7 @@ func Test_onRuleUpdate(t *testing.T) {
 			RetryTimeoutMs:   1000,
 			MinRequestAmount: 5,
 			StatIntervalMs:   1100,
-			Threshold:        10,
+			Threshold:        10.0,
 		}
 		_, _ = LoadRules([]*Rule{r4, r5, r6, r7})
 		assert.True(t, len(breakers) == 1)
@@ -249,7 +249,7 @@ func TestGeneratorCircuitBreaker(t *testing.T) {
 		RetryTimeoutMs:   1000,
 		MinRequestAmount: 5,
 		StatIntervalMs:   1000,
-		Threshold:        10,
+		Threshold:        10.0,
 	}
 	t.Run("SlowRequestRatio_Nil_Rule", func(t *testing.T) {
 		generator := cbGenFuncMap[SlowRequestRatio]
@@ -285,7 +285,7 @@ func TestGetRules(t *testing.T) {
 			RetryTimeoutMs:   1000,
 			MinRequestAmount: 5,
 			StatIntervalMs:   1000,
-			Threshold:        10,
+			Threshold:        10.0,
 		}
 
 		_, _ = LoadRules([]*Rule{r1})

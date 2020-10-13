@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/util"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -68,12 +70,12 @@ func Test_matchArg(t *testing.T) {
 		tcMock2 := &TrafficShapingControllerMock{}
 		tcMock2.On("BoundParamIndex").Return(2)
 		ret2 := matchArg(tcMock2, args)
-		assert.True(t, reflect.TypeOf(ret2).Kind() == reflect.Float64 && ret2 == 1.23457)
+		assert.True(t, reflect.TypeOf(ret2).Kind() == reflect.Float64 && util.Float64Equals(ret2.(float64), 1.23457))
 
 		tcMock3 := &TrafficShapingControllerMock{}
 		tcMock3.On("BoundParamIndex").Return(3)
 		ret3 := matchArg(tcMock3, args)
-		assert.True(t, reflect.TypeOf(ret3).Kind() == reflect.Float64 && ret3 == 1.23000)
+		assert.True(t, reflect.TypeOf(ret3).Kind() == reflect.Float64 && util.Float64Equals(ret3.(float64), 1.23000))
 
 		tcMock4 := &TrafficShapingControllerMock{}
 		tcMock4.On("BoundParamIndex").Return(4)
