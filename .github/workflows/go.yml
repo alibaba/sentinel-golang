@@ -68,4 +68,4 @@ jobs:
         with:
           level: warning # GitHub Status Check won't become failure with this level.
           golangci_lint_flags: |
-            --timeout 10s
+            --timeout 5m
