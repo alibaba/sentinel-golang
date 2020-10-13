@@ -174,7 +174,7 @@ func (t *TinyLfu) Len() int {
 
 // Purge is used to completely clear the cache.
 func (t *TinyLfu) Purge() {
-	for k, _ := range t.items {
+	for k := range t.items {
 		delete(t.items, k)
 	}
 	t.slru.clear()
