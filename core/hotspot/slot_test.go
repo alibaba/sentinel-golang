@@ -4,12 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/util"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/alibaba/sentinel-golang/core/base"
-
+	"github.com/alibaba/sentinel-golang/util"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
