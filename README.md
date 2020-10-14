@@ -46,4 +46,4 @@ Contributions are always welcomed! Please see [CONTRIBUTING](./CONTRIBUTING.md) 
 You can start with the issues labeled with [`good first issue`](https://github.com/alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
 ## Communication
-![qr-code](https://user-images.githubusercontent.com/28588342/96000984-19f8f380-0e6a-11eb-95ab-72594cd2673b.jpg)
+![Sentinel Go Group QR Code](https://user-images.githubusercontent.com/28588342/96000984-19f8f380-0e6a-11eb-95ab-72594cd2673b.jpg)
