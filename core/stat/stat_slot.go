@@ -5,7 +5,19 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 )
 
+const (
+	StatSlotName = "sentinel-core-stat-slot"
+)
+
+var (
+	DefaultSlot = &Slot{}
+)
+
 type Slot struct {
+}
+
+func (s *Slot) Name() string {
+	return StatSlotName
 }
 
 func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {

@@ -12,11 +12,15 @@ import (
 )
 
 type StatPrepareSlotMock1 struct {
-	Name string
+	name string
+}
+
+func (spl *StatPrepareSlotMock1) Name() string {
+	return "mock-sentinel-prepare-slot1"
 }
 
 func (spl *StatPrepareSlotMock1) Prepare(ctx *EntryContext) {
-	fmt.Println(spl.Name)
+	fmt.Println(spl.name)
 	return
 }
 
@@ -24,27 +28,27 @@ func TestSlotChain_addStatPrepareSlotFirstAndLast(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
 		sc.AddStatPrepareSlotFirst(&StatPrepareSlotMock1{
-			Name: "mock2" + strconv.Itoa(i),
+			name: "mock2" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
 		sc.AddStatPrepareSlotFirst(&StatPrepareSlotMock1{
-			Name: "mock1" + strconv.Itoa(i),
+			name: "mock1" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
 		sc.AddStatPrepareSlotLast(&StatPrepareSlotMock1{
-			Name: "mock3" + strconv.Itoa(i),
+			name: "mock3" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
 		sc.AddStatPrepareSlotFirst(&StatPrepareSlotMock1{
-			Name: "mock" + strconv.Itoa(i),
+			name: "mock" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
 		sc.AddStatPrepareSlotLast(&StatPrepareSlotMock1{
-			Name: "mock4" + strconv.Itoa(i),
+			name: "mock4" + strconv.Itoa(i),
 		})
 	}
 
@@ -59,43 +63,47 @@ func TestSlotChain_addStatPrepareSlotFirstAndLast(t *testing.T) {
 		if !ok {
 			t.Error("type error")
 		}
-		reflect.DeepEqual(n, spsm.Name)
+		reflect.DeepEqual(n, spsm.name)
 	}
 }
 
 type RuleCheckSlotMock1 struct {
-	Name string
+	name string
+}
+
+func (rcs *RuleCheckSlotMock1) Name() string {
+	return "mock-sentinel-rule-check-slot-1"
 }
 
 func (rcs *RuleCheckSlotMock1) Check(ctx *EntryContext) *TokenResult {
-	fmt.Println(rcs.Name)
+	fmt.Println(rcs.name)
 	return nil
 }
 func TestSlotChain_addRuleCheckSlotFirstAndLast(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
 		sc.AddRuleCheckSlotFirst(&RuleCheckSlotMock1{
-			Name: "mock2" + strconv.Itoa(i),
+			name: "mock2" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
 		sc.AddRuleCheckSlotFirst(&RuleCheckSlotMock1{
-			Name: "mock1" + strconv.Itoa(i),
+			name: "mock1" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
 		sc.AddRuleCheckSlotLast(&RuleCheckSlotMock1{
-			Name: "mock3" + strconv.Itoa(i),
+			name: "mock3" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
 		sc.AddRuleCheckSlotFirst(&RuleCheckSlotMock1{
-			Name: "mock" + strconv.Itoa(i),
+			name: "mock" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
 		sc.AddRuleCheckSlotLast(&RuleCheckSlotMock1{
-			Name: "mock4" + strconv.Itoa(i),
+			name: "mock4" + strconv.Itoa(i),
 		})
 	}
 
@@ -110,48 +118,52 @@ func TestSlotChain_addRuleCheckSlotFirstAndLast(t *testing.T) {
 		if !ok {
 			t.Error("type error")
 		}
-		reflect.DeepEqual(n, spsm.Name)
+		reflect.DeepEqual(n, spsm.name)
 	}
 }
 
 type StatSlotMock1 struct {
-	Name string
+	name string
+}
+
+func (ss *StatSlotMock1) Name() string {
+	return "mock-sentinel-stat-mock-slot-1"
 }
 
 func (ss *StatSlotMock1) OnEntryPassed(ctx *EntryContext) {
-	fmt.Println(ss.Name)
+	fmt.Println(ss.name)
 }
 func (ss *StatSlotMock1) OnEntryBlocked(ctx *EntryContext, blockError *BlockError) {
-	fmt.Printf("%s blocked: %v\n", ss.Name, blockError)
+	fmt.Printf("%s blocked: %v\n", ss.name, blockError)
 }
 func (ss *StatSlotMock1) OnCompleted(ctx *EntryContext) {
-	fmt.Println(ss.Name)
+	fmt.Println(ss.name)
 }
 func TestSlotChain_addStatSlotFirstAndLast(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
 		sc.AddStatSlotFirst(&StatSlotMock1{
-			Name: "mock2" + strconv.Itoa(i),
+			name: "mock2" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
 		sc.AddStatSlotFirst(&StatSlotMock1{
-			Name: "mock1" + strconv.Itoa(i),
+			name: "mock1" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
 		sc.AddStatSlotLast(&StatSlotMock1{
-			Name: "mock3" + strconv.Itoa(i),
+			name: "mock3" + strconv.Itoa(i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
 		sc.AddStatSlotFirst(&StatSlotMock1{
-			Name: "mock" + strconv.Itoa(i),
+			name: "mock" + strconv.Itoa(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
 		sc.AddStatSlotLast(&StatSlotMock1{
-			Name: "mock4" + strconv.Itoa(i),
+			name: "mock4" + strconv.Itoa(i),
 		})
 	}
 
@@ -167,12 +179,16 @@ func TestSlotChain_addStatSlotFirstAndLast(t *testing.T) {
 		if !ok {
 			t.Error("type error")
 		}
-		reflect.DeepEqual(n, spsm.Name)
+		reflect.DeepEqual(n, spsm.name)
 	}
 }
 
 type prepareSlotMock struct {
 	mock.Mock
+}
+
+func (m *prepareSlotMock) Name() string {
+	return "mock-sentinel-prepare-slot-1"
 }
 
 func (m *prepareSlotMock) Prepare(ctx *EntryContext) {
@@ -184,6 +200,10 @@ type mockRuleCheckSlot1 struct {
 	mock.Mock
 }
 
+func (m *mockRuleCheckSlot1) Name() string {
+	return "mock-sentinel-check-slot--1"
+}
+
 func (m *mockRuleCheckSlot1) Check(ctx *EntryContext) *TokenResult {
 	arg := m.Called(ctx)
 	return arg.Get(0).(*TokenResult)
@@ -193,6 +213,10 @@ type mockRuleCheckSlot2 struct {
 	mock.Mock
 }
 
+func (m *mockRuleCheckSlot2) Name() string {
+	return "mock-sentinel-rule-check-slot-2"
+}
+
 func (m *mockRuleCheckSlot2) Check(ctx *EntryContext) *TokenResult {
 	arg := m.Called(ctx)
 	return arg.Get(0).(*TokenResult)
@@ -200,6 +224,10 @@ func (m *mockRuleCheckSlot2) Check(ctx *EntryContext) *TokenResult {
 
 type statisticSlotMock struct {
 	mock.Mock
+}
+
+func (m *statisticSlotMock) Name() string {
+	return "mock-sentinel-statistic-slot"
 }
 
 func (m *statisticSlotMock) OnEntryPassed(ctx *EntryContext) {
@@ -308,6 +336,10 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 
 type badPrepareSlotMock struct {
 	mock.Mock
+}
+
+func (m *badPrepareSlotMock) Name() string {
+	return "bad-mock-sentinel-prepare-slot"
 }
 
 func (m *badPrepareSlotMock) Prepare(ctx *EntryContext) {
