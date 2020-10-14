@@ -8,9 +8,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+type NamedSlot interface {
+	// Name returns its slot name which should not be the same as other slots.
+	Name() string
+}
+
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on
 type StatPrepareSlot interface {
+	NamedSlot
 	// Prepare function do some initialization
 	// Such as: init statistic structure、node and etc
 	// The result of preparing would store in EntryContext
@@ -22,6 +28,7 @@ type StatPrepareSlot interface {
 // RuleCheckSlot is rule based checking strategy
 // All checking rule must implement this interface.
 type RuleCheckSlot interface {
+	NamedSlot
 	// Check function do some validation
 	// It can break off the slot pipeline
 	// Each TokenResult will return check result
@@ -32,6 +39,7 @@ type RuleCheckSlot interface {
 // StatSlot is responsible for counting all custom biz metrics.
 // StatSlot would not handle any panic, and pass up all panic to slot chain
 type StatSlot interface {
+	NamedSlot
 	// OnEntryPass function will be invoked when StatPrepareSlots and RuleCheckSlots execute pass
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	OnEntryPassed(ctx *EntryContext)
@@ -53,28 +61,32 @@ type SlotChain struct {
 	ruleChecks []RuleCheckSlot
 	stats      []StatSlot
 	// EntryContext Pool, used for reuse EntryContext object
-	ctxPool sync.Pool
+	ctxPool *sync.Pool
 }
+
+var (
+	ctxPool = &sync.Pool{
+		New: func() interface{} {
+			ctx := NewEmptyEntryContext()
+			ctx.RuleCheckResult = NewTokenResultPass()
+			ctx.Data = make(map[interface{}]interface{})
+			ctx.Input = &SentinelInput{
+				BatchCount:  1,
+				Flag:        0,
+				Args:        make([]interface{}, 0),
+				Attachments: make(map[interface{}]interface{}),
+			}
+			return ctx
+		},
+	}
+)
 
 func NewSlotChain() *SlotChain {
 	return &SlotChain{
 		statPres:   make([]StatPrepareSlot, 0, 5),
 		ruleChecks: make([]RuleCheckSlot, 0, 5),
 		stats:      make([]StatSlot, 0, 5),
-		ctxPool: sync.Pool{
-			New: func() interface{} {
-				ctx := NewEmptyEntryContext()
-				ctx.RuleCheckResult = NewTokenResultPass()
-				ctx.Data = make(map[interface{}]interface{})
-				ctx.Input = &SentinelInput{
-					BatchCount:  1,
-					Flag:        0,
-					Args:        make([]interface{}, 0),
-					Attachments: make(map[interface{}]interface{}),
-				}
-				return ctx
-			},
-		},
+		ctxPool:    ctxPool,
 	}
 }
 
@@ -92,6 +104,12 @@ func (sc *SlotChain) RefurbishContext(c *EntryContext) {
 	}
 }
 
+func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
+	for _, slot := range sc.statPres {
+		f(slot)
+	}
+}
+
 func (sc *SlotChain) AddStatPrepareSlotFirst(s StatPrepareSlot) {
 	ns := make([]StatPrepareSlot, 0, len(sc.statPres)+1)
 	// add to first
@@ -103,6 +121,12 @@ func (sc *SlotChain) AddStatPrepareSlotLast(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
 }
 
+func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
+	for _, slot := range sc.ruleChecks {
+		f(slot)
+	}
+}
+
 func (sc *SlotChain) AddRuleCheckSlotFirst(s RuleCheckSlot) {
 	ns := make([]RuleCheckSlot, 0, len(sc.ruleChecks)+1)
 	ns = append(ns, s)
@@ -111,6 +135,12 @@ func (sc *SlotChain) AddRuleCheckSlotFirst(s RuleCheckSlot) {
 
 func (sc *SlotChain) AddRuleCheckSlotLast(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
+}
+
+func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {
+	for _, slot := range sc.stats {
+		f(slot)
+	}
 }
 
 func (sc *SlotChain) AddStatSlotFirst(s StatSlot) {

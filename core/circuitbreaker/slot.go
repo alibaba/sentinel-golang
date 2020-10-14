@@ -4,7 +4,19 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
+const (
+	RuleCheckSlotName = "sentinel-core-circuit-breaker-rule-check-slot"
+)
+
+var (
+	DefaultSlot = &Slot{}
+)
+
 type Slot struct {
+}
+
+func (s *Slot) Name() string {
+	return RuleCheckSlotName
 }
 
 func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {

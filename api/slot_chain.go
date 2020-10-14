@@ -7,20 +7,12 @@ import (
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/isolation"
 	"github.com/alibaba/sentinel-golang/core/log"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system"
 )
 
 var globalSlotChain = BuildDefaultSlotChain()
-
-// SetSlotChain replaces current slot chain with the given one.
-// Note that this operation is not thread-safe, so it should be
-// called when pre-initializing Sentinel.
-func SetSlotChain(chain *base.SlotChain) {
-	if chain != nil {
-		globalSlotChain = chain
-	}
-}
 
 func GlobalSlotChain() *base.SlotChain {
 	return globalSlotChain
@@ -28,16 +20,20 @@ func GlobalSlotChain() *base.SlotChain {
 
 func BuildDefaultSlotChain() *base.SlotChain {
 	sc := base.NewSlotChain()
-	sc.AddStatPrepareSlotLast(&stat.ResourceNodePrepareSlot{})
-	sc.AddRuleCheckSlotLast(&system.AdaptiveSlot{})
-	sc.AddRuleCheckSlotLast(&flow.Slot{})
-	sc.AddRuleCheckSlotLast(&isolation.Slot{})
-	sc.AddRuleCheckSlotLast(&circuitbreaker.Slot{})
-	sc.AddRuleCheckSlotLast(&hotspot.Slot{})
-	sc.AddStatSlotLast(&stat.Slot{})
-	sc.AddStatSlotLast(&log.Slot{})
-	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
-	sc.AddStatSlotLast(&hotspot.ConcurrencyStatSlot{})
-	sc.AddStatSlotLast(&flow.StandaloneStatSlot{})
+	sc.AddStatPrepareSlotLast(stat.DefaultResourceNodePrepareSlot)
+
+	sc.AddRuleCheckSlotLast(system.DefaultAdaptiveSlot)
+	sc.AddRuleCheckSlotLast(flow.DefaultSlot)
+	sc.AddRuleCheckSlotLast(isolation.DefaultSlot)
+	sc.AddRuleCheckSlotLast(circuitbreaker.DefaultSlot)
+	sc.AddRuleCheckSlotLast(hotspot.DefaultSlot)
+
+	sc.AddStatSlotLast(stat.DefaultSlot)
+	sc.AddStatSlotLast(log.DefaultSlot)
+	sc.AddStatSlotLast(circuitbreaker.DefaultMetricStatSlot)
+	sc.AddStatSlotLast(hotspot.DefaultConcurrencyStatSlot)
+	sc.AddStatSlotLast(flow.DefaultStandaloneStatSlot)
+
+	misc.RegisterCustomGlobalSlotsToSc(sc)
 	return sc
 }

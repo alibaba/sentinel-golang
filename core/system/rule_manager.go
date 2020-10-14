@@ -3,6 +3,7 @@ package system
 import (
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -100,6 +101,9 @@ func buildRuleMap(rules []*Rule) RuleMap {
 		} else {
 			m[rule.MetricType] = append(rulesOfRes, rule)
 		}
+
+		// update resource slot chain
+		misc.RegisterResourceRuleCheckSlot(rule.ResourceName(), DefaultAdaptiveSlot)
 	}
 	return m
 }
