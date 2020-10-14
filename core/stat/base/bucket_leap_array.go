@@ -29,7 +29,8 @@ func (bla *BucketLeapArray) ResetBucketTo(bw *BucketWrap, startTime uint64) *Buc
 
 // sampleCount is the number of slots
 // intervalInMs is the time length of sliding window
-// (intervalInMs%sampleCount != 0,verification has been completed by the caller)
+// sampleCount and intervalInMs must be positive and intervalInMs%sampleCount == 0,
+// the validation must be done before call NewBucketLeapArray
 func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArray {
 	bucketLengthInMs := intervalInMs / sampleCount
 	ret := &BucketLeapArray{

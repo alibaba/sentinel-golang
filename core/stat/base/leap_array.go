@@ -96,7 +96,9 @@ func NewAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator Bucket
 
 func (aa *AtomicBucketWrapArray) elementOffset(idx int) (unsafe.Pointer, bool) {
 	if idx >= aa.length || idx < 0 {
-		logging.Error(errors.Errorf("The index (%d) is out of bounds, length is %d.", idx, aa.length), "")
+		logging.Error(errors.New("array index out of bounds"),
+			"array index out of bounds in AtomicBucketWrapArray.elementOffset()",
+			"idx", idx, "arrayLength", aa.length)
 		return nil, false
 	}
 	basePtr := aa.base
