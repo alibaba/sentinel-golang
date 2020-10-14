@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
-	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,7 +34,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			t.Fatal("nil traffic shaping controller")
 		}
 		assert.True(t, rejectTC.res == r1.Resource && rejectTC.metricType == r1.MetricType && rejectTC.paramIndex == r1.ParamIndex && rejectTC.burstCount == r1.BurstCount)
-		assert.True(t, util.Float64Equals(rejectTC.threshold, r1.Threshold) && rejectTC.durationInSec == r1.DurationInSec)
+		assert.True(t, rejectTC.threshold == r1.Threshold && rejectTC.durationInSec == r1.DurationInSec)
 	})
 
 	t.Run("Test_tcGenFuncMap_withMetric", func(t *testing.T) {
@@ -74,7 +73,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 		}
 		assert.True(t, rejectTC.metric == metric)
 		assert.True(t, rejectTC.res == r1.Resource && rejectTC.metricType == r1.MetricType && rejectTC.paramIndex == r1.ParamIndex && rejectTC.burstCount == r1.BurstCount)
-		assert.True(t, util.Float64Equals(rejectTC.threshold, r1.Threshold) && rejectTC.durationInSec == r1.DurationInSec)
+		assert.True(t, rejectTC.threshold == r1.Threshold && rejectTC.durationInSec == r1.DurationInSec)
 
 	})
 }
