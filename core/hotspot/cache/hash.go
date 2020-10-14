@@ -52,7 +52,6 @@ func sum(k interface{}) uint64 {
 		return h
 	}
 	return 0
-
 }
 
 func hashU64(data uint64) uint64 {

@@ -1,8 +1,9 @@
 package cache
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type tinyLFUTest struct {

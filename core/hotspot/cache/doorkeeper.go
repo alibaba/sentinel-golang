@@ -38,7 +38,7 @@ func newDoorkeeper(ins int, falsePositiveRate float64) *doorkeeper {
 // put inserts a hash value into the bloom filter.
 // returns true if the value may already in the doorkeeper.
 func (d *doorkeeper) put(h uint64) bool {
-	//only protectedLs hash functions are necessary to effectively
+	//only two hash functions are necessary to effectively
 	//implement a Bloom filter without any loss in the asymptotic false positive probability
 	//split up 64-bit hashcode into protectedLs 32-bit hashcode
 	hash1, hash2 := uint32(h), uint32(h>>32)
