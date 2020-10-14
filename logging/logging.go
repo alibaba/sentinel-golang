@@ -27,6 +27,8 @@ const (
 	// RecordLogFileName represents the default file name of the record log.
 	RecordLogFileName = "sentinel-record.log"
 	GlobalCallerDepth = 4
+
+	defaultLogMsgBufferSize = 256
 )
 
 var (
@@ -117,6 +119,8 @@ func caller(depth int) (file string, line int) {
 
 func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...interface{}) string {
 	sb := strings.Builder{}
+	sb.Grow(defaultLogMsgBufferSize)
+
 	file, line := caller(depth)
 	timeStr := time.Now().Format("2006-01-02 15:04:05.520")
 	caller := fmt.Sprintf("%s:%d", file, line)

@@ -109,3 +109,10 @@ func Benchmark_LoggingDebug_With_Precheck(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkAssembleMsg(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		AssembleMsg(1, "INFO", "test msg", nil, "k1", "v1", "k2", "v2")
+	}
+}
