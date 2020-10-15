@@ -1,9 +1,10 @@
 package hotspot
 
 import (
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
 )
 
 const (
@@ -39,7 +40,7 @@ func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 			}
 			continue
 		}
-		util.IncrementAndGetInt64(concurrencyPtr)
+		atomic.AddInt64(concurrencyPtr, 1)
 	}
 }
 
@@ -64,6 +65,6 @@ func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 			}
 			continue
 		}
-		util.DecrementAndGetInt64(concurrencyPtr)
+		atomic.AddInt64(concurrencyPtr, -1)
 	}
 }
