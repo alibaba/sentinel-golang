@@ -12,7 +12,7 @@ type BaseStatNode struct {
 	sampleCount uint32
 	intervalMs  uint32
 
-	goroutineNum int32
+	concurrency int32
 
 	arr    *sbase.BucketLeapArray
 	metric *sbase.SlidingWindowMetric
@@ -22,11 +22,11 @@ func NewBaseStatNode(sampleCount uint32, intervalInMs uint32) *BaseStatNode {
 	la := sbase.NewBucketLeapArray(config.GlobalStatisticSampleCountTotal(), config.GlobalStatisticIntervalMsTotal())
 	metric, _ := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, la)
 	return &BaseStatNode{
-		goroutineNum: 0,
-		sampleCount:  sampleCount,
-		intervalMs:   intervalInMs,
-		arr:          la,
-		metric:       metric,
+		concurrency: 0,
+		sampleCount: sampleCount,
+		intervalMs:  intervalInMs,
+		arr:         la,
+		metric:      metric,
 	}
 }
 
@@ -67,15 +67,15 @@ func (n *BaseStatNode) MinRT() float64 {
 }
 
 func (n *BaseStatNode) CurrentConcurrency() int32 {
-	return atomic.LoadInt32(&(n.goroutineNum))
+	return atomic.LoadInt32(&(n.concurrency))
 }
 
 func (n *BaseStatNode) IncreaseConcurrency() {
-	atomic.AddInt32(&(n.goroutineNum), 1)
+	atomic.AddInt32(&(n.concurrency), 1)
 }
 
 func (n *BaseStatNode) DecreaseConcurrency() {
-	atomic.AddInt32(&(n.goroutineNum), -1)
+	atomic.AddInt32(&(n.concurrency), -1)
 }
 
 func (n *BaseStatNode) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (base.ReadStat, error) {
