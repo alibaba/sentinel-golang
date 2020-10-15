@@ -44,7 +44,7 @@ func checkPass(ctx *base.EntryContext) (bool, *Rule, uint32) {
 	for _, rule := range getRulesOfResource(ctx.Resource.Name()) {
 		threshold := rule.Threshold
 		if rule.MetricType == Concurrency {
-			if cur := statNode.CurrentGoroutineNum(); cur >= 0 {
+			if cur := statNode.CurrentConcurrency(); cur >= 0 {
 				curCount = uint32(cur)
 			} else {
 				curCount = 0

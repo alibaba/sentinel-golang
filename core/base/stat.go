@@ -38,18 +38,19 @@ type WriteStat interface {
 	AddCount(event MetricEvent, count int64)
 }
 
+type ConcurrencyStat interface {
+	CurrentConcurrency() int32
+	IncreaseConcurrency()
+	DecreaseConcurrency()
+}
+
 // StatNode holds real-time statistics for resources.
 type StatNode interface {
 	MetricItemRetriever
 
 	ReadStat
 	WriteStat
-
-	CurrentGoroutineNum() int32
-	IncreaseGoroutineNum()
-	DecreaseGoroutineNum()
-
-	Reset()
+	ConcurrencyStat
 
 	// GenerateReadStat generates the readonly metric statistic based on resource level global statistic
 	// If parameters, sampleCount and intervalInMs, are not suitable for resource level global statistic, return (nil, error)

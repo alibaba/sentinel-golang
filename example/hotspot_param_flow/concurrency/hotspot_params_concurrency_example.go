@@ -41,7 +41,7 @@ func main() {
 	go func() {
 		node := stat.GetOrCreateResourceNode("abc", base.ResTypeCommon)
 		for {
-			logging.Info(fmt.Sprintf("current concurrency:%d", node.CurrentGoroutineNum()))
+			logging.Info(fmt.Sprintf("current concurrency:%d", node.CurrentConcurrency()))
 			time.Sleep(time.Duration(100) * time.Millisecond)
 		}
 	}()
