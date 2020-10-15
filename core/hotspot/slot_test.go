@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -41,68 +40,51 @@ func (m *TrafficShapingControllerMock) Replace(r *Rule) {
 
 func Test_matchArg(t *testing.T) {
 	t.Run("Test_matchArg", func(t *testing.T) {
-
 		args := make([]interface{}, 10)
-		args[0] = true
-		args[1] = false
-		args[2] = float32(1.2345678)
-		args[3] = float64(1.23)
-		args[4] = uint8(66)
-		args[5] = int32(88)
-		args[6] = int(6688)
-		args[7] = uint64(668866)
-		args[8] = "ximu"
-		args[9] = int64(-100)
+		args[0] = 1
+		args[1] = 2
+		args[2] = 3
+		args[3] = 4
+		args[4] = 5
+		args[5] = 6
+		args[6] = 7
+		args[7] = 8
+		args[8] = 9
+		args[9] = 10
 
 		tcMock := &TrafficShapingControllerMock{}
 		tcMock.On("BoundParamIndex").Return(0)
 		ret0 := matchArg(tcMock, args)
-		assert.True(t, reflect.TypeOf(ret0).Kind() == reflect.Bool && ret0 == true)
+		assert.True(t, reflect.DeepEqual(ret0, 1))
 
 		tcMock1 := &TrafficShapingControllerMock{}
-		tcMock1.On("BoundParamIndex").Return(1)
+		tcMock1.On("BoundParamIndex").Return(5)
 		ret1 := matchArg(tcMock1, args)
-		assert.True(t, reflect.TypeOf(ret1).Kind() == reflect.Bool && ret1 == false)
+		assert.True(t, reflect.DeepEqual(ret1, 6))
 
 		tcMock2 := &TrafficShapingControllerMock{}
-		tcMock2.On("BoundParamIndex").Return(2)
+		tcMock2.On("BoundParamIndex").Return(9)
 		ret2 := matchArg(tcMock2, args)
-		assert.True(t, reflect.TypeOf(ret2).Kind() == reflect.Float64 && util.Float64Equals(ret2.(float64), 1.23457))
+		assert.True(t, reflect.DeepEqual(ret2, 10))
 
 		tcMock3 := &TrafficShapingControllerMock{}
-		tcMock3.On("BoundParamIndex").Return(3)
+		tcMock3.On("BoundParamIndex").Return(-1)
 		ret3 := matchArg(tcMock3, args)
-		assert.True(t, reflect.TypeOf(ret3).Kind() == reflect.Float64 && util.Float64Equals(ret3.(float64), 1.23000))
+		assert.True(t, reflect.DeepEqual(ret3, 10))
 
 		tcMock4 := &TrafficShapingControllerMock{}
-		tcMock4.On("BoundParamIndex").Return(4)
+		tcMock4.On("BoundParamIndex").Return(-10)
 		ret4 := matchArg(tcMock4, args)
-		assert.True(t, reflect.TypeOf(ret4).Kind() == reflect.Int && ret4 == 66)
+		assert.True(t, reflect.DeepEqual(ret4, 1))
 
 		tcMock5 := &TrafficShapingControllerMock{}
-		tcMock5.On("BoundParamIndex").Return(5)
+		tcMock5.On("BoundParamIndex").Return(10)
 		ret5 := matchArg(tcMock5, args)
-		assert.True(t, reflect.TypeOf(ret5).Kind() == reflect.Int && ret5 == 88)
+		assert.True(t, ret5 == nil)
 
 		tcMock6 := &TrafficShapingControllerMock{}
-		tcMock6.On("BoundParamIndex").Return(6)
+		tcMock6.On("BoundParamIndex").Return(-11)
 		ret6 := matchArg(tcMock6, args)
-		assert.True(t, reflect.TypeOf(ret6).Kind() == reflect.Int && ret6 == 6688)
-
-		tcMock7 := &TrafficShapingControllerMock{}
-		tcMock7.On("BoundParamIndex").Return(7)
-		ret7 := matchArg(tcMock7, args)
-		assert.True(t, reflect.TypeOf(ret7).Kind() == reflect.Int && ret7 == 668866)
-
-		tcMock8 := &TrafficShapingControllerMock{}
-		tcMock8.On("BoundParamIndex").Return(8)
-		ret8 := matchArg(tcMock8, args)
-		assert.True(t, reflect.TypeOf(ret8).Kind() == reflect.String && ret8 == "ximu")
-
-		tcMock9 := &TrafficShapingControllerMock{}
-		tcMock9.On("BoundParamIndex").Return(9)
-		ret9 := matchArg(tcMock9, args)
-		assert.True(t, reflect.TypeOf(ret9).Kind() == reflect.Int && ret9 == -100)
-
+		assert.True(t, ret6 == nil)
 	})
 }

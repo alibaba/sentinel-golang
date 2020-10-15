@@ -159,10 +159,26 @@ func HotSpotParamRuleJsonArrayParser(src []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	rules := make([]*hotspot.Rule, 0)
-	if err := json.Unmarshal(src, &rules); err != nil {
+	hotspotRules := make([]*HotspotRule, 0)
+	if err := json.Unmarshal(src, &hotspotRules); err != nil {
 		desc := fmt.Sprintf("Fail to convert source bytes to []*hotspot.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
+	}
+	rules := make([]*hotspot.Rule, len(hotspotRules))
+	for i, hotspotRule := range hotspotRules {
+		rules[i] = &hotspot.Rule{
+			ID:                hotspotRule.ID,
+			Resource:          hotspotRule.Resource,
+			MetricType:        hotspotRule.MetricType,
+			ControlBehavior:   hotspotRule.ControlBehavior,
+			ParamIndex:        hotspotRule.ParamIndex,
+			Threshold:         hotspotRule.Threshold,
+			MaxQueueingTimeMs: hotspotRule.MaxQueueingTimeMs,
+			BurstCount:        hotspotRule.BurstCount,
+			DurationInSec:     hotspotRule.DurationInSec,
+			ParamsMaxCapacity: hotspotRule.ParamsMaxCapacity,
+			SpecificItems:     parseSpecificItems(hotspotRule.SpecificItems),
+		}
 	}
 	return rules, nil
 }
