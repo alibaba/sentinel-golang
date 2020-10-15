@@ -49,7 +49,7 @@ func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, float64) {
 		res := qps < threshold
 		return res, qps
 	case Concurrency:
-		n := float64(stat.InboundNode().CurrentGoroutineNum())
+		n := float64(stat.InboundNode().CurrentConcurrency())
 		res := n < threshold
 		return res, n
 	case AvgRT:
@@ -78,7 +78,7 @@ func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, float64) {
 }
 
 func checkBbrSimple() bool {
-	concurrency := stat.InboundNode().CurrentGoroutineNum()
+	concurrency := stat.InboundNode().CurrentConcurrency()
 	minRt := stat.InboundNode().MinRT()
 	maxComplete := stat.InboundNode().GetMaxAvg(base.MetricEventComplete)
 	if concurrency > 1 && float64(concurrency) > maxComplete*minRt/1000.0 {
