@@ -28,7 +28,7 @@ type baseTrafficShapingController struct {
 	res           string
 	metricType    MetricType
 	paramIndex    int
-	threshold     float64
+	threshold     int64
 	specificItems map[interface{}]int64
 	durationInSec int64
 
@@ -36,14 +36,16 @@ type baseTrafficShapingController struct {
 }
 
 func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *baseTrafficShapingController {
-	specificItems := parseSpecificItems(r.SpecificItems)
+	if r.SpecificItems == nil {
+		r.SpecificItems = make(map[interface{}]int64)
+	}
 	return &baseTrafficShapingController{
 		r:             r,
 		res:           r.Resource,
 		metricType:    r.MetricType,
 		paramIndex:    r.ParamIndex,
 		threshold:     r.Threshold,
-		specificItems: specificItems,
+		specificItems: r.SpecificItems,
 		durationInSec: r.DurationInSec,
 		metric:        metric,
 	}

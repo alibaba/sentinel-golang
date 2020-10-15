@@ -107,8 +107,9 @@ func (c *consulDataSource) watch() {
 				time.Sleep(time.Second)
 				continue
 			}
-
-			logging.Error(err, "[Consul] Failed to update data", "propertyKey", c.propertyKey)
+			logging.FrequentErrorOnce.Do(func() {
+				logging.Error(err, "[Consul] Failed to update data", "propertyKey", c.propertyKey)
+			})
 		}
 	}
 }

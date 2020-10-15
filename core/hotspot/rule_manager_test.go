@@ -6,18 +6,13 @@ import (
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
-	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_tcGenFuncMap(t *testing.T) {
 	t.Run("Test_tcGenFuncMap_withoutMetric", func(t *testing.T) {
-		m := make([]SpecificValue, 1)
-		m[0] = SpecificValue{
-			ValKind:   KindInt,
-			ValStr:    "100",
-			Threshold: 100,
-		}
+		specific := make(map[interface{}]int64)
+		specific[100] = 100
 		r1 := &Rule{
 			ID:                "abc",
 			Resource:          "abc",
@@ -28,7 +23,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     m,
+			SpecificItems:     specific,
 		}
 		generator, supported := tcGenFuncMap[r1.ControlBehavior]
 		assert.True(t, supported && generator != nil)
@@ -39,17 +34,12 @@ func Test_tcGenFuncMap(t *testing.T) {
 			t.Fatal("nil traffic shaping controller")
 		}
 		assert.True(t, rejectTC.res == r1.Resource && rejectTC.metricType == r1.MetricType && rejectTC.paramIndex == r1.ParamIndex && rejectTC.burstCount == r1.BurstCount)
-		assert.True(t, util.Float64Equals(rejectTC.threshold, r1.Threshold) && rejectTC.durationInSec == r1.DurationInSec)
+		assert.True(t, rejectTC.threshold == r1.Threshold && rejectTC.durationInSec == r1.DurationInSec)
 	})
 
 	t.Run("Test_tcGenFuncMap_withMetric", func(t *testing.T) {
-		m := make([]SpecificValue, 1)
-		m[0] = SpecificValue{
-			ValKind:   KindInt,
-			ValStr:    "100",
-			Threshold: 100,
-		}
-
+		specific := make(map[interface{}]int64)
+		specific[100] = 100
 		r1 := &Rule{
 			ID:                "abc",
 			Resource:          "abc",
@@ -60,7 +50,7 @@ func Test_tcGenFuncMap(t *testing.T) {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     m,
+			SpecificItems:     specific,
 		}
 		generator, supported := tcGenFuncMap[r1.ControlBehavior]
 		assert.True(t, supported && generator != nil)
@@ -83,19 +73,15 @@ func Test_tcGenFuncMap(t *testing.T) {
 		}
 		assert.True(t, rejectTC.metric == metric)
 		assert.True(t, rejectTC.res == r1.Resource && rejectTC.metricType == r1.MetricType && rejectTC.paramIndex == r1.ParamIndex && rejectTC.burstCount == r1.BurstCount)
-		assert.True(t, util.Float64Equals(rejectTC.threshold, r1.Threshold) && rejectTC.durationInSec == r1.DurationInSec)
+		assert.True(t, rejectTC.threshold == r1.Threshold && rejectTC.durationInSec == r1.DurationInSec)
 
 	})
 }
 
 func Test_IsValidRule(t *testing.T) {
 	t.Run("Test_IsValidRule", func(t *testing.T) {
-		m := make([]SpecificValue, 1)
-		m[0] = SpecificValue{
-			ValKind:   KindInt,
-			ValStr:    "100",
-			Threshold: 100,
-		}
+		specific := make(map[interface{}]int64)
+		specific[100] = 100
 		r1 := &Rule{
 			ID:                "abc",
 			Resource:          "abc",
@@ -106,18 +92,14 @@ func Test_IsValidRule(t *testing.T) {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     m,
+			SpecificItems:     specific,
 		}
 		assert.True(t, IsValidRule(r1) == nil)
 	})
 
 	t.Run("Test_InValidRule", func(t *testing.T) {
-		m := make([]SpecificValue, 1)
-		m[0] = SpecificValue{
-			ValKind:   KindInt,
-			ValStr:    "100",
-			Threshold: 100,
-		}
+		specific := make(map[interface{}]int64)
+		specific[100] = 100
 		r1 := &Rule{
 			ID:                "",
 			Resource:          "",
@@ -128,27 +110,37 @@ func Test_IsValidRule(t *testing.T) {
 			MaxQueueingTimeMs: 0,
 			BurstCount:        10,
 			DurationInSec:     1,
-			SpecificItems:     m,
+			SpecificItems:     specific,
 		}
 		assert.True(t, IsValidRule(r1) != nil)
+	})
+
+	t.Run("Test_InValidRule2", func(t *testing.T) {
+		specific := make(map[interface{}]int64)
+		specific[100] = 100
+		specific["100"] = 100
+		r1 := &Rule{
+			ID:                "",
+			Resource:          "abc",
+			MetricType:        Concurrency,
+			ControlBehavior:   Reject,
+			ParamIndex:        0,
+			Threshold:         110,
+			MaxQueueingTimeMs: 0,
+			BurstCount:        10,
+			DurationInSec:     1,
+			SpecificItems:     specific,
+		}
+		assert.True(t, IsValidRule(r1) == nil)
 	})
 }
 
 func Test_onRuleUpdate(t *testing.T) {
 	tcMap = make(trafficControllerMap)
 
-	m := make([]SpecificValue, 2)
-	m[0] = SpecificValue{
-		ValKind:   KindString,
-		ValStr:    "sss",
-		Threshold: 1,
-	}
-	m[1] = SpecificValue{
-		ValKind:   KindFloat64,
-		ValStr:    "1.123",
-		Threshold: 3,
-	}
-
+	specific := make(map[interface{}]int64)
+	specific["sss"] = 1
+	specific["123"] = 3
 	r1 := &Rule{
 		ID:                "1",
 		Resource:          "abc",
@@ -159,20 +151,12 @@ func Test_onRuleUpdate(t *testing.T) {
 		MaxQueueingTimeMs: 0,
 		BurstCount:        10,
 		DurationInSec:     1,
-		SpecificItems:     m,
+		SpecificItems:     specific,
 	}
 
-	m2 := make([]SpecificValue, 2)
-	m2[0] = SpecificValue{
-		ValKind:   KindString,
-		ValStr:    "sss",
-		Threshold: 1,
-	}
-	m2[1] = SpecificValue{
-		ValKind:   KindFloat64,
-		ValStr:    "1.123",
-		Threshold: 3,
-	}
+	specific2 := make(map[interface{}]int64)
+	specific2["sss"] = 1
+	specific2["123"] = 3
 	r2 := &Rule{
 		ID:                "2",
 		Resource:          "abc",
@@ -183,20 +167,12 @@ func Test_onRuleUpdate(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     1,
-		SpecificItems:     m2,
+		SpecificItems:     specific2,
 	}
 
-	m3 := make([]SpecificValue, 2)
-	m3[0] = SpecificValue{
-		ValKind:   KindString,
-		ValStr:    "sss",
-		Threshold: 1,
-	}
-	m3[1] = SpecificValue{
-		ValKind:   KindFloat64,
-		ValStr:    "1.123",
-		Threshold: 3,
-	}
+	specific3 := make(map[interface{}]int64)
+	specific3["sss"] = 1
+	specific3["123"] = 3
 	r3 := &Rule{
 		ID:                "3",
 		Resource:          "abc",
@@ -207,7 +183,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     1,
-		SpecificItems:     m3,
+		SpecificItems:     specific3,
 	}
 
 	r4 := &Rule{
@@ -220,7 +196,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     2,
-		SpecificItems:     m3,
+		SpecificItems:     specific3,
 	}
 
 	updated, err := LoadRules([]*Rule{r1, r2, r3, r4})
@@ -239,7 +215,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		MaxQueueingTimeMs: 0,
 		BurstCount:        10,
 		DurationInSec:     1,
-		SpecificItems:     m,
+		SpecificItems:     specific,
 	}
 	r22 := &Rule{
 		ID:                "22",
@@ -251,7 +227,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     1,
-		SpecificItems:     m2,
+		SpecificItems:     specific2,
 	}
 	r23 := &Rule{
 		ID:                "23",
@@ -263,7 +239,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		MaxQueueingTimeMs: 20,
 		BurstCount:        0,
 		DurationInSec:     12,
-		SpecificItems:     m3,
+		SpecificItems:     specific3,
 	}
 
 	oldTc1Ptr := tcMap["abc"][0]
