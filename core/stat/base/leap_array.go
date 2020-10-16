@@ -220,7 +220,7 @@ func (la *LeapArray) valuesWithTime(now uint64) []*BucketWrap {
 	if now <= 0 {
 		return make([]*BucketWrap, 0)
 	}
-	ret := make([]*BucketWrap, 0, 8)
+	ret := make([]*BucketWrap, 0, la.array.length)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
 		if ww == nil || la.isBucketDeprecated(now, ww) {
@@ -235,7 +235,7 @@ func (la *LeapArray) ValuesConditional(now uint64, predicate base.TimePredicate)
 	if now <= 0 {
 		return make([]*BucketWrap, 0)
 	}
-	ret := make([]*BucketWrap, 0, 8)
+	ret := make([]*BucketWrap, 0, la.array.length)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
 		if ww == nil || la.isBucketDeprecated(now, ww) || !predicate(atomic.LoadUint64(&ww.BucketStart)) {
