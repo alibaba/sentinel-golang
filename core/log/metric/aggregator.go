@@ -131,7 +131,7 @@ func isItemTimestampInTime(ts uint64, currentSecStart uint64) bool {
 }
 
 func currentMetricItems(retriever base.MetricItemRetriever, currentTime uint64) map[uint64]*base.MetricItem {
-	m := make(map[uint64]*base.MetricItem, 2)
+	m := make(map[uint64]*base.MetricItem, 8)
 	items := retriever.MetricsOnCondition(func(ts uint64) bool {
 		return isItemTimestampInTime(ts, currentTime)
 	})

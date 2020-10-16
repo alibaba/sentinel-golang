@@ -17,7 +17,7 @@ type TrafficControllerGenFunc func(r *Rule, reuseMetric *ParamsMetric) TrafficSh
 type trafficControllerMap map[string][]TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
+	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc, 4)
 	tcMap        = make(trafficControllerMap)
 	tcMux        = new(sync.RWMutex)
 )
@@ -117,7 +117,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	newRuleMap := make(map[string][]*Rule)
+	newRuleMap := make(map[string][]*Rule, len(rules))
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
 			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err)
@@ -213,7 +213,7 @@ func logRuleUpdate(m trafficControllerMap) {
 }
 
 func rulesFrom(m trafficControllerMap) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(m) == 0 {
 		return rules
 	}
