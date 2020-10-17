@@ -53,7 +53,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 		return err
 	}
 
-	defer logging.Info("print effective global config", "globalConfig", *globalCfg)
+	defer logging.Info("[Config] Print effective global config", "globalConfig", *globalCfg)
 	// Configured Logger is the highest priority
 	if configLogger := Logger(); configLogger != nil {
 		err = logging.ResetGlobalLogger(configLogger)
@@ -70,7 +70,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 	if err := initializeLogConfig(logDir, LogUsePid()); err != nil {
 		return err
 	}
-	logging.Info("App name resolved", "appName", AppName())
+	logging.Info("[Config] App name resolved", "appName", AppName())
 	return nil
 }
 
@@ -93,7 +93,7 @@ func loadGlobalConfigFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	logging.Info("Resolving Sentinel config from file", "file", filePath)
+	logging.Info("[Config] Resolving Sentinel config from file", "file", filePath)
 	return checkConfValid(&(globalCfg.Sentinel))
 }
 
@@ -128,7 +128,7 @@ func overrideItemsFromSystemEnv() error {
 
 func initializeLogConfig(logDir string, usePid bool) (err error) {
 	if logDir == "" {
-		return errors.New("Invalid empty log path")
+		return errors.New("invalid empty log path")
 	}
 
 	initLogOnce.Do(func() {
@@ -155,7 +155,7 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 		return err
 	}
 
-	logging.Info("INFO: log base directory is: " + logBaseDir)
+	logging.Info("[Config] Log base directory", "baseDir", logBaseDir)
 
 	return nil
 }

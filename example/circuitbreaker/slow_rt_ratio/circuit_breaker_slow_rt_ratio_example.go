@@ -57,7 +57,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logging.Info("Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
+	logging.Info("[CircuitBreaker SlowRtRatio] Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
 	go func() {
 		for {
 			e, b := sentinel.Entry("abc")

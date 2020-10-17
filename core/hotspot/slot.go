@@ -34,13 +34,13 @@ func matchArg(tc TrafficShapingController, args []interface{}) interface{} {
 	}
 	if idx < 0 {
 		if logging.DebugEnabled() {
-			logging.Debug("The param index of hotspot traffic shaping controller is invalid", "args", args, "paramIndex", tc.BoundParamIndex())
+			logging.Debug("[Slot matchArg] The param index of hotspot traffic shaping controller is invalid", "args", args, "paramIndex", tc.BoundParamIndex())
 		}
 		return nil
 	}
 	if idx >= len(args) {
 		if logging.DebugEnabled() {
-			logging.Debug("The argument in index doesn't exist", "args", args, "paramIndex", tc.BoundParamIndex())
+			logging.Debug("[Slot matchArg] The argument in index doesn't exist", "args", args, "paramIndex", tc.BoundParamIndex())
 		}
 		return nil
 	}

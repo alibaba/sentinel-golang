@@ -83,7 +83,7 @@ func (c *consulDataSource) Initialize() error {
 	}
 	if err := c.doReadAndUpdate(); err != nil {
 		// Failed to read default should't block initialization
-		logging.Error(err, "[Consul] Failed to read initial data for key", "propertyKey", c.propertyKey)
+		logging.Error(err, "Failed to read initial data for key in consulDataSource.Initialize()", "propertyKey", c.propertyKey)
 	}
 
 	go util.RunWithRecover(c.watch)
@@ -103,12 +103,12 @@ func (c *consulDataSource) watch() {
 			}
 
 			if api.IsRetryableError(err) {
-				logging.Warn("[Consul] Update failed with retryable error", "err", err)
+				logging.Warn("[Consul] Update failed with retryable error in consulDataSource.watch()", "err", err)
 				time.Sleep(time.Second)
 				continue
 			}
 			logging.FrequentErrorOnce.Do(func() {
-				logging.Error(err, "[Consul] Failed to update data", "propertyKey", c.propertyKey)
+				logging.Error(err, "Failed to update data in consulDataSource.watch()", "propertyKey", c.propertyKey)
 			})
 		}
 	}

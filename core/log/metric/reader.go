@@ -106,7 +106,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFile(filename string, offset ui
 		}
 		item, err := base.MetricItemFromFatString(line)
 		if err != nil {
-			logging.Error(err, "Failed to convert MetricItem to string")
+			logging.Error(err, "Failed to convert MetricItem to string in defaultMetricLogReader.readMetricsInOneFile()")
 			continue
 		}
 		tsSec := item.Timestamp / 1000
@@ -140,7 +140,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, 
 		}
 		item, err := base.MetricItemFromFatString(line)
 		if err != nil {
-			logging.Error(err, "Invalid line of metric file", "fileLine", line)
+			logging.Error(err, "Invalid line of metric file in defaultMetricLogReader.readMetricsInOneFileByEndTime()", "fileLine", line)
 			continue
 		}
 		tsSec := item.Timestamp / 1000

@@ -28,7 +28,7 @@ func (s StandaloneStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 			if tc.boundStat.writeOnlyMetric != nil {
 				tc.boundStat.writeOnlyMetric.AddCount(base.MetricEventPass, int64(ctx.Input.BatchCount))
 			} else {
-				logging.Error(errors.New("nil independent write statistic"), "flow module: nil statistic for traffic control", "rule", tc.rule)
+				logging.Error(errors.New("nil independent write statistic"), "Nil statistic for traffic control in StandaloneStatSlot.OnEntryPassed()", "rule", tc.rule)
 			}
 		}
 	}

@@ -21,10 +21,10 @@ type NacosDataSource struct {
 
 func NewNacosDataSource(client config_client.IConfigClient, group, dataId string, handlers ...datasource.PropertyHandler) (*NacosDataSource, error) {
 	if client == nil {
-		return nil, errors.New("Nil nacos config client")
+		return nil, errors.New("nil nacos config client")
 	}
 	if len(group) == 0 || len(dataId) == 0 {
-		return nil, errors.New(fmt.Sprintf("Invalid parameters, group: %s, dataId: %s", group, dataId))
+		return nil, errors.New(fmt.Sprintf("invalid parameters, group: %s, dataId: %s", group, dataId))
 	}
 	var ds = &NacosDataSource{
 		Base:   datasource.Base{},
@@ -51,7 +51,7 @@ func (s *NacosDataSource) Initialize() error {
 	}
 	err = s.listen(s.client)
 	if err == nil {
-		logging.Info("nacos data source is successfully initialized", "group", s.group, "dataId", s.dataId)
+		logging.Info("[Nacos] Nacos data source is successfully initialized", "group", s.group, "dataId", s.dataId)
 	}
 	return err
 }
@@ -65,7 +65,7 @@ func (s *NacosDataSource) ReadSource() ([]byte, error) {
 		return nil, errors.Errorf("Failed to read the nacos data source when initialization, err: %+v", err)
 	}
 
-	logging.Info("succeed to read source", "group", s.group, "dataId", s.dataId, "content", content)
+	logging.Info("[Nacos] Succeed to read source", "group", s.group, "dataId", s.dataId, "content", content)
 	return []byte(content), err
 }
 
@@ -78,10 +78,10 @@ func (s *NacosDataSource) listen(client config_client.IConfigClient) (err error)
 		DataId: s.dataId,
 		Group:  s.group,
 		OnChange: func(namespace, group, dataId, data string) {
-			logging.Info("receive listened property", "namespace", namespace, "group", group, "dataId", dataId, "data", data)
+			logging.Info("[Nacos] Receive listened property", "namespace", namespace, "group", group, "dataId", dataId, "data", data)
 			err := s.doUpdate([]byte(data))
 			if err != nil {
-				logging.Error(err, "fail to update data source")
+				logging.Error(err, "Fail to update data source in NacosDataSource.listen()")
 			}
 		},
 	}
@@ -100,6 +100,6 @@ func (s *NacosDataSource) Close() error {
 	if err != nil {
 		return errors.Errorf("Failed to cancel listen to the nacos data source, err: %+v", err)
 	}
-	logging.Info("the nacos datasource had been closed", "group", s.group, "dataId", s.dataId)
+	logging.Info("[Nacos] The nacos datasource had been closed", "group", s.group, "dataId", s.dataId)
 	return nil
 }
