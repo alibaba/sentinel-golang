@@ -26,9 +26,45 @@ var (
 
 	metricWriter MetricLogWriter
 	initOnce     sync.Once
+	taskTicker   *time.Ticker
 )
 
 func InitTask() (err error) {
+	watchTicker := time.NewTicker(time.Microsecond * 100)
+	lastFlushInterval := config.MetricLogFlushIntervalSec()
+	if lastFlushInterval > 0 {
+		err = StartTask()
+		if err != nil {
+			return
+		}
+	}
+
+	go util.RunWithRecover(func() {
+		for range watchTicker.C {
+			currFlushInterval := config.MetricLogFlushIntervalSec()
+			if lastFlushInterval == currFlushInterval {
+				continue
+			}
+			lastFlushInterval = currFlushInterval
+			if currFlushInterval <= 0 && taskTicker != nil {
+				taskTicker.Stop()
+			}
+
+			if currFlushInterval > 0 {
+				if taskTicker != nil {
+					taskTicker.Stop()
+				}
+				err = StartTask()
+				if err != nil {
+					logging.Error(err, "start metric log failed")
+				}
+			}
+		}
+	})
+	return err
+}
+
+func StartTask() (err error) {
 	initOnce.Do(func() {
 		flushInterval := config.MetricLogFlushIntervalSec()
 		if flushInterval == 0 {
@@ -44,14 +80,14 @@ func InitTask() (err error) {
 		// Schedule the log flushing task
 		go util.RunWithRecover(writeTaskLoop)
 		// Schedule the log aggregating task
-		ticker := time.NewTicker(time.Duration(flushInterval) * time.Second)
+		taskTicker = time.NewTicker(time.Duration(flushInterval) * time.Second)
 		go util.RunWithRecover(func() {
 			for {
 				select {
-				case <-ticker.C:
+				case <-taskTicker.C:
 					doAggregate()
 				case <-stopChan:
-					ticker.Stop()
+					taskTicker.Stop()
 					return
 				}
 			}

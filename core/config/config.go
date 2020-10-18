@@ -16,9 +16,12 @@ import (
 var (
 	globalCfg   = NewDefaultConfig()
 	initLogOnce sync.Once
+	confLock    sync.RWMutex
 )
 
 func SetDefaultConfig(config *Entity) {
+	confLock.Lock()
+	defer confLock.Unlock()
 	globalCfg = config
 }
 
@@ -187,6 +190,8 @@ func LogUsePid() bool {
 }
 
 func MetricLogFlushIntervalSec() uint32 {
+	confLock.RLock()
+	defer confLock.RUnlock()
 	return globalCfg.MetricLogFlushIntervalSec()
 }
 
