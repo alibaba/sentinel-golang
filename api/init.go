@@ -7,6 +7,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 // Initialization func initialize the Sentinel's runtime environment, including:
@@ -17,6 +18,19 @@ import (
 // environment and the default value.
 func InitDefault() error {
 	return initSentinel("")
+}
+
+// InitWithParser initializes Sentinel using given config parser
+// parser deserializes the configBytes and return config.Entity
+func InitWithParser(configBytes []byte, parser func([]byte) (*config.Entity, error)) (err error) {
+	if parser == nil {
+		return errors.New("nil parser")
+	}
+	confEntity, err := parser(configBytes)
+	if err != nil {
+		return err
+	}
+	return InitWithConfig(confEntity)
 }
 
 // InitWithConfig initializes Sentinel using given config.
@@ -35,7 +49,7 @@ func InitWithConfig(confEntity *config.Entity) (err error) {
 	if err != nil {
 		return err
 	}
-	config.SetDefaultConfig(confEntity)
+	config.ResetGlobalConfig(confEntity)
 	if err = config.OverrideConfigFromEnvAndInitLog(); err != nil {
 		return err
 	}
@@ -48,8 +62,7 @@ func InitWithConfigFile(configPath string) error {
 	return initSentinel(configPath)
 }
 
-// initCoreComponents init core components with default config
-// it's better SetDefaultConfig before initCoreComponents
+// initCoreComponents init core components with global config
 func initCoreComponents() error {
 	if config.MetricLogFlushIntervalSec() > 0 {
 		if err := metric.InitTask(); err != nil {
@@ -79,7 +92,7 @@ func initSentinel(configPath string) (err error) {
 		}
 	}()
 	// Initialize general config and logging module.
-	if err = config.InitConfig(configPath); err != nil {
+	if err = config.InitConfigWithYaml(configPath); err != nil {
 		return err
 	}
 	return initCoreComponents()

@@ -33,8 +33,8 @@ func TestLoadFromYamlFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := loadFromYamlFile(tt.args.filePath); (err != nil) != tt.wantErr {
-				t.Errorf("loadFromYamlFile() error = %v, wantErr %v", err, tt.wantErr)
+			if err := loadGlobalConfigFromYamlFile(tt.args.filePath); (err != nil) != tt.wantErr {
+				t.Errorf("loadGlobalConfigFromYamlFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -50,7 +50,7 @@ func TestOverrideFromSystemEnv(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	err := loadFromYamlFile(testDataBaseDir + "sentinel.yml")
+	err := loadGlobalConfigFromYamlFile(testDataBaseDir + "sentinel.yml")
 	if err != nil {
 		t.Errorf("Fail to initialize data.")
 	}
