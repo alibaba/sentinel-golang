@@ -194,8 +194,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	for res, tcs := range m {
 		if len(tcs) > 0 {
 			// update resource slot chain
-			resourcechain.RegisterResourceRuleCheckSlot(res, DefaultSlot)
-			resourcechain.RegisterResourceStatSlot(res, DefaultConcurrencyStatSlot)
+			resourcechain.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			resourcechain.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
 		}
 	}
 	tcMap = m

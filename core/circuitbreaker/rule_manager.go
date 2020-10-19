@@ -264,8 +264,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	for res, cbs := range newBreakers {
 		if len(cbs) > 0 {
 			// update resource slot chain
-			resourcechain.RegisterResourceRuleCheckSlot(res, DefaultSlot)
-			resourcechain.RegisterResourceStatSlot(res, DefaultMetricStatSlot)
+			resourcechain.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			resourcechain.RegisterStatSlotForResource(res, DefaultMetricStatSlot)
 		}
 	}
 

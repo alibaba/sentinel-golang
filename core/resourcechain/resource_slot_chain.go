@@ -78,7 +78,7 @@ func newResourceSlotChain() *base.SlotChain {
 	return sc
 }
 
-func RegisterResourceStatPrepareSlot(rsName string, slot base.StatPrepareSlot) {
+func RegisterStatPrepareSlotForResource(rsName string, slot base.StatPrepareSlot) {
 	rsSlotChainLock.Lock()
 	defer rsSlotChainLock.Unlock()
 
@@ -93,7 +93,7 @@ func RegisterResourceStatPrepareSlot(rsName string, slot base.StatPrepareSlot) {
 	}
 }
 
-func RegisterResourceRuleCheckSlot(rsName string, slot base.RuleCheckSlot) {
+func RegisterRuleCheckSlotForResource(rsName string, slot base.RuleCheckSlot) {
 	rsSlotChainLock.Lock()
 	defer rsSlotChainLock.Unlock()
 
@@ -108,7 +108,7 @@ func RegisterResourceRuleCheckSlot(rsName string, slot base.RuleCheckSlot) {
 	}
 }
 
-func RegisterResourceStatSlot(rsName string, slot base.StatSlot) {
+func RegisterStatSlotForResource(rsName string, slot base.StatSlot) {
 	rsSlotChainLock.Lock()
 	defer rsSlotChainLock.Unlock()
 

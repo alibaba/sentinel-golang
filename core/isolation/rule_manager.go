@@ -43,7 +43,7 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	for res, rs := range m {
 		if len(rs) > 0 {
 			// update resource slot chain
-			resourcechain.RegisterResourceRuleCheckSlot(res, DefaultSlot)
+			resourcechain.RegisterRuleCheckSlotForResource(res, DefaultSlot)
 		}
 	}
 	ruleMap = m
