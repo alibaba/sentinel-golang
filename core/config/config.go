@@ -18,12 +18,23 @@ var (
 	initLogOnce sync.Once
 )
 
-func SetDefaultConfig(config *Entity) {
+func ResetGlobalConfig(config *Entity) {
 	globalCfg = config
 }
 
-// InitConfig loads general configuration from the given file.
-func InitConfig(configPath string) error {
+func InitConfigWithYaml(filePath string) (err error) {
+	// Initialize general config and logging module.
+	if err = applyYamlConfigFile(filePath); err != nil {
+		return err
+	}
+	if err = OverrideConfigFromEnvAndInitLog(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// applyYamlConfigFile loads general configuration from the given YAML file.
+func applyYamlConfigFile(configPath string) error {
 	// Priority: system environment > YAML file > default config
 	if util.IsBlank(configPath) {
 		// If the config file path is absent, Sentinel will try to resolve it from the system env.
@@ -34,12 +45,7 @@ func InitConfig(configPath string) error {
 	}
 	// First Sentinel will try to load config from the given file.
 	// If the path is empty (not set), Sentinel will use the default config.
-	err := loadFromYamlFile(configPath)
-	if err != nil {
-		return err
-	}
-
-	return OverrideConfigFromEnvAndInitLog()
+	return loadGlobalConfigFromYamlFile(configPath)
 }
 
 func OverrideConfigFromEnvAndInitLog() error {
@@ -71,7 +77,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 	return nil
 }
 
-func loadFromYamlFile(filePath string) error {
+func loadGlobalConfigFromYamlFile(filePath string) error {
 	if filePath == DefaultConfigFilename {
 		if _, err := os.Stat(DefaultConfigFilename); err != nil {
 			//use default globalCfg.
