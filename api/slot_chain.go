@@ -7,7 +7,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/isolation"
 	"github.com/alibaba/sentinel-golang/core/log"
-	"github.com/alibaba/sentinel-golang/core/resourcechain"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system"
 )
@@ -37,13 +37,13 @@ func BuildDefaultSlotChain() *base.SlotChain {
 }
 
 func RegisterGlobalStatPrepareSlot(slot base.StatPrepareSlot) {
-	resourcechain.RegisterGlobalStatPrepareSlot(slot)
+	misc.RegisterGlobalStatPrepareSlot(slot)
 }
 
 func RegisterGlobalRuleCheckSlot(slot base.RuleCheckSlot) {
-	resourcechain.RegisterGlobalRuleCheckSlot(slot)
+	misc.RegisterGlobalRuleCheckSlot(slot)
 }
 
 func RegisterGlobalStatSlot(slot base.StatSlot) {
-	resourcechain.RegisterGlobalStatSlot(slot)
+	misc.RegisterGlobalStatSlot(slot)
 }

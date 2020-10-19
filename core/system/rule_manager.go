@@ -3,7 +3,7 @@ package system
 import (
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/resourcechain"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -103,7 +103,7 @@ func buildRuleMap(rules []*Rule) RuleMap {
 		}
 
 		// update resource slot chain
-		resourcechain.RegisterRuleCheckSlotForResource(rule.ResourceName(), DefaultAdaptiveSlot)
+		misc.RegisterRuleCheckSlotForResource(rule.ResourceName(), DefaultAdaptiveSlot)
 	}
 	return m
 }

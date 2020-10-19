@@ -6,7 +6,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
-	"github.com/alibaba/sentinel-golang/core/resourcechain"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -161,8 +161,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	for res, tcs := range m {
 		if len(tcs) > 0 {
 			// update resource slot chain
-			resourcechain.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			resourcechain.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
 		}
 	}
 	tcMap = m

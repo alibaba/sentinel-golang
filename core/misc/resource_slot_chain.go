@@ -1,4 +1,4 @@
-package resourcechain
+package misc
 
 import (
 	"sync"

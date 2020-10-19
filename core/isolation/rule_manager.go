@@ -3,7 +3,7 @@ package isolation
 import (
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/resourcechain"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -43,7 +43,7 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	for res, rs := range m {
 		if len(rs) > 0 {
 			// update resource slot chain
-			resourcechain.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
 		}
 	}
 	ruleMap = m

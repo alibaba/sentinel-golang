@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/resourcechain"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -194,8 +194,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	for res, tcs := range m {
 		if len(tcs) > 0 {
 			// update resource slot chain
-			resourcechain.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			resourcechain.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
 		}
 	}
 	tcMap = m
