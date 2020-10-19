@@ -3,7 +3,7 @@ package isolation
 import (
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/misc"
+	"github.com/alibaba/sentinel-golang/core/resourcechain"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -30,9 +30,6 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 			resRules = make([]*Rule, 0, 1)
 		}
 		m[r.Resource] = append(resRules, r)
-
-		// update resource slot chain
-		misc.RegisterResourceRuleCheckSlot(r.Resource, DefaultSlot)
 	}
 
 	start := util.CurrentTimeNano()
@@ -42,6 +39,13 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 		logging.Debug("time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
+
+	for res, rs := range m {
+		if len(rs) > 0 {
+			// update resource slot chain
+			resourcechain.RegisterResourceRuleCheckSlot(res, DefaultSlot)
+		}
+	}
 	ruleMap = m
 	return
 }

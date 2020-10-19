@@ -83,9 +83,9 @@ var (
 
 func NewSlotChain() *SlotChain {
 	return &SlotChain{
-		statPres:   make([]StatPrepareSlot, 0, 5),
-		ruleChecks: make([]RuleCheckSlot, 0, 5),
-		stats:      make([]StatSlot, 0, 5),
+		statPres:   make([]StatPrepareSlot, 0, 8),
+		ruleChecks: make([]RuleCheckSlot, 0, 8),
+		stats:      make([]StatSlot, 0, 8),
 		ctxPool:    ctxPool,
 	}
 }
@@ -102,6 +102,18 @@ func (sc *SlotChain) RefurbishContext(c *EntryContext) {
 		c.Reset()
 		sc.ctxPool.Put(c)
 	}
+}
+
+func ValidateStatPrepareSlot(sc *SlotChain, s StatPrepareSlot) bool {
+	isValid := true
+	f := func(slot StatPrepareSlot) {
+		if slot.Name() == s.Name() {
+			isValid = false
+		}
+	}
+	sc.RangeStatPrepareSlot(f)
+
+	return isValid
 }
 
 func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
@@ -121,6 +133,18 @@ func (sc *SlotChain) AddStatPrepareSlotLast(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
 }
 
+func ValidateRuleCheckSlot(sc *SlotChain, s RuleCheckSlot) bool {
+	isValid := true
+	f := func(slot RuleCheckSlot) {
+		if slot.Name() == s.Name() {
+			isValid = false
+		}
+	}
+	sc.RangeRuleCheckSlot(f)
+
+	return isValid
+}
+
 func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
 	for _, slot := range sc.ruleChecks {
 		f(slot)
@@ -135,6 +159,18 @@ func (sc *SlotChain) AddRuleCheckSlotFirst(s RuleCheckSlot) {
 
 func (sc *SlotChain) AddRuleCheckSlotLast(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
+}
+
+func ValidateStatSlot(sc *SlotChain, s StatSlot) bool {
+	isValid := true
+	f := func(slot StatSlot) {
+		if slot.Name() == s.Name() {
+			isValid = false
+		}
+	}
+	sc.RangeStatSlot(f)
+
+	return isValid
 }
 
 func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {

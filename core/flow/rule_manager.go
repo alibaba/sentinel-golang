@@ -6,7 +6,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
-	"github.com/alibaba/sentinel-golang/core/misc"
+	"github.com/alibaba/sentinel-golang/core/resourcechain"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -142,10 +142,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			resRules = make([]*Rule, 0, 1)
 		}
 		resRulesMap[rule.Resource] = append(resRules, rule)
-
-		// update resource slot chain
-		misc.RegisterResourceRuleCheckSlot(rule.Resource, DefaultSlot)
-		misc.RegisterResourceStatSlot(rule.Resource, DefaultStandaloneStatSlot)
 	}
 	m := make(TrafficControllerMap, len(resRulesMap))
 	start := util.CurrentTimeNano()
@@ -160,6 +156,14 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}()
 	for res, rulesOfRes := range resRulesMap {
 		m[res] = buildRulesOfRes(res, rulesOfRes)
+	}
+
+	for res, tcs := range m {
+		if len(tcs) > 0 {
+			// update resource slot chain
+			resourcechain.RegisterResourceRuleCheckSlot(res, DefaultSlot)
+			resourcechain.RegisterResourceStatSlot(res, DefaultStandaloneStatSlot)
+		}
 	}
 	tcMap = m
 	return nil
