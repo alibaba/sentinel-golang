@@ -27,10 +27,7 @@ func InitConfigWithYaml(filePath string) (err error) {
 	if err = applyYamlConfigFile(filePath); err != nil {
 		return err
 	}
-	if err = OverrideConfigFromEnvAndInitLog(); err != nil {
-		return err
-	}
-	return nil
+	return OverrideConfigFromEnvAndInitLog()
 }
 
 // applyYamlConfigFile loads general configuration from the given YAML file.
