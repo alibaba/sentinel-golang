@@ -24,7 +24,7 @@ func (s *Slot) OnEntryPassed(_ *base.EntryContext) {
 }
 
 func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
-	// TODO: write sentinel-block.log here
+	statBlockedEntry(ctx.Input.BatchCount, ctx.Resource.Name(), blockError.BlockType().String())
 }
 
 func (s *Slot) OnCompleted(_ *base.EntryContext) {
