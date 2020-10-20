@@ -9,6 +9,6 @@ var (
 	BlockLogger = statlogger.NewStatLogger("sentinel-block.log", 3, 1000, 6000, MaxBlockLogFileSize)
 )
 
-func statBlockedEntry(batchCount uint32, resourceName string, blockError string) {
+func StatBlockedEntry(batchCount uint32, resourceName string, blockError string) {
 	BlockLogger.Stat(batchCount, resourceName, blockError)
 }
