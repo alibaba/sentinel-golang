@@ -211,7 +211,7 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 }
 
 func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
-	logging.SetGlobalLoggerLevel(logging.InfoLevel)
+	logging.ResetGlobalLoggerLevel(logging.InfoLevel)
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
 		t.Fatal(clearErr)

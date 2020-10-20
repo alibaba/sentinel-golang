@@ -20,7 +20,7 @@ func main() {
 		logging.Error(err, "fail")
 		os.Exit(1)
 	}
-	logging.SetGlobalLoggerLevel(logging.DebugLevel)
+	logging.ResetGlobalLoggerLevel(logging.DebugLevel)
 	ch := make(chan struct{})
 
 	r1 := &isolation.Rule{

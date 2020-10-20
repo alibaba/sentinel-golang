@@ -46,8 +46,12 @@ func GetGlobalLoggerLevel() Level {
 	return globalLogLevel
 }
 
-func SetGlobalLoggerLevel(l Level) {
+func ResetGlobalLoggerLevel(l Level) {
 	globalLogLevel = l
+}
+
+func GetGlobalLogger() Logger {
+	return globalLogger
 }
 
 // Note: Not thread-safe
