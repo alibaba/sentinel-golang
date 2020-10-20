@@ -22,17 +22,17 @@ func registerCustomGlobalSlotsToSc(sc *base.SlotChain) {
 		return
 	}
 	for _, s := range globalStatPrepareSlots {
-		if base.ValidateStatPrepareSlot(sc, s) {
+		if base.ValidateStatPrepareSlotNaming(sc, s) {
 			sc.AddStatPrepareSlotLast(s)
 		}
 	}
 	for _, s := range globalRuleCheckSlots {
-		if base.ValidateRuleCheckSlot(sc, s) {
+		if base.ValidateRuleCheckSlotNaming(sc, s) {
 			sc.AddRuleCheckSlotLast(s)
 		}
 	}
 	for _, s := range globalStatSlot {
-		if base.ValidateStatSlot(sc, s) {
+		if base.ValidateStatSlotNaming(sc, s) {
 			sc.AddStatSlotLast(s)
 		}
 	}
@@ -88,7 +88,7 @@ func RegisterStatPrepareSlotForResource(rsName string, slot base.StatPrepareSlot
 		rsSlotChain[rsName] = sc
 	}
 
-	if base.ValidateStatPrepareSlot(sc, slot) {
+	if base.ValidateStatPrepareSlotNaming(sc, slot) {
 		sc.AddStatPrepareSlotLast(slot)
 	}
 }
@@ -103,7 +103,7 @@ func RegisterRuleCheckSlotForResource(rsName string, slot base.RuleCheckSlot) {
 		rsSlotChain[rsName] = sc
 	}
 
-	if base.ValidateRuleCheckSlot(sc, slot) {
+	if base.ValidateRuleCheckSlotNaming(sc, slot) {
 		sc.AddRuleCheckSlotLast(slot)
 	}
 }
@@ -118,7 +118,7 @@ func RegisterStatSlotForResource(rsName string, slot base.StatSlot) {
 		rsSlotChain[rsName] = sc
 	}
 
-	if base.ValidateStatSlot(sc, slot) {
+	if base.ValidateStatSlotNaming(sc, slot) {
 		sc.AddStatSlotLast(slot)
 	}
 }
