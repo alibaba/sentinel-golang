@@ -442,33 +442,36 @@ func IsValidRule(rule *Rule) error {
 		return errors.New("nil Rule")
 	}
 	if rule.Resource == "" {
-		return errors.New("empty resource name")
+		return errors.New("empty Resource")
 	}
 	if rule.Threshold < 0 {
-		return errors.New("negative threshold")
+		return errors.New("negative Threshold")
 	}
 	if int32(rule.TokenCalculateStrategy) < 0 {
-		return errors.New("invalid token calculate strategy")
+		return errors.New("negative TokenCalculateStrategy")
 	}
 	if int32(rule.ControlBehavior) < 0 {
-		return errors.New("invalid control behavior")
+		return errors.New("negative ControlBehavior")
 	}
 	if !(rule.RelationStrategy >= CurrentResource && rule.RelationStrategy <= AssociatedResource) {
-		return errors.New("invalid relation strategy")
+		return errors.New("invalid RelationStrategy")
 	}
 	if rule.RelationStrategy == AssociatedResource && rule.RefResource == "" {
-		return errors.New("Bad flow rule: invalid relation strategy")
+		return errors.New("RefResource must be non empty when RelationStrategy is AssociatedResource")
 	}
 	if rule.TokenCalculateStrategy == WarmUp {
 		if rule.WarmUpPeriodSec <= 0 {
-			return errors.New("invalid WarmUpPeriodSec")
+			return errors.New("WarmUpPeriodSec must be great than 0")
 		}
 		if rule.WarmUpColdFactor == 1 {
 			return errors.New("WarmUpColdFactor must be great than 1")
 		}
 	}
 	if rule.ControlBehavior == Throttling && rule.MaxQueueingTimeMs == 0 {
-		return errors.New("invalid MaxQueueingTimeMs")
+		return errors.New("MaxQueueingTimeMs can't be 0 when control behavior is Throttling")
+	}
+	if rule.ControlBehavior == Throttling && rule.StatIntervalInMs <= 0 {
+		return errors.New("StatIntervalInMs must be great than 0 when control behavior is Throttling")
 	}
 	if rule.StatIntervalInMs > config.GlobalStatisticIntervalMsTotal()*60 {
 		return errors.New("StatIntervalInMs must be less than 10 minutes")
