@@ -355,13 +355,13 @@ func getTrafficControllerListFor(name string) []*TrafficShapingController {
 	return tcMap[name]
 }
 
-func calculateReuseIndexFor(r *Rule, oldResCbs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
-	// the index of equivalent rule in old circuit breaker slice
+func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
+	// the index of equivalent rule in old traffic shaping controller slice
 	equalIdx = -1
-	// the index of statistic reusable rule in old circuit breaker slice
+	// the index of statistic reusable rule in old traffic shaping controller slice
 	reuseStatIdx = -1
 
-	for idx, oldTc := range oldResCbs {
+	for idx, oldTc := range oldResTcs {
 		oldRule := oldTc.BoundRule()
 		if oldRule.isEqualsTo(r) {
 			// break if there is equivalent rule
@@ -399,10 +399,10 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 
 		// First check equals scenario
 		if equalIdx >= 0 {
-			// reuse the old cb
+			// reuse the old tc
 			equalOldTc := oldResTcs[equalIdx]
 			newTcsOfRes = append(newTcsOfRes, equalOldTc)
-			// remove old cb from oldResCbs
+			// remove old tc from oldResTcs
 			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
@@ -428,7 +428,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			continue
 		}
 		if reuseStatIdx >= 0 {
-			// remove old cb from oldResCbs
+			// remove old tc from oldResTcs
 			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
 		newTcsOfRes = append(newTcsOfRes, tc)
