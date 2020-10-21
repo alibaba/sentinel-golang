@@ -301,6 +301,7 @@ func logRuleUpdate(m map[string][]*Rule) {
 	}
 }
 
+// RegisterStateChangeListeners registers the global state change listener for all circuit breakers
 // Note: this function is not thread-safe.
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	if len(listeners) == 0 {
@@ -310,7 +311,7 @@ func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	stateChangeListeners = append(stateChangeListeners, listeners...)
 }
 
-// ClearStateChangeListeners will clear the all StateChangeListener
+// ClearStateChangeListeners clears the all StateChangeListener
 // Note: this function is not thread-safe.
 func ClearStateChangeListeners() {
 	stateChangeListeners = make([]StateChangeListener, 0)

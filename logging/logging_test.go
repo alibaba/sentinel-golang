@@ -65,25 +65,25 @@ func Test_caller(t *testing.T) {
 }
 
 func TestLogLevelEnabled(t *testing.T) {
-	SetGlobalLoggerLevel(DebugLevel)
+	ResetGlobalLoggerLevel(DebugLevel)
 	assert.True(t, DebugEnabled(), "Debug should be enabled when log level is DebugLevel")
 	assert.True(t, InfoEnabled(), "Info should be enabled when log level is DebugLevel")
 	assert.True(t, WarnEnabled(), "Warn should be enabled when log level is DebugLevel")
 	assert.True(t, ErrorEnabled(), "Error should be enabled when log level is DebugLevel")
 
-	SetGlobalLoggerLevel(InfoLevel)
+	ResetGlobalLoggerLevel(InfoLevel)
 	assert.False(t, DebugEnabled(), "Debug should be disabled when log level is InfoLevel")
 	assert.True(t, InfoEnabled(), "Info should be enabled when log level is InfoLevel")
 	assert.True(t, WarnEnabled(), "Warn should be enabled when log level is InfoLevel")
 	assert.True(t, ErrorEnabled(), "Error should be enabled when log level is InfoLevel")
 
-	SetGlobalLoggerLevel(WarnLevel)
+	ResetGlobalLoggerLevel(WarnLevel)
 	assert.False(t, DebugEnabled(), "Debug should be disabled when log level is WarnLevel")
 	assert.False(t, InfoEnabled(), "Info should be disabled when log level is WarnLevel")
 	assert.True(t, WarnEnabled(), "Warn should be enabled when log level is WarnLevel")
 	assert.True(t, ErrorEnabled(), "Error should be enabled when log level is WarnLevel")
 
-	SetGlobalLoggerLevel(ErrorLevel)
+	ResetGlobalLoggerLevel(ErrorLevel)
 	assert.False(t, DebugEnabled(), "Debug should be disabled when log level is ErrorLevel")
 	assert.False(t, InfoEnabled(), "Info should be disabled when log level is ErrorLevel")
 	assert.False(t, WarnEnabled(), "Warn should be disabled when log level is ErrorLevel")
@@ -93,7 +93,7 @@ func TestLogLevelEnabled(t *testing.T) {
 func Benchmark_LoggingDebug_Without_Precheck(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
-	SetGlobalLoggerLevel(InfoLevel)
+	ResetGlobalLoggerLevel(InfoLevel)
 	for i := 0; i < b.N; i++ {
 		Debug("log test", "k1", "v1", "k2", "v2")
 	}
@@ -102,7 +102,7 @@ func Benchmark_LoggingDebug_Without_Precheck(b *testing.B) {
 func Benchmark_LoggingDebug_With_Precheck(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
-	SetGlobalLoggerLevel(InfoLevel)
+	ResetGlobalLoggerLevel(InfoLevel)
 	for i := 0; i < b.N; i++ {
 		if DebugEnabled() {
 			Debug("log test", "k1", "v1", "k2", "v2")

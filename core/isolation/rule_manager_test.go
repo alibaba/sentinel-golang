@@ -9,7 +9,7 @@ import (
 
 func TestLoadRules(t *testing.T) {
 	t.Run("TestLoadRules_1", func(t *testing.T) {
-		logging.SetGlobalLoggerLevel(logging.DebugLevel)
+		logging.ResetGlobalLoggerLevel(logging.DebugLevel)
 		r1 := &Rule{
 			Resource:   "abc1",
 			MetricType: Concurrency,
