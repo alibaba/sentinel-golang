@@ -36,14 +36,20 @@ func BuildDefaultSlotChain() *base.SlotChain {
 	return sc
 }
 
+// RegisterGlobalStatPrepareSlot registers the global StatPrepareSlot for all resource
+// Note: this function is not thread-safe
 func RegisterGlobalStatPrepareSlot(slot base.StatPrepareSlot) {
 	misc.RegisterGlobalStatPrepareSlot(slot)
 }
 
+// RegisterGlobalRuleCheckSlot registers the global RuleCheckSlot for all resource
+// Note: this function is not thread-safe
 func RegisterGlobalRuleCheckSlot(slot base.RuleCheckSlot) {
 	misc.RegisterGlobalRuleCheckSlot(slot)
 }
 
+// RegisterGlobalStatSlot registers the global StatSlot for all resource
+// Note: this function is not thread-safe
 func RegisterGlobalStatSlot(slot base.StatSlot) {
 	misc.RegisterGlobalStatSlot(slot)
 }
