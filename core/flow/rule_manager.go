@@ -29,6 +29,7 @@ var (
 	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
+	nopStat      = &standaloneStatistic{false, base.NopReadStat(), base.NopWriteStat()}
 )
 
 func init() {
@@ -55,15 +56,9 @@ func init() {
 	tcGenFuncMap[trafficControllerGenKey{
 		tokenCalculateStrategy: Direct,
 		controlBehavior:        Throttling,
-	}] = func(rule *Rule, boundStat *standaloneStatistic) (*TrafficShapingController, error) {
-		if boundStat == nil {
-			var err error
-			boundStat, err = generateStatFor(rule)
-			if err != nil {
-				return nil, err
-			}
-		}
-		tsc, err := NewTrafficShapingController(rule, boundStat)
+	}] = func(rule *Rule, _ *standaloneStatistic) (*TrafficShapingController, error) {
+		// Direct token calculate strategy and throttling control behavior don't use stat, so we just give a nop stat.
+		tsc, err := NewTrafficShapingController(rule, nopStat)
 		if err != nil || tsc == nil {
 			return nil, err
 		}
