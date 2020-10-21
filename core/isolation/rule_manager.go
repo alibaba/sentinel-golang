@@ -30,9 +30,6 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 			resRules = make([]*Rule, 0, 1)
 		}
 		m[r.Resource] = append(resRules, r)
-
-		// update resource slot chain
-		misc.RegisterResourceRuleCheckSlot(r.Resource, DefaultSlot)
 	}
 
 	start := util.CurrentTimeNano()
@@ -42,6 +39,13 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 		logging.Debug("time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
+
+	for res, rs := range m {
+		if len(rs) > 0 {
+			// update resource slot chain
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+		}
+	}
 	ruleMap = m
 	return
 }

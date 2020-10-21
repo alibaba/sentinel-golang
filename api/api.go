@@ -130,7 +130,7 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 	if options.slotChain == nil {
 		options.slotChain = misc.GetResourceSlotChain(resource)
 		if options.slotChain == nil {
-			options.slotChain = globalSlotChain
+			options.slotChain = GlobalSlotChain()
 		}
 	}
 	return entry(resource, options)

@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -16,11 +15,10 @@ type StatPrepareSlotMock1 struct {
 }
 
 func (spl *StatPrepareSlotMock1) Name() string {
-	return "mock-sentinel-prepare-slot1"
+	return spl.name
 }
 
 func (spl *StatPrepareSlotMock1) Prepare(ctx *EntryContext) {
-	fmt.Println(spl.name)
 	return
 }
 
@@ -72,11 +70,10 @@ type RuleCheckSlotMock1 struct {
 }
 
 func (rcs *RuleCheckSlotMock1) Name() string {
-	return "mock-sentinel-rule-check-slot-1"
+	return rcs.name
 }
 
 func (rcs *RuleCheckSlotMock1) Check(ctx *EntryContext) *TokenResult {
-	fmt.Println(rcs.name)
 	return nil
 }
 func TestSlotChain_addRuleCheckSlotFirstAndLast(t *testing.T) {
@@ -127,17 +124,17 @@ type StatSlotMock1 struct {
 }
 
 func (ss *StatSlotMock1) Name() string {
-	return "mock-sentinel-stat-mock-slot-1"
+	return ss.name
 }
 
 func (ss *StatSlotMock1) OnEntryPassed(ctx *EntryContext) {
-	fmt.Println(ss.name)
+	return
 }
 func (ss *StatSlotMock1) OnEntryBlocked(ctx *EntryContext, blockError *BlockError) {
-	fmt.Printf("%s blocked: %v\n", ss.name, blockError)
+	return
 }
 func (ss *StatSlotMock1) OnCompleted(ctx *EntryContext) {
-	fmt.Println(ss.name)
+	return
 }
 func TestSlotChain_addStatSlotFirstAndLast(t *testing.T) {
 	sc := NewSlotChain()
@@ -386,4 +383,91 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 	dsm.AssertNumberOfCalls(t, "Check", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 0)
+}
+
+func TestValidateStatPrepareSlotNaming(t *testing.T) {
+	sc := NewSlotChain()
+	sps1 := &StatPrepareSlotMock1{
+		name: "sps1",
+	}
+	sps2 := &StatPrepareSlotMock1{
+		name: "sps2",
+	}
+	sps3 := &StatPrepareSlotMock1{
+		name: "sps3",
+	}
+	sps4 := &StatPrepareSlotMock1{
+		name: "sps4",
+	}
+	sc.AddStatPrepareSlotLast(sps1)
+	sc.AddStatPrepareSlotLast(sps2)
+	sc.AddStatPrepareSlotLast(sps3)
+	sc.AddStatPrepareSlotLast(sps4)
+
+	sps5 := &StatPrepareSlotMock1{
+		name: "sps5",
+	}
+	assert.True(t, ValidateStatPrepareSlotNaming(sc, sps5))
+	sps6 := &StatPrepareSlotMock1{
+		name: "sps1",
+	}
+	assert.True(t, !ValidateStatPrepareSlotNaming(sc, sps6))
+}
+
+func TestValidateRuleCheckSlotNaming(t *testing.T) {
+	sc := NewSlotChain()
+	rcs1 := &RuleCheckSlotMock1{
+		name: "rcs1",
+	}
+	rcs2 := &RuleCheckSlotMock1{
+		name: "rcs2",
+	}
+	rcs3 := &RuleCheckSlotMock1{
+		name: "rcs3",
+	}
+	rcs4 := &RuleCheckSlotMock1{
+		name: "rcs4",
+	}
+	sc.AddRuleCheckSlotLast(rcs1)
+	sc.AddRuleCheckSlotLast(rcs2)
+	sc.AddRuleCheckSlotLast(rcs3)
+	sc.AddRuleCheckSlotLast(rcs4)
+
+	rcs5 := &RuleCheckSlotMock1{
+		name: "rcs5",
+	}
+	assert.True(t, ValidateRuleCheckSlotNaming(sc, rcs5))
+	rcs6 := &RuleCheckSlotMock1{
+		name: "rcs1",
+	}
+	assert.True(t, !ValidateRuleCheckSlotNaming(sc, rcs6))
+}
+
+func TestValidateStatSlotNaming(t *testing.T) {
+	sc := NewSlotChain()
+	ss1 := &StatSlotMock1{
+		name: "ss1",
+	}
+	ss2 := &StatSlotMock1{
+		name: "ss2",
+	}
+	ss3 := &StatSlotMock1{
+		name: "ss3",
+	}
+	ss4 := &StatSlotMock1{
+		name: "ss4",
+	}
+	sc.AddStatSlotLast(ss1)
+	sc.AddStatSlotLast(ss2)
+	sc.AddStatSlotLast(ss3)
+	sc.AddStatSlotLast(ss4)
+
+	ss5 := &StatSlotMock1{
+		name: "ss5",
+	}
+	assert.True(t, ValidateStatSlotNaming(sc, ss5))
+	ss6 := &StatSlotMock1{
+		name: "ss1",
+	}
+	assert.True(t, !ValidateStatSlotNaming(sc, ss6))
 }
