@@ -43,7 +43,6 @@ var (
 )
 
 // GetGlobalLoggerLevel gets the Sentinel log level
-// Note: this function is not thread-safe.
 func GetGlobalLoggerLevel() Level {
 	return globalLogLevel
 }
@@ -55,7 +54,6 @@ func ResetGlobalLoggerLevel(l Level) {
 }
 
 // GetGlobalLogger gets the Sentinel global logger
-// Note: this function is not thread-safe.
 func GetGlobalLogger() Logger {
 	return globalLogger
 }
