@@ -17,22 +17,22 @@ var (
 	globalStatSlot         = make([]base.StatSlot, 0, 8)
 )
 
-func RegisterCustomGlobalSlotsToSc(sc *base.SlotChain) {
+func registerCustomGlobalSlotsToSc(sc *base.SlotChain) {
 	if sc == nil {
 		return
 	}
 	for _, s := range globalStatPrepareSlots {
-		if !validateStatPrepareSlot(sc, s) {
+		if base.ValidateStatPrepareSlotNaming(sc, s) {
 			sc.AddStatPrepareSlotLast(s)
 		}
 	}
 	for _, s := range globalRuleCheckSlots {
-		if !validateRuleCheckSlot(sc, s) {
+		if base.ValidateRuleCheckSlotNaming(sc, s) {
 			sc.AddRuleCheckSlotLast(s)
 		}
 	}
 	for _, s := range globalStatSlot {
-		if !validateStatSlot(sc, s) {
+		if base.ValidateStatSlotNaming(sc, s) {
 			sc.AddStatSlotLast(s)
 		}
 	}
@@ -74,23 +74,11 @@ func newResourceSlotChain() *base.SlotChain {
 
 	sc.AddStatSlotLast(stat.DefaultSlot)
 	sc.AddStatSlotLast(log.DefaultSlot)
-	RegisterCustomGlobalSlotsToSc(sc)
+	registerCustomGlobalSlotsToSc(sc)
 	return sc
 }
 
-func validateStatPrepareSlot(sc *base.SlotChain, s base.StatPrepareSlot) bool {
-	flag := false
-	f := func(slot base.StatPrepareSlot) {
-		if slot.Name() == s.Name() {
-			flag = true
-		}
-	}
-	sc.RangeStatPrepareSlot(f)
-
-	return flag
-}
-
-func RegisterResourceStatPrepareSlot(rsName string, slot base.StatPrepareSlot) {
+func RegisterStatPrepareSlotForResource(rsName string, slot base.StatPrepareSlot) {
 	rsSlotChainLock.Lock()
 	defer rsSlotChainLock.Unlock()
 
@@ -100,24 +88,12 @@ func RegisterResourceStatPrepareSlot(rsName string, slot base.StatPrepareSlot) {
 		rsSlotChain[rsName] = sc
 	}
 
-	if !validateStatPrepareSlot(sc, slot) {
+	if base.ValidateStatPrepareSlotNaming(sc, slot) {
 		sc.AddStatPrepareSlotLast(slot)
 	}
 }
 
-func validateRuleCheckSlot(sc *base.SlotChain, s base.RuleCheckSlot) bool {
-	flag := false
-	f := func(slot base.RuleCheckSlot) {
-		if slot.Name() == s.Name() {
-			flag = true
-		}
-	}
-	sc.RangeRuleCheckSlot(f)
-
-	return flag
-}
-
-func RegisterResourceRuleCheckSlot(rsName string, slot base.RuleCheckSlot) {
+func RegisterRuleCheckSlotForResource(rsName string, slot base.RuleCheckSlot) {
 	rsSlotChainLock.Lock()
 	defer rsSlotChainLock.Unlock()
 
@@ -127,24 +103,12 @@ func RegisterResourceRuleCheckSlot(rsName string, slot base.RuleCheckSlot) {
 		rsSlotChain[rsName] = sc
 	}
 
-	if !validateRuleCheckSlot(sc, slot) {
+	if base.ValidateRuleCheckSlotNaming(sc, slot) {
 		sc.AddRuleCheckSlotLast(slot)
 	}
 }
 
-func validateStatSlot(sc *base.SlotChain, s base.StatSlot) bool {
-	flag := false
-	f := func(slot base.StatSlot) {
-		if slot.Name() == s.Name() {
-			flag = true
-		}
-	}
-	sc.RangeStatSlot(f)
-
-	return flag
-}
-
-func RegisterResourceStatSlot(rsName string, slot base.StatSlot) {
+func RegisterStatSlotForResource(rsName string, slot base.StatSlot) {
 	rsSlotChainLock.Lock()
 	defer rsSlotChainLock.Unlock()
 
@@ -154,7 +118,7 @@ func RegisterResourceStatSlot(rsName string, slot base.StatSlot) {
 		rsSlotChain[rsName] = sc
 	}
 
-	if !validateStatSlot(sc, slot) {
+	if base.ValidateStatSlotNaming(sc, slot) {
 		sc.AddStatSlotLast(slot)
 	}
 }

@@ -130,10 +130,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 		ruleSet = append(ruleSet, r)
 		newRuleMap[res] = ruleSet
-
-		// update resource slot chain
-		misc.RegisterResourceRuleCheckSlot(r.Resource, DefaultSlot)
-		misc.RegisterResourceStatSlot(r.Resource, DefaultConcurrencyStatSlot)
 	}
 
 	m := make(trafficControllerMap)
@@ -193,6 +189,13 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 			}
 			insertTcToTcMap(tc, res, m)
+		}
+	}
+	for res, tcs := range m {
+		if len(tcs) > 0 {
+			// update resource slot chain
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
 		}
 	}
 	tcMap = m

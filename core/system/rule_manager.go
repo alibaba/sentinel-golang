@@ -103,7 +103,7 @@ func buildRuleMap(rules []*Rule) RuleMap {
 		}
 
 		// update resource slot chain
-		misc.RegisterResourceRuleCheckSlot(rule.ResourceName(), DefaultAdaptiveSlot)
+		misc.RegisterRuleCheckSlotForResource(rule.ResourceName(), DefaultAdaptiveSlot)
 	}
 	return m
 }

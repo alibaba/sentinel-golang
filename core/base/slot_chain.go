@@ -83,9 +83,9 @@ var (
 
 func NewSlotChain() *SlotChain {
 	return &SlotChain{
-		statPres:   make([]StatPrepareSlot, 0, 5),
-		ruleChecks: make([]RuleCheckSlot, 0, 5),
-		stats:      make([]StatSlot, 0, 5),
+		statPres:   make([]StatPrepareSlot, 0, 8),
+		ruleChecks: make([]RuleCheckSlot, 0, 8),
+		stats:      make([]StatSlot, 0, 8),
 		ctxPool:    ctxPool,
 	}
 }
@@ -104,6 +104,21 @@ func (sc *SlotChain) RefurbishContext(c *EntryContext) {
 	}
 }
 
+// ValidateStatPrepareSlotNaming checks whether the name of StatPrepareSlot exists in SlotChain.[]StatPrepareSlot
+// return true the name of StatPrepareSlot doesn't exist in SlotChain.[]StatPrepareSlot
+func ValidateStatPrepareSlotNaming(sc *SlotChain, s StatPrepareSlot) bool {
+	isValid := true
+	f := func(slot StatPrepareSlot) {
+		if slot.Name() == s.Name() {
+			isValid = false
+		}
+	}
+	sc.RangeStatPrepareSlot(f)
+
+	return isValid
+}
+
+// RangeStatPrepareSlot iterates the SlotChain.[]StatPrepareSlot and call f function for each StatPrepareSlot
 func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
 	for _, slot := range sc.statPres {
 		f(slot)
@@ -121,6 +136,21 @@ func (sc *SlotChain) AddStatPrepareSlotLast(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
 }
 
+// ValidateRuleCheckSlotNaming checks whether the name of RuleCheckSlot exists in SlotChain.[]RuleCheckSlot
+// return true the name of RuleCheckSlot doesn't exist in SlotChain.[]RuleCheckSlot
+func ValidateRuleCheckSlotNaming(sc *SlotChain, s RuleCheckSlot) bool {
+	isValid := true
+	f := func(slot RuleCheckSlot) {
+		if slot.Name() == s.Name() {
+			isValid = false
+		}
+	}
+	sc.RangeRuleCheckSlot(f)
+
+	return isValid
+}
+
+// RangeRuleCheckSlot iterates the SlotChain.[]RuleCheckSlot and call f function for each RuleCheckSlot
 func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
 	for _, slot := range sc.ruleChecks {
 		f(slot)
@@ -137,6 +167,21 @@ func (sc *SlotChain) AddRuleCheckSlotLast(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
 }
 
+// ValidateStatSlotNaming checks whether the name of StatSlot exists in SlotChain.[]StatSlot
+// return true the name of StatSlot doesn't exist in SlotChain.[]StatSlot
+func ValidateStatSlotNaming(sc *SlotChain, s StatSlot) bool {
+	isValid := true
+	f := func(slot StatSlot) {
+		if slot.Name() == s.Name() {
+			isValid = false
+		}
+	}
+	sc.RangeStatSlot(f)
+
+	return isValid
+}
+
+// RangeStatSlot iterates the SlotChain.[]StatSlot and call f function for each StatSlot
 func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {
 	for _, slot := range sc.stats {
 		f(slot)
