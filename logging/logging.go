@@ -42,15 +42,24 @@ var (
 	FrequentErrorOnce = &sync.Once{}
 )
 
+// GetGlobalLoggerLevel gets the Sentinel log level
 func GetGlobalLoggerLevel() Level {
 	return globalLogLevel
 }
 
-func SetGlobalLoggerLevel(l Level) {
+// ResetGlobalLoggerLevel sets the Sentinel log level
+// Note: this function is not thread-safe.
+func ResetGlobalLoggerLevel(l Level) {
 	globalLogLevel = l
 }
 
-// Note: Not thread-safe
+// GetGlobalLogger gets the Sentinel global logger
+func GetGlobalLogger() Logger {
+	return globalLogger
+}
+
+// ResetGlobalLogger sets the Sentinel global logger
+// Note: this function is not thread-safe.
 func ResetGlobalLogger(log Logger) error {
 	if log == nil {
 		return errors.New("nil logger")
