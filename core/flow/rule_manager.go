@@ -470,8 +470,8 @@ func IsValidRule(rule *Rule) error {
 	if rule.ControlBehavior == Throttling && rule.MaxQueueingTimeMs == 0 {
 		return errors.New("MaxQueueingTimeMs can't be 0 when control behavior is Throttling")
 	}
-	if rule.StatIntervalInMs > config.GlobalStatisticIntervalMsTotal()*60 {
-		return errors.New("StatIntervalInMs must be less than 10 minutes")
+	if rule.StatIntervalInMs > 10*60*1000 {
+		logging.Info("StatIntervalInMs is great than 10 minutes, less than 10 minutes is recommended.")
 	}
 	return nil
 }
