@@ -68,7 +68,7 @@ func init() {
 			return nil, err
 		}
 		tsc.flowCalculator = NewDirectTrafficShapingCalculator(tsc, rule.Threshold)
-		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs)
+		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
 	tcGenFuncMap[trafficControllerGenKey{
@@ -106,7 +106,7 @@ func init() {
 			return nil, err
 		}
 		tsc.flowCalculator = NewWarmUpTrafficShapingCalculator(tsc, rule)
-		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs)
+		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
 }
@@ -469,9 +469,6 @@ func IsValidRule(rule *Rule) error {
 	}
 	if rule.ControlBehavior == Throttling && rule.MaxQueueingTimeMs == 0 {
 		return errors.New("MaxQueueingTimeMs can't be 0 when control behavior is Throttling")
-	}
-	if rule.ControlBehavior == Throttling && rule.StatIntervalInMs <= 0 {
-		return errors.New("StatIntervalInMs must be great than 0 when control behavior is Throttling")
 	}
 	if rule.StatIntervalInMs > config.GlobalStatisticIntervalMsTotal()*60 {
 		return errors.New("StatIntervalInMs must be less than 10 minutes")

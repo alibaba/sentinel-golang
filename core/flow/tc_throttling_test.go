@@ -10,36 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestThrottlingChecker(intervalMs uint32, threshold float64, timeoutMs uint32) (*ThrottlingChecker, error) {
-	rule := &Rule{
-		Resource:               "test",
-		TokenCalculateStrategy: Direct,
-		ControlBehavior:        Throttling,
-		Threshold:              threshold,
-		StatIntervalInMs:       intervalMs,
-		MaxQueueingTimeMs:      timeoutMs,
-	}
-
-	boundStat, err := generateStatFor(rule)
-	if err != nil {
-		return nil, err
-	}
-
-	tsc, err := NewTrafficShapingController(rule, boundStat)
-	if err != nil || tsc == nil {
-		return nil, err
-	}
-
-	return NewThrottlingChecker(tsc, timeoutMs), nil
-}
-
 func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {
 	intervalMs := 10000
 	threshold := 50.0
 	timeoutMs := 0
 
-	tc, err := newTestThrottlingChecker(uint32(intervalMs), threshold, uint32(timeoutMs))
-	assert.True(t, err == nil, err)
+	tc := NewThrottlingChecker(nil, uint32(timeoutMs), uint32(intervalMs))
 
 	// The first request will pass.
 	ret := tc.DoCheck(nil, 1, threshold)
@@ -60,8 +36,7 @@ func TestThrottlingChecker_DoCheckSingleThread(t *testing.T) {
 	threshold := 50.0
 	timeoutMs := 2000
 
-	tc, err := newTestThrottlingChecker(uint32(intervalMs), threshold, uint32(timeoutMs))
-	assert.True(t, err == nil, err)
+	tc := NewThrottlingChecker(nil, uint32(timeoutMs), uint32(intervalMs))
 
 	resultList := make([]*base.TokenResult, 0)
 	reqCount := 20
@@ -88,8 +63,7 @@ func TestThrottlingChecker_DoCheckQueueingParallel(t *testing.T) {
 	threshold := 50.0
 	timeoutMs := 0
 
-	tc, err := newTestThrottlingChecker(uint32(intervalMs), threshold, uint32(timeoutMs))
-	assert.True(t, err == nil, err)
+	tc := NewThrottlingChecker(nil, uint32(timeoutMs), uint32(intervalMs))
 
 	assert.True(t, tc.DoCheck(nil, 1, threshold) == nil)
 

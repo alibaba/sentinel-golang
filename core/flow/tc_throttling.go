@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -12,13 +13,25 @@ import (
 type ThrottlingChecker struct {
 	owner             *TrafficShapingController
 	maxQueueingTimeNs uint64
+	statIntervalNs    uint64
 	lastPassedTime    uint64
 }
 
-func NewThrottlingChecker(owner *TrafficShapingController, timeoutMs uint32) *ThrottlingChecker {
+func NewThrottlingChecker(owner *TrafficShapingController, timeoutMs uint32, statIntervalMs uint32) *ThrottlingChecker {
+	var statIntervalNs uint64
+	if statIntervalMs == 0 {
+		defaultIntervalMs := config.MetricStatisticIntervalMs()
+		if defaultIntervalMs == 0 {
+			defaultIntervalMs = 1000
+		}
+		statIntervalNs = uint64(defaultIntervalMs) * util.UnixTimeUnitOffset
+	} else {
+		statIntervalNs = uint64(statIntervalMs) * util.UnixTimeUnitOffset
+	}
 	return &ThrottlingChecker{
 		owner:             owner,
 		maxQueueingTimeNs: uint64(timeoutMs) * util.UnixTimeUnitOffset,
+		statIntervalNs:    statIntervalNs,
 		lastPassedTime:    0,
 	}
 }
@@ -37,10 +50,8 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, batchCount uint32, threshol
 	// Here we use nanosecond so that we could control the queueing time more accurately.
 	curNano := util.CurrentTimeNano()
 
-	statIntervalNs := uint64(c.BoundOwner().BoundRule().StatIntervalInMs) * util.UnixTimeUnitOffset
-
 	// The interval between two requests (in nanoseconds).
-	intervalNs := uint64(math.Ceil(float64(batchCount) / threshold * float64(statIntervalNs)))
+	intervalNs := uint64(math.Ceil(float64(batchCount) / threshold * float64(c.statIntervalNs)))
 
 	// Expected pass time of this request.
 	expectedTime := atomic.LoadUint64(&c.lastPassedTime) + intervalNs
