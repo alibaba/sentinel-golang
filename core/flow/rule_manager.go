@@ -248,6 +248,10 @@ func rulesFrom(m TrafficControllerMap) []*Rule {
 }
 
 func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
+	if !rule.needStatistic() {
+		return nopStat, nil
+	}
+
 	intervalInMs := rule.StatIntervalInMs
 
 	var retStat standaloneStatistic
