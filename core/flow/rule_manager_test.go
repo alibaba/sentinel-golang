@@ -54,7 +54,7 @@ func TestIsValidFlowRule(t *testing.T) {
 	badRule1 := &Rule{Threshold: 1, Resource: ""}
 	badRule2 := &Rule{Threshold: -1.9, Resource: "test"}
 	badRule3 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject}
-	goodRule1 := &Rule{Threshold: 10, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10, MaxQueueingTimeMs: 10}
+	goodRule1 := &Rule{Threshold: 10, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10, MaxQueueingTimeMs: 10, StatIntervalInMs: 1000}
 	badRule4 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject, StatIntervalInMs: 6000000}
 
 	assert.Error(t, IsValidRule(badRule1))
@@ -88,6 +88,7 @@ func TestGetRules(t *testing.T) {
 			RefResource:            "",
 			WarmUpPeriodSec:        0,
 			MaxQueueingTimeMs:      10,
+			StatIntervalInMs:       1000,
 		}
 		if _, err := LoadRules([]*Rule{r1, r2}); err != nil {
 			t.Fatal(err)
@@ -130,6 +131,7 @@ func TestGetRules(t *testing.T) {
 			RefResource:            "",
 			WarmUpPeriodSec:        0,
 			MaxQueueingTimeMs:      10,
+			StatIntervalInMs:       1000,
 		}
 		if _, err := LoadRules([]*Rule{r1, r2}); err != nil {
 			t.Fatal(err)
