@@ -29,7 +29,11 @@ var (
 	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
-	nopStat      = &standaloneStatistic{false, base.NopReadStat(), base.NopWriteStat()}
+	nopStat      = &standaloneStatistic{
+		reuseResourceStat: false,
+		readOnlyMetric:    base.NopReadStat(),
+		writeOnlyMetric:   base.NopWriteStat(),
+	}
 )
 
 func init() {

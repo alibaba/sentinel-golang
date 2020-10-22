@@ -46,15 +46,15 @@ func NopReadStat() *nopReadStat {
 type nopReadStat struct {
 }
 
-func (rs *nopReadStat) GetQPS(event MetricEvent) float64 {
+func (rs *nopReadStat) GetQPS(_ MetricEvent) float64 {
 	return 0.0
 }
 
-func (rs *nopReadStat) GetPreviousQPS(event MetricEvent) float64 {
+func (rs *nopReadStat) GetPreviousQPS(_ MetricEvent) float64 {
 	return 0.0
 }
 
-func (rs *nopReadStat) GetSum(event MetricEvent) int64 {
+func (rs *nopReadStat) GetSum(_ MetricEvent) int64 {
 	return 0
 }
 
@@ -77,7 +77,7 @@ func NopWriteStat() *nopWriteStat {
 type nopWriteStat struct {
 }
 
-func (ws *nopWriteStat) AddCount(event MetricEvent, count int64) {
+func (ws *nopWriteStat) AddCount(_ MetricEvent, _ int64) {
 }
 
 type ConcurrencyStat interface {
