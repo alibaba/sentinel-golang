@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -30,10 +29,9 @@ func (bla *BucketLeapArray) ResetBucketTo(bw *BucketWrap, startTime uint64) *Buc
 
 // sampleCount is the number of slots
 // intervalInMs is the time length of sliding window
+// sampleCount and intervalInMs must be positive and intervalInMs%sampleCount == 0,
+// the validation must be done before call NewBucketLeapArray
 func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArray {
-	if intervalInMs%sampleCount != 0 {
-		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
-	}
 	bucketLengthInMs := intervalInMs / sampleCount
 	ret := &BucketLeapArray{
 		data: LeapArray{
