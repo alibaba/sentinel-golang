@@ -68,7 +68,7 @@ func init() {
 			return nil, err
 		}
 		tsc.flowCalculator = NewDirectTrafficShapingCalculator(tsc, rule.Threshold)
-		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs)
+		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
 	tcGenFuncMap[trafficControllerGenKey{
@@ -106,7 +106,7 @@ func init() {
 			return nil, err
 		}
 		tsc.flowCalculator = NewWarmUpTrafficShapingCalculator(tsc, rule)
-		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs)
+		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
 }
@@ -355,13 +355,13 @@ func getTrafficControllerListFor(name string) []*TrafficShapingController {
 	return tcMap[name]
 }
 
-func calculateReuseIndexFor(r *Rule, oldResCbs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
-	// the index of equivalent rule in old circuit breaker slice
+func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
+	// the index of equivalent rule in old traffic shaping controller slice
 	equalIdx = -1
-	// the index of statistic reusable rule in old circuit breaker slice
+	// the index of statistic reusable rule in old traffic shaping controller slice
 	reuseStatIdx = -1
 
-	for idx, oldTc := range oldResCbs {
+	for idx, oldTc := range oldResTcs {
 		oldRule := oldTc.BoundRule()
 		if oldRule.isEqualsTo(r) {
 			// break if there is equivalent rule
@@ -399,10 +399,10 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 
 		// First check equals scenario
 		if equalIdx >= 0 {
-			// reuse the old cb
+			// reuse the old tc
 			equalOldTc := oldResTcs[equalIdx]
 			newTcsOfRes = append(newTcsOfRes, equalOldTc)
-			// remove old cb from oldResCbs
+			// remove old tc from oldResTcs
 			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
@@ -428,7 +428,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			continue
 		}
 		if reuseStatIdx >= 0 {
-			// remove old cb from oldResCbs
+			// remove old tc from oldResTcs
 			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
 		newTcsOfRes = append(newTcsOfRes, tc)
@@ -442,36 +442,36 @@ func IsValidRule(rule *Rule) error {
 		return errors.New("nil Rule")
 	}
 	if rule.Resource == "" {
-		return errors.New("empty resource name")
+		return errors.New("empty Resource")
 	}
 	if rule.Threshold < 0 {
-		return errors.New("negative threshold")
+		return errors.New("negative Threshold")
 	}
 	if int32(rule.TokenCalculateStrategy) < 0 {
-		return errors.New("invalid token calculate strategy")
+		return errors.New("negative TokenCalculateStrategy")
 	}
 	if int32(rule.ControlBehavior) < 0 {
-		return errors.New("invalid control behavior")
+		return errors.New("negative ControlBehavior")
 	}
 	if !(rule.RelationStrategy >= CurrentResource && rule.RelationStrategy <= AssociatedResource) {
-		return errors.New("invalid relation strategy")
+		return errors.New("invalid RelationStrategy")
 	}
 	if rule.RelationStrategy == AssociatedResource && rule.RefResource == "" {
-		return errors.New("Bad flow rule: invalid relation strategy")
+		return errors.New("RefResource must be non empty when RelationStrategy is AssociatedResource")
 	}
 	if rule.TokenCalculateStrategy == WarmUp {
 		if rule.WarmUpPeriodSec <= 0 {
-			return errors.New("invalid WarmUpPeriodSec")
+			return errors.New("WarmUpPeriodSec must be great than 0")
 		}
 		if rule.WarmUpColdFactor == 1 {
 			return errors.New("WarmUpColdFactor must be great than 1")
 		}
 	}
 	if rule.ControlBehavior == Throttling && rule.MaxQueueingTimeMs == 0 {
-		return errors.New("invalid MaxQueueingTimeMs")
+		return errors.New("MaxQueueingTimeMs can't be 0 when control behavior is Throttling")
 	}
-	if rule.StatIntervalInMs > config.GlobalStatisticIntervalMsTotal()*60 {
-		return errors.New("StatIntervalInMs must be less than 10 minutes")
+	if rule.StatIntervalInMs > 10*60*1000 {
+		logging.Info("StatIntervalInMs is great than 10 minutes, less than 10 minutes is recommended.")
 	}
 	return nil
 }
