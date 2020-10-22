@@ -1,0 +1,31 @@
+apiVersion: datasource.sentinel.io/v1
+kind: CircuitBreakerRules
+metadata:
+  name: sentinel-go-circuitbreaker-rules
+spec:
+  rules:
+    -
+      id: id1
+      resource: test1
+      strategy: SlowRequestRatio
+      statIntervalMs: 10000
+      retryTimeoutMs: 500
+      minRequestAmount: 10
+      maxAllowedRtMs: 100
+      threshold: 10
+    -
+      id: id2
+      resource: test1
+      strategy: ErrorRatio
+      statIntervalMs: 10000
+      retryTimeoutMs: 500
+      minRequestAmount: 10
+      threshold: 20
+    -
+      id: id3
+      resource: test1
+      strategy: ErrorCount
+      statIntervalMs: 10000
+      retryTimeoutMs: 500
+      minRequestAmount: 10
+      threshold: 20

@@ -1,0 +1,26 @@
+apiVersion: datasource.sentinel.io/v1
+kind: FlowRules
+metadata:
+  name: sentinel-go-flow-rules
+spec:
+  rules:
+    - resource: abcde
+      metricType: Concurrency
+      count: 100
+      relationStrategy: CurrentResource
+      tokenCalculateStrategy: Direct
+      controlBehavior: Reject
+    - resource: abcd
+      metricType: QPS
+      count: 200
+      relationStrategy: CurrentResource
+      tokenCalculateStrategy: WarmUp
+      controlBehavior: Reject
+      warmUpPeriodSec: 20
+      warmUpColdFactor: 3
+    - resource: abc
+      metricType: QPS
+      count: 300
+      relationStrategy: CurrentResource
+      tokenCalculateStrategy: Direct
+      controlBehavior: Reject

@@ -1,0 +1,16 @@
+domain: sentinel.io
+repo: sentinel-go-k8s-crd-datasource
+resources:
+- group: datasource
+  kind: CircuitBreakerRules
+  version: v1
+- group: datasource
+  kind: FlowRules
+  version: v1
+- group: datasource
+  kind: HotspotRules
+  version: v1
+- group: datasource
+  kind: SystemRules
+  version: v1
+version: "2"
