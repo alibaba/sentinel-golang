@@ -105,7 +105,8 @@ func (r *Rule) isStatReusable(newRule *Rule) bool {
 		return false
 	}
 	return r.Resource == newRule.Resource && r.RelationStrategy == newRule.RelationStrategy &&
-		r.RefResource == newRule.RefResource && r.StatIntervalInMs == newRule.StatIntervalInMs
+		r.RefResource == newRule.RefResource && r.StatIntervalInMs == newRule.StatIntervalInMs &&
+		r.needStatistic() && newRule.needStatistic()
 }
 
 func (r *Rule) needStatistic() bool {
