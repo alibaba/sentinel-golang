@@ -17,9 +17,13 @@ func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {
 
 	tc := NewThrottlingChecker(nil, uint32(timeoutMs), uint32(intervalMs))
 
+	// Should block when batchCount > threshold.
+	res := tc.DoCheck(nil, uint32(threshold+1.0), threshold)
+	assert.True(t, res != nil && res.IsBlocked())
+
 	// The first request will pass.
-	ret := tc.DoCheck(nil, 1, threshold)
-	assert.True(t, ret == nil || ret.IsPass())
+	res = tc.DoCheck(nil, uint32(threshold), threshold)
+	assert.True(t, res == nil || res.IsPass())
 
 	reqCount := 10
 	for i := 0; i < reqCount; i++ {
@@ -38,22 +42,29 @@ func TestThrottlingChecker_DoCheckSingleThread(t *testing.T) {
 
 	tc := NewThrottlingChecker(nil, uint32(timeoutMs), uint32(intervalMs))
 
+	// Should block when batchCount > threshold.
+	res := tc.DoCheck(nil, uint32(threshold+1.0), threshold)
+	assert.True(t, res != nil && res.IsBlocked())
+
+	// The first request will pass.
+	res = tc.DoCheck(nil, uint32(threshold), threshold)
+	assert.True(t, res == nil || res.IsPass())
+
 	resultList := make([]*base.TokenResult, 0)
 	reqCount := 20
 	for i := 0; i < reqCount; i++ {
 		res := tc.DoCheck(nil, 1, threshold)
 		resultList = append(resultList, res)
 	}
-	assert.True(t, resultList[0] == nil)
 
 	// waitCount is count of request that will wait and not be blocked
 	waitCount := int(float64(timeoutMs) / (float64(intervalMs) / threshold))
-	for i := 1; i <= waitCount; i++ {
+	for i := 0; i < waitCount; i++ {
 		assert.True(t, resultList[i].Status() == base.ResultStatusShouldWait)
 		wt := resultList[i].WaitMs()
-		assert.InEpsilon(t, i*1000/int(waitCount), wt, 10)
+		assert.InEpsilon(t, (i+1)*1000/int(waitCount), wt, 10)
 	}
-	for i := waitCount + 1; i < reqCount; i++ {
+	for i := waitCount; i < reqCount; i++ {
 		assert.True(t, resultList[i].IsBlocked())
 	}
 }
