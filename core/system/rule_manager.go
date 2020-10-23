@@ -54,7 +54,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 	m := buildRuleMap(rules)
 
 	if err := onRuleUpdate(m); err != nil {
-		logging.Error(err, "Fail to load rules", "rules", rules)
+		logging.Error(err, "Fail to load rules in system.LoadRules()", "rules", rules)
 		return false, err
 	}
 
@@ -72,7 +72,7 @@ func onRuleUpdate(r RuleMap) error {
 	ruleMapMux.Lock()
 	defer func() {
 		ruleMapMux.Unlock()
-		logging.Debug("time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[System onRuleUpdate] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
 		if len(r) > 0 {
 			logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
 		} else {
@@ -92,7 +92,7 @@ func buildRuleMap(rules []*Rule) RuleMap {
 
 	for _, rule := range rules {
 		if err := IsValidSystemRule(rule); err != nil {
-			logging.Warn("Ignoring invalid system rule", "rule", rule, "err", err)
+			logging.Warn("[System buildRuleMap] Ignoring invalid system rule", "rule", rule, "err", err)
 			continue
 		}
 		rulesOfRes, exists := m[rule.MetricType]

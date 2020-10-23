@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -41,12 +40,12 @@ func main() {
 	go func() {
 		node := stat.GetOrCreateResourceNode("abc", base.ResTypeCommon)
 		for {
-			logging.Info(fmt.Sprintf("current concurrency:%d", node.CurrentConcurrency()))
+			logging.Info("[HotSpot Concurrency] currentConcurrency", "currentConcurrency", node.CurrentConcurrency())
 			time.Sleep(time.Duration(100) * time.Millisecond)
 		}
 	}()
 
-	logging.Info("Sentinel Go hot-spot param flow control demo is running. You may see the pass/block metric in the metric log.")
+	logging.Info("[HotSpot Concurrency] Sentinel Go hot-spot param flow control demo is running. You may see the pass/block metric in the metric log.")
 	for i := 0; i < 10; i++ {
 		go func() {
 			for {

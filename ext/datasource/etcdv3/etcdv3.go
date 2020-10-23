@@ -42,7 +42,7 @@ func NewDataSource(client *clientv3.Client, key string, handlers ...datasource.P
 func (s *Etcdv3DataSource) Initialize() error {
 	err := s.doReadAndUpdate()
 	if err != nil {
-		logging.Error(err, "Fail to update data for key when execute Initialize function", "propertyKey", s.propertyKey)
+		logging.Error(err, "Fail to update data for key when execute Etcdv3DataSource.Initialize()", "propertyKey", s.propertyKey)
 	}
 	go util.RunWithRecover(s.watch)
 	return nil
@@ -59,7 +59,7 @@ func (s *Etcdv3DataSource) ReadSource() ([]byte, error) {
 		return nil, errors.Errorf("The key[%s] is not existed in etcd server.", s.propertyKey)
 	}
 	s.lastUpdatedRevision = resp.Header.GetRevision()
-	logging.Info("Get the newest data for key", "propertyKey", s.propertyKey,
+	logging.Info("[Etcdv3] Get the newest data for key", "propertyKey", s.propertyKey,
 		"revision", resp.Header.GetRevision(), "value", resp.Kvs[0].Value)
 	return resp.Kvs[0].Value, nil
 }

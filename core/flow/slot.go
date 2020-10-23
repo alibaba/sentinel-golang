@@ -32,7 +32,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	// Check rules in order
 	for _, tc := range tcs {
 		if tc == nil {
-			logging.Warn("nil traffic controller found", "resourceName", res)
+			logging.Warn("[FlowSlot Check]Nil traffic controller found", "resourceName", res)
 			continue
 		}
 		r := canPassCheck(tc, ctx.StatNode, ctx.Input.BatchCount)
@@ -73,7 +73,7 @@ func checkInLocal(tc *TrafficShapingController, resStat base.StatNode, batchCoun
 	actual := selectNodeByRelStrategy(tc.rule, resStat)
 	if actual == nil {
 		logging.FrequentErrorOnce.Do(func() {
-			logging.Error(errors.Errorf("nil resource node"), "no resource node for flow rule", "rule", tc.rule)
+			logging.Error(errors.Errorf("nil resource node"), "No resource node for flow rule in FlowSlot.checkInLocal()", "rule", tc.rule)
 		})
 		return base.NewTokenResultPass()
 	}

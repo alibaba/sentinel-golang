@@ -61,7 +61,7 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
 	}
 	if size <= 0 {
-		logging.Warn("invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
+		logging.Warn("[HotSpot newBaseTrafficShapingController] Invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
 			"ParamsMaxCapacity", ParamsMaxCapacity, "ParamsCapacityBase", ParamsCapacityBase)
 		size = ParamsMaxCapacity
 	}

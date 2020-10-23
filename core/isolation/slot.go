@@ -48,7 +48,7 @@ func checkPass(ctx *base.EntryContext) (bool, *Rule, uint32) {
 				curCount = uint32(cur)
 			} else {
 				curCount = 0
-				logging.Error(errors.New("negative concurrency"), "", "rule", rule)
+				logging.Error(errors.New("negative concurrency"), "Negative concurrency in isolation.checkPass()", "rule", rule)
 			}
 			if curCount+batchCount > threshold {
 				return false, rule, curCount

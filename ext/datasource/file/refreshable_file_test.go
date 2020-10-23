@@ -125,7 +125,7 @@ func TestRefreshableFileDataSource_doReadAndUpdate(t *testing.T) {
 			closeChan:      make(chan struct{}),
 		}
 		mh1 := &datasource.MockPropertyHandler{}
-		hErr := errors.New("Handle error")
+		hErr := errors.New("handle error")
 		mh1.On("Handle", tmock.Anything).Return(hErr)
 		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
 		s.AddPropertyHandler(mh1)
@@ -150,7 +150,7 @@ func TestRefreshableFileDataSource_doReadAndUpdate(t *testing.T) {
 			closeChan:      make(chan struct{}),
 		}
 		mh1 := &datasource.MockPropertyHandler{}
-		hErr := errors.New("Handle error")
+		hErr := errors.New("handle error")
 		mh1.On("Handle", tmock.Anything).Return(hErr)
 		mh1.On("isPropertyConsistent", tmock.Anything).Return(false)
 		mh2 := &datasource.MockPropertyHandler{}
