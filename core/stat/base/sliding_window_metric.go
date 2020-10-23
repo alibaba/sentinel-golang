@@ -62,7 +62,7 @@ func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*BucketWrap
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.count()", "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.count()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		ret += counter.Get(event)
@@ -111,7 +111,7 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.GetMaxOfSingleBucket()", "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.GetMaxOfSingleBucket()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.Get(event)
@@ -134,7 +134,7 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.MinRT()", "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.MinRT()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.MinRt()
@@ -193,7 +193,7 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 		}
 		mb, ok := mi.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.metricItemFromBuckets()", "bucketStartTime", w.BucketStart, "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.metricItemFromBuckets()", "bucketStartTime", w.BucketStart, "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			return nil
 		}
 		item.PassQps += uint64(mb.Get(base.MetricEventPass))
@@ -218,7 +218,7 @@ func (m *SlidingWindowMetric) metricItemFromBucket(w *BucketWrap) *base.MetricIt
 	}
 	mb, ok := mi.(*MetricBucket)
 	if !ok {
-		logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.metricItemFromBucket()", "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+		logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.metricItemFromBucket()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 		return nil
 	}
 	completeQps := mb.Get(base.MetricEventComplete)

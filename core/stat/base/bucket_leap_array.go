@@ -91,7 +91,7 @@ func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent,
 	}
 	b, ok := mb.(*MetricBucket)
 	if !ok {
-		logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.addCountWithTime()", "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+		logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.addCountWithTime()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 		return
 	}
 	b.Add(event, count)
@@ -117,7 +117,7 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 		}
 		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.CountWithTime()", "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.CountWithTime()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		count += b.Get(event)
@@ -154,7 +154,7 @@ func (bla *BucketLeapArray) MinRt() int64 {
 		}
 		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.MinRt()", "expect type", "*MetricBucket", "actual type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.MinRt()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		mr := b.MinRt()

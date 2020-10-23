@@ -40,7 +40,7 @@ func main() {
 	go func() {
 		node := stat.GetOrCreateResourceNode("abc", base.ResTypeCommon)
 		for {
-			logging.Info("[HotSpot Concurrency] currentConcurrency", "current concurrency", node.CurrentConcurrency())
+			logging.Info("[HotSpot Concurrency] currentConcurrency", "currentConcurrency", node.CurrentConcurrency())
 			time.Sleep(time.Duration(100) * time.Millisecond)
 		}
 	}()
