@@ -39,10 +39,10 @@ func main() {
 			for {
 				e, b := sentinel.Entry("abc", sentinel.WithBatchCount(1))
 				if b != nil {
-					logging.Info("blocked", "reason", b.BlockType().String(), "rule", b.TriggeredRule(), "snapshot", b.TriggeredValue())
+					logging.Info("[Isolation] Blocked", "reason", b.BlockType().String(), "rule", b.TriggeredRule(), "snapshot", b.TriggeredValue())
 					time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 				} else {
-					logging.Info("passed")
+					logging.Info("[Isolation] Passed")
 					time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 					e.Exit()
 				}

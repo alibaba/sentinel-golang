@@ -120,7 +120,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	newRuleMap := make(map[string][]*Rule)
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logging.Warn("Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err)
+			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err)
 			continue
 		}
 		res := r.ResourceName()
@@ -144,7 +144,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("time statistic(ns) for updating hotspot rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
@@ -169,7 +169,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			// generate new traffic shaping controller
 			generator, supported := tcGenFuncMap[r.ControlBehavior]
 			if !supported {
-				logging.Warn("Ignoring the frequent param flow rule due to unsupported control behavior", "rule", r)
+				logging.Warn("[HotSpot onRuleUpdate] Ignoring the frequent param flow rule due to unsupported control behavior", "rule", r)
 				continue
 			}
 			var tc TrafficShapingController
@@ -180,7 +180,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tc = generator(r, nil)
 			}
 			if tc == nil {
-				logging.Debug("Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
+				logging.Debug("[HotSpot onRuleUpdate] Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
 				continue
 			}
 

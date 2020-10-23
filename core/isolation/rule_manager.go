@@ -22,7 +22,7 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	m := make(map[string][]*Rule)
 	for _, r := range rules {
 		if e := IsValid(r); e != nil {
-			logging.Error(e, "invalid isolation rule.", "rule", r)
+			logging.Error(e, "Invalid isolation rule in isolation.LoadRules()", "rule", r)
 			continue
 		}
 		resRules, ok := m[r.Resource]
@@ -36,7 +36,7 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	rwMux.Lock()
 	defer func() {
 		rwMux.Unlock()
-		logging.Debug("time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 

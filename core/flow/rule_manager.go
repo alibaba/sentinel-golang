@@ -133,7 +133,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	resRulesMap := make(map[string][]*Rule)
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("ignoring invalid flow rule", "rule", rule, "reason", err)
+			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err)
 			continue
 		}
 		resRules, exist := resRulesMap[rule.Resource]
@@ -150,7 +150,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 	for res, rulesOfRes := range resRulesMap {
@@ -297,7 +297,7 @@ func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
 		retStat.writeOnlyMetric = nil
 		return &retStat, nil
 	} else if err == base.GlobalStatisticNonReusableError {
-		logging.Info("flow rule couldn't reuse global statistic and will generate independent statistic", "rule", rule)
+		logging.Info("[FlowRuleManager] Flow rule couldn't reuse global statistic and will generate independent statistic", "rule", rule)
 		retStat.reuseResourceStat = false
 		realLeapArray := sbase.NewBucketLeapArray(sampleCount, intervalInMs)
 		metricStat, e := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, realLeapArray)
@@ -390,7 +390,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 	emptyTcs := make([]*TrafficShapingController, 0, 0)
 	for _, rule := range rulesOfRes {
 		if res != rule.Resource {
-			logging.Error(errors.Errorf("unmatched resource name, expect: %s, actual: %s", res, rule.Resource), "FlowManager: unmatched resource name ", "rule", rule)
+			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
 		oldResTcs, exist := tcMap[res]
@@ -415,7 +415,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			controlBehavior:        rule.ControlBehavior,
 		}]
 		if !supported || generator == nil {
-			logging.Error(errors.New("unsupported flow control strategy"), "ignoring the rule due to unsupported control behavior", "rule", rule)
+			logging.Error(errors.New("unsupported flow control strategy"), "Ignoring the rule due to unsupported control behavior in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
 		var tc *TrafficShapingController
@@ -427,7 +427,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 		}
 
 		if tc == nil || e != nil {
-			logging.Error(errors.New("bad generated traffic controller"), "ignoring the rule due to bad generated traffic controller.", "rule", rule)
+			logging.Error(errors.New("bad generated traffic controller"), "Ignoring the rule due to bad generated traffic controller in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
 		if reuseStatIdx >= 0 {
