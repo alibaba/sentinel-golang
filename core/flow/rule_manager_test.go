@@ -148,6 +148,9 @@ func TestGetRules(t *testing.T) {
 			assert.True(t, reflect.DeepEqual(rs2[0], r2))
 			assert.True(t, reflect.DeepEqual(rs2[1], r1))
 		}
+		assert.True(t, len(tcMap["abc2"])==1 && !tcMap["abc2"][0].boundStat.reuseResourceStat)
+		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.readOnlyMetric, nopStat.readOnlyMetric))
+		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.writeOnlyMetric, nopStat.writeOnlyMetric))
 		if err := ClearRules(); err != nil {
 			t.Fatal(err)
 		}
@@ -392,22 +395,22 @@ func Test_buildRulesOfRes(t *testing.T) {
 			StatIntervalInMs:       50000,
 		}
 
-		tcs := buildRulesOfRes("abc1", []*Rule{r0, r12, r22, r32, r42})
-		assert.True(t, len(tcs) == 5)
+		tcs := buildRulesOfRes("abc1", []*Rule{r12, r22, r32, r42})
+		assert.True(t, len(tcs) == 4)
 
-		assert.True(t, tcs[1].BoundRule() == r12)
-		assert.True(t, tcs[2].BoundRule() == r22)
-		assert.True(t, tcs[3].BoundRule() == r3)
-		assert.True(t, tcs[4].BoundRule() == r42)
+		assert.True(t, tcs[0].BoundRule() == r12)
+		assert.True(t, tcs[1].BoundRule() == r22)
+		assert.True(t, tcs[2].BoundRule() == r3)
+		assert.True(t, tcs[3].BoundRule() == r42)
 
-		assert.True(t, reflect.DeepEqual(tcs[1].BoundRule(), r12))
-		assert.True(t, reflect.DeepEqual(tcs[2].BoundRule(), r22))
-		assert.True(t, reflect.DeepEqual(tcs[3].BoundRule(), r32) && reflect.DeepEqual(tcs[3].BoundRule(), r3))
-		assert.True(t, reflect.DeepEqual(tcs[4].BoundRule(), r42))
+		assert.True(t, reflect.DeepEqual(tcs[0].BoundRule(), r12))
+		assert.True(t, reflect.DeepEqual(tcs[1].BoundRule(), r22))
+		assert.True(t, reflect.DeepEqual(tcs[2].BoundRule(), r32) && reflect.DeepEqual(tcs[2].BoundRule(), r3))
+		assert.True(t, reflect.DeepEqual(tcs[3].BoundRule(), r42))
 
-		assert.True(t, tcs[1].boundStat == stat1)
-		assert.True(t, tcs[2].boundStat != stat2)
-		assert.True(t, tcs[3] == fakeTc3)
-		assert.True(t, tcs[4].boundStat == stat4)
+		assert.True(t, tcs[0].boundStat == stat1)
+		assert.True(t, tcs[1].boundStat != stat2)
+		assert.True(t, tcs[2] == fakeTc3)
+		assert.True(t, tcs[3].boundStat == stat4)
 	})
 }
