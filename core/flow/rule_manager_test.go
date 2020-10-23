@@ -148,7 +148,7 @@ func TestGetRules(t *testing.T) {
 			assert.True(t, reflect.DeepEqual(rs2[0], r2))
 			assert.True(t, reflect.DeepEqual(rs2[1], r1))
 		}
-		assert.True(t, len(tcMap["abc2"])==1 && !tcMap["abc2"][0].boundStat.reuseResourceStat)
+		assert.True(t, len(tcMap["abc2"]) == 1 && !tcMap["abc2"][0].boundStat.reuseResourceStat)
 		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.readOnlyMetric, nopStat.readOnlyMetric))
 		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.writeOnlyMetric, nopStat.writeOnlyMetric))
 		if err := ClearRules(); err != nil {
