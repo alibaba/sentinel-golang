@@ -1,7 +1,7 @@
 package base
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 )
 
 type TimePredicate func(uint64) bool
