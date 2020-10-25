@@ -74,12 +74,15 @@ type Rule struct {
 	ControlBehavior        ControlBehavior        `json:"controlBehavior"`
 	// Threshold means the threshold during StatIntervalInMs
 	// If StatIntervalInMs is 1000(1 second), Threshold means QPS
-	Threshold         float64          `json:"threshold"`
-	RelationStrategy  RelationStrategy `json:"relationStrategy"`
-	RefResource       string           `json:"refResource"`
-	MaxQueueingTimeMs uint32           `json:"maxQueueingTimeMs"`
-	WarmUpPeriodSec   uint32           `json:"warmUpPeriodSec"`
-	WarmUpColdFactor  uint32           `json:"warmUpColdFactor"`
+	Threshold        float64          `json:"threshold"`
+	RelationStrategy RelationStrategy `json:"relationStrategy"`
+	RefResource      string           `json:"refResource"`
+	// MaxQueueingTimeMs only takes effect when ControlBehavior is Throttling.
+	// When MaxQueueingTimeMs is 0, it means Throttling only controls interval of requests,
+	// and requests exceeding the threshold will be rejected directly.
+	MaxQueueingTimeMs uint32 `json:"maxQueueingTimeMs"`
+	WarmUpPeriodSec   uint32 `json:"warmUpPeriodSec"`
+	WarmUpColdFactor  uint32 `json:"warmUpColdFactor"`
 	// StatIntervalInMs indicates the statistic interval and it's the optional setting for flow Rule.
 	// If user doesn't set StatIntervalInMs, that means using default metric statistic of resource.
 	// If the StatIntervalInMs user specifies can not reuse the global statistic of resource,
