@@ -126,6 +126,15 @@ func caller(depth int) (file string, line int) {
 	return
 }
 
+// toSafeJSONString converts to valid JSON string, as the original string may contain '\\', '\n', '\r', '\t' and so on.
+func toSafeJSONString(s string) []byte {
+	if data, err := json.Marshal(s); err == nil {
+		return data
+	} else {
+		return []byte(`"JSON Marshal Error"`)
+	}
+}
+
 func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...interface{}) string {
 	sb := strings.Builder{}
 	sb.Grow(defaultLogMsgBufferSize)
@@ -166,9 +175,8 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 	sb.WriteString("msg")
 	sb.WriteByte('"')
 	sb.WriteByte(':')
-	sb.WriteByte('"')
-	sb.WriteString(msg)
-	sb.WriteByte('"')
+	data := toSafeJSONString(msg)
+	sb.Write(data)
 
 	kvLen := len(keysAndValues)
 	if kvLen&1 != 0 {
@@ -177,9 +185,9 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 		sb.WriteString("kvs")
 		sb.WriteByte('"')
 		sb.WriteByte(':')
-		sb.WriteByte('"')
-		sb.WriteString(fmt.Sprintf("%+v", keysAndValues))
-		sb.WriteByte('"')
+		s := fmt.Sprintf("%+v", keysAndValues)
+		data := toSafeJSONString(s)
+		sb.Write(data)
 	} else if kvLen != 0 {
 		for i := 0; i < kvLen; {
 			k := keysAndValues[i]
@@ -189,23 +197,27 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 				kStr = fmt.Sprintf("%+v", k)
 			}
 			sb.WriteByte(',')
-			sb.WriteByte('"')
-			sb.WriteString(kStr)
-			sb.WriteByte('"')
+			data := toSafeJSONString(kStr)
+			sb.Write(data)
 			sb.WriteByte(':')
 			vStr, vIsStr := v.(string)
 			if !vIsStr {
-				if vbs, err := json.Marshal(v); err != nil {
-					sb.WriteByte('"')
-					sb.WriteString(fmt.Sprintf("%+v", v))
-					sb.WriteByte('"')
-				} else {
-					sb.WriteString(string(vbs))
+				switch vv := v.(type) {
+				case error:
+					data := toSafeJSONString(vv.Error())
+					sb.Write(data)
+				default:
+					if vbs, err := json.Marshal(v); err != nil {
+						s := fmt.Sprintf("%+v", v)
+						data := toSafeJSONString(s)
+						sb.Write(data)
+					} else {
+						sb.Write(vbs)
+					}
 				}
 			} else {
-				sb.WriteByte('"')
-				sb.WriteString(vStr)
-				sb.WriteByte('"')
+				data := toSafeJSONString(vStr)
+				sb.Write(data)
 			}
 			i = i + 2
 		}
