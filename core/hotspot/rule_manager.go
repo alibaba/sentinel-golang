@@ -120,7 +120,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	newRuleMap := make(map[string][]*Rule)
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err)
+			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err.Error())
 			continue
 		}
 		res := r.ResourceName()

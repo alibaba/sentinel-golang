@@ -133,7 +133,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	resRulesMap := make(map[string][]*Rule)
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err)
+			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
 			continue
 		}
 		resRules, exist := resRulesMap[rule.Resource]

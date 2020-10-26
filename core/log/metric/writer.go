@@ -106,7 +106,7 @@ func (d *DefaultMetricLogWriter) writeItemsAndFlush(items []*base.MetricItem) er
 	for _, item := range items {
 		s, err := item.ToFatString()
 		if err != nil {
-			logging.Warn("[writeItemsAndFlush] Failed to convert MetricItem to string", "resourceName", item.Resource, "err", err)
+			logging.Warn("[writeItemsAndFlush] Failed to convert MetricItem to string", "resourceName", item.Resource, "err", err.Error())
 			continue
 		}
 
