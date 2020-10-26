@@ -94,7 +94,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFile(filename string, offset ui
 	defer file.Close()
 
 	bufReader := bufio.NewReaderSize(file, 8192)
-	items := make([]*base.MetricItem, 0, 8)
+	items := make([]*base.MetricItem, 0, 1024)
 	for {
 		line, err := readLine(bufReader)
 		if err != nil {
@@ -129,7 +129,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, 
 	defer file.Close()
 
 	bufReader := bufio.NewReaderSize(file, 8192)
-	items := make([]*base.MetricItem, 0, 8)
+	items := make([]*base.MetricItem, 0, 1024)
 	for {
 		line, err := readLine(bufReader)
 		if err != nil {
