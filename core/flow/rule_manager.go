@@ -26,7 +26,7 @@ type trafficControllerGenKey struct {
 type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc)
+	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 4)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
 	nopStat      = &standaloneStatistic{
@@ -130,7 +130,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	resRulesMap := make(map[string][]*Rule)
+	resRulesMap := make(map[string][]*Rule, len(rules))
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
 			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err)
@@ -230,7 +230,7 @@ func ClearRules() error {
 }
 
 func rulesFrom(m TrafficControllerMap) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(m) == 0 {
 		return rules
 	}

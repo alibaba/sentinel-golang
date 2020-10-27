@@ -98,7 +98,7 @@ func WithSlotChain(chain *base.SlotChain) EntryOption {
 func WithAttachment(key interface{}, value interface{}) EntryOption {
 	return func(opts *EntryOptions) {
 		if opts.attachments == nil {
-			opts.attachments = make(map[interface{}]interface{})
+			opts.attachments = make(map[interface{}]interface{}, 8)
 		}
 		opts.attachments[key] = value
 	}
@@ -108,7 +108,7 @@ func WithAttachment(key interface{}, value interface{}) EntryOption {
 func WithAttachments(data map[interface{}]interface{}) EntryOption {
 	return func(opts *EntryOptions) {
 		if opts.attachments == nil {
-			opts.attachments = make(map[interface{}]interface{})
+			opts.attachments = make(map[interface{}]interface{}, len(data))
 		}
 		for key, value := range data {
 			opts.attachments[key] = value

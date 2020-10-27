@@ -158,7 +158,7 @@ func (m *SlidingWindowMetric) SecondMetricsOnCondition(predicate base.TimePredic
 	ws := m.real.ValuesConditional(util.CurrentTimeMillis(), predicate)
 
 	// Aggregate second-level MetricItem (only for stable metrics)
-	wm := make(map[uint64][]*BucketWrap)
+	wm := make(map[uint64][]*BucketWrap, 8)
 	for _, w := range ws {
 		bucketStart := atomic.LoadUint64(&w.BucketStart)
 		secStart := bucketStart - bucketStart%1000
@@ -168,7 +168,7 @@ func (m *SlidingWindowMetric) SecondMetricsOnCondition(predicate base.TimePredic
 			wm[secStart] = []*BucketWrap{w}
 		}
 	}
-	items := make([]*base.MetricItem, 0)
+	items := make([]*base.MetricItem, 0, 8)
 	for ts, values := range wm {
 		if len(values) == 0 {
 			continue

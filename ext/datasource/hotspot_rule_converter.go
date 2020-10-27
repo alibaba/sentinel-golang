@@ -81,7 +81,7 @@ func (s *SpecificValue) String() string {
 
 // arseSpecificItems parses the SpecificValue as real value.
 func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
-	ret := make(map[interface{}]int64)
+	ret := make(map[interface{}]int64, len(source))
 	if len(source) == 0 {
 		return ret
 	}

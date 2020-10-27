@@ -131,10 +131,10 @@ func isItemTimestampInTime(ts uint64, currentSecStart uint64) bool {
 }
 
 func currentMetricItems(retriever base.MetricItemRetriever, currentTime uint64) map[uint64]*base.MetricItem {
-	m := make(map[uint64]*base.MetricItem, 2)
 	items := retriever.MetricsOnCondition(func(ts uint64) bool {
 		return isItemTimestampInTime(ts, currentTime)
 	})
+	m := make(map[uint64]*base.MetricItem, len(items))
 	for _, item := range items {
 		if !isActiveMetricItem(item) {
 			continue
