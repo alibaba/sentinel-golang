@@ -23,7 +23,7 @@ func FlowRuleJsonArrayParser(src []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	rules := make([]*flow.Rule, 0)
+	rules := make([]*flow.Rule, 0, 8)
 	if err := json.Unmarshal(src, &rules); err != nil {
 		desc := fmt.Sprintf("Fail to convert source bytes to []*flow.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
@@ -37,7 +37,7 @@ func FlowRulesUpdater(data interface{}) error {
 		return flow.ClearRules()
 	}
 
-	rules := make([]*flow.Rule, 0)
+	rules := make([]*flow.Rule, 0, 8)
 	if val, ok := data.([]flow.Rule); ok {
 		for _, v := range val {
 			rules = append(rules, &v)
@@ -70,7 +70,7 @@ func SystemRuleJsonArrayParser(src []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	rules := make([]*system.Rule, 0)
+	rules := make([]*system.Rule, 0, 8)
 	if err := json.Unmarshal(src, &rules); err != nil {
 		desc := fmt.Sprintf("Fail to convert source bytes to []*system.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
@@ -84,7 +84,7 @@ func SystemRulesUpdater(data interface{}) error {
 		return system.ClearRules()
 	}
 
-	rules := make([]*system.Rule, 0)
+	rules := make([]*system.Rule, 0, 8)
 	if val, ok := data.([]system.Rule); ok {
 		for _, v := range val {
 			rules = append(rules, &v)
@@ -116,7 +116,7 @@ func CircuitBreakerRuleJsonArrayParser(src []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	rules := make([]*cb.Rule, 0)
+	rules := make([]*cb.Rule, 0, 8)
 	if err := json.Unmarshal(src, &rules); err != nil {
 		desc := fmt.Sprintf("Fail to convert source bytes to []*circuitbreaker.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
@@ -159,7 +159,7 @@ func HotSpotParamRuleJsonArrayParser(src []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	hotspotRules := make([]*HotspotRule, 0)
+	hotspotRules := make([]*HotspotRule, 0, 8)
 	if err := json.Unmarshal(src, &hotspotRules); err != nil {
 		desc := fmt.Sprintf("Fail to convert source bytes to []*hotspot.Rule, err: %s", err.Error())
 		return nil, NewError(ConvertSourceError, desc)
@@ -189,7 +189,7 @@ func HotSpotParamRulesUpdater(data interface{}) error {
 		return hotspot.ClearRules()
 	}
 
-	rules := make([]*hotspot.Rule, 0)
+	rules := make([]*hotspot.Rule, 0, 8)
 	if val, ok := data.([]hotspot.Rule); ok {
 		for _, v := range val {
 			rules = append(rules, &v)

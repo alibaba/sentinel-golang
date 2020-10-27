@@ -19,7 +19,7 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	updated = true
 	err = nil
 
-	m := make(map[string][]*Rule)
+	m := make(map[string][]*Rule, len(rules))
 	for _, r := range rules {
 		if e := IsValid(r); e != nil {
 			logging.Error(e, "Invalid isolation rule in isolation.LoadRules()", "rule", r)
@@ -105,7 +105,7 @@ func getRulesOfResource(res string) []*Rule {
 }
 
 func rulesFrom(m map[string][]*Rule) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(m) == 0 {
 		return rules
 	}

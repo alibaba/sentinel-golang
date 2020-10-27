@@ -364,7 +364,7 @@ func (s *slowRequestLeapArray) currentCounter() *slowRequestCounter {
 
 func (s *slowRequestLeapArray) allCounter() []*slowRequestCounter {
 	buckets := s.data.Values()
-	ret := make([]*slowRequestCounter, 0)
+	ret := make([]*slowRequestCounter, 0, len(buckets))
 	for _, b := range buckets {
 		mb := b.Value.Load()
 		if mb == nil {
@@ -541,7 +541,7 @@ func (s *errorCounterLeapArray) currentCounter() *errorCounter {
 
 func (s *errorCounterLeapArray) allCounter() []*errorCounter {
 	buckets := s.data.Values()
-	ret := make([]*errorCounter, 0)
+	ret := make([]*errorCounter, 0, len(buckets))
 	for _, b := range buckets {
 		mb := b.Value.Load()
 		if mb == nil {

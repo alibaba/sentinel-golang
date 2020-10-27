@@ -14,7 +14,7 @@ import (
 type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
 
 var (
-	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc)
+	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc, 4)
 
 	breakerRules = make(map[string][]*Rule)
 	breakers     = make(map[string][]CircuitBreaker)
@@ -122,10 +122,10 @@ func LoadRules(rules []*Rule) (bool, error) {
 }
 
 func getBreakersOfResource(resource string) []CircuitBreaker {
-	ret := make([]CircuitBreaker, 0)
 	updateMux.RLock()
 	resCBs := breakers[resource]
 	updateMux.RUnlock()
+	ret := make([]CircuitBreaker, 0, len(resCBs))
 	if len(resCBs) == 0 {
 		return ret
 	}
@@ -181,7 +181,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	newBreakerRules := make(map[string][]*Rule)
+	newBreakerRules := make(map[string][]*Rule, len(rules))
 	for _, rule := range rules {
 		if rule == nil {
 			continue
@@ -200,7 +200,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		newBreakerRules[classification] = ruleSet
 	}
 
-	newBreakers := make(map[string][]CircuitBreaker)
+	newBreakers := make(map[string][]CircuitBreaker, len(rules))
 	// in order to avoid growing, build newBreakers in advance
 	for res, rules := range newBreakerRules {
 		newBreakers[res] = make([]CircuitBreaker, 0, len(rules))
@@ -275,7 +275,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 func rulesFrom(rm map[string][]*Rule) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(rm) == 0 {
 		return rules
 	}

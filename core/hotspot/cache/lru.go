@@ -31,7 +31,7 @@ func NewLRU(size int, onEvict EvictCallback) (*LRU, error) {
 	c := &LRU{
 		size:      size,
 		evictList: list.New(),
-		items:     make(map[interface{}]*list.Element),
+		items:     make(map[interface{}]*list.Element, 64),
 		onEvict:   onEvict,
 	}
 	return c, nil

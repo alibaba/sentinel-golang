@@ -42,7 +42,7 @@ func getRules() []*Rule {
 	ruleMapMux.RLock()
 	defer ruleMapMux.RUnlock()
 
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	for _, rs := range ruleMap {
 		rules = append(rules, rs...)
 	}
