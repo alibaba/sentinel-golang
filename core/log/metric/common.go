@@ -73,7 +73,7 @@ func listMetricFilesConditional(baseDir string, filePattern string, predicate fu
 	if err != nil {
 		return nil, err
 	}
-	arr := make([]string, 0, 8)
+	arr := make([]string, 0, len(dir))
 	for _, f := range dir {
 		if f.IsDir() {
 			continue
