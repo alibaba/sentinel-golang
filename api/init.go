@@ -2,12 +2,16 @@ package api
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
+
+const WINDOWS = "windows"
 
 // InitDefault initializes Sentinel using the configuration from system
 // environment and the default value.
@@ -50,8 +54,12 @@ func initCoreComponents() error {
 	if err := metric.InitTask(); err != nil {
 		return err
 	}
+	if runtime.GOOS != WINDOWS {
+		system.InitCollector(config.SystemStatCollectIntervalMs())
+	} else {
+		logging.Warnf("[Init initCoreComponents] Temporarily not supported retrieve and update system stat,currentSystem:%s", WINDOWS)
+	}
 
-	system.InitCollector(config.SystemStatCollectIntervalMs())
 	if config.UseCacheTime() {
 		util.StartTimeTicker()
 	}
