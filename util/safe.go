@@ -1,6 +1,9 @@
 package util
 
-import "unsafe"
+import (
+	"runtime"
+	"unsafe"
+)
 
 // SliceHeader is a safe version of SliceHeader used within this project.
 type SliceHeader struct {
@@ -13,4 +16,10 @@ type SliceHeader struct {
 type StringHeader struct {
 	Data unsafe.Pointer
 	Len  int
+}
+
+const windows = "windows"
+
+func IsWindowsOS() bool {
+	return runtime.GOOS == windows
 }

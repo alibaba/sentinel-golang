@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"runtime"
 
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
@@ -11,9 +10,6 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 )
 
-const WINDOWS = "windows"
-
-// InitDefault initializes Sentinel using the configuration from system
 // environment and the default value.
 func InitDefault() error {
 	return initSentinel("")
@@ -54,10 +50,10 @@ func initCoreComponents() error {
 	if err := metric.InitTask(); err != nil {
 		return err
 	}
-	if runtime.GOOS != WINDOWS {
+	if !util.IsWindowsOS() {
 		system.InitCollector(config.SystemStatCollectIntervalMs())
 	} else {
-		logging.Warnf("[Init initCoreComponents] Temporarily not supported retrieve and update system stat,currentSystem:%s", WINDOWS)
+		logging.Warn("[Init initCoreComponents] system metric collect is not available for system module in windows")
 	}
 
 	if config.UseCacheTime() {
