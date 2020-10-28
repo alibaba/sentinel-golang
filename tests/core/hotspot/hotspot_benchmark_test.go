@@ -1,4 +1,4 @@
-package hotsport
+package hotspot
 
 import (
 	"log"
