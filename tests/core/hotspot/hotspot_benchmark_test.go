@@ -4,11 +4,9 @@ import (
 	"log"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/core/hotspot"
-
-	"github.com/alibaba/sentinel-golang/core/stat"
-
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/hotspot"
+	"github.com/alibaba/sentinel-golang/core/stat"
 )
 
 var (
