@@ -6,10 +6,10 @@ import (
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
-// InitDefault initializes Sentinel using the configuration from system
 // environment and the default value.
 func InitDefault() error {
 	return initSentinel("")
@@ -50,8 +50,12 @@ func initCoreComponents() error {
 	if err := metric.InitTask(); err != nil {
 		return err
 	}
+	if !util.IsWindowsOS() {
+		system.InitCollector(config.SystemStatCollectIntervalMs())
+	} else {
+		logging.Warn("[Init initCoreComponents] system metric collect is not available for system module in windows")
+	}
 
-	system.InitCollector(config.SystemStatCollectIntervalMs())
 	if config.UseCacheTime() {
 		util.StartTimeTicker()
 	}

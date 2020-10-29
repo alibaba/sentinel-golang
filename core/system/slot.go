@@ -3,6 +3,7 @@ package system
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 type AdaptiveSlot struct {
@@ -10,6 +11,10 @@ type AdaptiveSlot struct {
 
 func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if ctx == nil || ctx.Resource == nil || ctx.Resource.FlowType() != base.Inbound {
+		return nil
+	}
+	// system module is not available for windows OS
+	if util.IsWindowsOS() {
 		return nil
 	}
 	rules := GetRules()
