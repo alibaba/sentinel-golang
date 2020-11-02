@@ -290,7 +290,8 @@ func (b *slowRtCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 		return
 	}
 
-	if slowRatio > b.maxSlowRequestRatio {
+	// Special case where maxSlowRequestRatio is set to 1.0 should be handled
+	if slowRatio > b.maxSlowRequestRatio || (slowRatio == 1.0 && b.maxSlowRequestRatio == 1.0) {
 		curStatus = b.CurrentState()
 		switch curStatus {
 		case Closed:
