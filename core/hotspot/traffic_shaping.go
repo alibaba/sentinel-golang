@@ -142,7 +142,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 	}
 
 	// calculate available token
-	tokenCount := int64(c.threshold)
+	tokenCount := c.threshold
 	val, existed := c.specificItems[arg]
 	if existed {
 		tokenCount = val
@@ -237,7 +237,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 	}
 
 	// calculate available token
-	tokenCount := int64(c.threshold)
+	tokenCount := c.threshold
 	val, existed := c.specificItems[arg]
 	if existed {
 		tokenCount = val
