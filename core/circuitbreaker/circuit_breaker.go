@@ -290,7 +290,7 @@ func (b *slowRtCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 		return
 	}
 
-	// Special case where maxSlowRequestRatio is set to 1.0 should be handled
+	// Special case when maxSlowRequestRatio is set to 1.0 should be handled
 	if slowRatio > b.maxSlowRequestRatio || (slowRatio == 1.0 && b.maxSlowRequestRatio == 1.0) {
 		curStatus = b.CurrentState()
 		switch curStatus {
@@ -469,7 +469,8 @@ func (b *errorRatioCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	if totalCount < b.minRequestAmount {
 		return
 	}
-	if errorRatio > b.errorRatioThreshold {
+	// Special case when errorRatioThreshold is set to 1.0 should be handled
+	if errorRatio > b.errorRatioThreshold || (b.errorRatioThreshold == 1.0 && errorRatio == 1.0) {
 		curStatus = b.CurrentState()
 		switch curStatus {
 		case Closed:
