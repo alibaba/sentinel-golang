@@ -95,7 +95,7 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
 			fmt.Sprintf("arg=%v", arg), c.BoundRule(), concurrency)
 	}
-	threshold := int64(c.threshold)
+	threshold := c.threshold
 	if concurrency <= threshold {
 		return nil
 	}
@@ -142,7 +142,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 	}
 
 	// calculate available token
-	tokenCount := int64(c.threshold)
+	tokenCount := c.threshold
 	val, existed := c.specificItems[arg]
 	if existed {
 		tokenCount = val
@@ -237,7 +237,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 	}
 
 	// calculate available token
-	tokenCount := int64(c.threshold)
+	tokenCount := c.threshold
 	val, existed := c.specificItems[arg]
 	if existed {
 		tokenCount = val

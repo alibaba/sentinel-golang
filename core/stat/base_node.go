@@ -51,7 +51,7 @@ func (n *BaseStatNode) GetMaxAvg(event base.MetricEvent) float64 {
 }
 
 func (n *BaseStatNode) AddCount(event base.MetricEvent, count int64) {
-	n.arr.AddCount(event, int64(count))
+	n.arr.AddCount(event, count)
 }
 
 func (n *BaseStatNode) AvgRT() float64 {
