@@ -95,7 +95,7 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
 			fmt.Sprintf("arg=%v", arg), c.BoundRule(), concurrency)
 	}
-	threshold := int64(c.threshold)
+	threshold := c.threshold
 	if concurrency <= threshold {
 		return nil
 	}
