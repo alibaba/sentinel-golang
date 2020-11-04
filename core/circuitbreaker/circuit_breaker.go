@@ -468,7 +468,7 @@ func (b *errorRatioCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	if totalCount < b.minRequestAmount {
 		return
 	}
-	if errorRatio > b.errorRatioThreshold {
+	if errorRatio >= b.errorRatioThreshold {
 		curStatus = b.CurrentState()
 		switch curStatus {
 		case Closed:
@@ -642,7 +642,7 @@ func (b *errorCountCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	if totalCount < b.minRequestAmount {
 		return
 	}
-	if errorCount > b.errorCountThreshold {
+	if errorCount >= b.errorCountThreshold {
 		curStatus = b.CurrentState()
 		switch curStatus {
 		case Closed:
