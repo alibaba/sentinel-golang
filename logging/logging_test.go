@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -8,6 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	testErrMsg = "test error with caller stack"
 )
 
 func TestNewSimpleFileLogger(t *testing.T) {
@@ -27,7 +32,7 @@ func TestNewSimpleFileLogger(t *testing.T) {
 }
 
 func throwError() error {
-	return errors.New("test error with caller stack")
+	return errors.New(testErrMsg)
 }
 
 func Test_caller_path(t *testing.T) {
@@ -36,8 +41,8 @@ func Test_caller_path(t *testing.T) {
 
 func Test_AssembleMsg(t *testing.T) {
 	t.Run("AssembleMsg1", func(t *testing.T) {
-		got := AssembleMsg(2, "ERROR", "test msg", nil, "k1", "v1")
-		assert.True(t, strings.Contains(got, `"logLevel":"ERROR","msg":"test msg","k1":"v1"}`))
+		got := AssembleMsg(2, "ERROR", "test msg1", nil, "k1", "v1")
+		assert.True(t, strings.Contains(got, `"logLevel":"ERROR","msg":"test msg1","k1":"v1"}`))
 	})
 
 	t.Run("AssembleMsg2", func(t *testing.T) {
@@ -45,16 +50,52 @@ func Test_AssembleMsg(t *testing.T) {
 		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg2","k1":"v1","k2":"v2"}`))
 	})
 
-	t.Run("AssembleMsg2", func(t *testing.T) {
-		got := AssembleMsg(2, "INFO", "test msg2", nil)
-		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg2"}`))
+	t.Run("AssembleMsg3", func(t *testing.T) {
+		got := AssembleMsg(2, "INFO", "test msg3", nil)
+		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg3"}`))
 	})
 
-	t.Run("AssembleMsg1", func(t *testing.T) {
-		got := AssembleMsg(2, "ERROR", "test msg", throwError(), "k1", "v1")
-		assert.True(t, strings.Contains(got, `"logLevel":"ERROR","msg":"test msg","k1":"v1"}`))
-		assert.True(t, strings.Contains(got, `test error with caller stack`))
+	t.Run("AssembleMsg4", func(t *testing.T) {
+		got := AssembleMsg(2, "ERROR", "test msg4", throwError(), "k1", "v1")
+		assert.True(t, strings.Contains(got, `"logLevel":"ERROR","msg":"test msg4","k1":"v1"}`))
+		assert.True(t, strings.Contains(got, testErrMsg))
 	})
+
+	t.Run("AssembleMsg5", func(t *testing.T) {
+		got := AssembleMsg(2, "WARN", "test msg5", nil, "reason", throwError())
+		assert.True(t, strings.Contains(got, fmt.Sprintf(`"logLevel":"WARN","msg":"test msg5","reason":"%s"`, testErrMsg)))
+	})
+
+	t.Run("AssembleMsg6", func(t *testing.T) {
+		got := AssembleMsg(2, "INFO", "test msg6", nil, "num", 123)
+		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg6","num":123`))
+	})
+
+	t.Run("AssembleMsg7", func(t *testing.T) {
+		got := AssembleMsg(2, "INFO", "test msg7", nil, "num", 123.456)
+		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg7","num":123.456`))
+	})
+
+	t.Run("AssembleMsg8", func(t *testing.T) {
+		got := AssembleMsg(2, "INFO", "test msg8", nil, "flag", true)
+		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg8","flag":true`))
+	})
+
+	t.Run("AssembleMsg8", func(t *testing.T) {
+		got := AssembleMsg(2, "INFO", "test msg8", nil, "flag", true)
+		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg8","flag":true`))
+	})
+
+	t.Run("AssembleMsg9", func(t *testing.T) {
+		got := AssembleMsg(2, "INFO", "test msg9", nil, "object", nil)
+		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg9","object":null`))
+	})
+
+	t.Run("AssembleMsg10", func(t *testing.T) {
+		got := AssembleMsg(2, "INFO", "test msg10", nil, `k1"\n\t`, `v1"\n\t`)
+		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg10","k1\"\\n\\t":"v1\"\\n\\t"`))
+	})
+
 }
 
 func Test_caller(t *testing.T) {

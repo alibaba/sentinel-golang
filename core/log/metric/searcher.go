@@ -56,7 +56,7 @@ func (s *DefaultMetricSearcher) searchOffsetAndRead(beginTimeMs uint64, doRead f
 	// If cache is not up-to-date, we'll read from the initial position (offset 0 of the first file).
 	offsetStart, fileNo, err := s.getOffsetStartAndFileIdx(filenames, beginTimeMs)
 	if err != nil {
-		logging.Warn("[searchOffsetAndRead] Failed to getOffsetStartAndFileIdx", "beginTimeMs", beginTimeMs, "err", err)
+		logging.Warn("[searchOffsetAndRead] Failed to getOffsetStartAndFileIdx", "beginTimeMs", beginTimeMs, "err", err.Error())
 	}
 	fileAmount := uint32(len(filenames))
 	for i := fileNo; i < fileAmount; i++ {

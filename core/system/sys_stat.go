@@ -57,11 +57,11 @@ func InitCollector(intervalMs uint32) {
 func retrieveAndUpdateSystemStat() {
 	cpuStats, err := cpu.Times(false)
 	if err != nil {
-		logging.Warn("[retrieveAndUpdateSystemStat] Failed to retrieve current CPU usage", "err", err)
+		logging.Warn("[retrieveAndUpdateSystemStat] Failed to retrieve current CPU usage", "err", err.Error())
 	}
 	loadStat, err := load.Avg()
 	if err != nil {
-		logging.Warn("[retrieveAndUpdateSystemStat] Failed to retrieve current system load", "err", err)
+		logging.Warn("[retrieveAndUpdateSystemStat] Failed to retrieve current system load", "err", err.Error())
 	}
 	if len(cpuStats) > 0 {
 		curCpuStat := &cpuStats[0]
