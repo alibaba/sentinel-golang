@@ -131,7 +131,7 @@ func toSafeJSONString(s string) []byte {
 	if data, err := json.Marshal(s); err == nil {
 		return data
 	} else {
-		return []byte(`"JSON Marshal Error"`)
+		return []byte("\"" + s + "\"")
 	}
 }
 
@@ -200,24 +200,21 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 			data := toSafeJSONString(kStr)
 			sb.Write(data)
 			sb.WriteByte(':')
-			vStr, vIsStr := v.(string)
-			if !vIsStr {
-				switch vv := v.(type) {
-				case error:
-					data := toSafeJSONString(vv.Error())
-					sb.Write(data)
-				default:
-					if vbs, err := json.Marshal(v); err != nil {
-						s := fmt.Sprintf("%+v", v)
-						data := toSafeJSONString(s)
-						sb.Write(data)
-					} else {
-						sb.Write(vbs)
-					}
-				}
-			} else {
-				data := toSafeJSONString(vStr)
+			switch v.(type) {
+			case string:
+				data := toSafeJSONString(v.(string))
 				sb.Write(data)
+			case error:
+				data := toSafeJSONString(v.(error).Error())
+				sb.Write(data)
+			default:
+				if vbs, err := json.Marshal(v); err != nil {
+					s := fmt.Sprintf("%+v", v)
+					data := toSafeJSONString(s)
+					sb.Write(data)
+				} else {
+					sb.Write(vbs)
+				}
 			}
 			i = i + 2
 		}
