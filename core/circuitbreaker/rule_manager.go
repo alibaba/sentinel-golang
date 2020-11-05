@@ -187,7 +187,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			continue
 		}
 		if err := IsValid(rule); err != nil {
-			logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring invalid circuit breaking rule when loading new rules", "rule", rule, "err", err)
+			logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring invalid circuit breaking rule when loading new rules", "rule", rule, "err", err.Error())
 			continue
 		}
 
@@ -250,7 +250,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				cb, e = generator(r, nil)
 			}
 			if cb == nil || e != nil {
-				logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e)
+				logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e.Error())
 				continue
 			}
 

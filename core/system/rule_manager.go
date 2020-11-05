@@ -92,7 +92,7 @@ func buildRuleMap(rules []*Rule) RuleMap {
 
 	for _, rule := range rules {
 		if err := IsValidSystemRule(rule); err != nil {
-			logging.Warn("[System buildRuleMap] Ignoring invalid system rule", "rule", rule, "err", err)
+			logging.Warn("[System buildRuleMap] Ignoring invalid system rule", "rule", rule, "err", err.Error())
 			continue
 		}
 		rulesOfRes, exists := m[rule.MetricType]
