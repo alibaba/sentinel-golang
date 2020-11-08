@@ -12,11 +12,14 @@ const (
 )
 
 var (
-	DefaultConcurrencyStatSlot = &ConcurrencyStatSlot{}
+	DefaultConcurrencyStatSlot = &ConcurrencyStatSlot{
+		base.ConcurrencyStatSlotDefaultOrder,
+	}
 )
 
 // ConcurrencyStatSlot is to record the Concurrency statistic for all arguments
 type ConcurrencyStatSlot struct {
+	base.SlotOrder
 }
 
 func (s *ConcurrencyStatSlot) Name() string {

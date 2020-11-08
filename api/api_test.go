@@ -9,6 +9,7 @@ import (
 )
 
 type prepareSlotMock struct {
+	base.SlotOrder
 	mock.Mock
 }
 
@@ -22,6 +23,7 @@ func (m *prepareSlotMock) Prepare(ctx *base.EntryContext) {
 }
 
 type mockRuleCheckSlot1 struct {
+	base.SlotOrder
 	mock.Mock
 }
 
@@ -35,6 +37,7 @@ func (m *mockRuleCheckSlot1) Check(ctx *base.EntryContext) *base.TokenResult {
 }
 
 type mockRuleCheckSlot2 struct {
+	base.SlotOrder
 	mock.Mock
 }
 
@@ -48,6 +51,7 @@ func (m *mockRuleCheckSlot2) Check(ctx *base.EntryContext) *base.TokenResult {
 }
 
 type statisticSlotMock struct {
+	base.SlotOrder
 	mock.Mock
 }
 
@@ -74,10 +78,10 @@ func Test_entryWithArgsAndChainPass(t *testing.T) {
 	rcs1 := &mockRuleCheckSlot1{}
 	rcs2 := &mockRuleCheckSlot2{}
 	ssm := &statisticSlotMock{}
-	sc.AddStatPrepareSlotFirst(ps1)
-	sc.AddRuleCheckSlotFirst(rcs1)
-	sc.AddRuleCheckSlotFirst(rcs2)
-	sc.AddStatSlotFirst(ssm)
+	sc.InsertStatPrepareSlotByOrder(ps1)
+	sc.InsertRuleCheckSlotByOrder(rcs1)
+	sc.InsertRuleCheckSlotByOrder(rcs2)
+	sc.InsertStatSlotByOrder(ssm)
 
 	ps1.On("Prepare", mock.Anything).Return()
 	rcs1.On("Check", mock.Anything).Return(base.NewTokenResultPass())
@@ -111,10 +115,10 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	rcs1 := &mockRuleCheckSlot1{}
 	rcs2 := &mockRuleCheckSlot2{}
 	ssm := &statisticSlotMock{}
-	sc.AddStatPrepareSlotFirst(ps1)
-	sc.AddRuleCheckSlotLast(rcs1)
-	sc.AddRuleCheckSlotLast(rcs2)
-	sc.AddStatSlotFirst(ssm)
+	sc.InsertStatPrepareSlotByOrder(ps1)
+	sc.InsertRuleCheckSlotByOrder(rcs1)
+	sc.InsertRuleCheckSlotByOrder(rcs2)
+	sc.InsertStatSlotByOrder(ssm)
 
 	blockType := base.BlockTypeFlow
 

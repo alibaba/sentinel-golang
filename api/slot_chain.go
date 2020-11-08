@@ -20,19 +20,19 @@ func GlobalSlotChain() *base.SlotChain {
 
 func BuildDefaultSlotChain() *base.SlotChain {
 	sc := base.NewSlotChain()
-	sc.AddStatPrepareSlotLast(stat.DefaultResourceNodePrepareSlot)
+	sc.InsertStatPrepareSlotByOrder(stat.DefaultResourceNodePrepareSlot)
 
-	sc.AddRuleCheckSlotLast(system.DefaultAdaptiveSlot)
-	sc.AddRuleCheckSlotLast(flow.DefaultSlot)
-	sc.AddRuleCheckSlotLast(isolation.DefaultSlot)
-	sc.AddRuleCheckSlotLast(circuitbreaker.DefaultSlot)
-	sc.AddRuleCheckSlotLast(hotspot.DefaultSlot)
+	sc.InsertRuleCheckSlotByOrder(system.DefaultAdaptiveSlot)
+	sc.InsertRuleCheckSlotByOrder(flow.DefaultSlot)
+	sc.InsertRuleCheckSlotByOrder(isolation.DefaultSlot)
+	sc.InsertRuleCheckSlotByOrder(circuitbreaker.DefaultSlot)
+	sc.InsertRuleCheckSlotByOrder(hotspot.DefaultSlot)
 
-	sc.AddStatSlotLast(stat.DefaultSlot)
-	sc.AddStatSlotLast(log.DefaultSlot)
-	sc.AddStatSlotLast(circuitbreaker.DefaultMetricStatSlot)
-	sc.AddStatSlotLast(hotspot.DefaultConcurrencyStatSlot)
-	sc.AddStatSlotLast(flow.DefaultStandaloneStatSlot)
+	sc.InsertStatSlotByOrder(stat.DefaultSlot)
+	sc.InsertStatSlotByOrder(log.DefaultSlot)
+	sc.InsertStatSlotByOrder(circuitbreaker.DefaultMetricStatSlot)
+	sc.InsertStatSlotByOrder(hotspot.DefaultConcurrencyStatSlot)
+	sc.InsertStatSlotByOrder(flow.DefaultStandaloneStatSlot)
 	return sc
 }
 

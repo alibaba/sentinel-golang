@@ -9,12 +9,15 @@ const (
 )
 
 var (
-	DefaultMetricStatSlot = &MetricStatSlot{}
+	DefaultMetricStatSlot = &MetricStatSlot{
+		base.CircuitBreakerMetricStatSlotDefaultOrder,
+	}
 )
 
 // MetricStatSlot records metrics for circuit breaker on invocation completed.
 // MetricStatSlot must be filled into slot chain if circuit breaker is alive.
 type MetricStatSlot struct {
+	base.SlotOrder
 }
 
 func (s *MetricStatSlot) Name() string {

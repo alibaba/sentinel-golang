@@ -14,10 +14,13 @@ const (
 )
 
 var (
-	DefaultSlot = &Slot{}
+	DefaultSlot = &Slot{
+		base.FlowSlotDefaultOrder,
+	}
 )
 
 type Slot struct {
+	base.SlotOrder
 }
 
 func (s *Slot) Name() string {

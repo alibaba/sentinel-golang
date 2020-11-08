@@ -9,6 +9,7 @@ import (
 )
 
 type RuleCheckSlotMock1 struct {
+	base.SlotOrder
 	name string
 }
 

@@ -8,15 +8,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-type NamedSlot interface {
+type BaseSlot interface {
 	// Name returns its slot name which should not be the same as other slots.
 	Name() string
+
+	// Order returns the order value of slot.
+	// Slots will be sorted according to order value in increasing order.
+	Order() uint32
 }
 
 // StatPrepareSlot is responsible for some preparation before statistic
 // For example: init structure and so on
 type StatPrepareSlot interface {
-	NamedSlot
+	BaseSlot
 	// Prepare function do some initialization
 	// Such as: init statistic structure、node and etc
 	// The result of preparing would store in EntryContext
@@ -28,7 +32,7 @@ type StatPrepareSlot interface {
 // RuleCheckSlot is rule based checking strategy
 // All checking rule must implement this interface.
 type RuleCheckSlot interface {
-	NamedSlot
+	BaseSlot
 	// Check function do some validation
 	// It can break off the slot pipeline
 	// Each TokenResult will return check result
@@ -39,7 +43,7 @@ type RuleCheckSlot interface {
 // StatSlot is responsible for counting all custom biz metrics.
 // StatSlot would not handle any panic, and pass up all panic to slot chain
 type StatSlot interface {
-	NamedSlot
+	BaseSlot
 	// OnEntryPass function will be invoked when StatPrepareSlots and RuleCheckSlots execute pass
 	// StatSlots will do some statistic logic, such as QPS、log、etc
 	OnEntryPassed(ctx *EntryContext)
@@ -125,15 +129,16 @@ func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
 	}
 }
 
-func (sc *SlotChain) AddStatPrepareSlotFirst(s StatPrepareSlot) {
-	ns := make([]StatPrepareSlot, 0, len(sc.statPres)+1)
-	// add to first
-	ns = append(ns, s)
-	sc.statPres = append(ns, sc.statPres...)
-}
-
-func (sc *SlotChain) AddStatPrepareSlotLast(s StatPrepareSlot) {
+func (sc *SlotChain) InsertStatPrepareSlotByOrder(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
+	i := len(sc.statPres) - 1
+	for i > 0 && sc.statPres[i].Order() > s.Order() {
+		sc.statPres[i+1] = sc.statPres[i]
+		i--
+	}
+	if i < len(sc.statPres)-1 {
+		sc.statPres[i+1] = s
+	}
 }
 
 // ValidateRuleCheckSlotNaming checks whether the name of RuleCheckSlot exists in SlotChain.[]RuleCheckSlot
@@ -157,14 +162,16 @@ func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
 	}
 }
 
-func (sc *SlotChain) AddRuleCheckSlotFirst(s RuleCheckSlot) {
-	ns := make([]RuleCheckSlot, 0, len(sc.ruleChecks)+1)
-	ns = append(ns, s)
-	sc.ruleChecks = append(ns, sc.ruleChecks...)
-}
-
-func (sc *SlotChain) AddRuleCheckSlotLast(s RuleCheckSlot) {
+func (sc *SlotChain) InsertRuleCheckSlotByOrder(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
+	i := len(sc.ruleChecks) - 1
+	for i > 0 && sc.ruleChecks[i].Order() > s.Order() {
+		sc.ruleChecks[i+1] = sc.ruleChecks[i]
+		i--
+	}
+	if i < len(sc.ruleChecks)-1 {
+		sc.ruleChecks[i+1] = s
+	}
 }
 
 // ValidateStatSlotNaming checks whether the name of StatSlot exists in SlotChain.[]StatSlot
@@ -188,14 +195,16 @@ func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {
 	}
 }
 
-func (sc *SlotChain) AddStatSlotFirst(s StatSlot) {
-	ns := make([]StatSlot, 0, len(sc.stats)+1)
-	ns = append(ns, s)
-	sc.stats = append(ns, sc.stats...)
-}
-
-func (sc *SlotChain) AddStatSlotLast(s StatSlot) {
+func (sc *SlotChain) InsertStatSlotByOrder(s StatSlot) {
 	sc.stats = append(sc.stats, s)
+	i := len(sc.stats) - 1
+	for i > 0 && sc.stats[i].Order() > s.Order() {
+		sc.stats[i+1] = sc.stats[i]
+		i--
+	}
+	if i < len(sc.stats)-1 {
+		sc.stats[i+1] = s
+	}
 }
 
 // The entrance of slot chain

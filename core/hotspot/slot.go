@@ -12,10 +12,13 @@ const (
 )
 
 var (
-	DefaultSlot = &Slot{}
+	DefaultSlot = &Slot{
+		base.HotSpotSlotDefaultOrder,
+	}
 )
 
 type Slot struct {
+	base.SlotOrder
 }
 
 func (s *Slot) Name() string {

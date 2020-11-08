@@ -11,10 +11,13 @@ const (
 )
 
 var (
-	DefaultStandaloneStatSlot = &StandaloneStatSlot{}
+	DefaultStandaloneStatSlot = &StandaloneStatSlot{
+		base.FlowStandaloneStatSlotDefaultOrder,
+	}
 )
 
 type StandaloneStatSlot struct {
+	base.SlotOrder
 }
 
 func (s *StandaloneStatSlot) Name() string {

@@ -9,10 +9,13 @@ const (
 )
 
 var (
-	DefaultResourceNodePrepareSlot = &ResourceNodePrepareSlot{}
+	DefaultResourceNodePrepareSlot = &ResourceNodePrepareSlot{
+		base.ResourceNodePrepareSlotDefaultOrder,
+	}
 )
 
 type ResourceNodePrepareSlot struct {
+	base.SlotOrder
 }
 
 func (s *ResourceNodePrepareSlot) Name() string {

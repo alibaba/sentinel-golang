@@ -10,10 +10,13 @@ const (
 )
 
 var (
-	DefaultAdaptiveSlot = &AdaptiveSlot{}
+	DefaultAdaptiveSlot = &AdaptiveSlot{
+		base.SystemAdaptiveSlotDefaultOrder,
+	}
 )
 
 type AdaptiveSlot struct {
+	base.SlotOrder
 }
 
 func (s *AdaptiveSlot) Name() string {
