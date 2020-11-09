@@ -128,6 +128,9 @@ func caller(depth int) (file string, line int) {
 
 // toSafeJSONString converts to valid JSON string, as the original string may contain '\\', '\n', '\r', '\t' and so on.
 func toSafeJSONString(s string) []byte {
+	if data, err := json.Marshal(json.RawMessage(s)); err == nil {
+		return data
+	}
 	if data, err := json.Marshal(s); err == nil {
 		return data
 	} else {
