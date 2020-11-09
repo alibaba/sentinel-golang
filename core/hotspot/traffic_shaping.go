@@ -85,7 +85,7 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 		}
 		return newBaseTrafficShapingControllerWithMetric(r, metric)
 	default:
-		logging.Error(errors.New("Unsupported metric type"), "Ignoring the rule due to unsupported  metric type in Rule.newBaseTrafficShapingController()", "MetricType", r.MetricType.String())
+		logging.Error(errors.New("unsupported metric type"), "Ignoring the rule due to unsupported  metric type in Rule.newBaseTrafficShapingController()", "MetricType", r.MetricType.String())
 		return nil
 	}
 
