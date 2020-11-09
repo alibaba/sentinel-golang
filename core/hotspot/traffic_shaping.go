@@ -80,13 +80,8 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 		} else {
 			size = ConcurrencyMaxCount
 		}
-		if size <= 0 {
-			logging.Warn("[HotSpot newBaseTrafficShapingController] Invalid size of cache, so use default value for ParamsMaxCapacity",
-				"ParamsMaxCapacity", ConcurrencyMaxCount)
-			size = ParamsMaxCapacity
-		}
 		metric := &ParamsMetric{
-			ConcurrencyCounter: cache.NewLRUCacheMap(ConcurrencyMaxCount),
+			ConcurrencyCounter: cache.NewLRUCacheMap(size),
 		}
 		return newBaseTrafficShapingControllerWithMetric(r, metric)
 	default:
