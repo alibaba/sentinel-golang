@@ -32,6 +32,9 @@ func init() {
 		} else {
 			baseTc = newBaseTrafficShapingController(r)
 		}
+		if baseTc == nil {
+			return nil
+		}
 		return &rejectTrafficShapingController{
 			baseTrafficShapingController: *baseTc,
 			burstCount:                   r.BurstCount,
@@ -44,6 +47,9 @@ func init() {
 			baseTc = newBaseTrafficShapingControllerWithMetric(r, reuseMetric)
 		} else {
 			baseTc = newBaseTrafficShapingController(r)
+		}
+		if baseTc == nil {
+			return nil
 		}
 		return &throttlingTrafficShapingController{
 			baseTrafficShapingController: *baseTc,
@@ -195,7 +201,12 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if len(tcs) > 0 {
 			// update resource slot chain
 			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
+			for _, tc := range tcs {
+				if tc.BoundRule().MetricType == Concurrency {
+					misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
+					break
+				}
+			}
 		}
 	}
 	tcMap = m

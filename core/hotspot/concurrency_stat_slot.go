@@ -28,6 +28,9 @@ func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 	args := ctx.Input.Args
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
+		if tc.BoundRule().MetricType != Concurrency {
+			continue
+		}
 		arg := matchArg(tc, args)
 		if arg == nil {
 			continue
@@ -53,6 +56,9 @@ func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 	args := ctx.Input.Args
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
+		if tc.BoundRule().MetricType != Concurrency {
+			continue
+		}
 		arg := matchArg(tc, args)
 		if arg == nil {
 			continue
