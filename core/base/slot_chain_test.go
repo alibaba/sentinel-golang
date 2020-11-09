@@ -11,48 +11,52 @@ import (
 )
 
 type StatPrepareSlotMock1 struct {
-	SlotOrder
-	name string
+	name  string
+	order uint32
 }
 
 func (spl *StatPrepareSlotMock1) Name() string {
 	return spl.name
 }
 
+func (spl *StatPrepareSlotMock1) Order() uint32 {
+	return spl.order
+}
+
 func (spl *StatPrepareSlotMock1) Prepare(ctx *EntryContext) {
 	return
 }
 
-func TestSlotChain_InsertStatPrepareSlotByOrder(t *testing.T) {
+func TestSlotChain_AddStatPrepareSlot(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
-		sc.InsertStatPrepareSlotByOrder(&StatPrepareSlotMock1{
-			SlotOrder: SlotOrder(20 + i),
-			name:      "mock2" + strconv.Itoa(i),
+		sc.AddStatPrepareSlot(&StatPrepareSlotMock1{
+			name:  "mock2" + strconv.Itoa(i),
+			order: uint32(20 + i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.InsertStatPrepareSlotByOrder(&StatPrepareSlotMock1{
-			SlotOrder: SlotOrder(10 + i),
-			name:      "mock1" + strconv.Itoa(i),
+		sc.AddStatPrepareSlot(&StatPrepareSlotMock1{
+			name:  "mock1" + strconv.Itoa(i),
+			order: uint32(10 + i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.InsertStatPrepareSlotByOrder(&StatPrepareSlotMock1{
-			SlotOrder: SlotOrder(30 + i),
-			name:      "mock3" + strconv.Itoa(i),
+		sc.AddStatPrepareSlot(&StatPrepareSlotMock1{
+			name:  "mock3" + strconv.Itoa(i),
+			order: uint32(30 + i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.InsertStatPrepareSlotByOrder(&StatPrepareSlotMock1{
-			SlotOrder: SlotOrder(i),
-			name:      "mock" + strconv.Itoa(i),
+		sc.AddStatPrepareSlot(&StatPrepareSlotMock1{
+			name:  "mock" + strconv.Itoa(i),
+			order: uint32(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.InsertStatPrepareSlotByOrder(&StatPrepareSlotMock1{
-			SlotOrder: SlotOrder(40 + i),
-			name:      "mock4" + strconv.Itoa(i),
+		sc.AddStatPrepareSlot(&StatPrepareSlotMock1{
+			name:  "mock4" + strconv.Itoa(i),
+			order: uint32(40 + i),
 		})
 	}
 
@@ -72,47 +76,51 @@ func TestSlotChain_InsertStatPrepareSlotByOrder(t *testing.T) {
 }
 
 type RuleCheckSlotMock1 struct {
-	SlotOrder
-	name string
+	name  string
+	order uint32
 }
 
 func (rcs *RuleCheckSlotMock1) Name() string {
 	return rcs.name
 }
 
+func (rcs *RuleCheckSlotMock1) Order() uint32 {
+	return rcs.order
+}
+
 func (rcs *RuleCheckSlotMock1) Check(ctx *EntryContext) *TokenResult {
 	return nil
 }
-func TestSlotChain_InsertRuleCheckSlotByOrder(t *testing.T) {
+func TestSlotChain_AddRuleCheckSlot(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
-		sc.InsertRuleCheckSlotByOrder(&RuleCheckSlotMock1{
-			SlotOrder: SlotOrder(20 + i),
-			name:      "mock2" + strconv.Itoa(i),
+		sc.AddRuleCheckSlot(&RuleCheckSlotMock1{
+			name:  "mock2" + strconv.Itoa(i),
+			order: uint32(20 + i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.InsertRuleCheckSlotByOrder(&RuleCheckSlotMock1{
-			SlotOrder: SlotOrder(10 + i),
-			name:      "mock1" + strconv.Itoa(i),
+		sc.AddRuleCheckSlot(&RuleCheckSlotMock1{
+			name:  "mock1" + strconv.Itoa(i),
+			order: uint32(10 + i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.InsertRuleCheckSlotByOrder(&RuleCheckSlotMock1{
-			SlotOrder: SlotOrder(30 + i),
-			name:      "mock3" + strconv.Itoa(i),
+		sc.AddRuleCheckSlot(&RuleCheckSlotMock1{
+			name:  "mock3" + strconv.Itoa(i),
+			order: uint32(30 + i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.InsertRuleCheckSlotByOrder(&RuleCheckSlotMock1{
-			SlotOrder: SlotOrder(i),
-			name:      "mock" + strconv.Itoa(i),
+		sc.AddRuleCheckSlot(&RuleCheckSlotMock1{
+			name:  "mock" + strconv.Itoa(i),
+			order: uint32(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.InsertRuleCheckSlotByOrder(&RuleCheckSlotMock1{
-			SlotOrder: SlotOrder(40 + i),
-			name:      "mock4" + strconv.Itoa(i),
+		sc.AddRuleCheckSlot(&RuleCheckSlotMock1{
+			name:  "mock4" + strconv.Itoa(i),
+			order: uint32(40 + i),
 		})
 	}
 
@@ -132,12 +140,16 @@ func TestSlotChain_InsertRuleCheckSlotByOrder(t *testing.T) {
 }
 
 type StatSlotMock1 struct {
-	SlotOrder
-	name string
+	name  string
+	order uint32
 }
 
 func (ss *StatSlotMock1) Name() string {
 	return ss.name
+}
+
+func (ss *StatSlotMock1) Order() uint32 {
+	return ss.order
 }
 
 func (ss *StatSlotMock1) OnEntryPassed(ctx *EntryContext) {
@@ -149,36 +161,36 @@ func (ss *StatSlotMock1) OnEntryBlocked(ctx *EntryContext, blockError *BlockErro
 func (ss *StatSlotMock1) OnCompleted(ctx *EntryContext) {
 	return
 }
-func TestSlotChain_InsertStatSlotByOrder(t *testing.T) {
+func TestSlotChain_AddStatSlot(t *testing.T) {
 	sc := NewSlotChain()
 	for i := 9; i >= 0; i-- {
-		sc.InsertStatSlotByOrder(&StatSlotMock1{
-			SlotOrder: SlotOrder(20 + i),
-			name:      "mock2" + strconv.Itoa(i),
+		sc.AddStatSlot(&StatSlotMock1{
+			name:  "mock2" + strconv.Itoa(i),
+			order: uint32(20 + i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.InsertStatSlotByOrder(&StatSlotMock1{
-			SlotOrder: SlotOrder(10 + i),
-			name:      "mock1" + strconv.Itoa(i),
+		sc.AddStatSlot(&StatSlotMock1{
+			name:  "mock1" + strconv.Itoa(i),
+			order: uint32(10 + i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.InsertStatSlotByOrder(&StatSlotMock1{
-			SlotOrder: SlotOrder(30 + i),
-			name:      "mock3" + strconv.Itoa(i),
+		sc.AddStatSlot(&StatSlotMock1{
+			name:  "mock3" + strconv.Itoa(i),
+			order: uint32(30 + i),
 		})
 	}
 	for i := 9; i >= 0; i-- {
-		sc.InsertStatSlotByOrder(&StatSlotMock1{
-			SlotOrder: SlotOrder(i),
-			name:      "mock" + strconv.Itoa(i),
+		sc.AddStatSlot(&StatSlotMock1{
+			name:  "mock" + strconv.Itoa(i),
+			order: uint32(i),
 		})
 	}
 	for i := 0; i < 10; i++ {
-		sc.InsertStatSlotByOrder(&StatSlotMock1{
-			SlotOrder: SlotOrder(40 + i),
-			name:      "mock4" + strconv.Itoa(i),
+		sc.AddStatSlot(&StatSlotMock1{
+			name:  "mock4" + strconv.Itoa(i),
+			order: uint32(40 + i),
 		})
 	}
 
@@ -199,12 +211,15 @@ func TestSlotChain_InsertStatSlotByOrder(t *testing.T) {
 }
 
 type prepareSlotMock struct {
-	SlotOrder
 	mock.Mock
 }
 
 func (m *prepareSlotMock) Name() string {
 	return "mock-sentinel-prepare-slot-1"
+}
+
+func (m *prepareSlotMock) Order() uint32 {
+	return 0
 }
 
 func (m *prepareSlotMock) Prepare(ctx *EntryContext) {
@@ -213,12 +228,15 @@ func (m *prepareSlotMock) Prepare(ctx *EntryContext) {
 }
 
 type mockRuleCheckSlot1 struct {
-	SlotOrder
 	mock.Mock
 }
 
 func (m *mockRuleCheckSlot1) Name() string {
 	return "mock-sentinel-check-slot--1"
+}
+
+func (m *mockRuleCheckSlot1) Order() uint32 {
+	return 0
 }
 
 func (m *mockRuleCheckSlot1) Check(ctx *EntryContext) *TokenResult {
@@ -227,12 +245,15 @@ func (m *mockRuleCheckSlot1) Check(ctx *EntryContext) *TokenResult {
 }
 
 type mockRuleCheckSlot2 struct {
-	SlotOrder
 	mock.Mock
 }
 
 func (m *mockRuleCheckSlot2) Name() string {
 	return "mock-sentinel-rule-check-slot-2"
+}
+
+func (m *mockRuleCheckSlot2) Order() uint32 {
+	return 0
 }
 
 func (m *mockRuleCheckSlot2) Check(ctx *EntryContext) *TokenResult {
@@ -241,12 +262,15 @@ func (m *mockRuleCheckSlot2) Check(ctx *EntryContext) *TokenResult {
 }
 
 type statisticSlotMock struct {
-	SlotOrder
 	mock.Mock
 }
 
 func (m *statisticSlotMock) Name() string {
 	return "mock-sentinel-statistic-slot"
+}
+
+func (m *statisticSlotMock) Order() uint32 {
+	return 0
 }
 
 func (m *statisticSlotMock) OnEntryPassed(ctx *EntryContext) {
@@ -280,10 +304,10 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 	rcs1 := &mockRuleCheckSlot1{}
 	rcs2 := &mockRuleCheckSlot2{}
 	ssm := &statisticSlotMock{}
-	sc.InsertStatPrepareSlotByOrder(ps1)
-	sc.InsertRuleCheckSlotByOrder(rcs1)
-	sc.InsertRuleCheckSlotByOrder(rcs2)
-	sc.InsertStatSlotByOrder(ssm)
+	sc.AddStatPrepareSlot(ps1)
+	sc.AddRuleCheckSlot(rcs1)
+	sc.AddRuleCheckSlot(rcs2)
+	sc.AddStatSlot(ssm)
 
 	ps1.On("Prepare", mock.Anything).Return()
 	rcs1.On("Check", mock.Anything).Return(NewTokenResultPass())
@@ -323,10 +347,10 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 	fsm := &mockRuleCheckSlot1{}
 	dsm := &mockRuleCheckSlot2{}
 	ssm := &statisticSlotMock{}
-	sc.InsertStatPrepareSlotByOrder(rbs)
-	sc.InsertRuleCheckSlotByOrder(fsm)
-	sc.InsertRuleCheckSlotByOrder(dsm)
-	sc.InsertStatSlotByOrder(ssm)
+	sc.AddStatPrepareSlot(rbs)
+	sc.AddRuleCheckSlot(fsm)
+	sc.AddRuleCheckSlot(dsm)
+	sc.AddStatSlot(ssm)
 
 	blockType := BlockTypeFlow
 
@@ -354,12 +378,15 @@ func TestSlotChain_Entry_Block(t *testing.T) {
 }
 
 type badPrepareSlotMock struct {
-	SlotOrder
 	mock.Mock
 }
 
 func (m *badPrepareSlotMock) Name() string {
 	return "bad-mock-sentinel-prepare-slot"
+}
+
+func (m *badPrepareSlotMock) Order() uint32 {
+	return 0
 }
 
 func (m *badPrepareSlotMock) Prepare(ctx *EntryContext) {
@@ -386,10 +413,10 @@ func TestSlotChain_Entry_With_Panic(t *testing.T) {
 	fsm := &mockRuleCheckSlot1{}
 	dsm := &mockRuleCheckSlot2{}
 	ssm := &statisticSlotMock{}
-	sc.InsertStatPrepareSlotByOrder(rbs)
-	sc.InsertRuleCheckSlotByOrder(fsm)
-	sc.InsertRuleCheckSlotByOrder(dsm)
-	sc.InsertStatSlotByOrder(ssm)
+	sc.AddStatPrepareSlot(rbs)
+	sc.AddRuleCheckSlot(fsm)
+	sc.AddRuleCheckSlot(dsm)
+	sc.AddStatSlot(ssm)
 
 	rbs.On("Prepare", mock.Anything).Return()
 	fsm.On("Check", mock.Anything).Return(NewTokenResultPass())
@@ -422,10 +449,10 @@ func TestValidateStatPrepareSlotNaming(t *testing.T) {
 	sps4 := &StatPrepareSlotMock1{
 		name: "sps4",
 	}
-	sc.InsertStatPrepareSlotByOrder(sps1)
-	sc.InsertStatPrepareSlotByOrder(sps2)
-	sc.InsertStatPrepareSlotByOrder(sps3)
-	sc.InsertStatPrepareSlotByOrder(sps4)
+	sc.AddStatPrepareSlot(sps1)
+	sc.AddStatPrepareSlot(sps2)
+	sc.AddStatPrepareSlot(sps3)
+	sc.AddStatPrepareSlot(sps4)
 
 	sps5 := &StatPrepareSlotMock1{
 		name: "sps5",
@@ -451,10 +478,10 @@ func TestValidateRuleCheckSlotNaming(t *testing.T) {
 	rcs4 := &RuleCheckSlotMock1{
 		name: "rcs4",
 	}
-	sc.InsertRuleCheckSlotByOrder(rcs1)
-	sc.InsertRuleCheckSlotByOrder(rcs2)
-	sc.InsertRuleCheckSlotByOrder(rcs3)
-	sc.InsertRuleCheckSlotByOrder(rcs4)
+	sc.AddRuleCheckSlot(rcs1)
+	sc.AddRuleCheckSlot(rcs2)
+	sc.AddRuleCheckSlot(rcs3)
+	sc.AddRuleCheckSlot(rcs4)
 
 	rcs5 := &RuleCheckSlotMock1{
 		name: "rcs5",
@@ -480,10 +507,10 @@ func TestValidateStatSlotNaming(t *testing.T) {
 	ss4 := &StatSlotMock1{
 		name: "ss4",
 	}
-	sc.InsertStatSlotByOrder(ss1)
-	sc.InsertStatSlotByOrder(ss2)
-	sc.InsertStatSlotByOrder(ss3)
-	sc.InsertStatSlotByOrder(ss4)
+	sc.AddStatSlot(ss1)
+	sc.AddStatSlot(ss2)
+	sc.AddStatSlot(ss3)
+	sc.AddStatSlot(ss4)
 
 	ss5 := &StatSlotMock1{
 		name: "ss5",

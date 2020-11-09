@@ -5,23 +5,25 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-core-circuit-breaker-metric-stat-slot"
+	StatSlotName  = "sentinel-core-circuit-breaker-metric-stat-slot"
+	StatSlotOrder = 3000
 )
 
 var (
-	DefaultMetricStatSlot = &MetricStatSlot{
-		base.CircuitBreakerMetricStatSlotDefaultOrder,
-	}
+	DefaultMetricStatSlot = &MetricStatSlot{}
 )
 
 // MetricStatSlot records metrics for circuit breaker on invocation completed.
 // MetricStatSlot must be filled into slot chain if circuit breaker is alive.
 type MetricStatSlot struct {
-	base.SlotOrder
 }
 
 func (s *MetricStatSlot) Name() string {
 	return StatSlotName
+}
+
+func (s *MetricStatSlot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (c *MetricStatSlot) OnEntryPassed(_ *base.EntryContext) {

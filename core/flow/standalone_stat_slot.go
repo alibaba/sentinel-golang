@@ -7,21 +7,23 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-core-flow-standalone-stat-slot"
+	StatSlotName  = "sentinel-core-flow-standalone-stat-slot"
+	StatSlotOrder = 5000
 )
 
 var (
-	DefaultStandaloneStatSlot = &StandaloneStatSlot{
-		base.FlowStandaloneStatSlotDefaultOrder,
-	}
+	DefaultStandaloneStatSlot = &StandaloneStatSlot{}
 )
 
 type StandaloneStatSlot struct {
-	base.SlotOrder
 }
 
 func (s *StandaloneStatSlot) Name() string {
 	return StatSlotName
+}
+
+func (s *StandaloneStatSlot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (s StandaloneStatSlot) OnEntryPassed(ctx *base.EntryContext) {

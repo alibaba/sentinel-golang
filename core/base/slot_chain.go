@@ -1,6 +1,7 @@
 package base
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -129,16 +130,11 @@ func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
 	}
 }
 
-func (sc *SlotChain) InsertStatPrepareSlotByOrder(s StatPrepareSlot) {
+func (sc *SlotChain) AddStatPrepareSlot(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
-	i := len(sc.statPres) - 1
-	for i > 0 && sc.statPres[i].Order() > s.Order() {
-		sc.statPres[i+1] = sc.statPres[i]
-		i--
-	}
-	if i < len(sc.statPres)-1 {
-		sc.statPres[i+1] = s
-	}
+	sort.Slice(sc.statPres, func(i, j int) bool {
+		return sc.statPres[i].Order() < sc.statPres[j].Order()
+	})
 }
 
 // ValidateRuleCheckSlotNaming checks whether the name of RuleCheckSlot exists in SlotChain.[]RuleCheckSlot
@@ -162,16 +158,11 @@ func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
 	}
 }
 
-func (sc *SlotChain) InsertRuleCheckSlotByOrder(s RuleCheckSlot) {
+func (sc *SlotChain) AddRuleCheckSlot(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
-	i := len(sc.ruleChecks) - 1
-	for i > 0 && sc.ruleChecks[i].Order() > s.Order() {
-		sc.ruleChecks[i+1] = sc.ruleChecks[i]
-		i--
-	}
-	if i < len(sc.ruleChecks)-1 {
-		sc.ruleChecks[i+1] = s
-	}
+	sort.Slice(sc.ruleChecks, func(i, j int) bool {
+		return sc.ruleChecks[i].Order() < sc.ruleChecks[j].Order()
+	})
 }
 
 // ValidateStatSlotNaming checks whether the name of StatSlot exists in SlotChain.[]StatSlot
@@ -195,16 +186,11 @@ func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {
 	}
 }
 
-func (sc *SlotChain) InsertStatSlotByOrder(s StatSlot) {
+func (sc *SlotChain) AddStatSlot(s StatSlot) {
 	sc.stats = append(sc.stats, s)
-	i := len(sc.stats) - 1
-	for i > 0 && sc.stats[i].Order() > s.Order() {
-		sc.stats[i+1] = sc.stats[i]
-		i--
-	}
-	if i < len(sc.stats)-1 {
-		sc.stats[i+1] = s
-	}
+	sort.Slice(sc.stats, func(i, j int) bool {
+		return sc.stats[i].Order() < sc.stats[j].Order()
+	})
 }
 
 // The entrance of slot chain

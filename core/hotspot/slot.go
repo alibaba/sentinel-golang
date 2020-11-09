@@ -8,21 +8,23 @@ import (
 )
 
 const (
-	RuleCheckSlotName = "sentinel-core-hotspot-rule-check-slot"
+	RuleCheckSlotName  = "sentinel-core-hotspot-rule-check-slot"
+	RuleCheckSlotOrder = 5000
 )
 
 var (
-	DefaultSlot = &Slot{
-		base.HotSpotSlotDefaultOrder,
-	}
+	DefaultSlot = &Slot{}
 )
 
 type Slot struct {
-	base.SlotOrder
 }
 
 func (s *Slot) Name() string {
 	return RuleCheckSlotName
+}
+
+func (s *Slot) Order() uint32 {
+	return RuleCheckSlotOrder
 }
 
 // matchArg matches the arg from args based on TrafficShapingController

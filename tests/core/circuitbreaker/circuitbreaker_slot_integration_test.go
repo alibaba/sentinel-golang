@@ -84,8 +84,8 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	}
 
 	sc := base.NewSlotChain()
-	sc.InsertRuleCheckSlotByOrder(&circuitbreaker.Slot{})
-	sc.InsertStatSlotByOrder(&circuitbreaker.MetricStatSlot{})
+	sc.AddRuleCheckSlot(&circuitbreaker.Slot{})
+	sc.AddStatSlot(&circuitbreaker.MetricStatSlot{})
 
 	stateListener.On("OnTransformToOpen", circuitbreaker.Closed, mock.Anything, mock.Anything).Return()
 	stateListener.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
@@ -170,8 +170,8 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 	}
 
 	sc := base.NewSlotChain()
-	sc.InsertRuleCheckSlotByOrder(&circuitbreaker.Slot{})
-	sc.InsertStatSlotByOrder(&circuitbreaker.MetricStatSlot{})
+	sc.AddRuleCheckSlot(&circuitbreaker.Slot{})
+	sc.AddStatSlot(&circuitbreaker.MetricStatSlot{})
 
 	stateListener.On("OnTransformToOpen", circuitbreaker.Closed, mock.Anything, mock.Anything).Return()
 	stateListener.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
@@ -249,8 +249,8 @@ func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
 	}
 
 	sc := base.NewSlotChain()
-	sc.InsertRuleCheckSlotByOrder(&circuitbreaker.Slot{})
-	sc.InsertStatSlotByOrder(&circuitbreaker.MetricStatSlot{})
+	sc.AddRuleCheckSlot(&circuitbreaker.Slot{})
+	sc.AddStatSlot(&circuitbreaker.MetricStatSlot{})
 
 	stateListener.On("OnTransformToOpen", circuitbreaker.Closed, mock.Anything, mock.Anything).Return()
 	stateListener.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()

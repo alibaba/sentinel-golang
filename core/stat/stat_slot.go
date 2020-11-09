@@ -6,21 +6,23 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-core-stat-slot"
+	StatSlotName  = "sentinel-core-stat-slot"
+	StatSlotOrder = 1000
 )
 
 var (
-	DefaultSlot = &Slot{
-		base.StatSlotDefaultOrder,
-	}
+	DefaultSlot = &Slot{}
 )
 
 type Slot struct {
-	base.SlotOrder
 }
 
 func (s *Slot) Name() string {
 	return StatSlotName
+}
+
+func (s *Slot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {

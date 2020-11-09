@@ -10,21 +10,23 @@ import (
 )
 
 const (
-	RuleCheckSlotName = "sentinel-core-flow-rule-check-slot"
+	RuleCheckSlotName  = "sentinel-core-flow-rule-check-slot"
+	RuleCheckSlotOrder = 2000
 )
 
 var (
-	DefaultSlot = &Slot{
-		base.FlowSlotDefaultOrder,
-	}
+	DefaultSlot = &Slot{}
 )
 
 type Slot struct {
-	base.SlotOrder
 }
 
 func (s *Slot) Name() string {
 	return RuleCheckSlotName
+}
+
+func (s *Slot) Order() uint32 {
+	return RuleCheckSlotOrder
 }
 
 func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {

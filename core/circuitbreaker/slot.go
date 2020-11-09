@@ -5,21 +5,23 @@ import (
 )
 
 const (
-	RuleCheckSlotName = "sentinel-core-circuit-breaker-rule-check-slot"
+	RuleCheckSlotName  = "sentinel-core-circuit-breaker-rule-check-slot"
+	RuleCheckSlotOrder = 4000
 )
 
 var (
-	DefaultSlot = &Slot{
-		base.CircuitBreakerSlotDefaultOrder,
-	}
+	DefaultSlot = &Slot{}
 )
 
 type Slot struct {
-	base.SlotOrder
 }
 
 func (s *Slot) Name() string {
 	return RuleCheckSlotName
+}
+
+func (s *Slot) Order() uint32 {
+	return RuleCheckSlotOrder
 }
 
 func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
