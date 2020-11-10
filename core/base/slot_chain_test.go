@@ -71,7 +71,7 @@ func TestSlotChain_AddStatPrepareSlot(t *testing.T) {
 		if !ok {
 			t.Error("type error")
 		}
-		reflect.DeepEqual(n, spsm.name)
+		assert.True(t, reflect.DeepEqual(n, spsm.name))
 	}
 }
 
@@ -135,7 +135,7 @@ func TestSlotChain_AddRuleCheckSlot(t *testing.T) {
 		if !ok {
 			t.Error("type error")
 		}
-		reflect.DeepEqual(n, spsm.name)
+		assert.True(t, reflect.DeepEqual(n, spsm.name))
 	}
 }
 
@@ -206,7 +206,7 @@ func TestSlotChain_AddStatSlot(t *testing.T) {
 		if !ok {
 			t.Error("type error")
 		}
-		reflect.DeepEqual(n, spsm.name)
+		assert.True(t, reflect.DeepEqual(n, spsm.name))
 	}
 }
 
