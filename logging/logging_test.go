@@ -97,7 +97,7 @@ func Test_AssembleMsg(t *testing.T) {
 	})
 
 	t.Run("AssembleMsg11", func(t *testing.T) {
-		got := AssembleMsg(2, "INFO", "test msg11", nil, `json`, `{"abc":"xyz"}`)
+		got := AssembleMsg(2, "INFO", "test msg11", nil, `json`, "{\"abc\":\"xyz\"}")
 		assert.True(t, strings.Contains(got, `"logLevel":"INFO","msg":"test msg11","json":{"abc":"xyz"}`))
 	})
 

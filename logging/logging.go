@@ -130,9 +130,6 @@ func caller(depth int) (file string, line int) {
 func toSafeJSONString(s string) []byte {
 	if data, err := json.Marshal(json.RawMessage(s)); err == nil {
 		return data
-	}
-	if data, err := json.Marshal(s); err == nil {
-		return data
 	} else {
 		return []byte("\"" + s + "\"")
 	}
