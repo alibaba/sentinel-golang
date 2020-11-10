@@ -10,11 +10,12 @@ import (
 )
 
 type BaseSlot interface {
-	// Name returns its slot name which should not be the same as other slots.
+	// Name returns it's slot name which should be global unique.
 	Name() string
 
-	// Order returns the order value of slot.
-	// Slots will be sorted according to order value in increasing order.
+	// Order returns the sort value of the slot.
+	// SlotChain will sort all it's slots by ascending sort value in each bucket
+	// (StatPrepareSlot bucket、RuleCheckSlot bucket and StatSlot bucket)
 	Order() uint32
 }
 
@@ -62,11 +63,11 @@ type StatSlot interface {
 // SlotChain hold all system slots and customized slot.
 // SlotChain support plug-in slots developed by developer.
 type SlotChain struct {
-	// statPres will be sorted according to StatPrepareSlot.Order() in increasing order.
+	// statPres is in ascending order by StatPrepareSlot.Order() value.
 	statPres []StatPrepareSlot
-	// ruleChecks will be sorted according to RuleCheckSlot.Order() in increasing order.
+	// ruleChecks is in ascending order by RuleCheckSlot.Order() value.
 	ruleChecks []RuleCheckSlot
-	// stats will be sorted according to StatSlot.Order() in increasing order.
+	// stats is in ascending order by StatSlot.Order() value.
 	stats []StatSlot
 	// EntryContext Pool, used for reuse EntryContext object
 	ctxPool *sync.Pool
@@ -134,7 +135,7 @@ func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
 }
 
 // AddStatPrepareSlot adds the StatPrepareSlot slot to the StatPrepareSlot list of the SlotChain.
-// All StatPrepareSlot in the list will be sorted according to StatPrepareSlot.Order() in increasing order.
+// All StatPrepareSlot in the list will be sorted according to StatPrepareSlot.Order() in ascending order.
 func (sc *SlotChain) AddStatPrepareSlot(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
 	sort.SliceStable(sc.statPres, func(i, j int) bool {
@@ -164,7 +165,7 @@ func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
 }
 
 // AddRuleCheckSlot adds the RuleCheckSlot to the RuleCheckSlot list of the SlotChain.
-// All RuleCheckSlot in the list will be sorted according to RuleCheckSlot.Order() in increasing order.
+// All RuleCheckSlot in the list will be sorted according to RuleCheckSlot.Order() in ascending order.
 func (sc *SlotChain) AddRuleCheckSlot(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
 	sort.SliceStable(sc.ruleChecks, func(i, j int) bool {
@@ -194,7 +195,7 @@ func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {
 }
 
 // AddStatSlot adds the StatSlot to the StatSlot list of the SlotChain.
-// All StatSlot in the list will be sorted according to StatSlot.Order() in increasing order.
+// All StatSlot in the list will be sorted according to StatSlot.Order() in ascending order.
 func (sc *SlotChain) AddStatSlot(s StatSlot) {
 	sc.stats = append(sc.stats, s)
 	sort.SliceStable(sc.stats, func(i, j int) bool {

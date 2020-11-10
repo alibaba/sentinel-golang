@@ -25,14 +25,14 @@ func BuildDefaultSlotChain() *base.SlotChain {
 	sc.AddRuleCheckSlot(system.DefaultAdaptiveSlot)
 	sc.AddRuleCheckSlot(flow.DefaultSlot)
 	sc.AddRuleCheckSlot(isolation.DefaultSlot)
-	sc.AddRuleCheckSlot(circuitbreaker.DefaultSlot)
 	sc.AddRuleCheckSlot(hotspot.DefaultSlot)
+	sc.AddRuleCheckSlot(circuitbreaker.DefaultSlot)
 
 	sc.AddStatSlot(stat.DefaultSlot)
 	sc.AddStatSlot(log.DefaultSlot)
-	sc.AddStatSlot(circuitbreaker.DefaultMetricStatSlot)
-	sc.AddStatSlot(hotspot.DefaultConcurrencyStatSlot)
 	sc.AddStatSlot(flow.DefaultStandaloneStatSlot)
+	sc.AddStatSlot(hotspot.DefaultConcurrencyStatSlot)
+	sc.AddStatSlot(circuitbreaker.DefaultMetricStatSlot)
 	return sc
 }
 
