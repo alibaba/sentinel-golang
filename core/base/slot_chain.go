@@ -137,7 +137,7 @@ func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
 // All StatPrepareSlot in the list will be sorted according to StatPrepareSlot.Order() in increasing order.
 func (sc *SlotChain) AddStatPrepareSlot(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
-	sort.Slice(sc.statPres, func(i, j int) bool {
+	sort.SliceStable(sc.statPres, func(i, j int) bool {
 		return sc.statPres[i].Order() < sc.statPres[j].Order()
 	})
 }
@@ -167,7 +167,7 @@ func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
 // All RuleCheckSlot in the list will be sorted according to RuleCheckSlot.Order() in increasing order.
 func (sc *SlotChain) AddRuleCheckSlot(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
-	sort.Slice(sc.ruleChecks, func(i, j int) bool {
+	sort.SliceStable(sc.ruleChecks, func(i, j int) bool {
 		return sc.ruleChecks[i].Order() < sc.ruleChecks[j].Order()
 	})
 }
@@ -197,7 +197,7 @@ func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {
 // All StatSlot in the list will be sorted according to StatSlot.Order() in increasing order.
 func (sc *SlotChain) AddStatSlot(s StatSlot) {
 	sc.stats = append(sc.stats, s)
-	sort.Slice(sc.stats, func(i, j int) bool {
+	sort.SliceStable(sc.stats, func(i, j int) bool {
 		return sc.stats[i].Order() < sc.stats[j].Order()
 	})
 }
