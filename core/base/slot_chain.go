@@ -62,9 +62,12 @@ type StatSlot interface {
 // SlotChain hold all system slots and customized slot.
 // SlotChain support plug-in slots developed by developer.
 type SlotChain struct {
-	statPres   []StatPrepareSlot
+	// statPres will be sorted according to StatPrepareSlot.Order() in increasing order.
+	statPres []StatPrepareSlot
+	// ruleChecks will be sorted according to RuleCheckSlot.Order() in increasing order.
 	ruleChecks []RuleCheckSlot
-	stats      []StatSlot
+	// stats will be sorted according to StatSlot.Order() in increasing order.
+	stats []StatSlot
 	// EntryContext Pool, used for reuse EntryContext object
 	ctxPool *sync.Pool
 }
@@ -130,6 +133,8 @@ func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
 	}
 }
 
+// AddStatPrepareSlot adds the StatPrepareSlot slot to the StatPrepareSlot list of the SlotChain.
+// All StatPrepareSlot in the list will be sorted according to StatPrepareSlot.Order() in increasing order.
 func (sc *SlotChain) AddStatPrepareSlot(s StatPrepareSlot) {
 	sc.statPres = append(sc.statPres, s)
 	sort.Slice(sc.statPres, func(i, j int) bool {
@@ -158,6 +163,8 @@ func (sc *SlotChain) RangeRuleCheckSlot(f func(slot RuleCheckSlot)) {
 	}
 }
 
+// AddRuleCheckSlot adds the RuleCheckSlot to the RuleCheckSlot list of the SlotChain.
+// All RuleCheckSlot in the list will be sorted according to RuleCheckSlot.Order() in increasing order.
 func (sc *SlotChain) AddRuleCheckSlot(s RuleCheckSlot) {
 	sc.ruleChecks = append(sc.ruleChecks, s)
 	sort.Slice(sc.ruleChecks, func(i, j int) bool {
@@ -186,6 +193,8 @@ func (sc *SlotChain) RangeStatSlot(f func(slot StatSlot)) {
 	}
 }
 
+// AddStatSlot adds the StatSlot to the StatSlot list of the SlotChain.
+// All StatSlot in the list will be sorted according to StatSlot.Order() in increasing order.
 func (sc *SlotChain) AddStatSlot(s StatSlot) {
 	sc.stats = append(sc.stats, s)
 	sort.Slice(sc.stats, func(i, j int) bool {
