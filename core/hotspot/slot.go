@@ -9,7 +9,7 @@ import (
 
 const (
 	RuleCheckSlotName  = "sentinel-core-hotspot-rule-check-slot"
-	RuleCheckSlotOrder = 5000
+	RuleCheckSlotOrder = 4000
 )
 
 var (

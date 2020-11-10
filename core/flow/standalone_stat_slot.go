@@ -8,7 +8,7 @@ import (
 
 const (
 	StatSlotName  = "sentinel-core-flow-standalone-stat-slot"
-	StatSlotOrder = 5000
+	StatSlotOrder = 3000
 )
 
 var (

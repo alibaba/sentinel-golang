@@ -6,7 +6,7 @@ import (
 
 const (
 	RuleCheckSlotName  = "sentinel-core-circuit-breaker-rule-check-slot"
-	RuleCheckSlotOrder = 4000
+	RuleCheckSlotOrder = 5000
 )
 
 var (

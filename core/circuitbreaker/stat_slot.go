@@ -6,7 +6,7 @@ import (
 
 const (
 	StatSlotName  = "sentinel-core-circuit-breaker-metric-stat-slot"
-	StatSlotOrder = 3000
+	StatSlotOrder = 5000
 )
 
 var (
