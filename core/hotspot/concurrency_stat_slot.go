@@ -19,7 +19,7 @@ var (
 type ConcurrencyStatSlot struct {
 }
 
-func (s *ConcurrencyStatSlot) Name() string {
+func (c *ConcurrencyStatSlot) Name() string {
 	return StatSlotName
 }
 
