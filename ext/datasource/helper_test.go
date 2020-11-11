@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/core/isolation"
+
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
@@ -485,6 +487,107 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 				MaxQueueingTimeMs:      0,
 			}}
 		err := HotSpotParamRulesUpdater(rules)
+
+		assert.True(t, err.(Error).Code() == UpdatePropertyError)
+		assert.True(t, strings.Contains(err.(Error).desc, "Fail to type assert"))
+	})
+}
+
+func TestIsolationRuleJsonArrayParser(t *testing.T) {
+	t.Run("TestIsolationJsonArrayParser_Invalid", func(t *testing.T) {
+		_, err := IsolationRuleJsonArrayParser([]byte{'s', 'r', 'c'})
+		assert.True(t, err != nil)
+	})
+
+	t.Run("TestIsolationRuleJsonArrayParser_Normal", func(t *testing.T) {
+		// Prepare test data
+		f, err := os.Open("../../tests/testdata/extension/helper/IsolationRule.json")
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		if err != nil {
+			t.Errorf("The rules file is not existed, err:%+v.", err)
+		}
+		src, err := ioutil.ReadAll(f)
+		if err != nil {
+			t.Errorf("Fail to read file, err: %+v.", err)
+		}
+
+		properties, err := IsolationRuleJsonArrayParser(src)
+		rules := properties.([]*isolation.Rule)
+		assert.True(t, err == nil)
+		assert.True(t, len(rules) == 4)
+		for _, r := range rules {
+			fmt.Println(r)
+		}
+
+		assert.True(t, strings.Contains(rules[0].String(), `{"resource":"abc","metricType":0,"threshold":100}`))
+		assert.True(t, strings.Contains(rules[1].String(), `{"resource":"abc","metricType":0,"threshold":90}`))
+		assert.True(t, strings.Contains(rules[2].String(), `{"resource":"abc","metricType":0,"threshold":80}`))
+		assert.True(t, strings.Contains(rules[3].String(), `{"resource":"abc","metricType":0,"threshold":70}`))
+	})
+
+	t.Run("TestIsolationRuleJsonArrayParser_Nil", func(t *testing.T) {
+		got, err := IsolationRuleJsonArrayParser(nil)
+		assert.True(t, got == nil && err == nil)
+
+		got, err = IsolationRuleJsonArrayParser([]byte{})
+		assert.True(t, got == nil && err == nil)
+	})
+}
+
+func TestIsolationRuleListJsonUpdater(t *testing.T) {
+	t.Run("TestIsolationRuleListJsonUpdater", func(t *testing.T) {
+		// Prepare test data
+		r1 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  100,
+		}
+
+		r2 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  90,
+		}
+
+		r3 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  80,
+		}
+
+		r4 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  70,
+		}
+
+		err := IsolationRulesUpdater([]*isolation.Rule{r1, r2, r3, r4})
+		assert.True(t, err == nil)
+
+		rules := isolation.GetRulesOfResource("abc")
+		assert.True(t, reflect.DeepEqual(rules[0], *r1))
+		assert.True(t, reflect.DeepEqual(rules[1], *r2))
+		assert.True(t, reflect.DeepEqual(rules[2], *r3))
+		assert.True(t, reflect.DeepEqual(rules[3], *r4))
+	})
+
+	t.Run("TestIsolationRuleListJsonUpdater_Type_Err", func(t *testing.T) {
+		rules := []*flow.Rule{
+			{
+				Resource:               "abc",
+				Threshold:              0,
+				RelationStrategy:       0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
+				RefResource:            "",
+				WarmUpPeriodSec:        0,
+				MaxQueueingTimeMs:      0,
+			}}
+		err := IsolationRulesUpdater(rules)
 
 		assert.True(t, err.(Error).Code() == UpdatePropertyError)
 		assert.True(t, strings.Contains(err.(Error).desc, "Fail to type assert"))

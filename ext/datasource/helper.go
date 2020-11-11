@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/alibaba/sentinel-golang/core/isolation"
+
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
@@ -214,4 +216,51 @@ func HotSpotParamRulesUpdater(data interface{}) error {
 
 func NewHotSpotParamRulesHandler(converter PropertyConverter) PropertyHandler {
 	return NewDefaultPropertyHandler(converter, HotSpotParamRulesUpdater)
+}
+
+// IsolationRuleJsonArrayParser provide JSON  as the default serialization for list of isolation.Rule
+func IsolationRuleJsonArrayParser(src []byte) (interface{}, error) {
+	if valid, err := checkSrcComplianceJson(src); !valid {
+		return nil, err
+	}
+
+	rules := make([]*isolation.Rule, 0, 8)
+	if err := json.Unmarshal(src, &rules); err != nil {
+		desc := fmt.Sprintf("Fail to convert source bytes to []*isolation.Rule, err: %s", err.Error())
+		return nil, NewError(ConvertSourceError, desc)
+	}
+	return rules, nil
+}
+
+// IsolationRulesUpdater load the newest []isolation.Rule to downstream system component.
+func IsolationRulesUpdater(data interface{}) error {
+	if data == nil {
+		return isolation.ClearRules()
+	}
+
+	rules := make([]*isolation.Rule, 0, 8)
+	if val, ok := data.([]isolation.Rule); ok {
+		for _, v := range val {
+			rules = append(rules, &v)
+		}
+	} else if val, ok := data.([]*isolation.Rule); ok {
+		rules = val
+	} else {
+		return NewError(
+			UpdatePropertyError,
+			fmt.Sprintf("Fail to type assert data to []isolation.Rule or []*isolation.Rule, in fact, data: %+v", data),
+		)
+	}
+	_, err := isolation.LoadRules(rules)
+	if err == nil {
+		return nil
+	}
+	return NewError(
+		UpdatePropertyError,
+		fmt.Sprintf("%+v", err),
+	)
+}
+
+func NewIsolationRulesHandler(converter PropertyConverter) *DefaultPropertyHandler {
+	return NewDefaultPropertyHandler(converter, IsolationRulesUpdater)
 }
