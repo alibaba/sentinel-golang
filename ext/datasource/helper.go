@@ -202,8 +202,8 @@ func HotSpotParamRulesUpdater(data interface{}) error {
 			fmt.Sprintf("Fail to type assert data to []hotspot.Rule or []*hotspot.Rule, in fact, data: %+v", data),
 		)
 	}
-	succ, err := hotspot.LoadRules(rules)
-	if succ && err == nil {
+	_, err := hotspot.LoadRules(rules)
+	if err == nil {
 		return nil
 	}
 	return NewError(
