@@ -1,24 +1,37 @@
 package isolation
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/misc"
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
 
 var (
-	ruleMap = make(map[string][]*Rule)
-	rwMux   = &sync.RWMutex{}
+	ruleMap      = make(map[string][]*Rule)
+	rwMux        = &sync.RWMutex{}
+	currentRules = make([]*Rule, 0)
 )
 
 // LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
-func LoadRules(rules []*Rule) (updated bool, err error) {
-	updated = true
-	err = nil
+func LoadRules(rules []*Rule) (bool, error) {
+	rwMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	rwMux.RUnlock()
+	if isEqual {
+		logging.Info("[Isolation] Load rules repetition, does not load")
+		return false, nil
+	}
 
+	err := onRuleUpdate(rules)
+	return true, err
+}
+
+func onRuleUpdate(rules []*Rule) (err error) {
 	m := make(map[string][]*Rule, len(rules))
 	for _, r := range rules {
 		if e := IsValid(r); e != nil {
@@ -47,6 +60,7 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 		}
 	}
 	ruleMap = m
+	currentRules = rules
 	return
 }
 
