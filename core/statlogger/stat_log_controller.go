@@ -44,21 +44,22 @@ func addLogger(sl *StatLogger) *StatLogger {
 	mux.Lock()
 	defer mux.Unlock()
 	logger, ok := statLoggers[sl.loggerName]
-	if !ok {
-		logger = sl
-		statLoggers[sl.loggerName] = logger
-		go util.RunWithRecover(func() {
-			for {
-				select {
-				case <-sl.rollingChan:
-					sl.writeChan <- sl.Rolling()
-					go nextRolling(sl)
-				}
-			}
-		})
-		go nextRolling(sl)
+	if ok {
+		return logger
 	}
-	return logger
+
+	statLoggers[sl.loggerName] = sl
+	go util.RunWithRecover(func() {
+		for {
+			select {
+			case <-sl.rollingChan:
+				sl.writeChan <- sl.Rolling()
+				go nextRolling(sl)
+			}
+		}
+	})
+	nextRolling(sl)
+	return sl
 }
 
 func nextRolling(sl *StatLogger) {

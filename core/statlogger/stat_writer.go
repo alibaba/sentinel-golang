@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -58,7 +59,7 @@ func (sw *StatFileWriter) WriteAndFlush(srd *StatRollingData) {
 	}
 	for key, value := range counter {
 		b := strings.Builder{}
-		_, err := fmt.Fprintf(&b, "%s|%s|%d", util.FormatTimeMillis(srd.timeSlot), key, value)
+		_, err := fmt.Fprintf(&b, "%s|%s|%d", util.FormatTimeMillis(srd.timeSlot), key, atomic.LoadInt64(value))
 		if err != nil {
 			logging.Warn("[StatFileWriter] Failed to convert StatData to string", "loggerName", srd.sl.loggerName, "err", err)
 			continue

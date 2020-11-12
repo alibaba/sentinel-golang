@@ -62,8 +62,8 @@ func (s *StatLogger) Rolling() *StatRollingData {
 	sr := StatRollingData{
 		timeSlot:          timeSlot,
 		rollingTimeMillis: rollingTimeMillis,
-		counter:           make(map[string]uint32, initCap),
-		mux:               new(sync.Mutex),
+		counter:           make(map[string]*int64, initCap),
+		mux:               new(sync.RWMutex),
 		sl:                s,
 	}
 	s.data.Store(&sr)
@@ -77,48 +77,72 @@ func (s *StatLogger) Rolling() *StatRollingData {
 type StatRollingData struct {
 	timeSlot          uint64
 	rollingTimeMillis uint64
-	counter           map[string]uint32
-	mux               *sync.Mutex
+	counter           map[string]*int64
+	mux               *sync.RWMutex
 	sl                *StatLogger
 }
 
 func (s *StatRollingData) CountAndSum(args []string, count uint32) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
 	key := strings.Join(args, "|")
-	num, ok := s.counter[key]
-	if !ok {
-		num = 0
-		size := len(s.counter)
-		// When entry size bigger than maxEntryCount
-		if size < s.sl.maxEntryCount {
-			s.counter[key] = num
-		} else {
-			old := s.counter
-			s.counter = make(map[string]uint32, 16)
-			clone := StatRollingData{
-				timeSlot:          s.timeSlot,
-				rollingTimeMillis: s.rollingTimeMillis,
-				counter:           old,
-				mux:               new(sync.Mutex),
-				sl:                s.sl,
-			}
-			s.sl.writeChan <- &clone
-		}
+	s.mux.RLock()
+	if s.counter == nil {
+		s.mux.RUnlock()
+		s.sl.Stat(count, args...)
+		return
 	}
-	s.counter[key] = num + count
+	num, ok := s.counter[key]
+	if ok {
+		atomic.AddInt64(num, int64(count))
+		s.mux.RUnlock()
+		return
+	}
+	s.mux.RUnlock()
+
+	s.mux.Lock()
+	if s.counter == nil {
+		s.mux.Unlock()
+		s.sl.Stat(count, args...)
+		return
+	}
+	num, ok = s.counter[key]
+	if ok {
+		atomic.AddInt64(num, int64(count))
+		s.mux.Unlock()
+		return
+	}
+	num = new(int64)
+	*num = int64(count)
+	size := len(s.counter)
+	// When entry size bigger than maxEntryCount
+	if size < s.sl.maxEntryCount {
+		s.counter[key] = num
+		s.mux.Unlock()
+	} else {
+		old := s.counter
+		s.counter = make(map[string]*int64, 8)
+		clone := StatRollingData{
+			timeSlot:          s.timeSlot,
+			rollingTimeMillis: s.rollingTimeMillis,
+			counter:           old,
+			mux:               new(sync.RWMutex),
+			sl:                s.sl,
+		}
+		s.counter[key] = num
+		s.mux.Unlock()
+		s.sl.writeChan <- &clone
+	}
 }
 
-func (s *StatRollingData) GetCloneDataAndClear() map[string]uint32 {
+func (s *StatRollingData) GetCloneDataAndClear() map[string]*int64 {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	counter := s.counter
-	s.counter = make(map[string]uint32)
+	s.counter = nil
 	return counter
 }
 
 func (s *StatRollingData) Len() int {
-	s.mux.Lock()
-	defer s.mux.Unlock()
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 	return len(s.counter)
 }

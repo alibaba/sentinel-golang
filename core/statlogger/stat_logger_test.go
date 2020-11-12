@@ -2,6 +2,7 @@ package statlogger
 
 import (
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/util"
@@ -16,18 +17,18 @@ func (sw *MockStatWriter) WriteAndFlush(srd *StatRollingData) {
 	sw.dataChan <- srd
 }
 
-func checkLog(t *testing.T, m *MockStatWriter, expectMap map[string]uint32) {
+func checkLog(t *testing.T, m *MockStatWriter, expectMap map[string]*int64) {
 	for i := 0; i < 2; i++ {
 		data := <-m.dataChan
 		data.mux.Lock()
 		for key, value := range data.counter {
 			expectValue, ok := expectMap[key]
 			if ok {
-				assert.True(t, value <= expectValue)
-				if value == expectValue {
+				assert.True(t, atomic.LoadInt64(value) <= atomic.LoadInt64(expectValue))
+				if atomic.LoadInt64(value) == atomic.LoadInt64(expectValue) {
 					delete(expectMap, key)
 				} else {
-					expectMap[key] = expectValue - value
+					atomic.AddInt64(expectValue, -1*atomic.LoadInt64(value))
 				}
 			}
 		}
@@ -64,16 +65,22 @@ func Test_Stat_Logger(t *testing.T) {
 		testLogger.mux.Unlock()
 
 		testLogger.Stat(2, "test1", "test2")
-		expectMap1 := make(map[string]uint32)
-		expectMap1["test1|test2"] = 2
+		expectMap1 := make(map[string]*int64)
+		a := new(int64)
+		*a = 2
+		expectMap1["test1|test2"] = a
 		checkLog(t, m, expectMap1)
 
 		testLogger.Stat(1, "test1", "test2")
 		testLogger.Stat(1, "test3")
 		testLogger.Stat(2, "test3")
-		expectMap2 := make(map[string]uint32)
-		expectMap2["test1|test2"] = 1
-		expectMap2["test3"] = 3
+		expectMap2 := make(map[string]*int64)
+		b := new(int64)
+		*b = 1
+		expectMap2["test1|test2"] = b
+		c := new(int64)
+		*c = 3
+		expectMap2["test3"] = c
 		checkLog(t, m, expectMap2)
 
 		// check interval
