@@ -19,6 +19,7 @@ var (
 	breakerRules = make(map[string][]*Rule)
 	breakers     = make(map[string][]CircuitBreaker)
 	updateMux    = &sync.RWMutex{}
+	currentRules = make([]*Rule, 0)
 
 	stateChangeListeners = make([]StateChangeListener, 0)
 )
@@ -117,6 +118,14 @@ func ClearRules() error {
 // error: was designed to indicate whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO in order to avoid invalid update, should check consistent with last update rules
+	updateMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	updateMux.RUnlock()
+	if isEqual {
+		logging.Info("[CircuitBreaker] Load rules repetition, does not load")
+		return false, nil
+	}
+
 	err := onRuleUpdate(rules)
 	return true, err
 }
@@ -271,6 +280,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 	breakerRules = newBreakerRules
 	breakers = newBreakers
+	currentRules = rules
+
 	return nil
 }
 
