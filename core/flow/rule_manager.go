@@ -172,13 +172,14 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
+// the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO: rethink the design
 	tcMux.RLock()
 	isEqual := reflect.DeepEqual(currentRules, rules)
 	tcMux.RUnlock()
 	if isEqual {
-		logging.Info("[Flow] Load rules repetition, does not load")
+		logging.Info("[Flow] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
