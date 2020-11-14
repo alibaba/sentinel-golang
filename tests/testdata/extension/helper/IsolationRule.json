@@ -1,0 +1,22 @@
+[
+  {
+    "Resource":   "abc",
+    "MetricType": 0,
+    "Threshold":  100
+  },
+  {
+    "Resource":   "abc",
+    "MetricType": 0,
+    "Threshold":  90
+  },
+  {
+    "Resource":   "abc",
+    "MetricType": 0,
+    "Threshold":  80
+  },
+  {
+    "Resource":   "abc",
+    "MetricType": 0,
+    "Threshold":  70
+  }
+]
