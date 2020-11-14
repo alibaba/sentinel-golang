@@ -97,7 +97,7 @@ func (r *Rule) ResourceName() string {
 
 // IsStatReusable checks whether current rule is "statistically" equal to the given rule.
 func (r *Rule) IsStatReusable(newRule *Rule) bool {
-	return r.Resource == newRule.Resource && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.DurationInSec == newRule.DurationInSec
+	return r.Resource == newRule.Resource && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.DurationInSec == newRule.DurationInSec && r.MetricType == newRule.MetricType
 }
 
 // Equals checks whether current rule is consistent with the given rule.

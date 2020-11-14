@@ -10,6 +10,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 type TrafficShapingController interface {
@@ -52,25 +53,41 @@ func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *b
 }
 
 func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
-	size := 0
-	if r.ParamsMaxCapacity > 0 {
-		size = int(r.ParamsMaxCapacity)
-	} else if r.DurationInSec == 0 {
-		size = ParamsMaxCapacity
-	} else {
-		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
+	switch r.MetricType {
+	case QPS:
+		size := 0
+		if r.ParamsMaxCapacity > 0 {
+			size = int(r.ParamsMaxCapacity)
+		} else if r.DurationInSec == 0 {
+			size = ParamsMaxCapacity
+		} else {
+			size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
+		}
+		if size <= 0 {
+			logging.Warn("[HotSpot newBaseTrafficShapingController] Invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
+				"ParamsMaxCapacity", ParamsMaxCapacity, "ParamsCapacityBase", ParamsCapacityBase)
+			size = ParamsMaxCapacity
+		}
+		metric := &ParamsMetric{
+			RuleTimeCounter:  cache.NewLRUCacheMap(size),
+			RuleTokenCounter: cache.NewLRUCacheMap(size),
+		}
+		return newBaseTrafficShapingControllerWithMetric(r, metric)
+	case Concurrency:
+		size := 0
+		if r.ParamsMaxCapacity > 0 {
+			size = int(r.ParamsMaxCapacity)
+		} else {
+			size = ConcurrencyMaxCount
+		}
+		metric := &ParamsMetric{
+			ConcurrencyCounter: cache.NewLRUCacheMap(size),
+		}
+		return newBaseTrafficShapingControllerWithMetric(r, metric)
+	default:
+		logging.Error(errors.New("unsupported metric type"), "Ignoring the rule due to unsupported  metric type in Rule.newBaseTrafficShapingController()", "MetricType", r.MetricType.String())
+		return nil
 	}
-	if size <= 0 {
-		logging.Warn("[HotSpot newBaseTrafficShapingController] Invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
-			"ParamsMaxCapacity", ParamsMaxCapacity, "ParamsCapacityBase", ParamsCapacityBase)
-		size = ParamsMaxCapacity
-	}
-	metric := &ParamsMetric{
-		RuleTimeCounter:    cache.NewLRUCacheMap(size),
-		RuleTokenCounter:   cache.NewLRUCacheMap(size),
-		ConcurrencyCounter: cache.NewLRUCacheMap(ConcurrencyMaxCount),
-	}
-	return newBaseTrafficShapingControllerWithMetric(r, metric)
 }
 
 func (c *baseTrafficShapingController) BoundMetric() *ParamsMetric {
