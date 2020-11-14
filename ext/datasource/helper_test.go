@@ -8,11 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/core/isolation"
-
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
+	"github.com/alibaba/sentinel-golang/core/isolation"
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -519,10 +518,6 @@ func TestIsolationRuleJsonArrayParser(t *testing.T) {
 		rules := properties.([]*isolation.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 4)
-		for _, r := range rules {
-			fmt.Println(r)
-		}
-
 		assert.True(t, strings.Contains(rules[0].String(), `{"resource":"abc","metricType":0,"threshold":100}`))
 		assert.True(t, strings.Contains(rules[1].String(), `{"resource":"abc","metricType":0,"threshold":90}`))
 		assert.True(t, strings.Contains(rules[2].String(), `{"resource":"abc","metricType":0,"threshold":80}`))
