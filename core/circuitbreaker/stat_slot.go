@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-core-circuit-breaker-metric-stat-slot"
+	StatSlotName  = "sentinel-core-circuit-breaker-metric-stat-slot"
+	StatSlotOrder = 5000
 )
 
 var (
@@ -19,6 +20,10 @@ type MetricStatSlot struct {
 
 func (s *MetricStatSlot) Name() string {
 	return StatSlotName
+}
+
+func (s *MetricStatSlot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (c *MetricStatSlot) OnEntryPassed(_ *base.EntryContext) {

@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	StatSlotName = "sentinel-core-hotspot-concurrency-stat-slot"
+	StatSlotName  = "sentinel-core-hotspot-concurrency-stat-slot"
+	StatSlotOrder = 4000
 )
 
 var (
@@ -21,6 +22,10 @@ type ConcurrencyStatSlot struct {
 
 func (c *ConcurrencyStatSlot) Name() string {
 	return StatSlotName
+}
+
+func (s *ConcurrencyStatSlot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {

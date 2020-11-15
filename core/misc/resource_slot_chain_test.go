@@ -16,6 +16,10 @@ func (rcs *RuleCheckSlotMock1) Name() string {
 	return rcs.name
 }
 
+func (rcs *RuleCheckSlotMock1) Order() uint32 {
+	return 0
+}
+
 func (rcs *RuleCheckSlotMock1) Check(ctx *base.EntryContext) *base.TokenResult {
 	return nil
 }

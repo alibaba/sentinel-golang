@@ -20,19 +20,19 @@ func GlobalSlotChain() *base.SlotChain {
 
 func BuildDefaultSlotChain() *base.SlotChain {
 	sc := base.NewSlotChain()
-	sc.AddStatPrepareSlotLast(stat.DefaultResourceNodePrepareSlot)
+	sc.AddStatPrepareSlot(stat.DefaultResourceNodePrepareSlot)
 
-	sc.AddRuleCheckSlotLast(system.DefaultAdaptiveSlot)
-	sc.AddRuleCheckSlotLast(flow.DefaultSlot)
-	sc.AddRuleCheckSlotLast(isolation.DefaultSlot)
-	sc.AddRuleCheckSlotLast(circuitbreaker.DefaultSlot)
-	sc.AddRuleCheckSlotLast(hotspot.DefaultSlot)
+	sc.AddRuleCheckSlot(system.DefaultAdaptiveSlot)
+	sc.AddRuleCheckSlot(flow.DefaultSlot)
+	sc.AddRuleCheckSlot(isolation.DefaultSlot)
+	sc.AddRuleCheckSlot(hotspot.DefaultSlot)
+	sc.AddRuleCheckSlot(circuitbreaker.DefaultSlot)
 
-	sc.AddStatSlotLast(stat.DefaultSlot)
-	sc.AddStatSlotLast(log.DefaultSlot)
-	sc.AddStatSlotLast(circuitbreaker.DefaultMetricStatSlot)
-	sc.AddStatSlotLast(hotspot.DefaultConcurrencyStatSlot)
-	sc.AddStatSlotLast(flow.DefaultStandaloneStatSlot)
+	sc.AddStatSlot(stat.DefaultSlot)
+	sc.AddStatSlot(log.DefaultSlot)
+	sc.AddStatSlot(flow.DefaultStandaloneStatSlot)
+	sc.AddStatSlot(hotspot.DefaultConcurrencyStatSlot)
+	sc.AddStatSlot(circuitbreaker.DefaultMetricStatSlot)
 	return sc
 }
 
