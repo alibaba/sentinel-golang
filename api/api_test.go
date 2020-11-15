@@ -16,6 +16,10 @@ func (m *prepareSlotMock) Name() string {
 	return "mock-sentinel-prepare-slot"
 }
 
+func (m *prepareSlotMock) Order() uint32 {
+	return 0
+}
+
 func (m *prepareSlotMock) Prepare(ctx *base.EntryContext) {
 	m.Called(ctx)
 	return
@@ -27,6 +31,10 @@ type mockRuleCheckSlot1 struct {
 
 func (m *mockRuleCheckSlot1) Name() string {
 	return "mock-sentinel-rule-check-slot1"
+}
+
+func (m *mockRuleCheckSlot1) Order() uint32 {
+	return 0
 }
 
 func (m *mockRuleCheckSlot1) Check(ctx *base.EntryContext) *base.TokenResult {
@@ -42,6 +50,10 @@ func (m *mockRuleCheckSlot2) Name() string {
 	return "mock-sentinel-rule-check-slot2"
 }
 
+func (m *mockRuleCheckSlot2) Order() uint32 {
+	return 0
+}
+
 func (m *mockRuleCheckSlot2) Check(ctx *base.EntryContext) *base.TokenResult {
 	arg := m.Called(ctx)
 	return arg.Get(0).(*base.TokenResult)
@@ -53,6 +65,10 @@ type statisticSlotMock struct {
 
 func (m *statisticSlotMock) Name() string {
 	return "mock-sentinel-stat-check-slot"
+}
+
+func (m *statisticSlotMock) Order() uint32 {
+	return 0
 }
 
 func (m *statisticSlotMock) OnEntryPassed(ctx *base.EntryContext) {
@@ -74,10 +90,10 @@ func Test_entryWithArgsAndChainPass(t *testing.T) {
 	rcs1 := &mockRuleCheckSlot1{}
 	rcs2 := &mockRuleCheckSlot2{}
 	ssm := &statisticSlotMock{}
-	sc.AddStatPrepareSlotFirst(ps1)
-	sc.AddRuleCheckSlotFirst(rcs1)
-	sc.AddRuleCheckSlotFirst(rcs2)
-	sc.AddStatSlotFirst(ssm)
+	sc.AddStatPrepareSlot(ps1)
+	sc.AddRuleCheckSlot(rcs1)
+	sc.AddRuleCheckSlot(rcs2)
+	sc.AddStatSlot(ssm)
 
 	ps1.On("Prepare", mock.Anything).Return()
 	rcs1.On("Check", mock.Anything).Return(base.NewTokenResultPass())
@@ -111,10 +127,10 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	rcs1 := &mockRuleCheckSlot1{}
 	rcs2 := &mockRuleCheckSlot2{}
 	ssm := &statisticSlotMock{}
-	sc.AddStatPrepareSlotFirst(ps1)
-	sc.AddRuleCheckSlotLast(rcs1)
-	sc.AddRuleCheckSlotLast(rcs2)
-	sc.AddStatSlotFirst(ssm)
+	sc.AddStatPrepareSlot(ps1)
+	sc.AddRuleCheckSlot(rcs1)
+	sc.AddRuleCheckSlot(rcs2)
+	sc.AddStatSlot(ssm)
 
 	blockType := base.BlockTypeFlow
 
