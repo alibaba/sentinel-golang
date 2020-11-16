@@ -2,6 +2,7 @@ package hotspot
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/misc"
@@ -20,6 +21,7 @@ var (
 	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc, 4)
 	tcMap        = make(trafficControllerMap)
 	tcMux        = new(sync.RWMutex)
+	currentRules = make([]*Rule, 0)
 )
 
 func init() {
@@ -70,6 +72,14 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 // bool: indicates whether the internal map has been changed;
 // error: indicates whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
+	tcMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	tcMux.RUnlock()
+	if isEqual {
+		logging.Info("[HotSpot] Load rules repetition, does not load")
+		return false, nil
+	}
+
 	err := onRuleUpdate(rules)
 	return true, err
 }
@@ -210,6 +220,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}
 	tcMap = m
+	currentRules = rules
 
 	return nil
 }
