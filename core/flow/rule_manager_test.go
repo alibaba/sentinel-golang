@@ -418,3 +418,27 @@ func Test_buildRulesOfRes(t *testing.T) {
 		assert.True(t, tcs[3].boundStat == stat4)
 	})
 }
+
+func TestLoadRules(t *testing.T) {
+	t.Run("loadSameRules", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				Resource:               "some-test",
+				Threshold:              10,
+				TokenCalculateStrategy: Direct,
+				ControlBehavior:        Reject,
+			},
+		})
+		assert.Nil(t, err)
+		ok, err := LoadRules([]*Rule{
+			{
+				Resource:               "some-test",
+				Threshold:              10,
+				TokenCalculateStrategy: Direct,
+				ControlBehavior:        Reject,
+			},
+		})
+		assert.Nil(t, err)
+		assert.False(t, ok)
+	})
+}
