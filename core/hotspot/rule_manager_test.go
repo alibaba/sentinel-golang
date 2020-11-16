@@ -279,3 +279,43 @@ func Test_onRuleUpdate(t *testing.T) {
 
 	tcMap = make(trafficControllerMap)
 }
+
+func TestLoadRules(t *testing.T) {
+	t.Run("loadSameRules", func(t *testing.T) {
+		specific := make(map[interface{}]int64)
+		specific["sss"] = 1
+		specific["123"] = 3
+
+		_, err := LoadRules([]*Rule{
+			{
+				ID:                "1",
+				Resource:          "abc",
+				MetricType:        Concurrency,
+				ControlBehavior:   Reject,
+				ParamIndex:        0,
+				Threshold:         100.0,
+				MaxQueueingTimeMs: 0,
+				BurstCount:        10,
+				DurationInSec:     1,
+				SpecificItems:     specific,
+			},
+		})
+		assert.Nil(t, err)
+		ok, err := LoadRules([]*Rule{
+			{
+				ID:                "1",
+				Resource:          "abc",
+				MetricType:        Concurrency,
+				ControlBehavior:   Reject,
+				ParamIndex:        0,
+				Threshold:         100.0,
+				MaxQueueingTimeMs: 0,
+				BurstCount:        10,
+				DurationInSec:     1,
+				SpecificItems:     specific,
+			},
+		})
+		assert.Nil(t, err)
+		assert.False(t, ok)
+	})
+}
