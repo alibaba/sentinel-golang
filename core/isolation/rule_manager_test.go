@@ -36,4 +36,24 @@ func TestLoadRules(t *testing.T) {
 		err = ClearRules()
 		assert.True(t, err == nil)
 	})
+
+	t.Run("loadSameRules", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				Resource:   "abc1",
+				MetricType: Concurrency,
+				Threshold:  100,
+			},
+		})
+		assert.Nil(t, err)
+		ok, err := LoadRules([]*Rule{
+			{
+				Resource:   "abc1",
+				MetricType: Concurrency,
+				Threshold:  100,
+			},
+		})
+		assert.Nil(t, err)
+		assert.False(t, ok)
+	})
 }
