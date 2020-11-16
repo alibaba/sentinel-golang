@@ -76,7 +76,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 	isEqual := reflect.DeepEqual(currentRules, rules)
 	tcMux.RUnlock()
 	if isEqual {
-		logging.Info("[HotSpot] Load rules repetition, does not load")
+		logging.Info("[HotSpot] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
