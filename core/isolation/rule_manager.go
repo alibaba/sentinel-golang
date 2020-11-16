@@ -5,9 +5,8 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/misc"
-	"github.com/alibaba/sentinel-golang/util"
-
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
 
@@ -18,12 +17,13 @@ var (
 )
 
 // LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
+// the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
 	rwMux.RLock()
 	isEqual := reflect.DeepEqual(currentRules, rules)
 	rwMux.RUnlock()
 	if isEqual {
-		logging.Info("[Isolation] Load rules repetition, does not load")
+		logging.Info("[Isolation] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
