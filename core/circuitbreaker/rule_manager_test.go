@@ -340,3 +340,33 @@ func TestRemoveCircuitBreakerGenerator(t *testing.T) {
 		assert.Error(t, err, "not allowed to remove the generator for default circuit breaking strategies")
 	})
 }
+
+func TestLoadRules(t *testing.T) {
+	t.Run("loadSameRules", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				Resource:         "abc",
+				Strategy:         SlowRequestRatio,
+				RetryTimeoutMs:   1000,
+				MinRequestAmount: 5,
+				StatIntervalMs:   1000,
+				MaxAllowedRtMs:   20,
+				Threshold:        0.1,
+			},
+		})
+		assert.Nil(t, err)
+		ok, err := LoadRules([]*Rule{
+			{
+				Resource:         "abc",
+				Strategy:         SlowRequestRatio,
+				RetryTimeoutMs:   1000,
+				MinRequestAmount: 5,
+				StatIntervalMs:   1000,
+				MaxAllowedRtMs:   20,
+				Threshold:        0.1,
+			},
+		})
+		assert.Nil(t, err)
+		assert.False(t, ok)
+	})
+}
