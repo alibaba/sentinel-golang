@@ -122,7 +122,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 	isEqual := reflect.DeepEqual(currentRules, rules)
 	updateMux.RUnlock()
 	if isEqual {
-		logging.Info("[CircuitBreaker] Load rules repetition, does not load")
+		logging.Info("[CircuitBreaker] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
