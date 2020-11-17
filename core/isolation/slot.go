@@ -1,8 +1,6 @@
 package isolation
 
 import (
-	"fmt"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
@@ -34,7 +32,8 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if len(resource) == 0 {
 		return result
 	}
-	if passed, rule, msg, snapshot := checkPass(ctx); !passed {
+	if passed, rule, snapshot := checkPass(ctx); !passed {
+		msg := "isolation check not pass"
 		if result == nil {
 			result = base.NewTokenResultBlockedWithCause(base.BlockTypeIsolation, msg, rule, snapshot)
 		} else {
@@ -44,7 +43,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func checkPass(ctx *base.EntryContext) (bool, *Rule, string, uint32) {
+func checkPass(ctx *base.EntryContext) (bool, *Rule, uint32) {
 	statNode := ctx.StatNode
 	batchCount := ctx.Input.BatchCount
 	curCount := uint32(0)
@@ -58,11 +57,9 @@ func checkPass(ctx *base.EntryContext) (bool, *Rule, string, uint32) {
 				logging.Error(errors.New("negative concurrency"), "Negative concurrency in isolation.checkPass()", "rule", rule)
 			}
 			if curCount+batchCount > threshold {
-				msg := fmt.Sprintf("concurrency check not pass, rule id: %s, current concurrency: %d, request batch count: %d, threshold: %d",
-					rule.ID, curCount, batchCount, threshold)
-				return false, rule, msg, curCount
+				return false, rule, curCount
 			}
 		}
 	}
-	return true, nil, "", curCount
+	return true, nil, curCount
 }

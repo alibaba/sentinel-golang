@@ -1,8 +1,6 @@
 package flow
 
 import (
-	"fmt"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
@@ -49,9 +47,7 @@ func (d *RejectTrafficShapingChecker) DoCheck(resStat base.StatNode, batchCount 
 	}
 	curCount := float64(metricReadonlyStat.GetSum(base.MetricEventPass))
 	if curCount+float64(batchCount) > threshold {
-		interval := d.rule.StatIntervalInMs
-		msg := fmt.Sprintf("rate check not pass, rule id: %s, stat interval: %d ms, current count: %.2f, request batch count: %d, threshold: %.2f",
-			d.rule.ID, interval, curCount, batchCount, threshold)
+		msg := "flow reject check not pass"
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, msg, d.rule, curCount)
 	}
 	return nil

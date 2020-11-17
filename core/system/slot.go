@@ -1,8 +1,6 @@
 package system
 
 import (
-	"fmt"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
 )
@@ -49,37 +47,36 @@ func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 }
 
 func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, string, float64) {
+	var msg string
+
 	threshold := rule.TriggerCount
 	switch rule.MetricType {
 	case InboundQPS:
 		qps := stat.InboundNode().GetQPS(base.MetricEventPass)
 		res := qps < threshold
-		msg := ""
 		if !res {
-			msg = fmt.Sprintf("qps check not pass, rule id: %s, current: %.2f, threshold: %.2f", rule.ID, qps, threshold)
+			msg = "system qps check not pass"
 		}
 		return res, msg, qps
 	case Concurrency:
 		n := float64(stat.InboundNode().CurrentConcurrency())
 		res := n < threshold
-		msg := ""
 		if !res {
-			msg = fmt.Sprintf("concurrency check not pass, rule id: %s, current: %.2f, threshold: %.2f", rule.ID, n, threshold)
+			msg = "system concurrency check not pass"
 		}
 		return res, msg, n
 	case AvgRT:
 		rt := stat.InboundNode().AvgRT()
 		res := rt < threshold
-		msg := ""
 		if !res {
-			msg = fmt.Sprintf("avg rt check not pass, rule id: %s, current: %.2f, threshold: %.2f", rule.ID, rt, threshold)
+			msg = "system avg rt check not pass"
 		}
 		return res, msg, rt
 	case Load:
 		l := CurrentLoad()
 		if l > threshold {
 			if rule.Strategy != BBR || !checkBbrSimple() {
-				msg := fmt.Sprintf("system load check not pass, rule id: %s, current: %0.2f, threshold: %.2f", rule.ID, l, threshold)
+				msg = "system load check not pass"
 				return false, msg, l
 			}
 		}
@@ -88,13 +85,13 @@ func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, string, float64) {
 		c := CurrentCpuUsage()
 		if c > threshold {
 			if rule.Strategy != BBR || !checkBbrSimple() {
-				msg := fmt.Sprintf("cpu usage check not pass, rule id: %s, current: %0.2f, threshold: %.2f", rule.ID, c, threshold)
+				msg = "system cpu usage check not pass"
 				return false, msg, c
 			}
 		}
 		return true, "", c
 	default:
-		msg := fmt.Sprintf("undefined metric type, pass by default, rule id: %s", rule.ID)
+		msg = "system undefined metric type, pass by default"
 		return true, msg, 0.0
 	}
 }
