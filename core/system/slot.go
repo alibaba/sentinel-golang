@@ -55,28 +55,28 @@ func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, string, float64) {
 		qps := stat.InboundNode().GetQPS(base.MetricEventPass)
 		res := qps < threshold
 		if !res {
-			msg = "system qps check not pass"
+			msg = "system qps check blocked"
 		}
 		return res, msg, qps
 	case Concurrency:
 		n := float64(stat.InboundNode().CurrentConcurrency())
 		res := n < threshold
 		if !res {
-			msg = "system concurrency check not pass"
+			msg = "system concurrency check blocked"
 		}
 		return res, msg, n
 	case AvgRT:
 		rt := stat.InboundNode().AvgRT()
 		res := rt < threshold
 		if !res {
-			msg = "system avg rt check not pass"
+			msg = "system avg rt check blocked"
 		}
 		return res, msg, rt
 	case Load:
 		l := CurrentLoad()
 		if l > threshold {
 			if rule.Strategy != BBR || !checkBbrSimple() {
-				msg = "system load check not pass"
+				msg = "system load check blocked"
 				return false, msg, l
 			}
 		}
@@ -85,7 +85,7 @@ func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, string, float64) {
 		c := CurrentCpuUsage()
 		if c > threshold {
 			if rule.Strategy != BBR || !checkBbrSimple() {
-				msg = "system cpu usage check not pass"
+				msg = "system cpu usage check blocked"
 				return false, msg, c
 			}
 		}

@@ -31,7 +31,7 @@ func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		return result
 	}
 	if passed, rule := checkPass(ctx); !passed {
-		msg := "circuit breaker check not pass"
+		msg := "circuit breaker check blocked"
 		if result == nil {
 			result = base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
 		} else {

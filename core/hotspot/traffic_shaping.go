@@ -109,14 +109,14 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 		if concurrency <= specificConcurrency {
 			return nil
 		}
-		msg := fmt.Sprintf("hotspot specific concurrency check not pass, arg: %v", arg)
+		msg := fmt.Sprintf("hotspot specific concurrency check blocked, arg: %v", arg)
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), concurrency)
 	}
 	threshold := c.threshold
 	if concurrency <= threshold {
 		return nil
 	}
-	msg := fmt.Sprintf("hotspot concurrency check not pass, arg: %v", arg)
+	msg := fmt.Sprintf("hotspot concurrency check blocked, arg: %v", arg)
 	return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), concurrency)
 }
 
@@ -165,13 +165,13 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 		tokenCount = val
 	}
 	if tokenCount <= 0 {
-		msg := fmt.Sprintf("hotspot reject check not pass, threshold is <= 0, arg: %v", arg)
+		msg := fmt.Sprintf("hotspot reject check blocked, threshold is <= 0, arg: %v", arg)
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 	}
 	maxCount := tokenCount + c.burstCount
 	if batchCount > maxCount {
 		// return blocked because the batch number is more than max count of rejectTrafficShapingController
-		msg := fmt.Sprintf("hotspot reject check not pass, request batch count is more than max token count, arg: %v", arg)
+		msg := fmt.Sprintf("hotspot reject check blocked, request batch count is more than max token count, arg: %v", arg)
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 	}
 
@@ -206,7 +206,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 					newQps = toAddTokenNum + restQps - batchCount
 				}
 				if newQps < 0 {
-					msg := fmt.Sprintf("hotspot reject check not pass, request batch count is more than available token count, arg: %v", arg)
+					msg := fmt.Sprintf("hotspot reject check blocked, request batch count is more than available token count, arg: %v", arg)
 					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 				}
 				if atomic.CompareAndSwapInt64(oldQpsPtr, restQps, newQps) {
@@ -226,7 +226,7 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 						return nil
 					}
 				} else {
-					msg := fmt.Sprintf("hotspot reject check not pass, request batch count is more than available token count, arg: %v", arg)
+					msg := fmt.Sprintf("hotspot reject check blocked, request batch count is more than available token count, arg: %v", arg)
 					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 				}
 			}
@@ -260,7 +260,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 		tokenCount = val
 	}
 	if tokenCount <= 0 {
-		msg := fmt.Sprintf("hotspot throttling check not pass, threshold is <= 0, arg: %v", arg)
+		msg := fmt.Sprintf("hotspot throttling check blocked, threshold is <= 0, arg: %v", arg)
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 	}
 	intervalCostTime := int64(math.Round(float64(batchCount * c.durationInSec * 1000 / tokenCount)))
@@ -288,7 +288,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 				runtime.Gosched()
 			}
 		} else {
-			msg := fmt.Sprintf("hotspot throttling check not pass, wait time exceedes max queueing time, arg: %v", arg)
+			msg := fmt.Sprintf("hotspot throttling check blocked, wait time exceedes max queueing time, arg: %v", arg)
 			return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 		}
 	}

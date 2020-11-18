@@ -33,7 +33,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		return result
 	}
 	if passed, rule, snapshot := checkPass(ctx); !passed {
-		msg := "isolation check not pass"
+		msg := "isolation check blocked"
 		if result == nil {
 			result = base.NewTokenResultBlockedWithCause(base.BlockTypeIsolation, msg, rule, snapshot)
 		} else {

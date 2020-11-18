@@ -51,7 +51,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, batchCount uint32, threshol
 	}
 
 	if threshold <= 0.0 {
-		msg := "flow throttling check not pass, threshold is <= 0.0"
+		msg := "flow throttling check blocked, threshold is <= 0.0"
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, msg, rule, nil)
 	}
 	if float64(batchCount) > threshold {
@@ -73,7 +73,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, batchCount uint32, threshol
 
 	estimatedQueueingDuration := atomic.LoadUint64(&c.lastPassedTime) + intervalNs - util.CurrentTimeNano()
 	if estimatedQueueingDuration > c.maxQueueingTimeNs {
-		msg := "flow throttling check not pass, estimated queueing time exceeds max queueing time"
+		msg := "flow throttling check blocked, estimated queueing time exceeds max queueing time"
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, msg, rule, nil)
 	}
 
@@ -82,7 +82,7 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, batchCount uint32, threshol
 	if estimatedQueueingDuration > c.maxQueueingTimeNs {
 		// Subtract the interval.
 		atomic.AddUint64(&c.lastPassedTime, ^(intervalNs - 1))
-		msg := "flow throttling check not pass, estimated queueing time exceeds max queueing time"
+		msg := "flow throttling check blocked, estimated queueing time exceeds max queueing time"
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, msg, rule, nil)
 	}
 	if estimatedQueueingDuration > 0 {
