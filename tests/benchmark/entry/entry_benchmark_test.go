@@ -1,4 +1,4 @@
-package tests
+package entry
 
 import (
 	"fmt"
@@ -6,8 +6,13 @@ import (
 	"math/rand"
 	"sort"
 	"testing"
+	"time"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 var numbers = make([]int, 0)
@@ -75,6 +80,53 @@ func doSomethingWithSentinel() {
 	}
 }
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+	// We should initialize Sentinel first.
+	conf := config.NewDefaultConfig()
+	// for testing, logging output to console
+	conf.Sentinel.Log.Logger = logging.NewConsoleLogger()
+	conf.Sentinel.Log.Metric.FlushIntervalSec = 0
+	conf.Sentinel.Stat.System.CollectIntervalMs = 0
+	err := sentinel.InitWithConfig(conf)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func Benchmark_SlotChain_Full_Global(b *testing.B) {
+	initNumberWith50()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		e, b := sentinel.Entry("Benchmark_SlotChain_Full_Global", sentinel.WithSlotChain(sentinel.GlobalSlotChain()))
+		if b != nil {
+			logging.Warn("Blocked")
+		} else {
+			doSomething()
+			e.Exit()
+		}
+	}
+}
+
+func Benchmark_SlotChain_Custom_Empty(b *testing.B) {
+	initNumberWith50()
+	sc := base.NewSlotChain()
+	sc.AddStatPrepareSlot(stat.DefaultResourceNodePrepareSlot)
+	sc.AddStatSlot(stat.DefaultSlot)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		e, b := sentinel.Entry("Benchmark_Custom_Empty_SlotChain", sentinel.WithSlotChain(sc))
+		if b != nil {
+			logging.Warn("Blocked")
+		} else {
+			doSomething()
+			e.Exit()
+		}
+	}
+}
+
 func Benchmark_Single_Directly_50(b *testing.B) {
 	initNumberWith50()
 	b.ReportAllocs()
@@ -85,11 +137,6 @@ func Benchmark_Single_Directly_50(b *testing.B) {
 }
 func Benchmark_Single_StatEntry_50(b *testing.B) {
 	initNumberWith50()
-	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -107,11 +154,6 @@ func Benchmark_Single_Directly_100(b *testing.B) {
 }
 func Benchmark_Single_StatEntry_100(b *testing.B) {
 	initNumberWith100()
-	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -129,11 +171,6 @@ func Benchmark_Single_Directly_200(b *testing.B) {
 }
 func Benchmark_Single_StatEntry_200(b *testing.B) {
 	initNumberWith200()
-	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -151,11 +188,6 @@ func Benchmark_Single_Directly_500(b *testing.B) {
 }
 func Benchmark_Single_StatEntry_500(b *testing.B) {
 	initNumberWith500()
-	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -173,11 +205,6 @@ func Benchmark_Single_Directly_1000(b *testing.B) {
 }
 func Benchmark_Single_StatEntry_1000(b *testing.B) {
 	initNumberWith1000()
-	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -195,11 +222,6 @@ func Benchmark_Single_Directly_2000(b *testing.B) {
 }
 func Benchmark_Single_StatEntry_2000(b *testing.B) {
 	initNumberWith2000()
-	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -217,11 +239,6 @@ func Benchmark_Single_Directly_4000(b *testing.B) {
 }
 func Benchmark_Single_StatEntry_4000(b *testing.B) {
 	initNumberWith4000()
-	// We should initialize Sentinel first.
-	err := sentinel.InitDefault()
-	if err != nil {
-		log.Fatalf("Unexpected error: %+v", err)
-	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

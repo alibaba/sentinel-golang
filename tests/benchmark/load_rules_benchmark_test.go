@@ -1,4 +1,4 @@
-package tests
+package benchmark
 
 import (
 	"math/rand"
