@@ -1,4 +1,4 @@
-package tests
+package memory
 
 import (
 	"fmt"
