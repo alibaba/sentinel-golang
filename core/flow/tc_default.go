@@ -47,7 +47,8 @@ func (d *RejectTrafficShapingChecker) DoCheck(resStat base.StatNode, batchCount 
 	}
 	curCount := float64(metricReadonlyStat.GetSum(base.MetricEventPass))
 	if curCount+float64(batchCount) > threshold {
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, "", d.rule, curCount)
+		msg := "flow reject check blocked"
+		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, msg, d.rule, curCount)
 	}
 	return nil
 }
