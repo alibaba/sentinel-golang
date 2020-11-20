@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/api"
-
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 )
 
