@@ -19,7 +19,7 @@ func doSomethingWithSize() {
 }
 
 func doSomethingWithSentinelForConcurrency() {
-	e, b := sentinel.Entry("benchmark_stat_entry")
+	e, b := sentinel.Entry("benchmark_entry_comparison_concurrency")
 	if b != nil {
 		fmt.Println("Blocked")
 	} else {
