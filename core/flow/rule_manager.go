@@ -2,10 +2,12 @@ package flow
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -25,9 +27,15 @@ type trafficControllerGenKey struct {
 type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc)
+	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 4)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
+	nopStat      = &standaloneStatistic{
+		reuseResourceStat: false,
+		readOnlyMetric:    base.NopReadStat(),
+		writeOnlyMetric:   base.NopWriteStat(),
+	}
+	currentRules = make([]*Rule, 0)
 )
 
 func init() {
@@ -54,20 +62,14 @@ func init() {
 	tcGenFuncMap[trafficControllerGenKey{
 		tokenCalculateStrategy: Direct,
 		controlBehavior:        Throttling,
-	}] = func(rule *Rule, boundStat *standaloneStatistic) (*TrafficShapingController, error) {
-		if boundStat == nil {
-			var err error
-			boundStat, err = generateStatFor(rule)
-			if err != nil {
-				return nil, err
-			}
-		}
-		tsc, err := NewTrafficShapingController(rule, boundStat)
+	}] = func(rule *Rule, _ *standaloneStatistic) (*TrafficShapingController, error) {
+		// Direct token calculate strategy and throttling control behavior don't use stat, so we just give a nop stat.
+		tsc, err := NewTrafficShapingController(rule, nopStat)
 		if err != nil || tsc == nil {
 			return nil, err
 		}
 		tsc.flowCalculator = NewDirectTrafficShapingCalculator(tsc, rule.Threshold)
-		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs)
+		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
 	tcGenFuncMap[trafficControllerGenKey{
@@ -105,7 +107,7 @@ func init() {
 			return nil, err
 		}
 		tsc.flowCalculator = NewWarmUpTrafficShapingCalculator(tsc, rule)
-		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs)
+		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
 }
@@ -130,10 +132,10 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	resRulesMap := make(map[string][]*Rule)
+	resRulesMap := make(map[string][]*Rule, len(rules))
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("ignoring invalid flow rule", "rule", rule, "reason", err)
+			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
 			continue
 		}
 		resRules, exist := resRulesMap[rule.Resource]
@@ -150,19 +152,37 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 	for res, rulesOfRes := range resRulesMap {
 		m[res] = buildRulesOfRes(res, rulesOfRes)
 	}
+
+	for res, tcs := range m {
+		if len(tcs) > 0 {
+			// update resource slot chain
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
+		}
+	}
 	tcMap = m
+	currentRules = rules
 	return nil
 }
 
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
+// the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO: rethink the design
+	tcMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	tcMux.RUnlock()
+	if isEqual {
+		logging.Info("[Flow] Load rules is the same with current rules, so ignore load operation.")
+		return false, nil
+	}
+
 	err := onRuleUpdate(rules)
 	return true, err
 }
@@ -222,7 +242,7 @@ func ClearRules() error {
 }
 
 func rulesFrom(m TrafficControllerMap) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(m) == 0 {
 		return rules
 	}
@@ -240,6 +260,10 @@ func rulesFrom(m TrafficControllerMap) []*Rule {
 }
 
 func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
+	if !rule.needStatistic() {
+		return nopStat, nil
+	}
+
 	intervalInMs := rule.StatIntervalInMs
 
 	var retStat standaloneStatistic
@@ -285,7 +309,7 @@ func generateStatFor(rule *Rule) (*standaloneStatistic, error) {
 		retStat.writeOnlyMetric = nil
 		return &retStat, nil
 	} else if err == base.GlobalStatisticNonReusableError {
-		logging.Info("flow rule couldn't reuse global statistic and will generate independent statistic", "rule", rule)
+		logging.Info("[FlowRuleManager] Flow rule couldn't reuse global statistic and will generate independent statistic", "rule", rule)
 		retStat.reuseResourceStat = false
 		realLeapArray := sbase.NewBucketLeapArray(sampleCount, intervalInMs)
 		metricStat, e := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, realLeapArray)
@@ -346,13 +370,13 @@ func getTrafficControllerListFor(name string) []*TrafficShapingController {
 	return tcMap[name]
 }
 
-func calculateReuseIndexFor(r *Rule, oldResCbs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
-	// the index of equivalent rule in old circuit breaker slice
+func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
+	// the index of equivalent rule in old traffic shaping controller slice
 	equalIdx = -1
-	// the index of statistic reusable rule in old circuit breaker slice
+	// the index of statistic reusable rule in old traffic shaping controller slice
 	reuseStatIdx = -1
 
-	for idx, oldTc := range oldResCbs {
+	for idx, oldTc := range oldResTcs {
 		oldRule := oldTc.BoundRule()
 		if oldRule.isEqualsTo(r) {
 			// break if there is equivalent rule
@@ -378,7 +402,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 	emptyTcs := make([]*TrafficShapingController, 0, 0)
 	for _, rule := range rulesOfRes {
 		if res != rule.Resource {
-			logging.Error(errors.Errorf("unmatched resource name, expect: %s, actual: %s", res, rule.Resource), "FlowManager: unmatched resource name ", "rule", rule)
+			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
 		oldResTcs, exist := tcMap[res]
@@ -390,10 +414,10 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 
 		// First check equals scenario
 		if equalIdx >= 0 {
-			// reuse the old cb
+			// reuse the old tc
 			equalOldTc := oldResTcs[equalIdx]
 			newTcsOfRes = append(newTcsOfRes, equalOldTc)
-			// remove old cb from oldResCbs
+			// remove old tc from oldResTcs
 			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
@@ -403,7 +427,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			controlBehavior:        rule.ControlBehavior,
 		}]
 		if !supported || generator == nil {
-			logging.Error(errors.New("unsupported flow control strategy"), "ignoring the rule due to unsupported control behavior", "rule", rule)
+			logging.Error(errors.New("unsupported flow control strategy"), "Ignoring the rule due to unsupported control behavior in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
 		var tc *TrafficShapingController
@@ -415,11 +439,11 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 		}
 
 		if tc == nil || e != nil {
-			logging.Error(errors.New("bad generated traffic controller"), "ignoring the rule due to bad generated traffic controller.", "rule", rule)
+			logging.Error(errors.New("bad generated traffic controller"), "Ignoring the rule due to bad generated traffic controller in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
 		if reuseStatIdx >= 0 {
-			// remove old cb from oldResCbs
+			// remove old tc from oldResTcs
 			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
 		newTcsOfRes = append(newTcsOfRes, tc)
@@ -433,36 +457,33 @@ func IsValidRule(rule *Rule) error {
 		return errors.New("nil Rule")
 	}
 	if rule.Resource == "" {
-		return errors.New("empty resource name")
+		return errors.New("empty Resource")
 	}
 	if rule.Threshold < 0 {
-		return errors.New("negative threshold")
+		return errors.New("negative Threshold")
 	}
 	if int32(rule.TokenCalculateStrategy) < 0 {
-		return errors.New("invalid token calculate strategy")
+		return errors.New("negative TokenCalculateStrategy")
 	}
 	if int32(rule.ControlBehavior) < 0 {
-		return errors.New("invalid control behavior")
+		return errors.New("negative ControlBehavior")
 	}
 	if !(rule.RelationStrategy >= CurrentResource && rule.RelationStrategy <= AssociatedResource) {
-		return errors.New("invalid relation strategy")
+		return errors.New("invalid RelationStrategy")
 	}
 	if rule.RelationStrategy == AssociatedResource && rule.RefResource == "" {
-		return errors.New("Bad flow rule: invalid relation strategy")
+		return errors.New("RefResource must be non empty when RelationStrategy is AssociatedResource")
 	}
 	if rule.TokenCalculateStrategy == WarmUp {
 		if rule.WarmUpPeriodSec <= 0 {
-			return errors.New("invalid WarmUpPeriodSec")
+			return errors.New("WarmUpPeriodSec must be great than 0")
 		}
 		if rule.WarmUpColdFactor == 1 {
 			return errors.New("WarmUpColdFactor must be great than 1")
 		}
 	}
-	if rule.ControlBehavior == Throttling && rule.MaxQueueingTimeMs == 0 {
-		return errors.New("invalid MaxQueueingTimeMs")
-	}
-	if rule.StatIntervalInMs > config.GlobalStatisticIntervalMsTotal()*60 {
-		return errors.New("StatIntervalInMs must be less than 10 minutes")
+	if rule.StatIntervalInMs > 10*60*1000 {
+		logging.Info("StatIntervalInMs is great than 10 minutes, less than 10 minutes is recommended.")
 	}
 	return nil
 }

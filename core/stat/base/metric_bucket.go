@@ -1,10 +1,11 @@
 package base
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/pkg/errors"
 )
 
 // MetricBucket represents the entity to record metrics per minimum time unit (i.e. the bucket time span).
@@ -25,7 +26,8 @@ func NewMetricBucket() *MetricBucket {
 // Add statistic count for the given metric event.
 func (mb *MetricBucket) Add(event base.MetricEvent, count int64) {
 	if event >= base.MetricEventTotal || event < 0 {
-		panic(fmt.Sprintf("Unknown metric event: %v", event))
+		logging.Error(errors.Errorf("Unknown metric event: %v", event), "")
+		return
 	}
 	if event == base.MetricEventRt {
 		mb.AddRt(count)
@@ -41,7 +43,8 @@ func (mb *MetricBucket) addCount(event base.MetricEvent, count int64) {
 // Get current statistic count of the given metric event.
 func (mb *MetricBucket) Get(event base.MetricEvent) int64 {
 	if event >= base.MetricEventTotal || event < 0 {
-		panic(fmt.Sprintf("Unknown metric event: %v", event))
+		logging.Error(errors.Errorf("Unknown metric event: %v", event), "")
+		return 0
 	}
 	return atomic.LoadInt64(&mb.counter[event])
 }

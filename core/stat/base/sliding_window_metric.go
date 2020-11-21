@@ -24,7 +24,7 @@ type SlidingWindowMetric struct {
 // It must pass the parameter point to the real storage entity
 func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapArray) (*SlidingWindowMetric, error) {
 	if real == nil {
-		return nil, errors.New("Nil BucketLeapArray")
+		return nil, errors.New("nil BucketLeapArray")
 	}
 	if err := base.CheckValidityForReuseStatistic(sampleCount, intervalInMs, real.SampleCount(), real.IntervalInMs()); err != nil {
 		return nil, err
@@ -57,12 +57,12 @@ func (m *SlidingWindowMetric) count(event base.MetricEvent, values []*BucketWrap
 	for _, ww := range values {
 		mb := ww.Value.Load()
 		if mb == nil {
-			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when summing count")
+			logging.Error(errors.New("nil BucketWrap"), "Current bucket value is nil in SlidingWindowMetric.count()")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.count()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		ret += counter.Get(event)
@@ -106,12 +106,12 @@ func (m *SlidingWindowMetric) GetMaxOfSingleBucket(event base.MetricEvent) int64
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when GetMaxOfSingleBucket")
+			logging.Error(errors.New("nil BucketWrap"), "Current bucket value is nil in SlidingWindowMetric.GetMaxOfSingleBucket()")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.GetMaxOfSingleBucket()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.Get(event)
@@ -129,12 +129,12 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {
-			logging.Error(errors.New("nil BucketWrap"), "Illegal state: current bucket Value is nil when calculating minRT")
+			logging.Error(errors.New("nil BucketWrap"), "Current bucket value is nil in SlidingWindowMetric.MinRT()")
 			continue
 		}
 		counter, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.MinRT()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		v := counter.MinRt()
@@ -158,7 +158,7 @@ func (m *SlidingWindowMetric) SecondMetricsOnCondition(predicate base.TimePredic
 	ws := m.real.ValuesConditional(util.CurrentTimeMillis(), predicate)
 
 	// Aggregate second-level MetricItem (only for stable metrics)
-	wm := make(map[uint64][]*BucketWrap)
+	wm := make(map[uint64][]*BucketWrap, 8)
 	for _, w := range ws {
 		bucketStart := atomic.LoadUint64(&w.BucketStart)
 		secStart := bucketStart - bucketStart%1000
@@ -168,7 +168,7 @@ func (m *SlidingWindowMetric) SecondMetricsOnCondition(predicate base.TimePredic
 			wm[secStart] = []*BucketWrap{w}
 		}
 	}
-	items := make([]*base.MetricItem, 0)
+	items := make([]*base.MetricItem, 0, 8)
 	for ts, values := range wm {
 		if len(values) == 0 {
 			continue
@@ -188,12 +188,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 	for _, w := range ws {
 		mi := w.Value.Load()
 		if mi == nil {
-			logging.Error(errors.New("nil BucketWrap"), "Get nil bucket when generating MetricItem from buckets")
+			logging.Error(errors.New("nil BucketWrap"), "Current bucket value is nil in SlidingWindowMetric.metricItemFromBuckets()")
 			return nil
 		}
 		mb, ok := mi.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "bucketStartTime", w.BucketStart, "type", reflect.TypeOf(mb).Name())
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.metricItemFromBuckets()", "bucketStartTime", w.BucketStart, "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			return nil
 		}
 		item.PassQps += uint64(mb.Get(base.MetricEventPass))
@@ -213,12 +213,12 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 func (m *SlidingWindowMetric) metricItemFromBucket(w *BucketWrap) *base.MetricItem {
 	mi := w.Value.Load()
 	if mi == nil {
-		logging.Error(errors.New("nil BucketWrap"), "Get nil bucket when generating MetricItem from buckets")
+		logging.Error(errors.New("nil BucketWrap"), "Current bucket value is nil in SlidingWindowMetric.metricItemFromBucket()")
 		return nil
 	}
 	mb, ok := mi.(*MetricBucket)
 	if !ok {
-		logging.Error(errors.New("type assert failed"), "Fail to do type assert, expect: MetricBucket", "type", reflect.TypeOf(mb).Name())
+		logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.metricItemFromBucket()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 		return nil
 	}
 	completeQps := mb.Get(base.MetricEventComplete)

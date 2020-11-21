@@ -49,7 +49,7 @@ func (h *DefaultPropertyHandler) isPropertyConsistent(src interface{}) bool {
 func (h *DefaultPropertyHandler) Handle(src []byte) error {
 	defer func() {
 		if err := recover(); err != nil {
-			logging.Error(errors.Errorf("%+v", err), "Unexpected panic", "err")
+			logging.Error(errors.Errorf("%+v", err), "Unexpected panic in DefaultPropertyHandler.Handle()")
 		}
 	}()
 	// convert to target property

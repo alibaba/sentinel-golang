@@ -4,7 +4,24 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
+const (
+	RuleCheckSlotName  = "sentinel-core-circuit-breaker-rule-check-slot"
+	RuleCheckSlotOrder = 5000
+)
+
+var (
+	DefaultSlot = &Slot{}
+)
+
 type Slot struct {
+}
+
+func (s *Slot) Name() string {
+	return RuleCheckSlotName
+}
+
+func (s *Slot) Order() uint32 {
+	return RuleCheckSlotOrder
 }
 
 func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
@@ -14,10 +31,11 @@ func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		return result
 	}
 	if passed, rule := checkPass(ctx); !passed {
+		msg := "circuit breaker check blocked"
 		if result == nil {
-			result = base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, "", rule, nil)
+			result = base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
 		} else {
-			result.ResetToBlockedWithCause(base.BlockTypeCircuitBreaking, "", rule, nil)
+			result.ResetToBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
 		}
 	}
 	return result

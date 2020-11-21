@@ -6,7 +6,24 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	StatSlotName  = "sentinel-core-flow-standalone-stat-slot"
+	StatSlotOrder = 3000
+)
+
+var (
+	DefaultStandaloneStatSlot = &StandaloneStatSlot{}
+)
+
 type StandaloneStatSlot struct {
+}
+
+func (s *StandaloneStatSlot) Name() string {
+	return StatSlotName
+}
+
+func (s *StandaloneStatSlot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (s StandaloneStatSlot) OnEntryPassed(ctx *base.EntryContext) {
@@ -16,7 +33,7 @@ func (s StandaloneStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 			if tc.boundStat.writeOnlyMetric != nil {
 				tc.boundStat.writeOnlyMetric.AddCount(base.MetricEventPass, int64(ctx.Input.BatchCount))
 			} else {
-				logging.Error(errors.New("nil independent write statistic"), "flow module: nil statistic for traffic control", "rule", tc.rule)
+				logging.Error(errors.New("nil independent write statistic"), "Nil statistic for traffic control in StandaloneStatSlot.OnEntryPassed()", "rule", tc.rule)
 			}
 		}
 	}

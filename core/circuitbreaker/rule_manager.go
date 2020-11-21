@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -13,11 +14,12 @@ import (
 type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
 
 var (
-	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc)
+	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc, 4)
 
 	breakerRules = make(map[string][]*Rule)
 	breakers     = make(map[string][]CircuitBreaker)
 	updateMux    = &sync.RWMutex{}
+	currentRules = make([]*Rule, 0)
 
 	stateChangeListeners = make([]StateChangeListener, 0)
 )
@@ -32,7 +34,7 @@ func init() {
 		}
 		stat, ok := reuseStat.(*slowRequestLeapArray)
 		if !ok || stat == nil {
-			logging.Warn("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*slowRequestLeapArray", "statType", reflect.TypeOf(stat).Name())
+			logging.Warn("[CircuitBreaker RuleManager] Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*slowRequestLeapArray", "statType", reflect.TypeOf(stat).Name())
 			return newSlowRtCircuitBreaker(r)
 		}
 		return newSlowRtCircuitBreakerWithStat(r, stat), nil
@@ -47,7 +49,7 @@ func init() {
 		}
 		stat, ok := reuseStat.(*errorCounterLeapArray)
 		if !ok || stat == nil {
-			logging.Warn("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray", "statType", reflect.TypeOf(stat).Name())
+			logging.Warn("[CircuitBreaker RuleManager] Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray", "statType", reflect.TypeOf(stat).Name())
 			return newErrorRatioCircuitBreaker(r)
 		}
 		return newErrorRatioCircuitBreakerWithStat(r, stat), nil
@@ -62,7 +64,7 @@ func init() {
 		}
 		stat, ok := reuseStat.(*errorCounterLeapArray)
 		if !ok || stat == nil {
-			logging.Warn("Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray", "statType", reflect.TypeOf(stat).Name())
+			logging.Warn("[CircuitBreaker RuleManager] Expect to generate circuit breaker with reuse statistic, but fail to do type assertion, expect:*errorCounterLeapArray", "statType", reflect.TypeOf(stat).Name())
 			return newErrorCountCircuitBreaker(r)
 		}
 		return newErrorCountCircuitBreakerWithStat(r, stat), nil
@@ -116,15 +118,23 @@ func ClearRules() error {
 // error: was designed to indicate whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO in order to avoid invalid update, should check consistent with last update rules
+	updateMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	updateMux.RUnlock()
+	if isEqual {
+		logging.Info("[CircuitBreaker] Load rules is the same with current rules, so ignore load operation.")
+		return false, nil
+	}
+
 	err := onRuleUpdate(rules)
 	return true, err
 }
 
 func getBreakersOfResource(resource string) []CircuitBreaker {
-	ret := make([]CircuitBreaker, 0)
 	updateMux.RLock()
 	resCBs := breakers[resource]
 	updateMux.RUnlock()
+	ret := make([]CircuitBreaker, 0, len(resCBs))
 	if len(resCBs) == 0 {
 		return ret
 	}
@@ -180,13 +190,13 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	newBreakerRules := make(map[string][]*Rule)
+	newBreakerRules := make(map[string][]*Rule, len(rules))
 	for _, rule := range rules {
 		if rule == nil {
 			continue
 		}
 		if err := IsValid(rule); err != nil {
-			logging.Warn("Ignoring invalid circuit breaking rule when loading new rules", "rule", rule, "err", err)
+			logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring invalid circuit breaking rule when loading new rules", "rule", rule, "err", err.Error())
 			continue
 		}
 
@@ -199,7 +209,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		newBreakerRules[classification] = ruleSet
 	}
 
-	newBreakers := make(map[string][]CircuitBreaker)
+	newBreakers := make(map[string][]CircuitBreaker, len(rules))
 	// in order to avoid growing, build newBreakers in advance
 	for res, rules := range newBreakerRules {
 		newBreakers[res] = make([]CircuitBreaker, 0, len(rules))
@@ -212,7 +222,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[CircuitBreaker onRuleUpdate] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(newBreakerRules)
 	}()
 
@@ -237,7 +247,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 			generator := cbGenFuncMap[r.Strategy]
 			if generator == nil {
-				logging.Warn("Ignoring the rule due to unsupported circuit breaking strategy", "rule", r)
+				logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring the rule due to unsupported circuit breaking strategy", "rule", r)
 				continue
 			}
 
@@ -249,7 +259,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				cb, e = generator(r, nil)
 			}
 			if cb == nil || e != nil {
-				logging.Warn("Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e)
+				logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e.Error())
 				continue
 			}
 
@@ -260,13 +270,23 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}
 
+	for res, cbs := range newBreakers {
+		if len(cbs) > 0 {
+			// update resource slot chain
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			misc.RegisterStatSlotForResource(res, DefaultMetricStatSlot)
+		}
+	}
+
 	breakerRules = newBreakerRules
 	breakers = newBreakers
+	currentRules = rules
+
 	return nil
 }
 
 func rulesFrom(rm map[string][]*Rule) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(rm) == 0 {
 		return rules
 	}
@@ -292,6 +312,7 @@ func logRuleUpdate(m map[string][]*Rule) {
 	}
 }
 
+// RegisterStateChangeListeners registers the global state change listener for all circuit breakers
 // Note: this function is not thread-safe.
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	if len(listeners) == 0 {
@@ -301,7 +322,7 @@ func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	stateChangeListeners = append(stateChangeListeners, listeners...)
 }
 
-// ClearStateChangeListeners will clear the all StateChangeListener
+// ClearStateChangeListeners clears the all StateChangeListener
 // Note: this function is not thread-safe.
 func ClearStateChangeListeners() {
 	stateChangeListeners = make([]StateChangeListener, 0)

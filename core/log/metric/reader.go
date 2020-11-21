@@ -94,7 +94,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFile(filename string, offset ui
 	defer file.Close()
 
 	bufReader := bufio.NewReaderSize(file, 8192)
-	items := make([]*base.MetricItem, 0)
+	items := make([]*base.MetricItem, 0, 1024)
 	for {
 		line, err := readLine(bufReader)
 		if err != nil {
@@ -106,7 +106,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFile(filename string, offset ui
 		}
 		item, err := base.MetricItemFromFatString(line)
 		if err != nil {
-			logging.Error(err, "Failed to convert MetricItem to string")
+			logging.Error(err, "Failed to convert MetricItem to string in defaultMetricLogReader.readMetricsInOneFile()")
 			continue
 		}
 		tsSec := item.Timestamp / 1000
@@ -129,7 +129,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, 
 	defer file.Close()
 
 	bufReader := bufio.NewReaderSize(file, 8192)
-	items := make([]*base.MetricItem, 0)
+	items := make([]*base.MetricItem, 0, 1024)
 	for {
 		line, err := readLine(bufReader)
 		if err != nil {
@@ -140,7 +140,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, 
 		}
 		item, err := base.MetricItemFromFatString(line)
 		if err != nil {
-			logging.Error(err, "Invalid line of metric file", "fileLine", line)
+			logging.Error(err, "Invalid line of metric file in defaultMetricLogReader.readMetricsInOneFileByEndTime()", "fileLine", line)
 			continue
 		}
 		tsSec := item.Timestamp / 1000
@@ -161,7 +161,7 @@ func (r *defaultMetricLogReader) readMetricsInOneFileByEndTime(filename string, 
 }
 
 func readLine(bufReader *bufio.Reader) (string, error) {
-	buf := make([]byte, 0)
+	buf := make([]byte, 0, 64)
 	for {
 		line, ne, err := bufReader.ReadLine()
 		if err != nil {

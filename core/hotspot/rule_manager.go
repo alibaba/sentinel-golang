@@ -2,8 +2,10 @@ package hotspot
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -16,9 +18,10 @@ type TrafficControllerGenFunc func(r *Rule, reuseMetric *ParamsMetric) TrafficSh
 type trafficControllerMap map[string][]TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc)
+	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc, 4)
 	tcMap        = make(trafficControllerMap)
 	tcMux        = new(sync.RWMutex)
+	currentRules = make([]*Rule, 0)
 )
 
 func init() {
@@ -30,6 +33,9 @@ func init() {
 			baseTc = newBaseTrafficShapingControllerWithMetric(r, reuseMetric)
 		} else {
 			baseTc = newBaseTrafficShapingController(r)
+		}
+		if baseTc == nil {
+			return nil
 		}
 		return &rejectTrafficShapingController{
 			baseTrafficShapingController: *baseTc,
@@ -43,6 +49,9 @@ func init() {
 			baseTc = newBaseTrafficShapingControllerWithMetric(r, reuseMetric)
 		} else {
 			baseTc = newBaseTrafficShapingController(r)
+		}
+		if baseTc == nil {
+			return nil
 		}
 		return &throttlingTrafficShapingController{
 			baseTrafficShapingController: *baseTc,
@@ -63,6 +72,14 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 // bool: indicates whether the internal map has been changed;
 // error: indicates whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
+	tcMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	tcMux.RUnlock()
+	if isEqual {
+		logging.Info("[HotSpot] Load rules is the same with current rules, so ignore load operation.")
+		return false, nil
+	}
+
 	err := onRuleUpdate(rules)
 	return true, err
 }
@@ -116,10 +133,10 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	newRuleMap := make(map[string][]*Rule)
+	newRuleMap := make(map[string][]*Rule, len(rules))
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logging.Warn("Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err)
+			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err.Error())
 			continue
 		}
 		res := r.ResourceName()
@@ -143,7 +160,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("time statistic(ns) for updating hotspot rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
@@ -168,7 +185,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			// generate new traffic shaping controller
 			generator, supported := tcGenFuncMap[r.ControlBehavior]
 			if !supported {
-				logging.Warn("Ignoring the frequent param flow rule due to unsupported control behavior", "rule", r)
+				logging.Warn("[HotSpot onRuleUpdate] Ignoring the frequent param flow rule due to unsupported control behavior", "rule", r)
 				continue
 			}
 			var tc TrafficShapingController
@@ -179,7 +196,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tc = generator(r, nil)
 			}
 			if tc == nil {
-				logging.Debug("Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
+				logging.Debug("[HotSpot onRuleUpdate] Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
 				continue
 			}
 
@@ -190,7 +207,20 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			insertTcToTcMap(tc, res, m)
 		}
 	}
+	for res, tcs := range m {
+		if len(tcs) > 0 {
+			// update resource slot chain
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+			for _, tc := range tcs {
+				if tc.BoundRule().MetricType == Concurrency {
+					misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
+					break
+				}
+			}
+		}
+	}
 	tcMap = m
+	currentRules = rules
 
 	return nil
 }
@@ -205,7 +235,7 @@ func logRuleUpdate(m trafficControllerMap) {
 }
 
 func rulesFrom(m trafficControllerMap) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(m) == 0 {
 		return rules
 	}

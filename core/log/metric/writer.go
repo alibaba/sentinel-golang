@@ -106,7 +106,7 @@ func (d *DefaultMetricLogWriter) writeItemsAndFlush(items []*base.MetricItem) er
 	for _, item := range items {
 		s, err := item.ToFatString()
 		if err != nil {
-			logging.Warn("Failed to convert MetricItem to string", "resourceName", item.Resource, "err", err)
+			logging.Warn("[writeItemsAndFlush] Failed to convert MetricItem to string", "resourceName", item.Resource, "err", err.Error())
 			continue
 		}
 
@@ -171,14 +171,14 @@ func (d *DefaultMetricLogWriter) removeDeprecatedFiles() error {
 		idxFilename := formMetricIdxFileName(filename)
 		err = os.Remove(filename)
 		if err != nil {
-			logging.Error(err, "[MetricWriter] Failed to remove metric log file", "filename", filename)
+			logging.Error(err, "Failed to remove metric log file in DefaultMetricLogWriter.removeDeprecatedFiles()", "filename", filename)
 		} else {
-			logging.Info("[MetricWriter] Metric log file removed", "filename", filename)
+			logging.Info("[MetricWriter] Metric log file removed in DefaultMetricLogWriter.removeDeprecatedFiles()", "filename", filename)
 		}
 
 		err = os.Remove(idxFilename)
 		if err != nil {
-			logging.Error(err, "[MetricWriter] Failed to remove metric log file", "idxFilename", idxFilename)
+			logging.Error(err, "Failed to remove metric log file in DefaultMetricLogWriter.removeDeprecatedFiles()", "idxFilename", idxFilename)
 		} else {
 			logging.Info("[MetricWriter] Metric index file removed", "idxFilename", idxFilename)
 		}
@@ -218,12 +218,12 @@ func (d *DefaultMetricLogWriter) closeCurAndNewFile(filename string) error {
 
 	if d.curMetricFile != nil {
 		if err = d.curMetricFile.Close(); err != nil {
-			logging.Error(err, "[MetricWriter] Failed to close metric log file", "curMetricFile", d.curMetricFile.Name())
+			logging.Error(err, "Failed to close metric log file in DefaultMetricLogWriter.closeCurAndNewFile()", "curMetricFile", d.curMetricFile.Name())
 		}
 	}
 	if d.curMetricIdxFile != nil {
 		if err = d.curMetricIdxFile.Close(); err != nil {
-			logging.Error(err, "[MetricWriter] Failed to close metric index file", "curMetricIdxFile", d.curMetricIdxFile.Name())
+			logging.Error(err, "Failed to close metric index file in DefaultMetricLogWriter.closeCurAndNewFile()", "curMetricIdxFile", d.curMetricIdxFile.Name())
 		}
 	}
 	// Create new metric log file, whether it exists or not.

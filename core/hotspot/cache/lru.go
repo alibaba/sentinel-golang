@@ -26,12 +26,12 @@ type entry struct {
 // NewLRU constructs an LRU of the given size
 func NewLRU(size int, onEvict EvictCallback) (*LRU, error) {
 	if size <= 0 {
-		return nil, errors.New("Must provide a positive size")
+		return nil, errors.New("must provide a positive size")
 	}
 	c := &LRU{
 		size:      size,
 		evictList: list.New(),
-		items:     make(map[interface{}]*list.Element),
+		items:     make(map[interface{}]*list.Element, 64),
 		onEvict:   onEvict,
 	}
 	return c, nil

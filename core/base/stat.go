@@ -1,7 +1,7 @@
 package base
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 )
 
 type TimePredicate func(uint64) bool
@@ -25,6 +25,11 @@ const (
 	MetricEventTotal
 )
 
+var (
+	globalNopReadStat  = &nopReadStat{}
+	globalNopWriteStat = &nopWriteStat{}
+)
+
 type ReadStat interface {
 	GetQPS(event MetricEvent) float64
 	GetPreviousQPS(event MetricEvent) float64
@@ -34,8 +39,51 @@ type ReadStat interface {
 	AvgRT() float64
 }
 
+func NopReadStat() *nopReadStat {
+	return globalNopReadStat
+}
+
+type nopReadStat struct {
+}
+
+func (rs *nopReadStat) GetQPS(_ MetricEvent) float64 {
+	return 0.0
+}
+
+func (rs *nopReadStat) GetPreviousQPS(_ MetricEvent) float64 {
+	return 0.0
+}
+
+func (rs *nopReadStat) GetSum(_ MetricEvent) int64 {
+	return 0
+}
+
+func (rs *nopReadStat) MinRT() float64 {
+	return 0.0
+}
+
+func (rs *nopReadStat) AvgRT() float64 {
+	return 0.0
+}
+
 type WriteStat interface {
 	AddCount(event MetricEvent, count int64)
+}
+
+func NopWriteStat() *nopWriteStat {
+	return globalNopWriteStat
+}
+
+type nopWriteStat struct {
+}
+
+func (ws *nopWriteStat) AddCount(_ MetricEvent, _ int64) {
+}
+
+type ConcurrencyStat interface {
+	CurrentConcurrency() int32
+	IncreaseConcurrency()
+	DecreaseConcurrency()
 }
 
 // StatNode holds real-time statistics for resources.
@@ -44,12 +92,7 @@ type StatNode interface {
 
 	ReadStat
 	WriteStat
-
-	CurrentGoroutineNum() int32
-	IncreaseGoroutineNum()
-	DecreaseGoroutineNum()
-
-	Reset()
+	ConcurrencyStat
 
 	// GenerateReadStat generates the readonly metric statistic based on resource level global statistic
 	// If parameters, sampleCount and intervalInMs, are not suitable for resource level global statistic, return (nil, error)

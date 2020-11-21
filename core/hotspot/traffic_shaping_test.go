@@ -70,7 +70,7 @@ func Test_baseTrafficShapingController_performCheckingForConcurrencyMetric(t *te
 			res:           "res_a",
 			metricType:    Concurrency,
 			paramIndex:    0,
-			threshold:     100,
+			threshold:     100.0,
 			specificItems: make(map[interface{}]int64),
 			durationInSec: 1,
 			metric: &ParamsMetric{
@@ -107,7 +107,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{
@@ -139,7 +139,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 10,
 				metric: &ParamsMetric{
@@ -172,7 +172,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{
@@ -205,7 +205,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{
@@ -243,7 +243,7 @@ func Test_throttlingTrafficShapingController_performChecking(t *testing.T) {
 				res:           "res_a",
 				metricType:    QPS,
 				paramIndex:    0,
-				threshold:     100,
+				threshold:     100.0,
 				specificItems: make(map[interface{}]int64),
 				durationInSec: 1,
 				metric: &ParamsMetric{
@@ -262,5 +262,46 @@ func Test_throttlingTrafficShapingController_performChecking(t *testing.T) {
 		timeCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(lastAddTokenTime).Times(1)
 		result := c.PerformChecking(arg, 20)
 		assert.True(t, result == nil)
+	})
+}
+
+func Test_newBaseTrafficShapingController(t *testing.T) {
+	t.Run("Test_newBaseTrafficShapingController", func(t *testing.T) {
+		tc := newBaseTrafficShapingController(&Rule{
+			MetricType: Concurrency,
+		})
+		for i := 0; i < 10000; i++ {
+			initConcurrency := new(int64)
+			*initConcurrency = 0
+			tc.metric.ConcurrencyCounter.AddIfAbsent(i, initConcurrency)
+		}
+		assert.True(t, tc.metric.ConcurrencyCounter != nil)
+		assert.True(t, tc.metric.ConcurrencyCounter.Len() == ConcurrencyMaxCount)
+
+		tc = newBaseTrafficShapingController(&Rule{
+			MetricType:        Concurrency,
+			ParamsMaxCapacity: 100,
+		})
+		for i := 0; i < 10000; i++ {
+			initConcurrency := new(int64)
+			*initConcurrency = 0
+			tc.metric.ConcurrencyCounter.AddIfAbsent(i, initConcurrency)
+		}
+		assert.True(t, tc.metric.ConcurrencyCounter != nil)
+		assert.True(t, tc.metric.ConcurrencyCounter.Len() == 100)
+
+		tc = newBaseTrafficShapingController(&Rule{
+			MetricType: QPS,
+		})
+		for i := 0; i < 30000; i++ {
+			initConcurrency := new(int64)
+			*initConcurrency = 0
+			tc.metric.RuleTimeCounter.AddIfAbsent(i, initConcurrency)
+			tc.metric.RuleTokenCounter.AddIfAbsent(i, initConcurrency)
+		}
+		assert.True(t, tc.metric.RuleTimeCounter != nil)
+		assert.True(t, tc.metric.RuleTokenCounter != nil)
+		assert.True(t, tc.metric.RuleTimeCounter.Len() == ParamsMaxCapacity)
+		assert.True(t, tc.metric.RuleTokenCounter.Len() == ParamsMaxCapacity)
 	})
 }

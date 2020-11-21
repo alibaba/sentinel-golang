@@ -10,7 +10,7 @@ import (
 func TraceError(entry *base.SentinelEntry, err error) {
 	defer func() {
 		if e := recover(); e != nil {
-			logging.Error(errors.Errorf("%+v", e), "failed to TraceError")
+			logging.Error(errors.Errorf("%+v", e), "Failed to api.TraceError()")
 			return
 		}
 	}()

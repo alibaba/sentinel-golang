@@ -11,6 +11,7 @@ import (
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
+	"github.com/alibaba/sentinel-golang/core/isolation"
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -389,10 +390,10 @@ func TestHotSpotParamRuleJsonArrayParser(t *testing.T) {
 		for _, r := range rules {
 			fmt.Println(r)
 		}
-		assert.True(t, strings.Contains(rules[0].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Reject, ParamIndex:0, Threshold:1000.000000, MaxQueueingTimeMs:1, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:10001} {ValKind:KindString ValStr:ximu Threshold:10002} {ValKind:KindBool ValStr:true Threshold:10003}]}"))
-		assert.True(t, strings.Contains(rules[1].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Throttling, ParamIndex:1, Threshold:2000.000000, MaxQueueingTimeMs:2, BurstCount:20, DurationInSec:2, ParamsMaxCapacity:20000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:20001} {ValKind:KindString ValStr:ximu Threshold:20002} {ValKind:KindBool ValStr:true Threshold:20003}]}"))
-		assert.True(t, strings.Contains(rules[2].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Reject, ParamIndex:2, Threshold:3000.000000, MaxQueueingTimeMs:3, BurstCount:30, DurationInSec:3, ParamsMaxCapacity:30000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:30001} {ValKind:KindString ValStr:ximu Threshold:30002} {ValKind:KindBool ValStr:true Threshold:30003}]}"))
-		assert.True(t, strings.Contains(rules[3].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Throttling, ParamIndex:3, Threshold:4000.000000, MaxQueueingTimeMs:4, BurstCount:40, DurationInSec:4, ParamsMaxCapacity:40000, SpecificItems:[{ValKind:KindInt ValStr:1000 Threshold:40001} {ValKind:KindString ValStr:ximu Threshold:40002} {ValKind:KindBool ValStr:true Threshold:40003}]}"))
+		assert.True(t, strings.Contains(rules[0].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Reject, ParamIndex:0, Threshold:1000, MaxQueueingTimeMs:1, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[true:10003 1000:10001 ximu:10002]"))
+		assert.True(t, strings.Contains(rules[1].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Throttling, ParamIndex:1, Threshold:2000, MaxQueueingTimeMs:2, BurstCount:20, DurationInSec:2, ParamsMaxCapacity:20000, SpecificItems:map[true:20003 1000:20001 ximu:20002"))
+		assert.True(t, strings.Contains(rules[2].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Reject, ParamIndex:2, Threshold:3000, MaxQueueingTimeMs:3, BurstCount:30, DurationInSec:3, ParamsMaxCapacity:30000, SpecificItems:map[true:30003 1000:30001 ximu:30002"))
+		assert.True(t, strings.Contains(rules[3].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Throttling, ParamIndex:3, Threshold:4000, MaxQueueingTimeMs:4, BurstCount:40, DurationInSec:4, ParamsMaxCapacity:40000, SpecificItems:map[true:40003 1000:40001 ximu:40002"))
 	})
 
 	t.Run("TestHotSpotParamRuleJsonArrayParser_Nil", func(t *testing.T) {
@@ -405,19 +406,9 @@ func TestHotSpotParamRuleJsonArrayParser(t *testing.T) {
 }
 
 func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
-	t.Run("TestHotSpotParamRuleListJsonUpdater_Normal", func(t *testing.T) {
+	t.Run("TestHotSpotParamRuleListJsonUpdater", func(t *testing.T) {
 		// Prepare test data
-		m := make([]hotspot.SpecificValue, 2)
-		m[0] = hotspot.SpecificValue{
-			ValKind:   hotspot.KindString,
-			ValStr:    "sss",
-			Threshold: 1,
-		}
-		m[1] = hotspot.SpecificValue{
-			ValKind:   hotspot.KindFloat64,
-			ValStr:    "1.123",
-			Threshold: 3,
-		}
+		m := make(map[interface{}]int64)
 		r1 := &hotspot.Rule{
 			ID:                "1",
 			Resource:          "abc",
@@ -431,17 +422,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			SpecificItems:     m,
 		}
 
-		m2 := make([]hotspot.SpecificValue, 2)
-		m2[0] = hotspot.SpecificValue{
-			ValKind:   hotspot.KindString,
-			ValStr:    "sss",
-			Threshold: 1,
-		}
-		m2[1] = hotspot.SpecificValue{
-			ValKind:   hotspot.KindFloat64,
-			ValStr:    "1.123",
-			Threshold: 3,
-		}
+		m2 := make(map[interface{}]int64)
 		r2 := &hotspot.Rule{
 			ID:                "2",
 			Resource:          "abc",
@@ -455,17 +436,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			SpecificItems:     m2,
 		}
 
-		m3 := make([]hotspot.SpecificValue, 2)
-		m3[0] = hotspot.SpecificValue{
-			ValKind:   hotspot.KindString,
-			ValStr:    "sss",
-			Threshold: 1,
-		}
-		m3[1] = hotspot.SpecificValue{
-			ValKind:   hotspot.KindFloat64,
-			ValStr:    "1.123",
-			Threshold: 3,
-		}
+		m3 := make(map[interface{}]int64)
 		r3 := &hotspot.Rule{
 			ID:                "3",
 			Resource:          "abc",
@@ -515,6 +486,103 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 				MaxQueueingTimeMs:      0,
 			}}
 		err := HotSpotParamRulesUpdater(rules)
+
+		assert.True(t, err.(Error).Code() == UpdatePropertyError)
+		assert.True(t, strings.Contains(err.(Error).desc, "Fail to type assert"))
+	})
+}
+
+func TestIsolationRuleJsonArrayParser(t *testing.T) {
+	t.Run("TestIsolationJsonArrayParser_Invalid", func(t *testing.T) {
+		_, err := IsolationRuleJsonArrayParser([]byte{'s', 'r', 'c'})
+		assert.True(t, err != nil)
+	})
+
+	t.Run("TestIsolationRuleJsonArrayParser_Normal", func(t *testing.T) {
+		// Prepare test data
+		f, err := os.Open("../../tests/testdata/extension/helper/IsolationRule.json")
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		if err != nil {
+			t.Errorf("The rules file is not existed, err:%+v.", err)
+		}
+		src, err := ioutil.ReadAll(f)
+		if err != nil {
+			t.Errorf("Fail to read file, err: %+v.", err)
+		}
+
+		properties, err := IsolationRuleJsonArrayParser(src)
+		rules := properties.([]*isolation.Rule)
+		assert.True(t, err == nil)
+		assert.True(t, len(rules) == 4)
+		assert.True(t, strings.Contains(rules[0].String(), `{"resource":"abc","metricType":0,"threshold":100}`))
+		assert.True(t, strings.Contains(rules[1].String(), `{"resource":"abc","metricType":0,"threshold":90}`))
+		assert.True(t, strings.Contains(rules[2].String(), `{"resource":"abc","metricType":0,"threshold":80}`))
+		assert.True(t, strings.Contains(rules[3].String(), `{"resource":"abc","metricType":0,"threshold":70}`))
+	})
+
+	t.Run("TestIsolationRuleJsonArrayParser_Nil", func(t *testing.T) {
+		got, err := IsolationRuleJsonArrayParser(nil)
+		assert.True(t, got == nil && err == nil)
+
+		got, err = IsolationRuleJsonArrayParser([]byte{})
+		assert.True(t, got == nil && err == nil)
+	})
+}
+
+func TestIsolationRuleListJsonUpdater(t *testing.T) {
+	t.Run("TestIsolationRuleListJsonUpdater", func(t *testing.T) {
+		// Prepare test data
+		r1 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  100,
+		}
+
+		r2 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  90,
+		}
+
+		r3 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  80,
+		}
+
+		r4 := &isolation.Rule{
+			Resource:   "abc",
+			MetricType: isolation.Concurrency,
+			Threshold:  70,
+		}
+
+		err := IsolationRulesUpdater([]*isolation.Rule{r1, r2, r3, r4})
+		assert.True(t, err == nil)
+
+		rules := isolation.GetRulesOfResource("abc")
+		assert.True(t, reflect.DeepEqual(rules[0], *r1))
+		assert.True(t, reflect.DeepEqual(rules[1], *r2))
+		assert.True(t, reflect.DeepEqual(rules[2], *r3))
+		assert.True(t, reflect.DeepEqual(rules[3], *r4))
+	})
+
+	t.Run("TestIsolationRuleListJsonUpdater_Type_Err", func(t *testing.T) {
+		rules := []*flow.Rule{
+			{
+				Resource:               "abc",
+				Threshold:              0,
+				RelationStrategy:       0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
+				RefResource:            "",
+				WarmUpPeriodSec:        0,
+				MaxQueueingTimeMs:      0,
+			}}
+		err := IsolationRulesUpdater(rules)
 
 		assert.True(t, err.(Error).Code() == UpdatePropertyError)
 		assert.True(t, strings.Contains(err.(Error).desc, "Fail to type assert"))

@@ -18,12 +18,20 @@ var (
 	initLogOnce sync.Once
 )
 
-func SetDefaultConfig(config *Entity) {
+func ResetGlobalConfig(config *Entity) {
 	globalCfg = config
 }
 
-// InitConfig loads general configuration from the given file.
-func InitConfig(configPath string) error {
+func InitConfigWithYaml(filePath string) (err error) {
+	// Initialize general config and logging module.
+	if err = applyYamlConfigFile(filePath); err != nil {
+		return err
+	}
+	return OverrideConfigFromEnvAndInitLog()
+}
+
+// applyYamlConfigFile loads general configuration from the given YAML file.
+func applyYamlConfigFile(configPath string) error {
 	// Priority: system environment > YAML file > default config
 	if util.IsBlank(configPath) {
 		// If the config file path is absent, Sentinel will try to resolve it from the system env.
@@ -34,12 +42,7 @@ func InitConfig(configPath string) error {
 	}
 	// First Sentinel will try to load config from the given file.
 	// If the path is empty (not set), Sentinel will use the default config.
-	err := loadFromYamlFile(configPath)
-	if err != nil {
-		return err
-	}
-
-	return OverrideConfigFromEnvAndInitLog()
+	return loadGlobalConfigFromYamlFile(configPath)
 }
 
 func OverrideConfigFromEnvAndInitLog() error {
@@ -50,7 +53,7 @@ func OverrideConfigFromEnvAndInitLog() error {
 		return err
 	}
 
-	defer logging.Info("print effective global config", "globalConfig", *globalCfg)
+	defer logging.Info("[Config] Print effective global config", "globalConfig", *globalCfg)
 	// Configured Logger is the highest priority
 	if configLogger := Logger(); configLogger != nil {
 		err = logging.ResetGlobalLogger(configLogger)
@@ -67,11 +70,11 @@ func OverrideConfigFromEnvAndInitLog() error {
 	if err := initializeLogConfig(logDir, LogUsePid()); err != nil {
 		return err
 	}
-	logging.Info("App name resolved", "appName", AppName())
+	logging.Info("[Config] App name resolved", "appName", AppName())
 	return nil
 }
 
-func loadFromYamlFile(filePath string) error {
+func loadGlobalConfigFromYamlFile(filePath string) error {
 	if filePath == DefaultConfigFilename {
 		if _, err := os.Stat(DefaultConfigFilename); err != nil {
 			//use default globalCfg.
@@ -90,7 +93,7 @@ func loadFromYamlFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	logging.Info("Resolving Sentinel config from file", "file", filePath)
+	logging.Info("[Config] Resolving Sentinel config from file", "file", filePath)
 	return checkConfValid(&(globalCfg.Sentinel))
 }
 
@@ -125,7 +128,7 @@ func overrideItemsFromSystemEnv() error {
 
 func initializeLogConfig(logDir string, usePid bool) (err error) {
 	if logDir == "" {
-		return errors.New("Invalid empty log path")
+		return errors.New("invalid empty log path")
 	}
 
 	initLogOnce.Do(func() {
@@ -152,7 +155,7 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 		return err
 	}
 
-	logging.Info("INFO: log base directory is: " + logBaseDir)
+	logging.Info("[Config] Log base directory", "baseDir", logBaseDir)
 
 	return nil
 }

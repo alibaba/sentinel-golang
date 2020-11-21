@@ -1,27 +1,41 @@
 package isolation
 
 import (
+	"reflect"
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
 
 var (
-	ruleMap = make(map[string][]*Rule)
-	rwMux   = &sync.RWMutex{}
+	ruleMap      = make(map[string][]*Rule)
+	rwMux        = &sync.RWMutex{}
+	currentRules = make([]*Rule, 0)
 )
 
 // LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
-func LoadRules(rules []*Rule) (updated bool, err error) {
-	updated = true
-	err = nil
+// the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
+func LoadRules(rules []*Rule) (bool, error) {
+	rwMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	rwMux.RUnlock()
+	if isEqual {
+		logging.Info("[Isolation] Load rules is the same with current rules, so ignore load operation.")
+		return false, nil
+	}
 
-	m := make(map[string][]*Rule)
+	err := onRuleUpdate(rules)
+	return true, err
+}
+
+func onRuleUpdate(rules []*Rule) (err error) {
+	m := make(map[string][]*Rule, len(rules))
 	for _, r := range rules {
 		if e := IsValid(r); e != nil {
-			logging.Error(e, "invalid isolation rule.", "rule", r)
+			logging.Error(e, "Invalid isolation rule in isolation.LoadRules()", "rule", r)
 			continue
 		}
 		resRules, ok := m[r.Resource]
@@ -35,10 +49,18 @@ func LoadRules(rules []*Rule) (updated bool, err error) {
 	rwMux.Lock()
 	defer func() {
 		rwMux.Unlock()
-		logging.Debug("time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
+
+	for res, rs := range m {
+		if len(rs) > 0 {
+			// update resource slot chain
+			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+		}
+	}
 	ruleMap = m
+	currentRules = rules
 	return
 }
 
@@ -97,7 +119,7 @@ func getRulesOfResource(res string) []*Rule {
 }
 
 func rulesFrom(m map[string][]*Rule) []*Rule {
-	rules := make([]*Rule, 0)
+	rules := make([]*Rule, 0, 8)
 	if len(m) == 0 {
 		return rules
 	}

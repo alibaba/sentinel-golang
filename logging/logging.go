@@ -27,6 +27,8 @@ const (
 	// RecordLogFileName represents the default file name of the record log.
 	RecordLogFileName = "sentinel-record.log"
 	GlobalCallerDepth = 4
+
+	defaultLogMsgBufferSize = 256
 )
 
 var (
@@ -40,15 +42,24 @@ var (
 	FrequentErrorOnce = &sync.Once{}
 )
 
+// GetGlobalLoggerLevel gets the Sentinel log level
 func GetGlobalLoggerLevel() Level {
 	return globalLogLevel
 }
 
-func SetGlobalLoggerLevel(l Level) {
+// ResetGlobalLoggerLevel sets the Sentinel log level
+// Note: this function is not thread-safe.
+func ResetGlobalLoggerLevel(l Level) {
 	globalLogLevel = l
 }
 
-// Note: Not thread-safe
+// GetGlobalLogger gets the Sentinel global logger
+func GetGlobalLogger() Logger {
+	return globalLogger
+}
+
+// ResetGlobalLogger sets the Sentinel global logger
+// Note: this function is not thread-safe.
 func ResetGlobalLogger(log Logger) error {
 	if log == nil {
 		return errors.New("nil logger")
@@ -115,8 +126,19 @@ func caller(depth int) (file string, line int) {
 	return
 }
 
+// toSafeJSONString converts to valid JSON string, as the original string may contain '\\', '\n', '\r', '\t' and so on.
+func toSafeJSONString(s string) []byte {
+	if data, err := json.Marshal(json.RawMessage(s)); err == nil {
+		return data
+	} else {
+		return []byte("\"" + s + "\"")
+	}
+}
+
 func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...interface{}) string {
 	sb := strings.Builder{}
+	sb.Grow(defaultLogMsgBufferSize)
+
 	file, line := caller(depth)
 	timeStr := time.Now().Format("2006-01-02 15:04:05.520")
 	caller := fmt.Sprintf("%s:%d", file, line)
@@ -153,9 +175,8 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 	sb.WriteString("msg")
 	sb.WriteByte('"')
 	sb.WriteByte(':')
-	sb.WriteByte('"')
-	sb.WriteString(msg)
-	sb.WriteByte('"')
+	data := toSafeJSONString(msg)
+	sb.Write(data)
 
 	kvLen := len(keysAndValues)
 	if kvLen&1 != 0 {
@@ -164,9 +185,9 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 		sb.WriteString("kvs")
 		sb.WriteByte('"')
 		sb.WriteByte(':')
-		sb.WriteByte('"')
-		sb.WriteString(fmt.Sprintf("%+v", keysAndValues))
-		sb.WriteByte('"')
+		s := fmt.Sprintf("%+v", keysAndValues)
+		data := toSafeJSONString(s)
+		sb.Write(data)
 	} else if kvLen != 0 {
 		for i := 0; i < kvLen; {
 			k := keysAndValues[i]
@@ -176,23 +197,24 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 				kStr = fmt.Sprintf("%+v", k)
 			}
 			sb.WriteByte(',')
-			sb.WriteByte('"')
-			sb.WriteString(kStr)
-			sb.WriteByte('"')
+			data := toSafeJSONString(kStr)
+			sb.Write(data)
 			sb.WriteByte(':')
-			vStr, vIsStr := v.(string)
-			if !vIsStr {
+			switch v.(type) {
+			case string:
+				data := toSafeJSONString(v.(string))
+				sb.Write(data)
+			case error:
+				data := toSafeJSONString(v.(error).Error())
+				sb.Write(data)
+			default:
 				if vbs, err := json.Marshal(v); err != nil {
-					sb.WriteByte('"')
-					sb.WriteString(fmt.Sprintf("%+v", v))
-					sb.WriteByte('"')
+					s := fmt.Sprintf("%+v", v)
+					data := toSafeJSONString(s)
+					sb.Write(data)
 				} else {
-					sb.WriteString(string(vbs))
+					sb.Write(vbs)
 				}
-			} else {
-				sb.WriteByte('"')
-				sb.WriteString(vStr)
-				sb.WriteByte('"')
 			}
 			i = i + 2
 		}

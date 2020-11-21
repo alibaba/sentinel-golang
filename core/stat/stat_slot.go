@@ -5,7 +5,24 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 )
 
+const (
+	StatSlotName  = "sentinel-core-stat-slot"
+	StatSlotOrder = 1000
+)
+
+var (
+	DefaultSlot = &Slot{}
+)
+
 type Slot struct {
+}
+
+func (s *Slot) Name() string {
+	return StatSlotName
+}
+
+func (s *Slot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {
@@ -35,7 +52,7 @@ func (s *Slot) recordPassFor(sn base.StatNode, count uint32) {
 	if sn == nil {
 		return
 	}
-	sn.IncreaseGoroutineNum()
+	sn.IncreaseConcurrency()
 	sn.AddCount(base.MetricEventPass, int64(count))
 }
 
@@ -55,5 +72,5 @@ func (s *Slot) recordCompleteFor(sn base.StatNode, count uint32, rt uint64, err 
 	}
 	sn.AddCount(base.MetricEventRt, int64(rt))
 	sn.AddCount(base.MetricEventComplete, int64(count))
-	sn.DecreaseGoroutineNum()
+	sn.DecreaseConcurrency()
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 
@@ -49,7 +48,7 @@ func main() {
 		return
 	}
 
-	fmt.Println("Sentinel Go hot-spot param flow control demo is running. You may see the pass/block metric in the metric log.")
+	logging.Info("[HotSpot Throttling] Sentinel Go hot-spot param flow control demo is running. You may see the pass/block metric in the metric log.")
 	for i := 0; i < 10; i++ {
 		go func() {
 			for {

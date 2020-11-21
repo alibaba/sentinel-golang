@@ -84,8 +84,8 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	}
 
 	sc := base.NewSlotChain()
-	sc.AddRuleCheckSlotLast(&circuitbreaker.Slot{})
-	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
+	sc.AddRuleCheckSlot(&circuitbreaker.Slot{})
+	sc.AddStatSlot(&circuitbreaker.MetricStatSlot{})
 
 	stateListener.On("OnTransformToOpen", circuitbreaker.Closed, mock.Anything, mock.Anything).Return()
 	stateListener.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
@@ -170,8 +170,8 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 	}
 
 	sc := base.NewSlotChain()
-	sc.AddRuleCheckSlotLast(&circuitbreaker.Slot{})
-	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
+	sc.AddRuleCheckSlot(&circuitbreaker.Slot{})
+	sc.AddStatSlot(&circuitbreaker.MetricStatSlot{})
 
 	stateListener.On("OnTransformToOpen", circuitbreaker.Closed, mock.Anything, mock.Anything).Return()
 	stateListener.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()
@@ -211,7 +211,7 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 }
 
 func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
-	logging.SetGlobalLoggerLevel(logging.InfoLevel)
+	logging.ResetGlobalLoggerLevel(logging.InfoLevel)
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
 		t.Fatal(clearErr)
@@ -249,8 +249,8 @@ func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
 	}
 
 	sc := base.NewSlotChain()
-	sc.AddRuleCheckSlotLast(&circuitbreaker.Slot{})
-	sc.AddStatSlotLast(&circuitbreaker.MetricStatSlot{})
+	sc.AddRuleCheckSlot(&circuitbreaker.Slot{})
+	sc.AddStatSlot(&circuitbreaker.MetricStatSlot{})
 
 	stateListener.On("OnTransformToOpen", circuitbreaker.Closed, mock.Anything, mock.Anything).Return()
 	stateListener.On("OnTransformToClosed", mock.Anything, mock.Anything).Return()

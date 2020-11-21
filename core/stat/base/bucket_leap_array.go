@@ -1,7 +1,7 @@
 package base
 
 import (
-	"fmt"
+	"reflect"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -30,10 +30,9 @@ func (bla *BucketLeapArray) ResetBucketTo(bw *BucketWrap, startTime uint64) *Buc
 
 // sampleCount is the number of slots
 // intervalInMs is the time length of sliding window
+// sampleCount and intervalInMs must be positive and intervalInMs%sampleCount == 0,
+// the validation must be done before call NewBucketLeapArray
 func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArray {
-	if intervalInMs%sampleCount != 0 {
-		panic(fmt.Sprintf("Invalid parameters, intervalInMs is %d, sampleCount is %d.", intervalInMs, sampleCount))
-	}
 	bucketLengthInMs := intervalInMs / sampleCount
 	ret := &BucketLeapArray{
 		data: LeapArray{
@@ -78,21 +77,21 @@ func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
 func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent, count int64) {
 	curBucket, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket", "now", now)
+		logging.Error(err, "Failed to get current bucket in BucketLeapArray.addCountWithTime()", "now", now)
 		return
 	}
 	if curBucket == nil {
-		logging.Error(errors.New("current bucket is nil"), "Failed to add count")
+		logging.Error(errors.New("current bucket is nil"), "Nil curBucket in BucketLeapArray.addCountWithTime()")
 		return
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logging.Error(errors.New("nil bucket"), "Failed to add count: current bucket atomic Value is nil")
+		logging.Error(errors.New("nil bucket"), "Current bucket atomic Value is nil in BucketLeapArray.addCountWithTime()")
 		return
 	}
 	b, ok := mb.(*MetricBucket)
 	if !ok {
-		logging.Error(errors.New("fail to type assert, expect MetricBucket"), "Failed to add count: bucket data type error")
+		logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.addCountWithTime()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 		return
 	}
 	b.Add(event, count)
@@ -107,18 +106,18 @@ func (bla *BucketLeapArray) Count(event base.MetricEvent) int64 {
 func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) int64 {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket", "now", now)
+		logging.Error(err, "Failed to get current bucket in BucketLeapArray.CountWithTime()", "now", now)
 	}
 	count := int64(0)
 	for _, ww := range bla.data.valuesWithTime(now) {
 		mb := ww.Value.Load()
 		if mb == nil {
-			logging.Error(errors.New("current bucket is nil"), "Failed to load current bucket")
+			logging.Error(errors.New("current bucket is nil"), "Failed to load current bucket in BucketLeapArray.CountWithTime()")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("fail to type assert, expect MetricBucket"), "fail to get current MetricBucket")
+			logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.CountWithTime()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		count += b.Get(event)
@@ -130,7 +129,7 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 func (bla *BucketLeapArray) Values(now uint64) []*BucketWrap {
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket", "now", now)
+		logging.Error(err, "Failed to get current bucket in BucketLeapArray.Values()", "now", now)
 	}
 	return bla.data.valuesWithTime(now)
 }
@@ -142,7 +141,7 @@ func (bla *BucketLeapArray) ValuesConditional(now uint64, predicate base.TimePre
 func (bla *BucketLeapArray) MinRt() int64 {
 	_, err := bla.data.CurrentBucket(bla)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket")
+		logging.Error(err, "Failed to get current bucket in BucketLeapArray.MinRt()")
 	}
 
 	ret := base.DefaultStatisticMaxRt
@@ -150,12 +149,12 @@ func (bla *BucketLeapArray) MinRt() int64 {
 	for _, v := range bla.data.Values() {
 		mb := v.Value.Load()
 		if mb == nil {
-			logging.Error(errors.New("current bucket is nil"), "Failed to load current bucket")
+			logging.Error(errors.New("current bucket is nil"), "Failed to load current bucket in BucketLeapArray.MinRt()")
 			continue
 		}
 		b, ok := mb.(*MetricBucket)
 		if !ok {
-			logging.Error(errors.New("fail to type assert, expect MetricBucket"), "fail to get current MetricBucket")
+			logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.MinRt()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
 			continue
 		}
 		mr := b.MinRt()

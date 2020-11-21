@@ -7,6 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
@@ -93,25 +94,34 @@ func NewAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator Bucket
 	return NewAtomicBucketWrapArrayWithTime(len, bucketLengthInMs, util.CurrentTimeMillis(), generator)
 }
 
-func (aa *AtomicBucketWrapArray) elementOffset(idx int) unsafe.Pointer {
+func (aa *AtomicBucketWrapArray) elementOffset(idx int) (unsafe.Pointer, bool) {
 	if idx >= aa.length || idx < 0 {
-		panic(fmt.Sprintf("The index (%d) is out of bounds, length is %d.", idx, aa.length))
+		logging.Error(errors.New("array index out of bounds"),
+			"array index out of bounds in AtomicBucketWrapArray.elementOffset()",
+			"idx", idx, "arrayLength", aa.length)
+		return nil, false
 	}
 	basePtr := aa.base
-	return unsafe.Pointer(uintptr(basePtr) + uintptr(idx*PtrSize))
+	return unsafe.Pointer(uintptr(basePtr) + uintptr(idx*PtrSize)), true
 }
 
 func (aa *AtomicBucketWrapArray) get(idx int) *BucketWrap {
 	// aa.elementOffset(idx) return the secondary pointer of BucketWrap, which is the pointer to the aa.data[idx]
 	// then convert to (*unsafe.Pointer)
-	return (*BucketWrap)(atomic.LoadPointer((*unsafe.Pointer)(aa.elementOffset(idx))))
+	if offset, ok := aa.elementOffset(idx); ok {
+		return (*BucketWrap)(atomic.LoadPointer((*unsafe.Pointer)(offset)))
+	}
+	return nil
 }
 
 func (aa *AtomicBucketWrapArray) compareAndSet(idx int, except, update *BucketWrap) bool {
 	// aa.elementOffset(idx) return the secondary pointer of BucketWrap, which is the pointer to the aa.data[idx]
 	// then convert to (*unsafe.Pointer)
 	// update secondary pointer
-	return atomic.CompareAndSwapPointer((*unsafe.Pointer)(aa.elementOffset(idx)), unsafe.Pointer(except), unsafe.Pointer(update))
+	if offset, ok := aa.elementOffset(idx); ok {
+		return atomic.CompareAndSwapPointer((*unsafe.Pointer)(offset), unsafe.Pointer(except), unsafe.Pointer(update))
+	}
+	return false
 }
 
 // The BucketWrap leap array,
@@ -210,7 +220,7 @@ func (la *LeapArray) valuesWithTime(now uint64) []*BucketWrap {
 	if now <= 0 {
 		return make([]*BucketWrap, 0)
 	}
-	ret := make([]*BucketWrap, 0)
+	ret := make([]*BucketWrap, 0, la.array.length)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
 		if ww == nil || la.isBucketDeprecated(now, ww) {
@@ -225,7 +235,7 @@ func (la *LeapArray) ValuesConditional(now uint64, predicate base.TimePredicate)
 	if now <= 0 {
 		return make([]*BucketWrap, 0)
 	}
-	ret := make([]*BucketWrap, 0)
+	ret := make([]*BucketWrap, 0, la.array.length)
 	for i := 0; i < la.array.length; i++ {
 		ww := la.array.get(i)
 		if ww == nil || la.isBucketDeprecated(now, ww) || !predicate(atomic.LoadUint64(&ww.BucketStart)) {

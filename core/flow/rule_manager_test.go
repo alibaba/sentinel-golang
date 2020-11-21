@@ -54,14 +54,18 @@ func TestIsValidFlowRule(t *testing.T) {
 	badRule1 := &Rule{Threshold: 1, Resource: ""}
 	badRule2 := &Rule{Threshold: -1.9, Resource: "test"}
 	badRule3 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject}
-	goodRule1 := &Rule{Threshold: 10, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10, MaxQueueingTimeMs: 10}
 	badRule4 := &Rule{Threshold: 5, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Reject, StatIntervalInMs: 6000000}
+
+	goodRule1 := &Rule{Threshold: 10, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10, MaxQueueingTimeMs: 10, StatIntervalInMs: 1000}
+	goodRule2 := &Rule{Threshold: 10, Resource: "test", TokenCalculateStrategy: WarmUp, ControlBehavior: Throttling, WarmUpPeriodSec: 10, MaxQueueingTimeMs: 0, StatIntervalInMs: 1000}
 
 	assert.Error(t, IsValidRule(badRule1))
 	assert.Error(t, IsValidRule(badRule2))
 	assert.Error(t, IsValidRule(badRule3))
-	assert.NoError(t, IsValidRule(goodRule1))
 	assert.Error(t, IsValidRule(badRule4))
+
+	assert.NoError(t, IsValidRule(goodRule1))
+	assert.NoError(t, IsValidRule(goodRule2))
 }
 
 func TestGetRules(t *testing.T) {
@@ -88,6 +92,7 @@ func TestGetRules(t *testing.T) {
 			RefResource:            "",
 			WarmUpPeriodSec:        0,
 			MaxQueueingTimeMs:      10,
+			StatIntervalInMs:       1000,
 		}
 		if _, err := LoadRules([]*Rule{r1, r2}); err != nil {
 			t.Fatal(err)
@@ -130,6 +135,7 @@ func TestGetRules(t *testing.T) {
 			RefResource:            "",
 			WarmUpPeriodSec:        0,
 			MaxQueueingTimeMs:      10,
+			StatIntervalInMs:       1000,
 		}
 		if _, err := LoadRules([]*Rule{r1, r2}); err != nil {
 			t.Fatal(err)
@@ -146,6 +152,9 @@ func TestGetRules(t *testing.T) {
 			assert.True(t, reflect.DeepEqual(rs2[0], r2))
 			assert.True(t, reflect.DeepEqual(rs2[1], r1))
 		}
+		assert.True(t, len(tcMap["abc2"]) == 1 && !tcMap["abc2"][0].boundStat.reuseResourceStat)
+		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.readOnlyMetric, nopStat.readOnlyMetric))
+		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.writeOnlyMetric, nopStat.writeOnlyMetric))
 		if err := ClearRules(); err != nil {
 			t.Fatal(err)
 		}
@@ -249,7 +258,16 @@ func Test_buildRulesOfRes(t *testing.T) {
 	})
 
 	t.Run("Test_buildRulesOfRes_reuse_stat", func(t *testing.T) {
-		// reuse
+		// use nop statistics because of no need statistics
+		r0 := &Rule{
+			Resource:               "abc1",
+			Threshold:              100,
+			RelationStrategy:       CurrentResource,
+			TokenCalculateStrategy: Direct,
+			ControlBehavior:        Throttling,
+			StatIntervalInMs:       1000,
+		}
+		// reuse resource node default leap array
 		r1 := &Rule{
 			Resource:               "abc1",
 			Threshold:              100,
@@ -258,17 +276,17 @@ func Test_buildRulesOfRes(t *testing.T) {
 			ControlBehavior:        Reject,
 			StatIntervalInMs:       1000,
 		}
-		// reuse
+		// reuse resource node default leap array
 		r2 := &Rule{
 			Resource:               "abc1",
 			Threshold:              200,
 			RelationStrategy:       CurrentResource,
 			TokenCalculateStrategy: Direct,
-			ControlBehavior:        Throttling,
+			ControlBehavior:        Reject,
 			MaxQueueingTimeMs:      10,
 			StatIntervalInMs:       2000,
 		}
-		// reuse
+		// reuse resource node default leap array
 		r3 := &Rule{
 			Resource:               "abc1",
 			Threshold:              300,
@@ -278,7 +296,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			MaxQueueingTimeMs:      10,
 			StatIntervalInMs:       5000,
 		}
-		// independent statistic
+		// use independent leap array because of too big interval
 		r4 := &Rule{
 			Resource:               "abc1",
 			Threshold:              400,
@@ -289,36 +307,59 @@ func Test_buildRulesOfRes(t *testing.T) {
 			StatIntervalInMs:       50000,
 		}
 
-		s1, err := generateStatFor(r1)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fakeTc1 := &TrafficShapingController{flowCalculator: nil, flowChecker: nil, rule: r1, boundStat: *s1}
-		s2, err := generateStatFor(r2)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fakeTc2 := &TrafficShapingController{flowCalculator: nil, flowChecker: nil, rule: r2, boundStat: *s2}
-		s3, err := generateStatFor(r3)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fakeTc3 := &TrafficShapingController{flowCalculator: nil, flowChecker: nil, rule: r3, boundStat: *s3}
-		s4, err := generateStatFor(r4)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fakeTc4 := &TrafficShapingController{flowCalculator: nil, flowChecker: nil, rule: r4, boundStat: *s4}
-		tcMap["abc1"] = []*TrafficShapingController{fakeTc1, fakeTc2, fakeTc3, fakeTc4}
-		assert.True(t, len(tcMap["abc1"]) == 4)
-		stat1 := tcMap["abc1"][0].boundStat
-		stat2 := tcMap["abc1"][1].boundStat
-		oldTc3 := tcMap["abc1"][2]
-		assert.True(t, tcMap["abc1"][3].boundStat.writeOnlyMetric != nil)
-		assert.True(t, !tcMap["abc1"][3].boundStat.reuseResourceStat)
-		stat4 := tcMap["abc1"][3].boundStat
+		s0, err := generateStatFor(r0)
+		assert.Empty(t, err)
+		fakeTc0, err := NewTrafficShapingController(r0, s0)
+		assert.Empty(t, err)
+		stat0 := fakeTc0.boundStat
+		assert.True(t, reflect.DeepEqual(stat0, *nopStat))
+		assert.True(t, stat0.reuseResourceStat == false)
+		assert.True(t, stat0.readOnlyMetric != nil)
+		assert.True(t, stat0.writeOnlyMetric != nil)
 
-		// reuse stat
+		s1, err := generateStatFor(r1)
+		assert.Empty(t, err)
+		fakeTc1, err := NewTrafficShapingController(r1, s1)
+		assert.Empty(t, err)
+		stat1 := fakeTc1.boundStat
+		assert.True(t, !reflect.DeepEqual(stat1, stat0))
+		assert.True(t, stat1.reuseResourceStat == true)
+		assert.True(t, stat1.readOnlyMetric != nil)
+		assert.True(t, stat1.writeOnlyMetric == nil)
+
+		s2, err := generateStatFor(r2)
+		assert.Empty(t, err)
+		fakeTc2, err := NewTrafficShapingController(r2, s2)
+		assert.Empty(t, err)
+		stat2 := fakeTc2.boundStat
+		assert.True(t, !reflect.DeepEqual(stat2, stat0))
+		assert.True(t, stat2.reuseResourceStat == true)
+		assert.True(t, stat2.readOnlyMetric != nil)
+		assert.True(t, stat2.writeOnlyMetric == nil)
+
+		s3, err := generateStatFor(r3)
+		assert.Empty(t, err)
+		fakeTc3, err := NewTrafficShapingController(r3, s3)
+		assert.Empty(t, err)
+		stat3 := fakeTc3.boundStat
+		assert.True(t, !reflect.DeepEqual(stat3, stat0))
+		assert.True(t, stat3.reuseResourceStat == true)
+		assert.True(t, stat3.readOnlyMetric != nil)
+		assert.True(t, stat3.writeOnlyMetric == nil)
+
+		s4, err := generateStatFor(r4)
+		assert.Empty(t, err)
+		fakeTc4, err := NewTrafficShapingController(r4, s4)
+		assert.Empty(t, err)
+		stat4 := fakeTc4.boundStat
+		assert.True(t, !reflect.DeepEqual(stat4, stat0))
+		assert.True(t, stat4.reuseResourceStat == false)
+		assert.True(t, stat4.readOnlyMetric != nil)
+		assert.True(t, stat4.writeOnlyMetric != nil)
+
+		tcMap["abc1"] = []*TrafficShapingController{fakeTc0, fakeTc1, fakeTc2, fakeTc3, fakeTc4}
+		assert.True(t, len(tcMap["abc1"]) == 5)
+		// reuse stat with rule 1
 		r12 := &Rule{
 			Resource:               "abc1",
 			Threshold:              300,
@@ -327,17 +368,17 @@ func Test_buildRulesOfRes(t *testing.T) {
 			ControlBehavior:        Reject,
 			StatIntervalInMs:       1000,
 		}
-		// not reusable, generate from resource's global statistic
+		// can't reuse stat with rule 2, generate from resource's global statistic
 		r22 := &Rule{
 			Resource:               "abc1",
 			Threshold:              400,
 			RelationStrategy:       CurrentResource,
 			TokenCalculateStrategy: Direct,
-			ControlBehavior:        Throttling,
+			ControlBehavior:        Reject,
 			MaxQueueingTimeMs:      10,
 			StatIntervalInMs:       10000,
 		}
-		// equals
+		// equals with rule 3
 		r32 := &Rule{
 			Resource:               "abc1",
 			Threshold:              300,
@@ -347,7 +388,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			MaxQueueingTimeMs:      10,
 			StatIntervalInMs:       5000,
 		}
-		// reuse independent stat
+		// reuse independent stat with rule 4
 		r42 := &Rule{
 			Resource:               "abc1",
 			Threshold:              4000,
@@ -357,19 +398,47 @@ func Test_buildRulesOfRes(t *testing.T) {
 			MaxQueueingTimeMs:      10,
 			StatIntervalInMs:       50000,
 		}
+
 		tcs := buildRulesOfRes("abc1", []*Rule{r12, r22, r32, r42})
 		assert.True(t, len(tcs) == 4)
+
 		assert.True(t, tcs[0].BoundRule() == r12)
 		assert.True(t, tcs[1].BoundRule() == r22)
 		assert.True(t, tcs[2].BoundRule() == r3)
 		assert.True(t, tcs[3].BoundRule() == r42)
+
 		assert.True(t, reflect.DeepEqual(tcs[0].BoundRule(), r12))
 		assert.True(t, reflect.DeepEqual(tcs[1].BoundRule(), r22))
 		assert.True(t, reflect.DeepEqual(tcs[2].BoundRule(), r32) && reflect.DeepEqual(tcs[2].BoundRule(), r3))
 		assert.True(t, reflect.DeepEqual(tcs[3].BoundRule(), r42))
+
 		assert.True(t, tcs[0].boundStat == stat1)
 		assert.True(t, tcs[1].boundStat != stat2)
-		assert.True(t, tcs[2] == oldTc3)
+		assert.True(t, tcs[2] == fakeTc3)
 		assert.True(t, tcs[3].boundStat == stat4)
+	})
+}
+
+func TestLoadRules(t *testing.T) {
+	t.Run("loadSameRules", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				Resource:               "some-test",
+				Threshold:              10,
+				TokenCalculateStrategy: Direct,
+				ControlBehavior:        Reject,
+			},
+		})
+		assert.Nil(t, err)
+		ok, err := LoadRules([]*Rule{
+			{
+				Resource:               "some-test",
+				Threshold:              10,
+				TokenCalculateStrategy: Direct,
+				ControlBehavior:        Reject,
+			},
+		})
+		assert.Nil(t, err)
+		assert.False(t, ok)
 	})
 }

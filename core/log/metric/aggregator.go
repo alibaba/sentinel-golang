@@ -37,7 +37,7 @@ func InitTask() (err error) {
 
 		metricWriter, err = NewDefaultMetricLogWriter(config.MetricLogSingleFileMaxSize(), config.MetricLogMaxFileAmount())
 		if err != nil {
-			logging.Error(err, "Failed to initialize the MetricLogWriter")
+			logging.Error(err, "Failed to initialize the MetricLogWriter in aggregator.InitTask()")
 			return
 		}
 
@@ -76,7 +76,7 @@ func writeTaskLoop() {
 			for _, t := range keys {
 				err := metricWriter.Write(t, m[t])
 				if err != nil {
-					logging.Error(err, "[MetricAggregatorTask] fail tp write metric")
+					logging.Error(err, "[MetricAggregatorTask] fail tp write metric in aggregator.writeTaskLoop()")
 				}
 			}
 		}
@@ -131,10 +131,10 @@ func isItemTimestampInTime(ts uint64, currentSecStart uint64) bool {
 }
 
 func currentMetricItems(retriever base.MetricItemRetriever, currentTime uint64) map[uint64]*base.MetricItem {
-	m := make(map[uint64]*base.MetricItem, 2)
 	items := retriever.MetricsOnCondition(func(ts uint64) bool {
 		return isItemTimestampInTime(ts, currentTime)
 	})
+	m := make(map[uint64]*base.MetricItem, len(items))
 	for _, item := range items {
 		if !isActiveMetricItem(item) {
 			continue

@@ -1,6 +1,7 @@
 package circuitbreaker
 
 import (
+	"reflect"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -152,7 +153,7 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen(ctx *base.EntryContext) bool {
 
 		entry := ctx.Entry()
 		if entry == nil {
-			logging.Error(errors.New("nil entry"), "nil entry when probing", "rule", b.rule)
+			logging.Error(errors.New("nil entry"), "Nil entry in circuitBreakerBase.fromOpenToHalfOpen()", "rule", b.rule)
 		} else {
 			// add hook for entry exit
 			// if the current circuit breaker performs the probe through this entry, but the entry was blocked,
@@ -289,7 +290,7 @@ func (b *slowRtCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 		return
 	}
 
-	if slowRatio > b.maxSlowRequestRatio {
+	if slowRatio > b.maxSlowRequestRatio || util.Float64Equals(slowRatio, b.maxSlowRequestRatio) {
 		curStatus = b.CurrentState()
 		switch curStatus {
 		case Closed:
@@ -341,21 +342,21 @@ func (s *slowRequestLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime uin
 func (s *slowRequestLeapArray) currentCounter() *slowRequestCounter {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logging.Error(err, "failed to get current bucket")
+		logging.Error(err, "Failed to get current bucket in slowRequestLeapArray.currentCounter()")
 		return nil
 	}
 	if curBucket == nil {
-		logging.Error(errors.New("nil current BucketWrap"), "Current bucket is nil")
+		logging.Error(errors.New("nil current BucketWrap"), "Current bucket is nil in slowRequestLeapArray.currentCounter()")
 		return nil
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logging.Error(errors.New("Current bucket atomic Value is nil"), "")
+		logging.Error(errors.New("current bucket atomic Value is nil"), "Current bucket atomic Value is nil in slowRequestLeapArray.currentCounter()")
 		return nil
 	}
 	counter, ok := mb.(*slowRequestCounter)
 	if !ok {
-		logging.Error(errors.New("Bucket data type error"), "")
+		logging.Error(errors.New("bucket data type error"), "Bucket data type error in slowRequestLeapArray.currentCounter()", "expect type", "*slowRequestCounter", "actual type", reflect.TypeOf(mb).Name())
 		return nil
 	}
 	return counter
@@ -363,16 +364,16 @@ func (s *slowRequestLeapArray) currentCounter() *slowRequestCounter {
 
 func (s *slowRequestLeapArray) allCounter() []*slowRequestCounter {
 	buckets := s.data.Values()
-	ret := make([]*slowRequestCounter, 0)
+	ret := make([]*slowRequestCounter, 0, len(buckets))
 	for _, b := range buckets {
 		mb := b.Value.Load()
 		if mb == nil {
-			logging.Error(errors.New("Current bucket atomic Value is nil"), "")
+			logging.Error(errors.New("current bucket atomic Value is nil"), "Current bucket atomic Value is nil in slowRequestLeapArray.allCounter()")
 			continue
 		}
 		counter, ok := mb.(*slowRequestCounter)
 		if !ok {
-			logging.Error(errors.New("Bucket data type error"), "")
+			logging.Error(errors.New("bucket data type error"), "Bucket data type error in slowRequestLeapArray.allCounter()", "expect type", "*slowRequestCounter", "actual type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		ret = append(ret, counter)
@@ -467,7 +468,7 @@ func (b *errorRatioCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	if totalCount < b.minRequestAmount {
 		return
 	}
-	if errorRatio > b.errorRatioThreshold {
+	if errorRatio > b.errorRatioThreshold || util.Float64Equals(errorRatio, b.errorRatioThreshold) {
 		curStatus = b.CurrentState()
 		switch curStatus {
 		case Closed:
@@ -518,21 +519,21 @@ func (s *errorCounterLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime ui
 func (s *errorCounterLeapArray) currentCounter() *errorCounter {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket")
+		logging.Error(err, "Failed to get current bucket in errorCounterLeapArray.currentCounter()")
 		return nil
 	}
 	if curBucket == nil {
-		logging.Error(errors.New("Current bucket is nil"), "")
+		logging.Error(errors.New("current bucket is nil"), "Current bucket is nil in errorCounterLeapArray.currentCounter()")
 		return nil
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logging.Error(errors.New("Current bucket atomic Value is nil"), "")
+		logging.Error(errors.New("current bucket atomic Value is nil"), "Current bucket atomic Value is nil in errorCounterLeapArray.currentCounter()")
 		return nil
 	}
 	counter, ok := mb.(*errorCounter)
 	if !ok {
-		logging.Error(errors.New("Bucket data type error"), "")
+		logging.Error(errors.New("bucket data type error"), "Bucket data type error in errorCounterLeapArray.currentCounter()", "expect type", "*errorCounter", "actual type", reflect.TypeOf(mb).Name())
 		return nil
 	}
 	return counter
@@ -540,16 +541,16 @@ func (s *errorCounterLeapArray) currentCounter() *errorCounter {
 
 func (s *errorCounterLeapArray) allCounter() []*errorCounter {
 	buckets := s.data.Values()
-	ret := make([]*errorCounter, 0)
+	ret := make([]*errorCounter, 0, len(buckets))
 	for _, b := range buckets {
 		mb := b.Value.Load()
 		if mb == nil {
-			logging.Error(errors.New("Current bucket atomic Value is nil"), "")
+			logging.Error(errors.New("current bucket atomic Value is nil"), "Current bucket atomic Value is nil in errorCounterLeapArray.allCounter()")
 			continue
 		}
 		counter, ok := mb.(*errorCounter)
 		if !ok {
-			logging.Error(errors.New("Bucket data type error"), "")
+			logging.Error(errors.New("bucket data type error"), "Bucket data type error in errorCounterLeapArray.allCounter()", "expect type", "*errorCounter", "actual type", reflect.TypeOf(mb).Name())
 			continue
 		}
 		ret = append(ret, counter)
@@ -641,7 +642,7 @@ func (b *errorCountCircuitBreaker) OnRequestComplete(rt uint64, err error) {
 	if totalCount < b.minRequestAmount {
 		return
 	}
-	if errorCount > b.errorCountThreshold {
+	if errorCount >= b.errorCountThreshold {
 		curStatus = b.CurrentState()
 		switch curStatus {
 		case Closed:

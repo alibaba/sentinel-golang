@@ -22,7 +22,7 @@ func (s *stateChangeTestListener) OnTransformToClosed(prev circuitbreaker.State,
 }
 
 func (s *stateChangeTestListener) OnTransformToOpen(prev circuitbreaker.State, rule circuitbreaker.Rule, snapshot interface{}) {
-	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %.2f, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
+	fmt.Printf("rule.steategy: %+v, From %s to Open, snapshot: %d, time: %d\n", rule.Strategy, prev.String(), snapshot, util.CurrentTimeMillis())
 }
 
 func (s *stateChangeTestListener) OnTransformToHalfOpen(prev circuitbreaker.State, rule circuitbreaker.Rule) {
@@ -56,7 +56,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logging.Info("Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
+	logging.Info("[CircuitBreaker ErrorCount] Sentinel Go circuit breaking demo is running. You may see the pass/block metric in the metric log.")
 	go func() {
 		for {
 			e, b := sentinel.Entry("abc")

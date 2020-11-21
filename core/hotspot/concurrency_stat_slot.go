@@ -1,13 +1,31 @@
 package hotspot
 
 import (
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
+)
+
+const (
+	StatSlotName  = "sentinel-core-hotspot-concurrency-stat-slot"
+	StatSlotOrder = 4000
+)
+
+var (
+	DefaultConcurrencyStatSlot = &ConcurrencyStatSlot{}
 )
 
 // ConcurrencyStatSlot is to record the Concurrency statistic for all arguments
 type ConcurrencyStatSlot struct {
+}
+
+func (c *ConcurrencyStatSlot) Name() string {
+	return StatSlotName
+}
+
+func (s *ConcurrencyStatSlot) Order() uint32 {
+	return StatSlotOrder
 }
 
 func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
@@ -15,6 +33,9 @@ func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 	args := ctx.Input.Args
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
+		if tc.BoundRule().MetricType != Concurrency {
+			continue
+		}
 		arg := matchArg(tc, args)
 		if arg == nil {
 			continue
@@ -23,11 +44,11 @@ func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
 		if !existed || concurrencyPtr == nil {
 			if logging.DebugEnabled() {
-				logging.Debug("Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+				logging.Debug("[ConcurrencyStatSlot OnEntryPassed] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
 			}
 			continue
 		}
-		util.IncrementAndGetInt64(concurrencyPtr)
+		atomic.AddInt64(concurrencyPtr, 1)
 	}
 }
 
@@ -40,6 +61,9 @@ func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 	args := ctx.Input.Args
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
+		if tc.BoundRule().MetricType != Concurrency {
+			continue
+		}
 		arg := matchArg(tc, args)
 		if arg == nil {
 			continue
@@ -48,10 +72,10 @@ func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
 		if !existed || concurrencyPtr == nil {
 			if logging.DebugEnabled() {
-				logging.Debug("Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+				logging.Debug("[ConcurrencyStatSlot OnCompleted] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
 			}
 			continue
 		}
-		util.DecrementAndGetInt64(concurrencyPtr)
+		atomic.AddInt64(concurrencyPtr, -1)
 	}
 }

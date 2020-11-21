@@ -10,6 +10,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
+	"github.com/pkg/errors"
 )
 
 type TrafficShapingController interface {
@@ -28,7 +29,7 @@ type baseTrafficShapingController struct {
 	res           string
 	metricType    MetricType
 	paramIndex    int
-	threshold     float64
+	threshold     int64
 	specificItems map[interface{}]int64
 	durationInSec int64
 
@@ -36,39 +37,57 @@ type baseTrafficShapingController struct {
 }
 
 func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *baseTrafficShapingController {
-	specificItems := parseSpecificItems(r.SpecificItems)
+	if r.SpecificItems == nil {
+		r.SpecificItems = make(map[interface{}]int64)
+	}
 	return &baseTrafficShapingController{
 		r:             r,
 		res:           r.Resource,
 		metricType:    r.MetricType,
 		paramIndex:    r.ParamIndex,
 		threshold:     r.Threshold,
-		specificItems: specificItems,
+		specificItems: r.SpecificItems,
 		durationInSec: r.DurationInSec,
 		metric:        metric,
 	}
 }
 
 func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
-	size := 0
-	if r.ParamsMaxCapacity > 0 {
-		size = int(r.ParamsMaxCapacity)
-	} else if r.DurationInSec == 0 {
-		size = ParamsMaxCapacity
-	} else {
-		size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
+	switch r.MetricType {
+	case QPS:
+		size := 0
+		if r.ParamsMaxCapacity > 0 {
+			size = int(r.ParamsMaxCapacity)
+		} else if r.DurationInSec == 0 {
+			size = ParamsMaxCapacity
+		} else {
+			size = int(math.Min(float64(ParamsMaxCapacity), float64(ParamsCapacityBase*r.DurationInSec)))
+		}
+		if size <= 0 {
+			logging.Warn("[HotSpot newBaseTrafficShapingController] Invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
+				"ParamsMaxCapacity", ParamsMaxCapacity, "ParamsCapacityBase", ParamsCapacityBase)
+			size = ParamsMaxCapacity
+		}
+		metric := &ParamsMetric{
+			RuleTimeCounter:  cache.NewLRUCacheMap(size),
+			RuleTokenCounter: cache.NewLRUCacheMap(size),
+		}
+		return newBaseTrafficShapingControllerWithMetric(r, metric)
+	case Concurrency:
+		size := 0
+		if r.ParamsMaxCapacity > 0 {
+			size = int(r.ParamsMaxCapacity)
+		} else {
+			size = ConcurrencyMaxCount
+		}
+		metric := &ParamsMetric{
+			ConcurrencyCounter: cache.NewLRUCacheMap(size),
+		}
+		return newBaseTrafficShapingControllerWithMetric(r, metric)
+	default:
+		logging.Error(errors.New("unsupported metric type"), "Ignoring the rule due to unsupported  metric type in Rule.newBaseTrafficShapingController()", "MetricType", r.MetricType.String())
+		return nil
 	}
-	if size <= 0 {
-		logging.Warn("invalid size of cache, so use default value for ParamsMaxCapacity and ParamsCapacityBase",
-			"ParamsMaxCapacity", ParamsMaxCapacity, "ParamsCapacityBase", ParamsCapacityBase)
-		size = ParamsMaxCapacity
-	}
-	metric := &ParamsMetric{
-		RuleTimeCounter:    cache.NewTinyLfuCacheMap(size),
-		RuleTokenCounter:   cache.NewTinyLfuCacheMap(size),
-		ConcurrencyCounter: cache.NewTinyLfuCacheMap(ConcurrencyMaxCount),
-	}
-	return newBaseTrafficShapingControllerWithMetric(r, metric)
 }
 
 func (c *baseTrafficShapingController) BoundMetric() *ParamsMetric {
@@ -90,15 +109,15 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 		if concurrency <= specificConcurrency {
 			return nil
 		}
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-			fmt.Sprintf("arg=%v", arg), c.BoundRule(), concurrency)
+		msg := fmt.Sprintf("hotspot specific concurrency check blocked, arg: %v", arg)
+		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), concurrency)
 	}
-	threshold := int64(c.threshold)
+	threshold := c.threshold
 	if concurrency <= threshold {
 		return nil
 	}
-	return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-		fmt.Sprintf("arg=%v", arg), c.BoundRule(), concurrency)
+	msg := fmt.Sprintf("hotspot concurrency check blocked, arg: %v", arg)
+	return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), concurrency)
 }
 
 // rejectTrafficShapingController use Reject strategy
@@ -140,20 +159,20 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 	}
 
 	// calculate available token
-	tokenCount := int64(c.threshold)
+	tokenCount := c.threshold
 	val, existed := c.specificItems[arg]
 	if existed {
 		tokenCount = val
 	}
 	if tokenCount <= 0 {
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
+		msg := fmt.Sprintf("hotspot reject check blocked, threshold is <= 0, arg: %v", arg)
+		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 	}
 	maxCount := tokenCount + c.burstCount
 	if batchCount > maxCount {
 		// return blocked because the batch number is more than max count of rejectTrafficShapingController
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
+		msg := fmt.Sprintf("hotspot reject check blocked, request batch count is more than max token count, arg: %v", arg)
+		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 	}
 
 	for {
@@ -187,8 +206,8 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 					newQps = toAddTokenNum + restQps - batchCount
 				}
 				if newQps < 0 {
-					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-						fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
+					msg := fmt.Sprintf("hotspot reject check blocked, request batch count is more than available token count, arg: %v", arg)
+					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 				}
 				if atomic.CompareAndSwapInt64(oldQpsPtr, restQps, newQps) {
 					atomic.StoreInt64(lastAddTokenTimePtr, currentTimeInMs)
@@ -207,8 +226,8 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 						return nil
 					}
 				} else {
-					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-						fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
+					msg := fmt.Sprintf("hotspot reject check blocked, request batch count is more than available token count, arg: %v", arg)
+					return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 				}
 			}
 			runtime.Gosched()
@@ -235,14 +254,14 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 	}
 
 	// calculate available token
-	tokenCount := int64(c.threshold)
+	tokenCount := c.threshold
 	val, existed := c.specificItems[arg]
 	if existed {
 		tokenCount = val
 	}
 	if tokenCount <= 0 {
-		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-			fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
+		msg := fmt.Sprintf("hotspot throttling check blocked, threshold is <= 0, arg: %v", arg)
+		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 	}
 	intervalCostTime := int64(math.Round(float64(batchCount * c.durationInSec * 1000 / tokenCount)))
 	for {
@@ -269,8 +288,8 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 				runtime.Gosched()
 			}
 		} else {
-			return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow,
-				fmt.Sprintf("arg=%v", arg), c.BoundRule(), nil)
+			msg := fmt.Sprintf("hotspot throttling check blocked, wait time exceedes max queueing time, arg: %v", arg)
+			return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 		}
 	}
 }

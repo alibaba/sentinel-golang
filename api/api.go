@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/misc"
 )
 
 var entryOptsPool = sync.Pool{
@@ -97,7 +98,7 @@ func WithSlotChain(chain *base.SlotChain) EntryOption {
 func WithAttachment(key interface{}, value interface{}) EntryOption {
 	return func(opts *EntryOptions) {
 		if opts.attachments == nil {
-			opts.attachments = make(map[interface{}]interface{})
+			opts.attachments = make(map[interface{}]interface{}, 8)
 		}
 		opts.attachments[key] = value
 	}
@@ -107,7 +108,7 @@ func WithAttachment(key interface{}, value interface{}) EntryOption {
 func WithAttachments(data map[interface{}]interface{}) EntryOption {
 	return func(opts *EntryOptions) {
 		if opts.attachments == nil {
-			opts.attachments = make(map[interface{}]interface{})
+			opts.attachments = make(map[interface{}]interface{}, len(data))
 		}
 		for key, value := range data {
 			opts.attachments[key] = value
@@ -123,12 +124,15 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 		entryOptsPool.Put(options)
 	}()
 
-	options.slotChain = globalSlotChain
-
 	for _, opt := range opts {
 		opt(options)
 	}
-
+	if options.slotChain == nil {
+		options.slotChain = misc.GetResourceSlotChain(resource)
+		if options.slotChain == nil {
+			options.slotChain = GlobalSlotChain()
+		}
+	}
 	return entry(resource, options)
 }
 

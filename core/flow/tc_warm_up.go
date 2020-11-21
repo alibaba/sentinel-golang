@@ -98,10 +98,10 @@ func (c *WarmUpTrafficShapingCalculator) coolDownTokens(currentTime uint64, pass
 	// Prerequisites for adding a token:
 	// When token consumption is much lower than the warning line
 	if oldValue < int64(c.warningToken) {
-		newValue = int64(float64(oldValue) + (float64(currentTime)-float64(atomic.LoadUint64(&c.lastFilledTime)))*c.threshold/1000)
+		newValue = int64(float64(oldValue) + (float64(currentTime)-float64(atomic.LoadUint64(&c.lastFilledTime)))*c.threshold/1000.0)
 	} else if oldValue > int64(c.warningToken) {
 		if passQps < float64(uint32(c.threshold)/c.coldFactor) {
-			newValue = int64(float64(oldValue) + float64(currentTime-atomic.LoadUint64(&c.lastFilledTime))*c.threshold/1000)
+			newValue = int64(float64(oldValue) + float64(currentTime-atomic.LoadUint64(&c.lastFilledTime))*c.threshold/1000.0)
 		}
 	}
 

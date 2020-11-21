@@ -9,7 +9,7 @@ import (
 
 func TestLoadRules(t *testing.T) {
 	t.Run("TestLoadRules_1", func(t *testing.T) {
-		logging.SetGlobalLoggerLevel(logging.DebugLevel)
+		logging.ResetGlobalLoggerLevel(logging.DebugLevel)
 		r1 := &Rule{
 			Resource:   "abc1",
 			MetricType: Concurrency,
@@ -35,5 +35,25 @@ func TestLoadRules(t *testing.T) {
 
 		err = ClearRules()
 		assert.True(t, err == nil)
+	})
+
+	t.Run("loadSameRules", func(t *testing.T) {
+		_, err := LoadRules([]*Rule{
+			{
+				Resource:   "abc1",
+				MetricType: Concurrency,
+				Threshold:  100,
+			},
+		})
+		assert.Nil(t, err)
+		ok, err := LoadRules([]*Rule{
+			{
+				Resource:   "abc1",
+				MetricType: Concurrency,
+				Threshold:  100,
+			},
+		})
+		assert.Nil(t, err)
+		assert.False(t, ok)
 	})
 }

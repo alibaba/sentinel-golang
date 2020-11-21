@@ -6,7 +6,24 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	RuleCheckSlotName  = "sentinel-core-isolation-rule-check-slot"
+	RuleCheckSlotOrder = 3000
+)
+
+var (
+	DefaultSlot = &Slot{}
+)
+
 type Slot struct {
+}
+
+func (s *Slot) Name() string {
+	return RuleCheckSlotName
+}
+
+func (s *Slot) Order() uint32 {
+	return RuleCheckSlotOrder
 }
 
 func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
@@ -16,10 +33,11 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		return result
 	}
 	if passed, rule, snapshot := checkPass(ctx); !passed {
+		msg := "isolation check blocked"
 		if result == nil {
-			result = base.NewTokenResultBlockedWithCause(base.BlockTypeIsolation, "", rule, snapshot)
+			result = base.NewTokenResultBlockedWithCause(base.BlockTypeIsolation, msg, rule, snapshot)
 		} else {
-			result.ResetToBlockedWithCause(base.BlockTypeIsolation, "", rule, snapshot)
+			result.ResetToBlockedWithCause(base.BlockTypeIsolation, msg, rule, snapshot)
 		}
 	}
 	return result
@@ -32,11 +50,11 @@ func checkPass(ctx *base.EntryContext) (bool, *Rule, uint32) {
 	for _, rule := range getRulesOfResource(ctx.Resource.Name()) {
 		threshold := rule.Threshold
 		if rule.MetricType == Concurrency {
-			if cur := statNode.CurrentGoroutineNum(); cur >= 0 {
+			if cur := statNode.CurrentConcurrency(); cur >= 0 {
 				curCount = uint32(cur)
 			} else {
 				curCount = 0
-				logging.Error(errors.New("negative concurrency"), "", "rule", rule)
+				logging.Error(errors.New("negative concurrency"), "Negative concurrency in isolation.checkPass()", "rule", rule)
 			}
 			if curCount+batchCount > threshold {
 				return false, rule, curCount

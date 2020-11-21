@@ -12,7 +12,7 @@ type BaseStatNode struct {
 	sampleCount uint32
 	intervalMs  uint32
 
-	goroutineNum int32
+	concurrency int32
 
 	arr    *sbase.BucketLeapArray
 	metric *sbase.SlidingWindowMetric
@@ -22,11 +22,11 @@ func NewBaseStatNode(sampleCount uint32, intervalInMs uint32) *BaseStatNode {
 	la := sbase.NewBucketLeapArray(config.GlobalStatisticSampleCountTotal(), config.GlobalStatisticIntervalMsTotal())
 	metric, _ := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, la)
 	return &BaseStatNode{
-		goroutineNum: 0,
-		sampleCount:  sampleCount,
-		intervalMs:   intervalInMs,
-		arr:          la,
-		metric:       metric,
+		concurrency: 0,
+		sampleCount: sampleCount,
+		intervalMs:  intervalInMs,
+		arr:         la,
+		metric:      metric,
 	}
 }
 
@@ -47,17 +47,17 @@ func (n *BaseStatNode) GetSum(event base.MetricEvent) int64 {
 }
 
 func (n *BaseStatNode) GetMaxAvg(event base.MetricEvent) float64 {
-	return float64(n.metric.GetMaxOfSingleBucket(event)) * float64(n.sampleCount) / float64(n.intervalMs) * 1000
+	return float64(n.metric.GetMaxOfSingleBucket(event)) * float64(n.sampleCount) / float64(n.intervalMs) * 1000.0
 }
 
 func (n *BaseStatNode) AddCount(event base.MetricEvent, count int64) {
-	n.arr.AddCount(event, int64(count))
+	n.arr.AddCount(event, count)
 }
 
 func (n *BaseStatNode) AvgRT() float64 {
 	complete := n.metric.GetSum(base.MetricEventComplete)
 	if complete <= 0 {
-		return float64(0)
+		return float64(0.0)
 	}
 	return float64(n.metric.GetSum(base.MetricEventRt) / complete)
 }
@@ -66,21 +66,16 @@ func (n *BaseStatNode) MinRT() float64 {
 	return float64(n.metric.MinRT())
 }
 
-func (n *BaseStatNode) CurrentGoroutineNum() int32 {
-	return atomic.LoadInt32(&(n.goroutineNum))
+func (n *BaseStatNode) CurrentConcurrency() int32 {
+	return atomic.LoadInt32(&(n.concurrency))
 }
 
-func (n *BaseStatNode) IncreaseGoroutineNum() {
-	atomic.AddInt32(&(n.goroutineNum), 1)
+func (n *BaseStatNode) IncreaseConcurrency() {
+	atomic.AddInt32(&(n.concurrency), 1)
 }
 
-func (n *BaseStatNode) DecreaseGoroutineNum() {
-	atomic.AddInt32(&(n.goroutineNum), -1)
-}
-
-func (n *BaseStatNode) Reset() {
-	// TODO: this should be thread-safe, or error may occur
-	panic("to be implemented")
+func (n *BaseStatNode) DecreaseConcurrency() {
+	atomic.AddInt32(&(n.concurrency), -1)
 }
 
 func (n *BaseStatNode) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (base.ReadStat, error) {

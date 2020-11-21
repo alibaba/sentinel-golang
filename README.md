@@ -1,5 +1,7 @@
-<img src="https://user-images.githubusercontent.com/9434884/43697219-3cb4ef3a-9975-11e8-9a9c-73f4f537442d.png" alt="Sentinel Logo" width="50%">
-
+<p align="center">
+	<img src="https://user-images.githubusercontent.com/9434884/43697219-3cb4ef3a-9975-11e8-9a9c-73f4f537442d.png" alt="Sentinel Logo" width="50%">
+<p align="center">
+  
 # Sentinel: The Sentinel of Your Microservices
 
 ![CI](https://github.com/alibaba/sentinel-golang/workflows/CI/badge.svg?branch=master)
@@ -44,3 +46,6 @@ For bug report, questions and discussions please submit [GitHub Issues](https://
 Contributions are always welcomed! Please see [CONTRIBUTING](./CONTRIBUTING.md) for detailed guidelines.
 
 You can start with the issues labeled with [`good first issue`](https://github.com/alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
+## Communication
+![Sentinel Go Group QR Code](https://user-images.githubusercontent.com/28588342/96000984-19f8f380-0e6a-11eb-95ab-72594cd2673b.jpg)
