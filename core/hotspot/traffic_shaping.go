@@ -69,8 +69,8 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 			size = ParamsMaxCapacity
 		}
 		metric := &ParamsMetric{
-			RuleTimeCounter:  cache.NewLRUCacheMap(size),
-			RuleTokenCounter: cache.NewLRUCacheMap(size),
+			RuleTimeCounter:  cache.NewTinyLfuCacheMap(size),
+			RuleTokenCounter: cache.NewTinyLfuCacheMap(size),
 		}
 		return newBaseTrafficShapingControllerWithMetric(r, metric)
 	case Concurrency:
@@ -81,7 +81,7 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 			size = ConcurrencyMaxCount
 		}
 		metric := &ParamsMetric{
-			ConcurrencyCounter: cache.NewLRUCacheMap(size),
+			ConcurrencyCounter: cache.NewTinyLfuCacheMap(size),
 		}
 		return newBaseTrafficShapingControllerWithMetric(r, metric)
 	default:
