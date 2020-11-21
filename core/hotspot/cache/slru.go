@@ -55,7 +55,7 @@ func (slru *slru) get(v *list.Element) {
 	back := slru.protectedLs.Back()
 	backItem := back.Value.(*slruItem)
 
-	// swap the item
+	// swap the two item
 	*backItem, *item = *item, *backItem
 	backItem.listId = protectedSegment
 	item.listId = probationSegment
@@ -72,18 +72,18 @@ func (slru *slru) add(newItem slruItem) {
 
 	newItem.listId = probationSegment
 
-	if slru.probationLs.Len() < slru.probationCap || (slru.Len() < slru.probationCap+slru.protectedCap) {
+	if slru.probationLs.Len() < slru.probationCap || slru.Len() < slru.probationCap+slru.protectedCap {
 		slru.data[newItem.key] = slru.probationLs.PushFront(&newItem)
 		return
 	}
 
-	e := slru.probationLs.Back()
-	item := e.Value.(*slruItem)
+	back := slru.probationLs.Back()
+	item := back.Value.(*slruItem)
 	delete(slru.data, item.key)
 	*item = newItem
 
-	slru.data[item.key] = e
-	slru.probationLs.MoveToFront(e)
+	slru.data[item.key] = back
+	slru.probationLs.MoveToFront(back)
 }
 
 func (slru *slru) victim() *slruItem {
@@ -154,7 +154,7 @@ func (lru *lru) add(newItem slruItem) (oldItem slruItem, evicted bool) {
 		return slruItem{}, false
 	}
 
-	// reuse the tail item
+	// reuse the item
 	e := lru.evictList.Back()
 	item := e.Value.(*slruItem)
 
