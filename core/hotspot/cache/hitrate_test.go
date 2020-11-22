@@ -25,7 +25,7 @@ func testBySize(cacheSize int, zipf *rand.Zipf) {
 
 	totalLru := 0
 	missLru := 0
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i < 2000000; i++ {
 		totalLru++
 		key := zipf.Uint64()
 		_, ok := lru.Get(key)
