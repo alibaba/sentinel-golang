@@ -5,23 +5,25 @@ import (
 	"math"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/api"
+	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/isolation"
+	"github.com/alibaba/sentinel-golang/tests/benchmark"
 )
 
 func init() {
+	benchmark.InitSentinel()
 	rule := &isolation.Rule{
 		Resource:   "abc",
 		MetricType: isolation.Concurrency,
 		Threshold:  math.MaxInt32,
 	}
 	if _, err := isolation.LoadRules([]*isolation.Rule{rule}); err != nil {
-		log.Fatalf("Load rule err: %s", err.Error())
+		panic(err)
 	}
 }
 
 func doCheck() {
-	if se, err := api.Entry("abc"); err == nil {
+	if se, err := sentinel.Entry("abc"); err == nil {
 		se.Exit()
 	} else {
 		log.Fatalf("Block err: %s", err.Error())
