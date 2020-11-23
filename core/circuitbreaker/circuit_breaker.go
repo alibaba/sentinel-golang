@@ -251,10 +251,15 @@ func (b *slowRtCircuitBreaker) TryPass(ctx *base.EntryContext) bool {
 	return false
 }
 
-func (b *slowRtCircuitBreaker) OnRequestComplete(rt uint64, err error) {
+func (b *slowRtCircuitBreaker) OnRequestComplete(rt uint64, _ error) {
 	// add slow and add total
 	metricStat := b.stat
-	counter := metricStat.currentCounter()
+	counter, curErr := metricStat.currentCounter()
+	if curErr != nil {
+		logging.Error(curErr, "Fail to get current counter in slowRtCircuitBreaker#OnRequestComplete().",
+			"rule", b.rule)
+		return
+	}
 	if rt > b.maxAllowedRt {
 		atomic.AddUint64(&counter.slowCount, 1)
 	}
@@ -339,27 +344,23 @@ func (s *slowRequestLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime uin
 	return bw
 }
 
-func (s *slowRequestLeapArray) currentCounter() *slowRequestCounter {
+func (s *slowRequestLeapArray) currentCounter() (*slowRequestCounter, error) {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket in slowRequestLeapArray.currentCounter()")
-		return nil
+		return nil, err
 	}
 	if curBucket == nil {
-		logging.Error(errors.New("nil current BucketWrap"), "Current bucket is nil in slowRequestLeapArray.currentCounter()")
-		return nil
+		return nil, errors.New("nil BucketWrap")
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logging.Error(errors.New("current bucket atomic Value is nil"), "Current bucket atomic Value is nil in slowRequestLeapArray.currentCounter()")
-		return nil
+		return nil, errors.New("nil slowRequestCounter")
 	}
 	counter, ok := mb.(*slowRequestCounter)
 	if !ok {
-		logging.Error(errors.New("bucket data type error"), "Bucket data type error in slowRequestLeapArray.currentCounter()", "expect type", "*slowRequestCounter", "actual type", reflect.TypeOf(mb).Name())
-		return nil
+		return nil, errors.Errorf("bucket fail to do type assert, expect: *slowRequestCounter, in fact: %s", reflect.TypeOf(mb).Name())
 	}
-	return counter
+	return counter, nil
 }
 
 func (s *slowRequestLeapArray) allCounter() []*slowRequestCounter {
@@ -432,9 +433,14 @@ func (b *errorRatioCircuitBreaker) TryPass(ctx *base.EntryContext) bool {
 	return false
 }
 
-func (b *errorRatioCircuitBreaker) OnRequestComplete(rt uint64, err error) {
+func (b *errorRatioCircuitBreaker) OnRequestComplete(_ uint64, err error) {
 	metricStat := b.stat
-	counter := metricStat.currentCounter()
+	counter, curErr := metricStat.currentCounter()
+	if curErr != nil {
+		logging.Error(curErr, "Fail to get current counter in errorRatioCircuitBreaker#OnRequestComplete().",
+			"rule", b.rule)
+		return
+	}
 	if err != nil {
 		atomic.AddUint64(&counter.errorCount, 1)
 	}
@@ -516,27 +522,23 @@ func (s *errorCounterLeapArray) ResetBucketTo(bw *sbase.BucketWrap, startTime ui
 	return bw
 }
 
-func (s *errorCounterLeapArray) currentCounter() *errorCounter {
+func (s *errorCounterLeapArray) currentCounter() (*errorCounter, error) {
 	curBucket, err := s.data.CurrentBucket(s)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket in errorCounterLeapArray.currentCounter()")
-		return nil
+		return nil, err
 	}
 	if curBucket == nil {
-		logging.Error(errors.New("current bucket is nil"), "Current bucket is nil in errorCounterLeapArray.currentCounter()")
-		return nil
+		return nil, errors.New("nil BucketWrap")
 	}
 	mb := curBucket.Value.Load()
 	if mb == nil {
-		logging.Error(errors.New("current bucket atomic Value is nil"), "Current bucket atomic Value is nil in errorCounterLeapArray.currentCounter()")
-		return nil
+		return nil, errors.New("nil errorCounter")
 	}
 	counter, ok := mb.(*errorCounter)
 	if !ok {
-		logging.Error(errors.New("bucket data type error"), "Bucket data type error in errorCounterLeapArray.currentCounter()", "expect type", "*errorCounter", "actual type", reflect.TypeOf(mb).Name())
-		return nil
+		return nil, errors.Errorf("bucket fail to do type assert, expect: *errorCounter, in fact: %s", reflect.TypeOf(mb).Name())
 	}
-	return counter
+	return counter, nil
 }
 
 func (s *errorCounterLeapArray) allCounter() []*errorCounter {
@@ -609,9 +611,14 @@ func (b *errorCountCircuitBreaker) TryPass(ctx *base.EntryContext) bool {
 	return false
 }
 
-func (b *errorCountCircuitBreaker) OnRequestComplete(rt uint64, err error) {
+func (b *errorCountCircuitBreaker) OnRequestComplete(_ uint64, err error) {
 	metricStat := b.stat
-	counter := metricStat.currentCounter()
+	counter, curErr := metricStat.currentCounter()
+	if curErr != nil {
+		logging.Error(curErr, "Fail to get current counter in errorCountCircuitBreaker#OnRequestComplete().",
+			"rule", b.rule)
+		return
+	}
 	if err != nil {
 		atomic.AddUint64(&counter.errorCount, 1)
 	}
