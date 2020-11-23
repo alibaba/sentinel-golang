@@ -229,12 +229,12 @@ func TestMetricItemFromBuckets(t *testing.T) {
 }
 
 func TestMetricItemFromBucket(t *testing.T) {
-	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
-	assert.True(t, err == nil && got != nil)
-	got.real.AddCount(base.MetricEventPass, 100)
-	currentBucket, err := got.real.data.CurrentBucket(&leapArrayMock{})
-	assert.Nil(t, err)
-	item := got.metricItemFromBucket(currentBucket)
+	mb := NewMetricBucket()
+	mb.addCount(base.MetricEventPass, 100)
+	wrap := &BucketWrap{}
+	wrap.Value.Store(mb)
+	got := &SlidingWindowMetric{}
+	item := got.metricItemFromBucket(wrap)
 	assert.True(t, item.PassQps == 100)
 }
 
