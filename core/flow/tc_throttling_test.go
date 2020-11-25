@@ -61,8 +61,8 @@ func TestThrottlingChecker_DoCheckSingleThread(t *testing.T) {
 	waitCount := int(float64(timeoutMs) / (float64(intervalMs) / threshold))
 	for i := 0; i < waitCount; i++ {
 		assert.True(t, resultList[i].Status() == base.ResultStatusShouldWait)
-		wt := resultList[i].WaitMs()
-		assert.InEpsilon(t, (i+1)*1000/int(waitCount), wt, 10)
+		wt := resultList[i].NanosToWait()
+		assert.InEpsilon(t, (i+1)*(int)(time.Second/time.Nanosecond)/waitCount, wt, 10)
 	}
 	for i := waitCount; i < reqCount; i++ {
 		assert.True(t, resultList[i].IsBlocked())
