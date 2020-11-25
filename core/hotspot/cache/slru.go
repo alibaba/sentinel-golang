@@ -39,19 +39,16 @@ func newSLRU(cap int, data map[interface{}]*list.Element) *slru {
 // Get looks up a key's value from the cache.
 func (slru *slru) get(v *list.Element) {
 	item := v.Value.(*slruItem)
-
 	if item.listId == protectedSegment {
 		slru.protectedLs.MoveToFront(v)
 		return
 	}
-
 	if slru.protectedLs.Len() < slru.protectedCap {
 		slru.probationLs.Remove(v)
 		item.listId = protectedSegment
 		slru.data[item.key] = slru.protectedLs.PushFront(item)
 		return
 	}
-
 	back := slru.protectedLs.Back()
 	backItem := back.Value.(*slruItem)
 
@@ -69,31 +66,24 @@ func (slru *slru) get(v *list.Element) {
 
 // add set a value in the cache
 func (slru *slru) add(newItem slruItem) {
-
 	newItem.listId = probationSegment
-
 	if slru.probationLs.Len() < slru.probationCap || slru.Len() < slru.probationCap+slru.protectedCap {
 		slru.data[newItem.key] = slru.probationLs.PushFront(&newItem)
 		return
 	}
-
 	back := slru.probationLs.Back()
 	item := back.Value.(*slruItem)
 	delete(slru.data, item.key)
 	*item = newItem
-
 	slru.data[item.key] = back
 	slru.probationLs.MoveToFront(back)
 }
 
 func (slru *slru) victim() *slruItem {
-
 	if slru.Len() < slru.probationCap+slru.protectedCap {
 		return nil
 	}
-
 	v := slru.probationLs.Back()
-
 	return v.Value.(*slruItem)
 }
 
@@ -108,17 +98,13 @@ func (slru *slru) Remove(key interface{}) (interface{}, bool) {
 	if !ok {
 		return nil, false
 	}
-
 	item := v.Value.(*slruItem)
-
 	if item.listId == protectedSegment {
 		slru.protectedLs.Remove(v)
 	} else {
 		slru.probationLs.Remove(v)
 	}
-
 	delete(slru.data, key)
-
 	return item.value, true
 }
 

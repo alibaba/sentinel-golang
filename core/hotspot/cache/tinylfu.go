@@ -73,7 +73,6 @@ func (t *TinyLfu) Get(key interface{}) (interface{}, bool) {
 		}
 		return nil, false
 	}
-
 	item := val.Value.(*slruItem)
 	if t.doorkeeper.put(item.keyHash) {
 		t.countMinSketch.add(item.keyHash)
@@ -108,7 +107,6 @@ func (t *TinyLfu) AddIfAbsent(key interface{}, val interface{}) (priorValue inte
 	}
 
 	newItem := slruItem{admissionWindow, key, val, sum(key)}
-
 	candidate, evicted := t.lru.add(newItem)
 	if !evicted {
 		return nil
@@ -123,7 +121,6 @@ func (t *TinyLfu) AddIfAbsent(key interface{}, val interface{}) (priorValue inte
 
 	victimCount := t.estimate(victim.keyHash)
 	candidateCount := t.estimate(candidate.keyHash)
-
 	if candidateCount > victimCount {
 		t.slru.add(candidate)
 	}
