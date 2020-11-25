@@ -49,9 +49,9 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 			return r
 		}
 		if r.Status() == base.ResultStatusShouldWait {
-			if waitMs := r.WaitMs(); waitMs > 0 {
+			if nanosToWait := r.NanosToWait(); nanosToWait > 0 {
 				// Handle waiting action.
-				time.Sleep(time.Duration(waitMs) * time.Millisecond)
+				time.Sleep(nanosToWait)
 			}
 			continue
 		}

@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"time"
 )
 
 type BlockType uint8
@@ -58,13 +59,13 @@ func (s TokenResultStatus) String() string {
 type TokenResult struct {
 	status TokenResultStatus
 
-	blockErr *BlockError
-	waitMs   uint64
+	blockErr    *BlockError
+	nanosToWait time.Duration
 }
 
 func (r *TokenResult) DeepCopyFrom(newResult *TokenResult) {
 	r.status = newResult.status
-	r.waitMs = newResult.waitMs
+	r.nanosToWait = newResult.nanosToWait
 	if r.blockErr == nil {
 		r.blockErr = &BlockError{
 			blockType:     newResult.blockErr.blockType,
@@ -84,7 +85,7 @@ func (r *TokenResult) DeepCopyFrom(newResult *TokenResult) {
 func (r *TokenResult) ResetToPass() {
 	r.status = ResultStatusPass
 	r.blockErr = nil
-	r.waitMs = 0
+	r.nanosToWait = 0
 }
 
 func (r *TokenResult) ResetToBlocked(blockType BlockType) {
@@ -97,7 +98,7 @@ func (r *TokenResult) ResetToBlocked(blockType BlockType) {
 		r.blockErr.rule = nil
 		r.blockErr.snapshotValue = nil
 	}
-	r.waitMs = 0
+	r.nanosToWait = 0
 }
 
 func (r *TokenResult) ResetToBlockedWithMessage(blockType BlockType, blockMsg string) {
@@ -110,7 +111,7 @@ func (r *TokenResult) ResetToBlockedWithMessage(blockType BlockType, blockMsg st
 		r.blockErr.rule = nil
 		r.blockErr.snapshotValue = nil
 	}
-	r.waitMs = 0
+	r.nanosToWait = 0
 }
 
 func (r *TokenResult) ResetToBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) {
@@ -123,7 +124,7 @@ func (r *TokenResult) ResetToBlockedWithCause(blockType BlockType, blockMsg stri
 		r.blockErr.rule = rule
 		r.blockErr.snapshotValue = snapshot
 	}
-	r.waitMs = 0
+	r.nanosToWait = 0
 }
 
 func (r *TokenResult) IsPass() bool {
@@ -142,8 +143,8 @@ func (r *TokenResult) BlockError() *BlockError {
 	return r.blockErr
 }
 
-func (r *TokenResult) WaitMs() uint64 {
-	return r.waitMs
+func (r *TokenResult) NanosToWait() time.Duration {
+	return r.nanosToWait
 }
 
 func (r *TokenResult) String() string {
@@ -153,45 +154,45 @@ func (r *TokenResult) String() string {
 	} else {
 		blockMsg = r.blockErr.Error()
 	}
-	return fmt.Sprintf("TokenResult{status=%s, blockErr=%s, waitMs=%d}", r.status.String(), blockMsg, r.waitMs)
+	return fmt.Sprintf("TokenResult{status=%s, blockErr=%s, nanosToWait=%d}", r.status.String(), blockMsg, r.nanosToWait)
 }
 
 func NewTokenResultPass() *TokenResult {
 	return &TokenResult{
-		status:   ResultStatusPass,
-		blockErr: nil,
-		waitMs:   0,
+		status:      ResultStatusPass,
+		blockErr:    nil,
+		nanosToWait: 0,
 	}
 }
 
 func NewTokenResultBlocked(blockType BlockType) *TokenResult {
 	return &TokenResult{
-		status:   ResultStatusBlocked,
-		blockErr: NewBlockError(blockType),
-		waitMs:   0,
+		status:      ResultStatusBlocked,
+		blockErr:    NewBlockError(blockType),
+		nanosToWait: 0,
 	}
 }
 
 func NewTokenResultBlockedWithMessage(blockType BlockType, blockMsg string) *TokenResult {
 	return &TokenResult{
-		status:   ResultStatusBlocked,
-		blockErr: NewBlockErrorWithMessage(blockType, blockMsg),
-		waitMs:   0,
+		status:      ResultStatusBlocked,
+		blockErr:    NewBlockErrorWithMessage(blockType, blockMsg),
+		nanosToWait: 0,
 	}
 }
 
 func NewTokenResultBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) *TokenResult {
 	return &TokenResult{
-		status:   ResultStatusBlocked,
-		blockErr: NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot),
-		waitMs:   0,
+		status:      ResultStatusBlocked,
+		blockErr:    NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot),
+		nanosToWait: 0,
 	}
 }
 
-func NewTokenResultShouldWait(waitMs uint64) *TokenResult {
+func NewTokenResultShouldWait(waitNs time.Duration) *TokenResult {
 	return &TokenResult{
-		status:   ResultStatusShouldWait,
-		blockErr: nil,
-		waitMs:   waitMs,
+		status:      ResultStatusShouldWait,
+		blockErr:    nil,
+		nanosToWait: waitNs,
 	}
 }
