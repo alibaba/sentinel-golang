@@ -143,15 +143,11 @@ func (lru *lru) add(newItem slruItem) (oldItem slruItem, evicted bool) {
 	// reuse the item
 	e := lru.evictList.Back()
 	item := e.Value.(*slruItem)
-
 	delete(lru.data, item.key)
-
 	oldItem = *item
 	*item = newItem
-
 	lru.data[item.key] = e
 	lru.evictList.MoveToFront(e)
-
 	return oldItem, true
 }
 
