@@ -5,6 +5,7 @@ import (
 	"math"
 	"runtime"
 	"sync/atomic"
+	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
@@ -281,7 +282,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 				awaitTime := expectedTime - currentTimeInMs
 				if awaitTime > 0 {
 					atomic.StoreInt64(lastPassTimePtr, expectedTime)
-					return base.NewTokenResultShouldWait(uint64(awaitTime))
+					return base.NewTokenResultShouldWait(time.Duration(awaitTime) * time.Millisecond)
 				}
 				return nil
 			} else {
