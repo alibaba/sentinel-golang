@@ -18,10 +18,11 @@ type TrafficControllerGenFunc func(r *Rule, reuseMetric *ParamsMetric) TrafficSh
 type trafficControllerMap map[string][]TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc, 4)
-	tcMap        = make(trafficControllerMap)
-	tcMux        = new(sync.RWMutex)
-	currentRules = make([]*Rule, 0)
+	tcGenFuncMap  = make(map[ControlBehavior]TrafficControllerGenFunc, 4)
+	tcMap         = make(trafficControllerMap)
+	tcMux         = new(sync.RWMutex)
+	currentRules  = make([]*Rule, 0)
+	updateRuleMux = new(sync.Mutex)
 )
 
 func init() {
@@ -72,6 +73,8 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 // bool: indicates whether the internal map has been changed;
 // error: indicates whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
 	tcMux.RLock()
 	isEqual := reflect.DeepEqual(currentRules, rules)
 	tcMux.RUnlock()
@@ -154,20 +157,22 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-	tcMux.Lock()
-	defer func() {
-		tcMux.Unlock()
-		if r := recover(); r != nil {
-			return
+
+	tcMux.RLock()
+	tcMapClone := make(trafficControllerMap, len(tcMap))
+	for res, tcs := range tcMap {
+		tcMapClone[res] = make([]TrafficShapingController, 0, len(tcs))
+		resTcs := tcMapClone[res]
+		for _, tc := range tcs {
+			resTcs = append(resTcs, tc)
 		}
-		logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(m)
-	}()
+	}
+	tcMux.RUnlock()
 
 	for res, resRules := range newRuleMap {
 		emptyTcList := make([]TrafficShapingController, 0, 0)
 		for _, r := range resRules {
-			oldResTcs := tcMap[res]
+			oldResTcs := tcMapClone[res]
 			if oldResTcs == nil {
 				oldResTcs = emptyTcList
 			}
@@ -178,7 +183,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				equalOldTC := oldResTcs[equalIdx]
 				insertTcToTcMap(equalOldTC, res, m)
 				// remove old tc from old resTcs
-				tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
+				tcMapClone[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 				continue
 			}
 
@@ -202,7 +207,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 			//  remove the reused traffic shaping controller old res tcs
 			if reuseStatIdx >= 0 {
-				tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
+				tcMapClone[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 			}
 			insertTcToTcMap(tc, res, m)
 		}
@@ -219,6 +224,16 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			}
 		}
 	}
+
+	tcMux.Lock()
+	defer func() {
+		tcMux.Unlock()
+		if r := recover(); r != nil {
+			return
+		}
+		logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
+		logRuleUpdate(m)
+	}()
 	tcMap = m
 	currentRules = rules
 
