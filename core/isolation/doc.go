@@ -1,3 +1,2 @@
-// Package isolation implements the concurrency traffic control.
-
+// Package isolation provides implementation of concurrency limiting (semaphore isolation).
 package isolation

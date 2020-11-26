@@ -22,6 +22,7 @@ func ResetGlobalConfig(config *Entity) {
 	globalCfg = config
 }
 
+// InitConfigWithYaml loads general configuration from the YAML file under provided path.
 func InitConfigWithYaml(filePath string) (err error) {
 	// Initialize general config and logging module.
 	if err = applyYamlConfigFile(filePath); err != nil {
