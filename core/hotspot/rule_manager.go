@@ -162,9 +162,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	tcMapClone := make(trafficControllerMap, len(tcMap))
 	for res, tcs := range tcMap {
 		tcMapClone[res] = make([]TrafficShapingController, 0, len(tcs))
-		resTcs := tcMapClone[res]
 		for _, tc := range tcs {
-			resTcs = append(resTcs, tc)
+			tcMapClone[res] = append(tcMapClone[res], tc)
 		}
 	}
 	tcMux.RUnlock()
