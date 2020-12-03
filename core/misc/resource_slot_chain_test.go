@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,9 +45,8 @@ func TestRegisterRuleCheckSlotForResource(t *testing.T) {
 	cnt := 0
 	GetResourceSlotChain("abc").RangeRuleCheckSlot(func(slot base.RuleCheckSlot) {
 		cnt++
-		assert.True(t, slot.Name() == "rcs1")
 	})
-	assert.True(t, cnt == 1)
+	assert.True(t, cnt == 2)
 
 	RegisterRuleCheckSlotForResource("abc", rcs2)
 	RegisterRuleCheckSlotForResource("abc", rcs3)
@@ -54,15 +54,15 @@ func TestRegisterRuleCheckSlotForResource(t *testing.T) {
 	GetResourceSlotChain("abc").RangeRuleCheckSlot(func(slot base.RuleCheckSlot) {
 		cnt2++
 	})
-	assert.True(t, cnt2 == 3)
+	assert.True(t, cnt2 == 4)
 
 	RegisterRuleCheckSlotForResource("abc", rcs4)
 	cnt3 := 0
-	names := make([]string, 0, 3)
+	names := make([]string, 0, 4)
 	GetResourceSlotChain("abc").RangeRuleCheckSlot(func(slot base.RuleCheckSlot) {
 		cnt3++
 		names = append(names, slot.Name())
 	})
-	assert.True(t, reflect.DeepEqual(names, []string{"rcs1", "rcs2", "rcs3"}))
-	assert.True(t, cnt3 == 3)
+	assert.True(t, reflect.DeepEqual(names, []string{"rcs1", "rcs2", "rcs3", system.RuleCheckSlotName}))
+	assert.True(t, cnt3 == 4)
 }
