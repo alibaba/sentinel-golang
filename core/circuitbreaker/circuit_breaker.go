@@ -237,8 +237,9 @@ func newSlowRtCircuitBreakerWithStat(r *Rule, stat *slowRequestLeapArray) *slowR
 
 func newSlowRtCircuitBreaker(r *Rule) (*slowRtCircuitBreaker, error) {
 	interval := r.StatIntervalMs
+	bucketCount := r.getValidStatSlidingWindowBucketCount()
 	stat := &slowRequestLeapArray{}
-	leapArray, err := sbase.NewLeapArray(1, interval, stat)
+	leapArray, err := sbase.NewLeapArray(bucketCount, interval, stat)
 	if err != nil {
 		return nil, err
 	}
@@ -421,8 +422,9 @@ func newErrorRatioCircuitBreakerWithStat(r *Rule, stat *errorCounterLeapArray) *
 
 func newErrorRatioCircuitBreaker(r *Rule) (*errorRatioCircuitBreaker, error) {
 	interval := r.StatIntervalMs
+	bucketCount := r.getValidStatSlidingWindowBucketCount()
 	stat := &errorCounterLeapArray{}
-	leapArray, err := sbase.NewLeapArray(1, interval, stat)
+	leapArray, err := sbase.NewLeapArray(bucketCount, interval, stat)
 	if err != nil {
 		return nil, err
 	}
@@ -599,8 +601,9 @@ func newErrorCountCircuitBreakerWithStat(r *Rule, stat *errorCounterLeapArray) *
 
 func newErrorCountCircuitBreaker(r *Rule) (*errorCountCircuitBreaker, error) {
 	interval := r.StatIntervalMs
+	bucketCount := r.getValidStatSlidingWindowBucketCount()
 	stat := &errorCounterLeapArray{}
-	leapArray, err := sbase.NewLeapArray(1, interval, stat)
+	leapArray, err := sbase.NewLeapArray(bucketCount, interval, stat)
 	if err != nil {
 		return nil, err
 	}
