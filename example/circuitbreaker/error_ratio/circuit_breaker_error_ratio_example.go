@@ -42,7 +42,7 @@ func main() {
 	circuitbreaker.RegisterStateChangeListeners(&stateChangeTestListener{})
 
 	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
-		// Statistic time span=10s, recoveryTimeout=3s, maxErrorRatio=50%
+		// Statistic time span=5s, recoveryTimeout=3s, maxErrorRatio=40%
 		{
 			Resource:         "abc",
 			Strategy:         circuitbreaker.ErrorRatio,
