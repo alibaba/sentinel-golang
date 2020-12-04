@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// the max concurrency is 5
+	// the max concurrency is 8
 	_, err = hotspot.LoadRules([]*hotspot.Rule{
 		{
 			Resource:      "abc",
