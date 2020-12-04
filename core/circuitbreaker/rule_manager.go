@@ -394,7 +394,7 @@ func IsValid(r *Rule) error {
 		return errors.New("invalid error ratio threshold (valid range: [0.0, 1.0])")
 	}
 	if r.StatSlidingWindowBucketCount != 0 && r.StatIntervalMs%r.StatSlidingWindowBucketCount != 0 {
-		logging.Warn("The following must be true: StatIntervalMs % StatSlidingWindowBucketCount == 0. StatSlidingWindowBucketCount will be replaced by 1", "rule", r)
+		logging.Warn("[CircuitBreaker IsValid] The following must be true: StatIntervalMs % StatSlidingWindowBucketCount == 0. StatSlidingWindowBucketCount will be replaced by 1", "rule", r)
 	}
 	return nil
 }
