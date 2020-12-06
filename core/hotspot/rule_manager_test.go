@@ -320,7 +320,6 @@ func TestLoadRules(t *testing.T) {
 	})
 }
 
-
 func TestWhenUpdateRules(t *testing.T) {
 	t.Run("WhenUpdateRules", func(t *testing.T) {
 		specific := make(map[interface{}]int64)

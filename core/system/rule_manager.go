@@ -129,5 +129,3 @@ func IsValidSystemRule(rule *Rule) error {
 func WhenUpdateRules(h func(r RuleMap) (err error)) {
 	ruleUpdateHandler = h
 }
-
-
