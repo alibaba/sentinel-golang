@@ -488,6 +488,7 @@ func IsValidRule(rule *Rule) error {
 	}
 	return nil
 }
+
 func WhenUpdateRules(h func([]*Rule) (err error)) {
 	ruleUpdateHandler = h
 }

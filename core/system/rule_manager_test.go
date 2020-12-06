@@ -174,6 +174,8 @@ func TestWhenUpdateRules(t *testing.T) {
 		}
 		assert.Equal(t, 2, len(Rules))
 	})
+	_ = ClearRules()
+	WhenUpdateRules(DefaultRuleUpdateHandler)
 }
 
 func ruleUpdateForResetResourceHandler(rules RuleMap) (err error) {

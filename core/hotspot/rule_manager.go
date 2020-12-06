@@ -357,6 +357,7 @@ func RemoveTrafficShapingGenerator(cb ControlBehavior) error {
 	delete(tcGenFuncMap, cb)
 	return nil
 }
+
 func WhenUpdateRules(h func([]*Rule) (err error)) {
 	ruleUpdateHandler = h
 }

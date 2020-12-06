@@ -389,6 +389,8 @@ func TestWhenUpdateRules(t *testing.T) {
 		for _, r := range GetRules() {
 			assert.Equal(t, "123", r.Resource)
 		}
+		_ = ClearRules()
+		WhenUpdateRules(DefaultRuleUpdateHandler)
 	})
 
 }

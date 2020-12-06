@@ -72,8 +72,11 @@ func TestWhenUpdateRules(t *testing.T) {
 		for _, r := range GetRules() {
 			assert.Equal(t, "123", r.Resource)
 		}
+		_ = ClearRules()
+		WhenUpdateRules(DefaultRuleUpdateHandler)
 	})
 }
+
 func ruleUpdateForResetResourceHandler(rules []*Rule) (err error) {
 	for _, r := range rules {
 		r.Resource = "123"
