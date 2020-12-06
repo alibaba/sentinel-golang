@@ -172,10 +172,9 @@ func TestWhenUpdateRules(t *testing.T) {
 		for _, r := range GetRules() {
 			assert.Equal(t, triggerCount, r.TriggerCount)
 		}
-		assert.Equal(t, 2, len(Rules))
+		_ = ClearRules()
+		WhenUpdateRules(DefaultRuleUpdateHandler)
 	})
-	_ = ClearRules()
-	WhenUpdateRules(DefaultRuleUpdateHandler)
 }
 
 func ruleUpdateForResetResourceHandler(rules RuleMap) (err error) {
