@@ -159,7 +159,7 @@ func TestIsValidSystemRule(t *testing.T) {
 
 func TestWhenUpdateRules(t *testing.T) {
 	t.Run("WhenUpdateRules", func(t *testing.T) {
-		defer func() { Rules = make(RuleMap) }()
+		_ = ClearRules()
 		WhenUpdateRules(ruleUpdateForResetResourceHandler)
 		sRule := []*Rule{
 			{MetricType: InboundQPS, TriggerCount: 1},

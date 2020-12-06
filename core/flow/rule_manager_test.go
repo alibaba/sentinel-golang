@@ -445,6 +445,7 @@ func TestLoadRules(t *testing.T) {
 
 func TestDefaultRuleUpdateHandler(t *testing.T) {
 	t.Run("DefaultRuleUpdateHandler", func(t *testing.T) {
+		_ = ClearRules()
 		WhenUpdateRules(ruleUpdateForResetResourceHandler)
 		_, err := LoadRules([]*Rule{
 			{

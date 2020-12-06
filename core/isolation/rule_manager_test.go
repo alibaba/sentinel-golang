@@ -60,6 +60,7 @@ func TestLoadRules(t *testing.T) {
 
 func TestWhenUpdateRules(t *testing.T) {
 	t.Run("WhenUpdateRules", func(t *testing.T) {
+		_ = ClearRules()
 		WhenUpdateRules(ruleUpdateForResetResourceHandler)
 		_, err := LoadRules([]*Rule{
 			{

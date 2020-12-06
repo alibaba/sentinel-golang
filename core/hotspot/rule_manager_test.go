@@ -326,6 +326,7 @@ func TestWhenUpdateRules(t *testing.T) {
 		specific["sss"] = 1
 		specific["123"] = 3
 
+		_ = ClearRules()
 		WhenUpdateRules(ruleUpdateForResetResourceHandler)
 		_, err := LoadRules([]*Rule{
 			{
