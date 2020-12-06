@@ -112,8 +112,8 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 	})
 }
 
-func Test_onUpdateRules(t *testing.T) {
-	t.Run("Test_onUpdateRules", func(t *testing.T) {
+func Test_DefaultRuleUpdateHandler(t *testing.T) {
+	t.Run("Test_DefaultRuleUpdateHandler", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
 			Resource:         "abc01",
@@ -141,28 +141,28 @@ func Test_onUpdateRules(t *testing.T) {
 			Threshold:        10.0,
 		}
 		rules = append(rules, r1, r2, r3)
-		err := onRuleUpdate(rules)
+		err := DefaultRuleUpdateHandler(rules)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.True(t, len(breakers["abc01"]) == 3)
-		assert.True(t, len(breakerRules["abc01"]) == 3)
-		breakers = make(map[string][]CircuitBreaker)
-		breakerRules = make(map[string][]*Rule)
+		assert.True(t, len(Breakers["abc01"]) == 3)
+		assert.True(t, len(BreakerRules["abc01"]) == 3)
+		Breakers = make(map[string][]CircuitBreaker)
+		BreakerRules = make(map[string][]*Rule)
 	})
 
-	t.Run("Test_onUpdateRules_invalid", func(t *testing.T) {
+	t.Run("Test_DefaultRuleUpdateHandler_invalid", func(t *testing.T) {
 		r1 := &Rule{
 			Resource: "abc",
 		}
-		err := onRuleUpdate([]*Rule{r1})
+		err := DefaultRuleUpdateHandler([]*Rule{r1})
 		assert.Nil(t, err)
 		assert.True(t, len(GetRules()) == 0)
 	})
 }
 
-func Test_onRuleUpdate(t *testing.T) {
-	t.Run("Test_onRuleUpdate", func(t *testing.T) {
+func Test_loadRules(t *testing.T) {
+	t.Run("Test_loadRules", func(t *testing.T) {
 		r1 := &Rule{
 			Resource:         "abc",
 			Strategy:         SlowRequestRatio,
@@ -190,13 +190,13 @@ func Test_onRuleUpdate(t *testing.T) {
 		}
 
 		_, _ = LoadRules([]*Rule{r1, r2, r3})
-		b2 := breakers["abc"][1]
+		b2 := Breakers["abc"][1]
 
-		assert.True(t, len(breakers) == 1)
-		assert.True(t, len(breakers["abc"]) == 3)
-		assert.True(t, reflect.DeepEqual(breakers["abc"][0].BoundRule(), r1))
-		assert.True(t, reflect.DeepEqual(breakers["abc"][1].BoundRule(), r2))
-		assert.True(t, reflect.DeepEqual(breakers["abc"][2].BoundRule(), r3))
+		assert.True(t, len(Breakers) == 1)
+		assert.True(t, len(Breakers["abc"]) == 3)
+		assert.True(t, reflect.DeepEqual(Breakers["abc"][0].BoundRule(), r1))
+		assert.True(t, reflect.DeepEqual(Breakers["abc"][1].BoundRule(), r2))
+		assert.True(t, reflect.DeepEqual(Breakers["abc"][2].BoundRule(), r3))
 
 		r4 := &Rule{
 			Resource:         "abc",
@@ -232,8 +232,8 @@ func Test_onRuleUpdate(t *testing.T) {
 			Threshold:        10.0,
 		}
 		_, _ = LoadRules([]*Rule{r4, r5, r6, r7})
-		assert.True(t, len(breakers) == 1)
-		newCbs := breakers["abc"]
+		assert.True(t, len(Breakers) == 1)
+		newCbs := Breakers["abc"]
 		assert.True(t, len(newCbs) == 4, "Expect:4, in fact:", len(newCbs))
 		assert.True(t, reflect.DeepEqual(newCbs[0].BoundRule(), r1))
 		assert.True(t, reflect.DeepEqual(newCbs[1].BoundStat(), b2.BoundStat()))
@@ -369,4 +369,36 @@ func TestLoadRules(t *testing.T) {
 		assert.Nil(t, err)
 		assert.False(t, ok)
 	})
+}
+
+func TestWhenUpdateRules(t *testing.T) {
+	t.Run("loadWhenUpdateRules", func(t *testing.T) {
+		WhenUpdateRules(ruleUpdateForResetResourceHandler)
+		_, err := LoadRules([]*Rule{
+			{
+				Resource:         "abc",
+				Strategy:         SlowRequestRatio,
+				RetryTimeoutMs:   1000,
+				MinRequestAmount: 5,
+				StatIntervalMs:   1000,
+				MaxAllowedRtMs:   20,
+				Threshold:        0.1,
+			},
+		})
+		assert.Nil(t, err)
+		for _, r := range GetRules() {
+			assert.Equal(t, "123", r.Resource)
+		}
+	})
+
+}
+
+func ruleUpdateForResetResourceHandler(rules []*Rule) (err error) {
+	for _, r := range rules {
+		r.Resource = "123"
+	}
+	if err := DefaultRuleUpdateHandler(rules); err != nil {
+		return err
+	}
+	return nil
 }

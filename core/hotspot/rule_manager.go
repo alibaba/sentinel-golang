@@ -18,10 +18,11 @@ type TrafficControllerGenFunc func(r *Rule, reuseMetric *ParamsMetric) TrafficSh
 type trafficControllerMap map[string][]TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[ControlBehavior]TrafficControllerGenFunc, 4)
-	tcMap        = make(trafficControllerMap)
-	tcMux        = new(sync.RWMutex)
-	currentRules = make([]*Rule, 0)
+	tcGenFuncMap      = make(map[ControlBehavior]TrafficControllerGenFunc, 4)
+	TcMap             = make(trafficControllerMap)
+	TcMux             = new(sync.RWMutex)
+	CurrentRules      = make([]*Rule, 0)
+	ruleUpdateHandler = DefaultRuleUpdateHandler
 )
 
 func init() {
@@ -61,10 +62,10 @@ func init() {
 }
 
 func getTrafficControllersFor(res string) []TrafficShapingController {
-	tcMux.RLock()
-	defer tcMux.RUnlock()
+	TcMux.RLock()
+	defer TcMux.RUnlock()
 
-	return tcMap[res]
+	return TcMap[res]
 }
 
 // LoadRules replaces old rules with the given hotspot parameter flow control rules. Return value:
@@ -72,15 +73,15 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 // bool: indicates whether the internal map has been changed;
 // error: indicates whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
-	tcMux.RLock()
-	isEqual := reflect.DeepEqual(currentRules, rules)
-	tcMux.RUnlock()
+	TcMux.RLock()
+	isEqual := reflect.DeepEqual(CurrentRules, rules)
+	TcMux.RUnlock()
 	if isEqual {
 		logging.Info("[HotSpot] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
-	err := onRuleUpdate(rules)
+	err := ruleUpdateHandler(rules)
 	return true, err
 }
 
@@ -89,9 +90,9 @@ func LoadRules(rules []*Rule) (bool, error) {
 // GetRules need to compete hotspot module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRules if possible
 func GetRules() []Rule {
-	tcMux.RLock()
-	rules := rulesFrom(tcMap)
-	tcMux.RUnlock()
+	TcMux.RLock()
+	rules := rulesFrom(TcMap)
+	TcMux.RUnlock()
 
 	ret := make([]Rule, 0, len(rules))
 	for _, rule := range rules {
@@ -105,9 +106,9 @@ func GetRules() []Rule {
 // GetRulesOfResource need to compete hotspot module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRulesOfResource frequently if possible
 func GetRulesOfResource(res string) []Rule {
-	tcMux.RLock()
-	resTcs := tcMap[res]
-	tcMux.RUnlock()
+	TcMux.RLock()
+	resTcs := TcMap[res]
+	TcMux.RUnlock()
 
 	ret := make([]Rule, 0, len(resTcs))
 	for _, tc := range resTcs {
@@ -122,7 +123,7 @@ func ClearRules() error {
 	return err
 }
 
-func onRuleUpdate(rules []*Rule) (err error) {
+func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -136,7 +137,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	newRuleMap := make(map[string][]*Rule, len(rules))
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
-			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err.Error())
+			logging.Warn("[HotSpot DefaultRuleUpdateHandler] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err.Error())
 			continue
 		}
 		res := r.ResourceName()
@@ -154,20 +155,20 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-	tcMux.Lock()
+	TcMux.Lock()
 	defer func() {
-		tcMux.Unlock()
+		TcMux.Unlock()
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[HotSpot DefaultRuleUpdateHandler] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 
 	for res, resRules := range newRuleMap {
 		emptyTcList := make([]TrafficShapingController, 0, 0)
 		for _, r := range resRules {
-			oldResTcs := tcMap[res]
+			oldResTcs := TcMap[res]
 			if oldResTcs == nil {
 				oldResTcs = emptyTcList
 			}
@@ -178,14 +179,14 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				equalOldTC := oldResTcs[equalIdx]
 				insertTcToTcMap(equalOldTC, res, m)
 				// remove old tc from old resTcs
-				tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
+				TcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 				continue
 			}
 
 			// generate new traffic shaping controller
 			generator, supported := tcGenFuncMap[r.ControlBehavior]
 			if !supported {
-				logging.Warn("[HotSpot onRuleUpdate] Ignoring the frequent param flow rule due to unsupported control behavior", "rule", r)
+				logging.Warn("[HotSpot DefaultRuleUpdateHandler] Ignoring the frequent param flow rule due to unsupported control behavior", "rule", r)
 				continue
 			}
 			var tc TrafficShapingController
@@ -196,13 +197,13 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tc = generator(r, nil)
 			}
 			if tc == nil {
-				logging.Debug("[HotSpot onRuleUpdate] Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
+				logging.Debug("[HotSpot DefaultRuleUpdateHandler] Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", r)
 				continue
 			}
 
 			//  remove the reused traffic shaping controller old res tcs
 			if reuseStatIdx >= 0 {
-				tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
+				TcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 			}
 			insertTcToTcMap(tc, res, m)
 		}
@@ -219,8 +220,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			}
 		}
 	}
-	tcMap = m
-	currentRules = rules
+	TcMap = m
+	CurrentRules = rules
 
 	return nil
 }
@@ -339,8 +340,8 @@ func SetTrafficShapingGenerator(cb ControlBehavior, generator TrafficControllerG
 	if cb >= Reject && cb <= Throttling {
 		return errors.New("not allowed to replace the generator for default control behaviors")
 	}
-	tcMux.Lock()
-	defer tcMux.Unlock()
+	TcMux.Lock()
+	defer TcMux.Unlock()
 
 	tcGenFuncMap[cb] = generator
 	return nil
@@ -350,9 +351,12 @@ func RemoveTrafficShapingGenerator(cb ControlBehavior) error {
 	if cb >= Reject && cb <= Throttling {
 		return errors.New("not allowed to replace the generator for default control behaviors")
 	}
-	tcMux.Lock()
-	defer tcMux.Unlock()
+	TcMux.Lock()
+	defer TcMux.Unlock()
 
 	delete(tcGenFuncMap, cb)
 	return nil
+}
+func WhenUpdateRules(h func([]*Rule) (err error)) {
+	ruleUpdateHandler = h
 }

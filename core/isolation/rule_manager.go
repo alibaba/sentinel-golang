@@ -11,27 +11,28 @@ import (
 )
 
 var (
-	ruleMap      = make(map[string][]*Rule)
-	rwMux        = &sync.RWMutex{}
-	currentRules = make([]*Rule, 0)
+	RuleMap           = make(map[string][]*Rule)
+	RwMux             = &sync.RWMutex{}
+	CurrentRules      = make([]*Rule, 0)
+	ruleUpdateHandler = DefaultRuleUpdateHandler
 )
 
 // LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
-	rwMux.RLock()
-	isEqual := reflect.DeepEqual(currentRules, rules)
-	rwMux.RUnlock()
+	RwMux.RLock()
+	isEqual := reflect.DeepEqual(CurrentRules, rules)
+	RwMux.RUnlock()
 	if isEqual {
 		logging.Info("[Isolation] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
-	err := onRuleUpdate(rules)
+	err := ruleUpdateHandler(rules)
 	return true, err
 }
 
-func onRuleUpdate(rules []*Rule) (err error) {
+func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 	m := make(map[string][]*Rule, len(rules))
 	for _, r := range rules {
 		if e := IsValid(r); e != nil {
@@ -46,9 +47,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-	rwMux.Lock()
+	RwMux.Lock()
 	defer func() {
-		rwMux.Unlock()
+		RwMux.Unlock()
 		logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
@@ -59,8 +60,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
 		}
 	}
-	ruleMap = m
-	currentRules = rules
+	RuleMap = m
+	CurrentRules = rules
 	return
 }
 
@@ -95,19 +96,19 @@ func GetRulesOfResource(res string) []Rule {
 // getRules returns all the rules。Any changes of rules take effect for isolation module
 // getRules is an internal interface.
 func getRules() []*Rule {
-	rwMux.RLock()
-	defer rwMux.RUnlock()
+	RwMux.RLock()
+	defer RwMux.RUnlock()
 
-	return rulesFrom(ruleMap)
+	return rulesFrom(RuleMap)
 }
 
 // getRulesOfResource returns specific resource's rules。Any changes of rules take effect for isolation module
 // getRulesOfResource is an internal interface.
 func getRulesOfResource(res string) []*Rule {
-	rwMux.RLock()
-	defer rwMux.RUnlock()
+	RwMux.RLock()
+	defer RwMux.RUnlock()
 
-	resRules, exist := ruleMap[res]
+	resRules, exist := RuleMap[res]
 	if !exist {
 		return nil
 	}
@@ -157,4 +158,7 @@ func IsValid(r *Rule) error {
 		return errors.New("zero threshold")
 	}
 	return nil
+}
+func WhenUpdateRules(h func([]*Rule) (err error)) {
+	ruleUpdateHandler = h
 }

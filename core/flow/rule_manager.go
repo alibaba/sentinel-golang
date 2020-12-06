@@ -28,14 +28,15 @@ type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
 	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 4)
-	tcMap        = make(TrafficControllerMap)
-	tcMux        = new(sync.RWMutex)
+	TcMap        = make(TrafficControllerMap)
+	TcMux        = new(sync.RWMutex)
 	nopStat      = &standaloneStatistic{
 		reuseResourceStat: false,
 		readOnlyMetric:    base.NopReadStat(),
 		writeOnlyMetric:   base.NopWriteStat(),
 	}
-	currentRules = make([]*Rule, 0)
+	CurrentRules      = make([]*Rule, 0)
+	ruleUpdateHandler = DefaultRuleUpdateHandler
 )
 
 func init() {
@@ -121,7 +122,7 @@ func logRuleUpdate(m TrafficControllerMap) {
 	}
 }
 
-func onRuleUpdate(rules []*Rule) (err error) {
+func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -135,7 +136,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	resRulesMap := make(map[string][]*Rule, len(rules))
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+			logging.Warn("[Flow DefaultRuleUpdateHandler] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
 			continue
 		}
 		resRules, exist := resRulesMap[rule.Resource]
@@ -146,13 +147,13 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 	m := make(TrafficControllerMap, len(resRulesMap))
 	start := util.CurrentTimeNano()
-	tcMux.Lock()
+	TcMux.Lock()
 	defer func() {
-		tcMux.Unlock()
+		TcMux.Unlock()
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[Flow DefaultRuleUpdateHandler] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 	for res, rulesOfRes := range resRulesMap {
@@ -166,8 +167,8 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
 		}
 	}
-	tcMap = m
-	currentRules = rules
+	TcMap = m
+	CurrentRules = rules
 	return nil
 }
 
@@ -175,34 +176,34 @@ func onRuleUpdate(rules []*Rule) (err error) {
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO: rethink the design
-	tcMux.RLock()
-	isEqual := reflect.DeepEqual(currentRules, rules)
-	tcMux.RUnlock()
+	TcMux.RLock()
+	isEqual := reflect.DeepEqual(CurrentRules, rules)
+	TcMux.RUnlock()
 	if isEqual {
 		logging.Info("[Flow] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
-	err := onRuleUpdate(rules)
+	err := ruleUpdateHandler(rules)
 	return true, err
 }
 
 // getRules returns all the rules。Any changes of rules take effect for flow module
 // getRules is an internal interface.
 func getRules() []*Rule {
-	tcMux.RLock()
-	defer tcMux.RUnlock()
+	TcMux.RLock()
+	defer TcMux.RUnlock()
 
-	return rulesFrom(tcMap)
+	return rulesFrom(TcMap)
 }
 
 // getRulesOfResource returns specific resource's rules。Any changes of rules take effect for flow module
 // getRulesOfResource is an internal interface.
 func getRulesOfResource(res string) []*Rule {
-	tcMux.RLock()
-	defer tcMux.RUnlock()
+	TcMux.RLock()
+	defer TcMux.RUnlock()
 
-	resTcs, exist := tcMap[res]
+	resTcs, exist := TcMap[res]
 	if !exist {
 		return nil
 	}
@@ -336,8 +337,8 @@ func SetTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy, c
 	if controlBehavior >= Reject && controlBehavior <= Throttling {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
-	tcMux.Lock()
-	defer tcMux.Unlock()
+	TcMux.Lock()
+	defer TcMux.Unlock()
 
 	tcGenFuncMap[trafficControllerGenKey{
 		tokenCalculateStrategy: tokenCalculateStrategy,
@@ -353,8 +354,8 @@ func RemoveTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy
 	if controlBehavior >= Reject && controlBehavior <= Throttling {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
-	tcMux.Lock()
-	defer tcMux.Unlock()
+	TcMux.Lock()
+	defer TcMux.Unlock()
 
 	delete(tcGenFuncMap, trafficControllerGenKey{
 		tokenCalculateStrategy: tokenCalculateStrategy,
@@ -364,10 +365,10 @@ func RemoveTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy
 }
 
 func getTrafficControllerListFor(name string) []*TrafficShapingController {
-	tcMux.RLock()
-	defer tcMux.RUnlock()
+	TcMux.RLock()
+	defer TcMux.RUnlock()
 
-	return tcMap[name]
+	return TcMap[name]
 }
 
 func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
@@ -405,7 +406,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
-		oldResTcs, exist := tcMap[res]
+		oldResTcs, exist := TcMap[res]
 		if !exist {
 			oldResTcs = emptyTcs
 		}
@@ -418,7 +419,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			equalOldTc := oldResTcs[equalIdx]
 			newTcsOfRes = append(newTcsOfRes, equalOldTc)
 			// remove old tc from oldResTcs
-			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
+			TcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
 
@@ -444,7 +445,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 		}
 		if reuseStatIdx >= 0 {
 			// remove old tc from oldResTcs
-			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
+			TcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
 		newTcsOfRes = append(newTcsOfRes, tc)
 	}
@@ -486,4 +487,7 @@ func IsValidRule(rule *Rule) error {
 		logging.Info("StatIntervalInMs is great than 10 minutes, less than 10 minutes is recommended.")
 	}
 	return nil
+}
+func WhenUpdateRules(h func([]*Rule) (err error)) {
+	ruleUpdateHandler = h
 }

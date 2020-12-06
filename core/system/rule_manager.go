@@ -11,10 +11,10 @@ import (
 
 type RuleMap map[MetricType][]*Rule
 
-// const
 var (
-	ruleMap    = make(RuleMap)
-	ruleMapMux = new(sync.RWMutex)
+	Rules             = make(RuleMap)
+	RuleMapMux        = new(sync.RWMutex)
+	ruleUpdateHandler = DefaultRuleUpdateHandler
 )
 
 // GetRules returns all the rules based on copy.
@@ -22,12 +22,12 @@ var (
 // GetRules need to compete system module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRules if possible
 func GetRules() []Rule {
-	rules := make([]*Rule, 0, len(ruleMap))
-	ruleMapMux.RLock()
-	for _, rs := range ruleMap {
+	rules := make([]*Rule, 0, len(Rules))
+	RuleMapMux.RLock()
+	for _, rs := range Rules {
 		rules = append(rules, rs...)
 	}
-	ruleMapMux.RUnlock()
+	RuleMapMux.RUnlock()
 
 	ret := make([]Rule, 0, len(rules))
 	for _, r := range rules {
@@ -39,11 +39,11 @@ func GetRules() []Rule {
 // getRules returns all the rules。Any changes of rules take effect for system module
 // getRules is an internal interface.
 func getRules() []*Rule {
-	ruleMapMux.RLock()
-	defer ruleMapMux.RUnlock()
+	RuleMapMux.RLock()
+	defer RuleMapMux.RUnlock()
 
 	rules := make([]*Rule, 0, 8)
-	for _, rs := range ruleMap {
+	for _, rs := range Rules {
 		rules = append(rules, rs...)
 	}
 	return rules
@@ -53,7 +53,7 @@ func getRules() []*Rule {
 func LoadRules(rules []*Rule) (bool, error) {
 	m := buildRuleMap(rules)
 
-	if err := onRuleUpdate(m); err != nil {
+	if err := ruleUpdateHandler(m); err != nil {
 		logging.Error(err, "Fail to load rules in system.LoadRules()", "rules", rules)
 		return false, err
 	}
@@ -67,19 +67,19 @@ func ClearRules() error {
 	return err
 }
 
-func onRuleUpdate(r RuleMap) error {
+func DefaultRuleUpdateHandler(r RuleMap) error {
 	start := util.CurrentTimeNano()
-	ruleMapMux.Lock()
+	RuleMapMux.Lock()
 	defer func() {
-		ruleMapMux.Unlock()
-		logging.Debug("[System onRuleUpdate] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
+		RuleMapMux.Unlock()
+		logging.Debug("[System DefaultRuleUpdateHandler] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
 		if len(r) > 0 {
 			logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
 		} else {
 			logging.Info("[SystemRuleManager] System rules were cleared")
 		}
 	}()
-	ruleMap = r
+	Rules = r
 	return nil
 }
 
@@ -125,3 +125,7 @@ func IsValidSystemRule(rule *Rule) error {
 	}
 	return nil
 }
+func WhenUpdateRules(h func(r RuleMap) (err error)) {
+	ruleUpdateHandler = h
+}
+
