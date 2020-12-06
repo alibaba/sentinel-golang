@@ -63,17 +63,16 @@ func addLogger(sl *StatLogger) *StatLogger {
 }
 
 func nextRolling(sl *StatLogger) {
+	defer func() {
+		sl.rollingChan <- 1
+	}()
 	rollingTimeMillis := sl.data.Load().(*StatRollingData).rollingTimeMillis
 	delayMillis := int64(rollingTimeMillis) - int64(util.CurrentTimeMillis())
 	if delayMillis > 5 {
 		timer := time.NewTimer(time.Duration(delayMillis) * time.Millisecond)
 		<-timer.C
-		sl.rollingChan <- 1
 	} else if -delayMillis > int64(sl.intervalMillis) {
-		logging.Warn("[StatLogController] unusual delay of statLogger[" + sl.loggerName + "], " +
-			"delay=" + strconv.FormatInt(-delayMillis, 10) + "ms, submit now")
-		sl.rollingChan <- 1
-	} else {
-		sl.rollingChan <- 1
+		logging.Warn("[StatLogController] unusual delay of statLogger, submit now", "loggerName", sl.loggerName,
+			"delay", strconv.FormatInt(-delayMillis, 10)+"ms")
 	}
 }
