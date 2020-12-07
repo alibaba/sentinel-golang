@@ -282,7 +282,7 @@ func (sw *MockMetricLogWriter) Write(ts uint64, items []*base.MetricItem) error 
 }
 
 func Test_Aggregate(t *testing.T) {
-	t.Run("Test_stat_logger", func(t *testing.T) {
+	t.Run("Test_aggregate", func(t *testing.T) {
 		m := &MockMetricLogWriter{make(chan *writeData, 100)}
 		err := InitTask()
 		metricWriter = m
