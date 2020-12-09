@@ -41,7 +41,7 @@ It's also encouraged to add the link of your blog post, tutorial, demo or custom
 
 All integration modules and sub-projects are located in [sentinel-group](https://github.com/sentinel-group).
 
-- [Sentinel Go adapters for frameworks](https://github.com/sentinel-group/sentinel-go-datasource-k8s-crd)
+- [Sentinel Go adapters for frameworks](https://github.com/sentinel-group/sentinel-go-adapters)
 - [Sentinel Go dynamic data-source modules](https://github.com/sentinel-group/sentinel-go-datasources)
 - [Kubernetes CRD data-source for Sentinel Go](https://github.com/sentinel-group/sentinel-go-datasource-k8s-crd)
 
