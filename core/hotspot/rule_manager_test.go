@@ -136,7 +136,7 @@ func Test_IsValidRule(t *testing.T) {
 }
 
 func Test_onRuleUpdate(t *testing.T) {
-	TcMap = make(trafficControllerMap)
+	tcMap = make(trafficControllerMap)
 
 	specific := make(map[interface{}]int64)
 	specific["sss"] = 1
@@ -203,7 +203,7 @@ func Test_onRuleUpdate(t *testing.T) {
 	if !updated || err != nil {
 		t.Errorf("Fail to prepare data, err: %+v", err)
 	}
-	assert.True(t, len(TcMap["abc"]) == 4)
+	assert.True(t, len(tcMap["abc"]) == 4)
 
 	r21 := &Rule{
 		ID:                "21",
@@ -242,10 +242,10 @@ func Test_onRuleUpdate(t *testing.T) {
 		SpecificItems:     specific3,
 	}
 
-	oldTc1Ptr := TcMap["abc"][0]
-	oldTc2Ptr := TcMap["abc"][1]
-	oldTc3Ptr := TcMap["abc"][2]
-	oldTc4Ptr := TcMap["abc"][3]
+	oldTc1Ptr := tcMap["abc"][0]
+	oldTc2Ptr := tcMap["abc"][1]
+	oldTc3Ptr := tcMap["abc"][2]
+	oldTc4Ptr := tcMap["abc"][3]
 	oldTc1PtrAddr := fmt.Sprintf("%p", oldTc1Ptr)
 	oldTc2PtrAddr := fmt.Sprintf("%p", oldTc2Ptr)
 	oldTc3PtrAddr := fmt.Sprintf("%p", oldTc3Ptr)
@@ -254,13 +254,13 @@ func Test_onRuleUpdate(t *testing.T) {
 	fmt.Println(oldTc2PtrAddr)
 	fmt.Println(oldTc3PtrAddr)
 	fmt.Println(oldTc4PtrAddr)
-	oldTc2MetricPtrAddr := fmt.Sprintf("%p", TcMap["abc"][1].BoundMetric())
+	oldTc2MetricPtrAddr := fmt.Sprintf("%p", tcMap["abc"][1].BoundMetric())
 	fmt.Println("oldTc2MetricPtr:", oldTc2MetricPtrAddr)
 
 	err = onRuleUpdate([]*Rule{r21, r22, r23})
 	assert.True(t, err == nil)
-	assert.True(t, len(TcMap) == 1)
-	abcTcs := TcMap["abc"]
+	assert.True(t, len(tcMap) == 1)
+	abcTcs := tcMap["abc"]
 	assert.True(t, len(abcTcs) == 3)
 	newTc1Ptr := abcTcs[0]
 	newTc2Ptr := abcTcs[1]
@@ -277,7 +277,7 @@ func Test_onRuleUpdate(t *testing.T) {
 	assert.True(t, abcTcs[0].BoundRule() == r1 && abcTcs[0] == oldTc1Ptr)
 	assert.True(t, abcTcs[1].BoundMetric() == oldTc2Ptr.BoundMetric())
 
-	TcMap = make(trafficControllerMap)
+	tcMap = make(trafficControllerMap)
 }
 
 func TestLoadRules(t *testing.T) {

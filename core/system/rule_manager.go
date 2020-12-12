@@ -19,7 +19,7 @@ var (
 	ruleUpdateHandler = defaultRuleUpdateHandler
 )
 
-// GetRules returns all the ruleMap based on copy.
+// GetRules returns all the rules based on copy.
 // It doesn't take effect for system module if user changes the rule.
 // GetRules need to compete system module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRules if possible
@@ -38,7 +38,7 @@ func GetRules() []Rule {
 	return ret
 }
 
-// getRules returns all the ruleMap。Any changes of ruleMap take effect for system module
+// getRules returns all the rules。Any changes of rules take effect for system module
 // getRules is an internal interface.
 func getRules() []*Rule {
 	ruleMapMux.RLock()
@@ -51,19 +51,19 @@ func getRules() []*Rule {
 	return rules
 }
 
-// LoadRules loads given system ruleMap to the rule manager, while all previous ruleMap will be replaced.
+// LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
 func LoadRules(rules []*Rule) (bool, error) {
 	m := buildRuleMap(rules)
 
 	if err := ruleUpdateHandler(onRuleUpdate, m); err != nil {
-		logging.Error(err, "Fail to load ruleMap in system.LoadRules()", "ruleMap", rules)
+		logging.Error(err, "Fail to load rules in system.LoadRules()", "rules", rules)
 		return false, err
 	}
 
 	return true, nil
 }
 
-// ClearRules clear all the previous ruleMap
+// ClearRules clear all the previous rules
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
@@ -76,9 +76,9 @@ func onRuleUpdate(r RuleMap) error {
 		ruleMapMux.Unlock()
 		logging.Debug("[System onRuleUpdate] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
 		if len(r) > 0 {
-			logging.Info("[SystemRuleManager] System ruleMap loaded", "ruleMap", r)
+			logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
 		} else {
-			logging.Info("[SystemRuleManager] System ruleMap were cleared")
+			logging.Info("[SystemRuleManager] System rules were cleared")
 		}
 	}()
 	ruleMap = r

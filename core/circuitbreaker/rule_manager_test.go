@@ -112,8 +112,8 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 	})
 }
 
-func Test_onRuleUpdate(t *testing.T) {
-	t.Run("Test_onRuleUpdate", func(t *testing.T) {
+func Test_onRuleUpdates(t *testing.T) {
+	t.Run("Test_onRuleUpdates", func(t *testing.T) {
 		rules := make([]*Rule, 0)
 		r1 := &Rule{
 			Resource:         "abc01",
@@ -151,7 +151,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		breakerRules = make(map[string][]*Rule)
 	})
 
-	t.Run("Test_onRuleUpdate_invalid", func(t *testing.T) {
+	t.Run("Test_onRuleUpdates_invalid", func(t *testing.T) {
 		r1 := &Rule{
 			Resource: "abc",
 		}
@@ -161,8 +161,8 @@ func Test_onRuleUpdate(t *testing.T) {
 	})
 }
 
-func Test_loadRules(t *testing.T) {
-	t.Run("Test_loadRules", func(t *testing.T) {
+func Test_onRuleUpdate(t *testing.T) {
+	t.Run("Test_onRuleUpdate", func(t *testing.T) {
 		r1 := &Rule{
 			Resource:         "abc",
 			Strategy:         SlowRequestRatio,
@@ -371,8 +371,8 @@ func TestLoadRules(t *testing.T) {
 	})
 }
 
-func TestWhenUpdateRules(t *testing.T) {
-	t.Run("loadWhenUpdateRules", func(t *testing.T) {
+func TestRegisterRuleUpdateHandler(t *testing.T) {
+	t.Run("RegisterRuleUpdateHandler", func(t *testing.T) {
 		_ = ClearRules()
 		RegisterRuleUpdateHandler(ruleUpdateForResetResourceHandler)
 		_, err := LoadRules([]*Rule{
