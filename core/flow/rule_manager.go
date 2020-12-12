@@ -26,17 +26,19 @@ type trafficControllerGenKey struct {
 // TrafficControllerMap represents the map storage for TrafficShapingController.
 type TrafficControllerMap map[string][]*TrafficShapingController
 
+type RuleUpdateHandler func(onRuleUpdate func(rules []*Rule) (err error), rules []*Rule) error
+
 var (
 	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 4)
-	TcMap        = make(TrafficControllerMap)
-	TcMux        = new(sync.RWMutex)
+	tcMap        = make(TrafficControllerMap)
+	tcMux        = new(sync.RWMutex)
 	nopStat      = &standaloneStatistic{
 		reuseResourceStat: false,
 		readOnlyMetric:    base.NopReadStat(),
 		writeOnlyMetric:   base.NopWriteStat(),
 	}
-	CurrentRules      = make([]*Rule, 0)
-	ruleUpdateHandler = DefaultRuleUpdateHandler
+	currentRules      = make([]*Rule, 0)
+	ruleUpdateHandler = defaultRuleUpdateHandler
 )
 
 func init() {
@@ -122,7 +124,7 @@ func logRuleUpdate(m TrafficControllerMap) {
 	}
 }
 
-func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
+func onRuleUpdate(rules []*Rule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -136,7 +138,7 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 	resRulesMap := make(map[string][]*Rule, len(rules))
 	for _, rule := range rules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("[Flow DefaultRuleUpdateHandler] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
 			continue
 		}
 		resRules, exist := resRulesMap[rule.Resource]
@@ -147,13 +149,13 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 	}
 	m := make(TrafficControllerMap, len(resRulesMap))
 	start := util.CurrentTimeNano()
-	TcMux.Lock()
+	tcMux.Lock()
 	defer func() {
-		TcMux.Unlock()
+		tcMux.Unlock()
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("[Flow DefaultRuleUpdateHandler] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
 	for res, rulesOfRes := range resRulesMap {
@@ -167,8 +169,8 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 			misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
 		}
 	}
-	TcMap = m
-	CurrentRules = rules
+	tcMap = m
+	currentRules = rules
 	return nil
 }
 
@@ -176,34 +178,34 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO: rethink the design
-	TcMux.RLock()
-	isEqual := reflect.DeepEqual(CurrentRules, rules)
-	TcMux.RUnlock()
+	tcMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	tcMux.RUnlock()
 	if isEqual {
 		logging.Info("[Flow] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
-	err := ruleUpdateHandler(rules)
+	err := ruleUpdateHandler(onRuleUpdate, rules)
 	return true, err
 }
 
 // getRules returns all the rules。Any changes of rules take effect for flow module
 // getRules is an internal interface.
 func getRules() []*Rule {
-	TcMux.RLock()
-	defer TcMux.RUnlock()
+	tcMux.RLock()
+	defer tcMux.RUnlock()
 
-	return rulesFrom(TcMap)
+	return rulesFrom(tcMap)
 }
 
 // getRulesOfResource returns specific resource's rules。Any changes of rules take effect for flow module
 // getRulesOfResource is an internal interface.
 func getRulesOfResource(res string) []*Rule {
-	TcMux.RLock()
-	defer TcMux.RUnlock()
+	tcMux.RLock()
+	defer tcMux.RUnlock()
 
-	resTcs, exist := TcMap[res]
+	resTcs, exist := tcMap[res]
 	if !exist {
 		return nil
 	}
@@ -337,8 +339,8 @@ func SetTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy, c
 	if controlBehavior >= Reject && controlBehavior <= Throttling {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
-	TcMux.Lock()
-	defer TcMux.Unlock()
+	tcMux.Lock()
+	defer tcMux.Unlock()
 
 	tcGenFuncMap[trafficControllerGenKey{
 		tokenCalculateStrategy: tokenCalculateStrategy,
@@ -354,8 +356,8 @@ func RemoveTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy
 	if controlBehavior >= Reject && controlBehavior <= Throttling {
 		return errors.New("not allowed to replace the generator for default control strategy")
 	}
-	TcMux.Lock()
-	defer TcMux.Unlock()
+	tcMux.Lock()
+	defer tcMux.Unlock()
 
 	delete(tcGenFuncMap, trafficControllerGenKey{
 		tokenCalculateStrategy: tokenCalculateStrategy,
@@ -365,10 +367,10 @@ func RemoveTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy
 }
 
 func getTrafficControllerListFor(name string) []*TrafficShapingController {
-	TcMux.RLock()
-	defer TcMux.RUnlock()
+	tcMux.RLock()
+	defer tcMux.RUnlock()
 
-	return TcMap[name]
+	return tcMap[name]
 }
 
 func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
@@ -406,7 +408,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
-		oldResTcs, exist := TcMap[res]
+		oldResTcs, exist := tcMap[res]
 		if !exist {
 			oldResTcs = emptyTcs
 		}
@@ -419,7 +421,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			equalOldTc := oldResTcs[equalIdx]
 			newTcsOfRes = append(newTcsOfRes, equalOldTc)
 			// remove old tc from oldResTcs
-			TcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
+			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
 
@@ -445,7 +447,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 		}
 		if reuseStatIdx >= 0 {
 			// remove old tc from oldResTcs
-			TcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
+			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
 		newTcsOfRes = append(newTcsOfRes, tc)
 	}
@@ -489,6 +491,10 @@ func IsValidRule(rule *Rule) error {
 	return nil
 }
 
-func WhenUpdateRules(h func([]*Rule) (err error)) {
-	ruleUpdateHandler = h
+func RegisterRuleUpdateHandler(handler RuleUpdateHandler) {
+	ruleUpdateHandler = handler
+}
+
+func defaultRuleUpdateHandler(onRuleUpdate func(rules []*Rule) (err error), rules []*Rule) error {
+	return onRuleUpdate(rules)
 }

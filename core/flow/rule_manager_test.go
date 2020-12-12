@@ -40,8 +40,8 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	}
 	assert.NoError(t, err)
 	assert.Contains(t, tcGenFuncMap, cs)
-	assert.NotZero(t, len(TcMap[resource]))
-	assert.Equal(t, tsc, TcMap[resource][0])
+	assert.NotZero(t, len(tcMap[resource]))
+	assert.Equal(t, tsc, tcMap[resource][0])
 
 	err = RemoveTrafficShapingGenerator(TokenCalculateStrategy(111), ControlBehavior(112))
 	assert.NoError(t, err)
@@ -152,9 +152,9 @@ func TestGetRules(t *testing.T) {
 			assert.True(t, reflect.DeepEqual(rs2[0], r2))
 			assert.True(t, reflect.DeepEqual(rs2[1], r1))
 		}
-		assert.True(t, len(TcMap["abc2"]) == 1 && !TcMap["abc2"][0].boundStat.reuseResourceStat)
-		assert.True(t, reflect.DeepEqual(TcMap["abc2"][0].boundStat.readOnlyMetric, nopStat.readOnlyMetric))
-		assert.True(t, reflect.DeepEqual(TcMap["abc2"][0].boundStat.writeOnlyMetric, nopStat.writeOnlyMetric))
+		assert.True(t, len(tcMap["abc2"]) == 1 && !tcMap["abc2"][0].boundStat.reuseResourceStat)
+		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.readOnlyMetric, nopStat.readOnlyMetric))
+		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.writeOnlyMetric, nopStat.writeOnlyMetric))
 		if err := ClearRules(); err != nil {
 			t.Fatal(err)
 		}
@@ -248,7 +248,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			ControlBehavior:        Throttling,
 			MaxQueueingTimeMs:      10,
 		}
-		assert.True(t, len(TcMap["abc1"]) == 0)
+		assert.True(t, len(tcMap["abc1"]) == 0)
 		tcs := buildRulesOfRes("abc1", []*Rule{r1, r2})
 		assert.True(t, len(tcs) == 2)
 		assert.True(t, tcs[0].BoundRule() == r1)
@@ -357,8 +357,8 @@ func Test_buildRulesOfRes(t *testing.T) {
 		assert.True(t, stat4.readOnlyMetric != nil)
 		assert.True(t, stat4.writeOnlyMetric != nil)
 
-		TcMap["abc1"] = []*TrafficShapingController{fakeTc0, fakeTc1, fakeTc2, fakeTc3, fakeTc4}
-		assert.True(t, len(TcMap["abc1"]) == 5)
+		tcMap["abc1"] = []*TrafficShapingController{fakeTc0, fakeTc1, fakeTc2, fakeTc3, fakeTc4}
+		assert.True(t, len(tcMap["abc1"]) == 5)
 		// reuse stat with rule 1
 		r12 := &Rule{
 			Resource:               "abc1",
@@ -443,10 +443,10 @@ func TestLoadRules(t *testing.T) {
 	})
 }
 
-func TestDefaultRuleUpdateHandler(t *testing.T) {
-	t.Run("DefaultRuleUpdateHandler", func(t *testing.T) {
+func TestRegisterRuleUpdateHandler(t *testing.T) {
+	t.Run("RegisterRuleUpdateHandler", func(t *testing.T) {
 		_ = ClearRules()
-		WhenUpdateRules(ruleUpdateForResetResourceHandler)
+		RegisterRuleUpdateHandler(ruleUpdateForResetResourceHandler)
 		_, err := LoadRules([]*Rule{
 			{
 				Resource:               "some-test",
@@ -460,15 +460,15 @@ func TestDefaultRuleUpdateHandler(t *testing.T) {
 			assert.Equal(t, "123", r.Resource)
 		}
 		_ = ClearRules()
-		WhenUpdateRules(DefaultRuleUpdateHandler)
+		RegisterRuleUpdateHandler(defaultRuleUpdateHandler)
 	})
 }
 
-func ruleUpdateForResetResourceHandler(rules []*Rule) (err error) {
+func ruleUpdateForResetResourceHandler(onRuleUpdate func(rules []*Rule) (err error), rules []*Rule) error {
 	for _, r := range rules {
 		r.Resource = "123"
 	}
-	if err := DefaultRuleUpdateHandler(rules); err != nil {
+	if err := onRuleUpdate(rules); err != nil {
 		return err
 	}
 	return nil

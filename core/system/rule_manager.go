@@ -11,23 +11,25 @@ import (
 
 type RuleMap map[MetricType][]*Rule
 
+type RuleUpdateHandler func(onRuleUpdate func(rules RuleMap) (err error), rules RuleMap) error
+
 var (
-	Rules             = make(RuleMap)
-	RuleMapMux        = new(sync.RWMutex)
-	ruleUpdateHandler = DefaultRuleUpdateHandler
+	ruleMap           = make(RuleMap)
+	ruleMapMux        = new(sync.RWMutex)
+	ruleUpdateHandler = defaultRuleUpdateHandler
 )
 
-// GetRules returns all the rules based on copy.
+// GetRules returns all the ruleMap based on copy.
 // It doesn't take effect for system module if user changes the rule.
 // GetRules need to compete system module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRules if possible
 func GetRules() []Rule {
-	rules := make([]*Rule, 0, len(Rules))
-	RuleMapMux.RLock()
-	for _, rs := range Rules {
+	rules := make([]*Rule, 0, len(ruleMap))
+	ruleMapMux.RLock()
+	for _, rs := range ruleMap {
 		rules = append(rules, rs...)
 	}
-	RuleMapMux.RUnlock()
+	ruleMapMux.RUnlock()
 
 	ret := make([]Rule, 0, len(rules))
 	for _, r := range rules {
@@ -36,50 +38,50 @@ func GetRules() []Rule {
 	return ret
 }
 
-// getRules returns all the rules。Any changes of rules take effect for system module
+// getRules returns all the ruleMap。Any changes of ruleMap take effect for system module
 // getRules is an internal interface.
 func getRules() []*Rule {
-	RuleMapMux.RLock()
-	defer RuleMapMux.RUnlock()
+	ruleMapMux.RLock()
+	defer ruleMapMux.RUnlock()
 
 	rules := make([]*Rule, 0, 8)
-	for _, rs := range Rules {
+	for _, rs := range ruleMap {
 		rules = append(rules, rs...)
 	}
 	return rules
 }
 
-// LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
+// LoadRules loads given system ruleMap to the rule manager, while all previous ruleMap will be replaced.
 func LoadRules(rules []*Rule) (bool, error) {
 	m := buildRuleMap(rules)
 
-	if err := ruleUpdateHandler(m); err != nil {
-		logging.Error(err, "Fail to load rules in system.LoadRules()", "rules", rules)
+	if err := ruleUpdateHandler(onRuleUpdate, m); err != nil {
+		logging.Error(err, "Fail to load ruleMap in system.LoadRules()", "ruleMap", rules)
 		return false, err
 	}
 
 	return true, nil
 }
 
-// ClearRules clear all the previous rules
+// ClearRules clear all the previous ruleMap
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
 }
 
-func DefaultRuleUpdateHandler(r RuleMap) error {
+func onRuleUpdate(r RuleMap) error {
 	start := util.CurrentTimeNano()
-	RuleMapMux.Lock()
+	ruleMapMux.Lock()
 	defer func() {
-		RuleMapMux.Unlock()
-		logging.Debug("[System DefaultRuleUpdateHandler] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
+		ruleMapMux.Unlock()
+		logging.Debug("[System onRuleUpdate] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
 		if len(r) > 0 {
-			logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
+			logging.Info("[SystemRuleManager] System ruleMap loaded", "ruleMap", r)
 		} else {
-			logging.Info("[SystemRuleManager] System rules were cleared")
+			logging.Info("[SystemRuleManager] System ruleMap were cleared")
 		}
 	}()
-	Rules = r
+	ruleMap = r
 	return nil
 }
 
@@ -126,6 +128,10 @@ func IsValidSystemRule(rule *Rule) error {
 	return nil
 }
 
-func WhenUpdateRules(h func(r RuleMap) (err error)) {
-	ruleUpdateHandler = h
+func RegisterRuleUpdateHandler(handler RuleUpdateHandler) {
+	ruleUpdateHandler = handler
+}
+
+func defaultRuleUpdateHandler(onRuleUpdate func(rules RuleMap) (err error), rules RuleMap) error {
+	return onRuleUpdate(rules)
 }

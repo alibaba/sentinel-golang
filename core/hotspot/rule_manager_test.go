@@ -135,7 +135,7 @@ func Test_IsValidRule(t *testing.T) {
 	})
 }
 
-func Test_defaultRuleUpdateHandler(t *testing.T) {
+func Test_onRuleUpdate(t *testing.T) {
 	TcMap = make(trafficControllerMap)
 
 	specific := make(map[interface{}]int64)
@@ -257,7 +257,7 @@ func Test_defaultRuleUpdateHandler(t *testing.T) {
 	oldTc2MetricPtrAddr := fmt.Sprintf("%p", TcMap["abc"][1].BoundMetric())
 	fmt.Println("oldTc2MetricPtr:", oldTc2MetricPtrAddr)
 
-	err = DefaultRuleUpdateHandler([]*Rule{r21, r22, r23})
+	err = onRuleUpdate([]*Rule{r21, r22, r23})
 	assert.True(t, err == nil)
 	assert.True(t, len(TcMap) == 1)
 	abcTcs := TcMap["abc"]
@@ -320,14 +320,14 @@ func TestLoadRules(t *testing.T) {
 	})
 }
 
-func TestWhenUpdateRules(t *testing.T) {
-	t.Run("WhenUpdateRules", func(t *testing.T) {
+func TestRegisterRuleUpdateHandler(t *testing.T) {
+	t.Run("RegisterRuleUpdateHandler", func(t *testing.T) {
 		specific := make(map[interface{}]int64)
 		specific["sss"] = 1
 		specific["123"] = 3
 
 		_ = ClearRules()
-		WhenUpdateRules(ruleUpdateForResetResourceHandler)
+		RegisterRuleUpdateHandler(ruleUpdateForResetResourceHandler)
 		_, err := LoadRules([]*Rule{
 			{
 				ID:                "1",
@@ -347,15 +347,15 @@ func TestWhenUpdateRules(t *testing.T) {
 			assert.Equal(t, "123", r.Resource)
 		}
 		_ = ClearRules()
-		WhenUpdateRules(DefaultRuleUpdateHandler)
+		RegisterRuleUpdateHandler(defaultRuleUpdateHandler)
 	})
 }
 
-func ruleUpdateForResetResourceHandler(rules []*Rule) (err error) {
+func ruleUpdateForResetResourceHandler(onRuleUpdate func(rules []*Rule) (err error), rules []*Rule) error {
 	for _, r := range rules {
 		r.Resource = "123"
 	}
-	if err := DefaultRuleUpdateHandler(rules); err != nil {
+	if err := onRuleUpdate(rules); err != nil {
 		return err
 	}
 	return nil

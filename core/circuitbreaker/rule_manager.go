@@ -13,15 +13,17 @@ import (
 
 type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
 
+type RuleUpdateHandler func(onRuleUpdate func(rules []*Rule) (err error), rules []*Rule) error
+
 var (
 	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc, 4)
 
-	BreakerRules         = make(map[string][]*Rule)
-	Breakers             = make(map[string][]CircuitBreaker)
-	UpdateMux            = &sync.RWMutex{}
-	CurrentRules         = make([]*Rule, 0)
-	ruleUpdateHandler    = DefaultRuleUpdateHandler
+	breakerRules         = make(map[string][]*Rule)
+	breakers             = make(map[string][]CircuitBreaker)
+	updateMux            = &sync.RWMutex{}
+	currentRules         = make([]*Rule, 0)
 	stateChangeListeners = make([]StateChangeListener, 0)
+	ruleUpdateHandler    = defaultRuleUpdateHandler
 )
 
 func init() {
@@ -76,9 +78,9 @@ func init() {
 // GetRulesOfResource need to compete circuit breaker module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRulesOfResource frequently if possible
 func GetRulesOfResource(resource string) []Rule {
-	UpdateMux.RLock()
-	resRules, ok := BreakerRules[resource]
-	UpdateMux.RUnlock()
+	updateMux.RLock()
+	resRules, ok := breakerRules[resource]
+	updateMux.RUnlock()
 	if !ok {
 		return nil
 	}
@@ -94,9 +96,9 @@ func GetRulesOfResource(resource string) []Rule {
 // GetRules need to compete circuit breaker module's global lock and the high performance losses of copy,
 // 		reduce or do not call GetRules if possible
 func GetRules() []Rule {
-	UpdateMux.RLock()
-	rules := rulesFrom(BreakerRules)
-	UpdateMux.RUnlock()
+	updateMux.RLock()
+	rules := rulesFrom(breakerRules)
+	updateMux.RUnlock()
 	ret := make([]Rule, 0, len(rules))
 	for _, rule := range rules {
 		ret = append(ret, *rule)
@@ -118,22 +120,21 @@ func ClearRules() error {
 // error: was designed to indicate whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO in order to avoid invalid update, should check consistent with last update rules
-	UpdateMux.RLock()
-	isEqual := reflect.DeepEqual(CurrentRules, rules)
-	UpdateMux.RUnlock()
+	updateMux.RLock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	updateMux.RUnlock()
 	if isEqual {
 		logging.Info("[CircuitBreaker] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
-
-	err := ruleUpdateHandler(rules)
+	err := ruleUpdateHandler(onRuleUpdate, rules)
 	return true, err
 }
 
 func getBreakersOfResource(resource string) []CircuitBreaker {
-	UpdateMux.RLock()
-	resCBs := Breakers[resource]
-	UpdateMux.RUnlock()
+	updateMux.RLock()
+	resCBs := breakers[resource]
+	updateMux.RUnlock()
 	ret := make([]CircuitBreaker, 0, len(resCBs))
 	if len(resCBs) == 0 {
 		return ret
@@ -179,7 +180,7 @@ func insertCbToCbMap(cb CircuitBreaker, res string, m map[string][]CircuitBreake
 }
 
 // Concurrent safe to update rules
-func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
+func onRuleUpdate(rules []*Rule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -196,7 +197,7 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 			continue
 		}
 		if err := IsValid(rule); err != nil {
-			logging.Warn("[CircuitBreaker DefaultRuleUpdateHandler] Ignoring invalid circuit breaking rule when loading new rules", "rule", rule, "err", err.Error())
+			logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring invalid circuit breaking rule when loading new rules", "rule", rule, "err", err.Error())
 			continue
 		}
 
@@ -216,20 +217,20 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-	UpdateMux.Lock()
+	updateMux.Lock()
 	defer func() {
-		UpdateMux.Unlock()
+		updateMux.Unlock()
 		if r := recover(); r != nil {
 			return
 		}
-		logging.Debug("[CircuitBreaker DefaultRuleUpdateHandler] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
+		logging.Debug("[CircuitBreaker onRuleUpdate] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(newBreakerRules)
 	}()
 
 	for res, resRules := range newBreakerRules {
 		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
 		for _, r := range resRules {
-			oldResCbs := Breakers[res]
+			oldResCbs := breakers[res]
 			if oldResCbs == nil {
 				oldResCbs = emptyCircuitBreakerList
 			}
@@ -241,13 +242,13 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 				equalOldCb := oldResCbs[equalIdx]
 				insertCbToCbMap(equalOldCb, res, newBreakers)
 				// remove old cb from oldResCbs
-				Breakers[res] = append(oldResCbs[:equalIdx], oldResCbs[equalIdx+1:]...)
+				breakers[res] = append(oldResCbs[:equalIdx], oldResCbs[equalIdx+1:]...)
 				continue
 			}
 
 			generator := cbGenFuncMap[r.Strategy]
 			if generator == nil {
-				logging.Warn("[CircuitBreaker DefaultRuleUpdateHandler] Ignoring the rule due to unsupported circuit breaking strategy", "rule", r)
+				logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring the rule due to unsupported circuit breaking strategy", "rule", r)
 				continue
 			}
 
@@ -259,12 +260,12 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 				cb, e = generator(r, nil)
 			}
 			if cb == nil || e != nil {
-				logging.Warn("[CircuitBreaker DefaultRuleUpdateHandler] Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e.Error())
+				logging.Warn("[CircuitBreaker onRuleUpdate] Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e.Error())
 				continue
 			}
 
 			if reuseStatIdx >= 0 {
-				Breakers[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
+				breakers[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
 			}
 			insertCbToCbMap(cb, res, newBreakers)
 		}
@@ -278,9 +279,9 @@ func DefaultRuleUpdateHandler(rules []*Rule) (err error) {
 		}
 	}
 
-	BreakerRules = newBreakerRules
-	Breakers = newBreakers
-	CurrentRules = rules
+	breakerRules = newBreakerRules
+	breakers = newBreakers
+	currentRules = rules
 
 	return nil
 }
@@ -312,7 +313,7 @@ func logRuleUpdate(m map[string][]*Rule) {
 	}
 }
 
-// RegisterStateChangeListeners registers the global state change listener for all circuit Breakers
+// RegisterStateChangeListeners registers the global state change listener for all circuit breakers
 // Note: this function is not thread-safe.
 func RegisterStateChangeListeners(listeners ...StateChangeListener) {
 	if len(listeners) == 0 {
@@ -337,8 +338,8 @@ func SetCircuitBreakerGenerator(s Strategy, generator CircuitBreakerGenFunc) err
 	if s <= ErrorCount {
 		return errors.New("not allowed to replace the generator for default circuit breaking strategies")
 	}
-	UpdateMux.Lock()
-	defer UpdateMux.Unlock()
+	updateMux.Lock()
+	defer updateMux.Unlock()
 
 	cbGenFuncMap[s] = generator
 	return nil
@@ -348,8 +349,8 @@ func RemoveCircuitBreakerGenerator(s Strategy) error {
 	if s <= ErrorCount {
 		return errors.New("not allowed to remove the generator for default circuit breaking strategies")
 	}
-	UpdateMux.Lock()
-	defer UpdateMux.Unlock()
+	updateMux.Lock()
+	defer updateMux.Unlock()
 
 	delete(cbGenFuncMap, s)
 	return nil
@@ -377,6 +378,10 @@ func IsValid(r *Rule) error {
 	return nil
 }
 
-func WhenUpdateRules(h func([]*Rule) (err error)) {
-	ruleUpdateHandler = h
+func RegisterRuleUpdateHandler(handler RuleUpdateHandler) {
+	ruleUpdateHandler = handler
+}
+
+func defaultRuleUpdateHandler(onRuleUpdate func(rules []*Rule) (err error), rules []*Rule) error {
+	return onRuleUpdate(rules)
 }

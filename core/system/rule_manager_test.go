@@ -13,18 +13,18 @@ func TestGetRules(t *testing.T) {
 	})
 
 	t.Run("GetUpdatedRules", func(t *testing.T) {
-		defer func() { Rules = make(RuleMap) }()
+		defer func() { ruleMap = make(RuleMap) }()
 
 		r := map[MetricType][]*Rule{
 			InboundQPS:  {&Rule{MetricType: InboundQPS, TriggerCount: 1}},
 			Concurrency: {&Rule{MetricType: Concurrency, TriggerCount: 2}},
 		}
-		Rules = r
+		ruleMap = r
 		rules := getRules()
 		assert.Equal(t, 2, len(rules))
 
 		r[InboundQPS] = append(r[InboundQPS], &Rule{MetricType: InboundQPS, TriggerCount: 2})
-		Rules = r
+		ruleMap = r
 		rules = getRules()
 		assert.Equal(t, 3, len(rules))
 	})
@@ -35,11 +35,11 @@ func TestLoadRules(t *testing.T) {
 		isOK, err := LoadRules(nil)
 		assert.Equal(t, true, isOK)
 		assert.Nil(t, err)
-		assert.Equal(t, 0, len(Rules))
+		assert.Equal(t, 0, len(ruleMap))
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
-		defer func() { Rules = make(RuleMap) }()
+		defer func() { ruleMap = make(RuleMap) }()
 		sRule := []*Rule{
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: Concurrency, TriggerCount: 2},
@@ -47,14 +47,14 @@ func TestLoadRules(t *testing.T) {
 		isOK, err := LoadRules(sRule)
 		assert.Equal(t, true, isOK)
 		assert.Nil(t, err)
-		assert.Equal(t, 2, len(Rules))
+		assert.Equal(t, 2, len(ruleMap))
 	})
 }
 
 func TestClearRules(t *testing.T) {
 	t.Run("EmptyOriginRuleMap", func(t *testing.T) {
 		err := ClearRules()
-		assert.Equal(t, 0, len(Rules))
+		assert.Equal(t, 0, len(ruleMap))
 		assert.Nil(t, err)
 	})
 
@@ -63,22 +63,22 @@ func TestClearRules(t *testing.T) {
 			InboundQPS:  {&Rule{MetricType: InboundQPS, TriggerCount: 1}},
 			Concurrency: {&Rule{MetricType: Concurrency, TriggerCount: 2}},
 		}
-		Rules = r
+		ruleMap = r
 		err := ClearRules()
 		assert.Nil(t, err)
-		assert.Equal(t, 0, len(Rules))
+		assert.Equal(t, 0, len(ruleMap))
 	})
 }
 
-func TestDefaultRuleUpdateHandler(t *testing.T) {
+func TestOnRuleUpdate(t *testing.T) {
 	t.Run("NilSystemRule", func(t *testing.T) {
-		err := DefaultRuleUpdateHandler(nil)
+		err := onRuleUpdate(nil)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(Rules))
+		assert.Equal(t, 0, len(ruleMap))
 	})
 
 	t.Run("ValidSystemRule", func(t *testing.T) {
-		defer func() { Rules = make(RuleMap) }()
+		defer func() { ruleMap = make(RuleMap) }()
 		rMap := RuleMap{
 			InboundQPS: []*Rule{
 				{MetricType: InboundQPS, TriggerCount: 1},
@@ -87,9 +87,9 @@ func TestDefaultRuleUpdateHandler(t *testing.T) {
 				{MetricType: Concurrency, TriggerCount: 2},
 			},
 		}
-		err := DefaultRuleUpdateHandler(rMap)
+		err := onRuleUpdate(rMap)
 		assert.NoError(t, err)
-		assert.Equal(t, len(rMap), len(Rules))
+		assert.Equal(t, len(rMap), len(ruleMap))
 	})
 }
 
@@ -157,10 +157,10 @@ func TestIsValidSystemRule(t *testing.T) {
 	})
 }
 
-func TestWhenUpdateRules(t *testing.T) {
-	t.Run("WhenUpdateRules", func(t *testing.T) {
+func TestRegisterRuleUpdateHandler(t *testing.T) {
+	t.Run("RegisterRuleUpdateHandler", func(t *testing.T) {
 		_ = ClearRules()
-		WhenUpdateRules(ruleUpdateForResetResourceHandler)
+		RegisterRuleUpdateHandler(ruleUpdateForResetResourceHandler)
 		sRule := []*Rule{
 			{MetricType: InboundQPS, TriggerCount: 1},
 			{MetricType: Concurrency, TriggerCount: 2},
@@ -173,17 +173,17 @@ func TestWhenUpdateRules(t *testing.T) {
 			assert.Equal(t, triggerCount, r.TriggerCount)
 		}
 		_ = ClearRules()
-		WhenUpdateRules(DefaultRuleUpdateHandler)
+		RegisterRuleUpdateHandler(defaultRuleUpdateHandler)
 	})
 }
 
-func ruleUpdateForResetResourceHandler(rules RuleMap) (err error) {
+func ruleUpdateForResetResourceHandler(onRuleUpdate func(rules RuleMap) (err error), rules RuleMap) error {
 	for _, v := range rules {
 		for _, r := range v {
 			r.TriggerCount = 10
 		}
 	}
-	if err := DefaultRuleUpdateHandler(rules); err != nil {
+	if err := onRuleUpdate(rules); err != nil {
 		return err
 	}
 	return nil
