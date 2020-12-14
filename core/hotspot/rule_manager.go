@@ -227,7 +227,10 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	currentRules = rules
 	tcMux.Unlock()
 	logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
+
+	tcMux.RLock()
 	logRuleUpdate(m)
+	tcMux.RUnlock()
 
 	return nil
 }
