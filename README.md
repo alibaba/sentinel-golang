@@ -30,12 +30,20 @@ Sentinel provides the following features:
 
 ## Documentation
 
-See the [中文文档](https://github.com/alibaba/sentinel-golang/wiki/介绍) for document in Chinese.
+See the [中文文档](https://sentinelguard.io/zh-cn/docs/golang/basic-api-usage.html) for document in Chinese.
 
 See the [Wiki](https://github.com/alibaba/sentinel-golang/wiki) for full documentation, examples, blog posts, and other information.
 
 If you are using Sentinel, please [**leave a comment here**](https://github.com/alibaba/Sentinel/issues/18) to tell us your scenario to make Sentinel better.
 It's also encouraged to add the link of your blog post, tutorial, demo or customized components to [**Awesome Sentinel**](https://github.com/alibaba/sentinel-awesome).
+
+## Sub-projects
+
+All integration modules and sub-projects are located in [sentinel-group](https://github.com/sentinel-group).
+
+- [Sentinel Go adapters for frameworks](https://github.com/sentinel-group/sentinel-go-adapters)
+- [Sentinel Go dynamic data-source modules](https://github.com/sentinel-group/sentinel-go-datasources)
+- [Kubernetes CRD data-source for Sentinel Go](https://github.com/sentinel-group/sentinel-go-datasource-k8s-crd)
 
 ## Bugs and Feedback
 
@@ -48,4 +56,6 @@ Contributions are always welcomed! Please see [CONTRIBUTING](./CONTRIBUTING.md) 
 You can start with the issues labeled with [`good first issue`](https://github.com/alibaba/sentinel-golang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
 
 ## Communication
-![Sentinel Go Group QR Code](https://user-images.githubusercontent.com/28588342/96000984-19f8f380-0e6a-11eb-95ab-72594cd2673b.jpg)
+
+- DingTalk Group (钉钉群): 23339422
+- [Gitter](https://gitter.im/alibaba/Sentinel)

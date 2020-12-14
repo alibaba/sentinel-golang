@@ -1,3 +1,17 @@
+// Copyright 1999-2020 Alibaba Group Holding Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package misc
 
 import (
@@ -6,17 +20,20 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/log"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/core/system"
 )
 
 var (
 	rsSlotChainLock sync.RWMutex
 	rsSlotChain     = make(map[string]*base.SlotChain, 8)
 
+	// non-thread safe
 	globalStatPrepareSlots = make([]base.StatPrepareSlot, 0, 8)
 	globalRuleCheckSlots   = make([]base.RuleCheckSlot, 0, 8)
 	globalStatSlot         = make([]base.StatSlot, 0, 8)
 )
 
+// non-thread safe
 func registerCustomGlobalSlotsToSc(sc *base.SlotChain) {
 	if sc == nil {
 		return
@@ -72,6 +89,8 @@ func newResourceSlotChain() *base.SlotChain {
 	sc := base.NewSlotChain()
 	sc.AddStatPrepareSlot(stat.DefaultResourceNodePrepareSlot)
 
+	sc.AddRuleCheckSlot(system.DefaultAdaptiveSlot)
+
 	sc.AddStatSlot(stat.DefaultSlot)
 	sc.AddStatSlot(log.DefaultSlot)
 	registerCustomGlobalSlotsToSc(sc)
@@ -85,11 +104,16 @@ func RegisterStatPrepareSlotForResource(rsName string, slot base.StatPrepareSlot
 	sc, ok := rsSlotChain[rsName]
 	if !ok {
 		sc = newResourceSlotChain()
+		if base.ValidateStatPrepareSlotNaming(sc, slot) {
+			sc.AddStatPrepareSlot(slot)
+		}
 		rsSlotChain[rsName] = sc
-	}
-
-	if base.ValidateStatPrepareSlotNaming(sc, slot) {
-		sc.AddStatPrepareSlot(slot)
+	} else {
+		sc.Lock()
+		if base.ValidateStatPrepareSlotNaming(sc, slot) {
+			sc.AddStatPrepareSlot(slot)
+		}
+		sc.Unlock()
 	}
 }
 
@@ -100,12 +124,18 @@ func RegisterRuleCheckSlotForResource(rsName string, slot base.RuleCheckSlot) {
 	sc, ok := rsSlotChain[rsName]
 	if !ok {
 		sc = newResourceSlotChain()
+		if base.ValidateRuleCheckSlotNaming(sc, slot) {
+			sc.AddRuleCheckSlot(slot)
+		}
 		rsSlotChain[rsName] = sc
+	} else {
+		sc.Lock()
+		if base.ValidateRuleCheckSlotNaming(sc, slot) {
+			sc.AddRuleCheckSlot(slot)
+		}
+		sc.Unlock()
 	}
 
-	if base.ValidateRuleCheckSlotNaming(sc, slot) {
-		sc.AddRuleCheckSlot(slot)
-	}
 }
 
 func RegisterStatSlotForResource(rsName string, slot base.StatSlot) {
@@ -115,12 +145,18 @@ func RegisterStatSlotForResource(rsName string, slot base.StatSlot) {
 	sc, ok := rsSlotChain[rsName]
 	if !ok {
 		sc = newResourceSlotChain()
+		if base.ValidateStatSlotNaming(sc, slot) {
+			sc.AddStatSlot(slot)
+		}
 		rsSlotChain[rsName] = sc
+	} else {
+		sc.Lock()
+		if base.ValidateStatSlotNaming(sc, slot) {
+			sc.AddStatSlot(slot)
+		}
+		sc.Unlock()
 	}
 
-	if base.ValidateStatSlotNaming(sc, slot) {
-		sc.AddStatSlot(slot)
-	}
 }
 
 func GetResourceSlotChain(rsName string) *base.SlotChain {
