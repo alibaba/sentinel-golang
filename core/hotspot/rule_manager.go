@@ -159,10 +159,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	tcMux.RLock()
 	tcMapClone := make(trafficControllerMap, len(tcMap))
 	for res, tcs := range tcMap {
-		tcMapClone[res] = make([]TrafficShapingController, 0, len(tcs))
-		for _, tc := range tcs {
-			tcMapClone[res] = append(tcMapClone[res], tc)
-		}
+		resTcClone := make([]TrafficShapingController, 0, len(tcs))
+		resTcClone = append(resTcClone, tcs...)
+		tcMapClone[res] = resTcClone
 	}
 	tcMux.RUnlock()
 
@@ -233,14 +232,12 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 func logRuleUpdate(m map[string][]*Rule) {
-	rules := make([]*Rule, 0, 8)
+	rules := make([]*Rule, 0, 9)
 	for _, rs := range m {
 		if len(rs) == 0 {
 			continue
 		}
-		for _, r := range rs {
-			rules = append(rules, r)
-		}
+		rules = append(rules, rs...)
 	}
 	if len(rules) == 0 {
 		logging.Info("[HotspotRuleManager] Hotspot rules were cleared")
