@@ -226,21 +226,26 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	tcMap = m
 	currentRules = rules
 	tcMux.Unlock()
+
 	logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
-
-	tcMux.RLock()
-	logRuleUpdate(m)
-	tcMux.RUnlock()
-
+	logRuleUpdate(newRuleMap)
 	return nil
 }
 
-func logRuleUpdate(m trafficControllerMap) {
-	rs := rulesFrom(m)
-	if len(rs) == 0 {
+func logRuleUpdate(m map[string][]*Rule) {
+	rules := make([]*Rule, 0, 8)
+	for _, rs := range m {
+		if len(rs) == 0 {
+			continue
+		}
+		for _, r := range rs {
+			rules = append(rules, r)
+		}
+	}
+	if len(rules) == 0 {
 		logging.Info("[HotspotRuleManager] Hotspot rules were cleared")
 	} else {
-		logging.Info("[HotspotRuleManager] Hotspot rules were loaded", "rules", rs)
+		logging.Info("[HotspotRuleManager] Hotspot rules were loaded", "rules", rules)
 	}
 }
 
