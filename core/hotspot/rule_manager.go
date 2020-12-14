@@ -223,13 +223,11 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 
 	tcMux.Lock()
-	defer func() {
-		tcMux.Unlock()
-		logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(m)
-	}()
 	tcMap = m
 	currentRules = rules
+	tcMux.Unlock()
+	logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
+	logRuleUpdate(m)
 
 	return nil
 }
