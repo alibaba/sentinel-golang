@@ -75,9 +75,7 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 func LoadRules(rules []*Rule) (bool, error) {
 	updateRuleMux.Lock()
 	defer updateRuleMux.Unlock()
-	tcMux.RLock()
 	isEqual := reflect.DeepEqual(currentRules, rules)
-	tcMux.RUnlock()
 	if isEqual {
 		logging.Info("[HotSpot] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
@@ -227,9 +225,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	tcMux.Lock()
 	defer func() {
 		tcMux.Unlock()
-		if r := recover(); r != nil {
-			return
-		}
 		logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
 		logRuleUpdate(m)
 	}()
