@@ -1,4 +1,4 @@
-package cache
+package wtinylfu
 
 import "math"
 
@@ -84,7 +84,7 @@ func (d *doorkeeper) reset() {
 	}
 }
 
-// return the integer >= i which is a power of protectedLs
+// return the integer >= i which is a power of two
 func nextPowerOfTwo(i uint32) uint32 {
 	n := i - 1
 	n |= n >> 1

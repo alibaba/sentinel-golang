@@ -1,7 +1,9 @@
-package cache
+package wtinylfu
 
 import (
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 )
 
 // TinyLfuCacheMap use tinyLfu strategy to cache the most frequently accessed hotspot parameter
@@ -76,7 +78,7 @@ func (c *TinyLfuCacheMap) Purge() {
 	c.tinyLfu.Purge()
 }
 
-func NewTinyLfuCacheMap(size int) ConcurrentCounterCache {
+func NewTinyLfuCacheMap(size int) cache.ConcurrentCounterCache {
 	tinyLfu, err := NewTinyLfu(size)
 	if err != nil {
 		return nil

@@ -1,14 +1,16 @@
-package cache
+package wtinylfu
 
 import (
 	"fmt"
 	"math/rand"
 	"testing"
+
+	lru2 "github.com/alibaba/sentinel-golang/core/hotspot/cache/lru"
 )
 
 func testBySize(cacheSize int, zipf *rand.Zipf) {
 	lfu, _ := NewTinyLfu(cacheSize)
-	lru, _ := NewLRU(cacheSize, nil)
+	lru, _ := lru2.NewLRU(cacheSize, nil)
 	totalLfu := 0
 	missLfu := 0
 	for i := 0; i < 2000000; i++ {

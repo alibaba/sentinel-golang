@@ -1,6 +1,8 @@
-package cache
+package wtinylfu
 
 const sketchDepth = 4
+
+const resetMask = 0x7777777777777777
 
 // countMinSketch is an implementation of count-min sketch with 4-bit counters.
 type countMinSketch struct {
@@ -52,7 +54,7 @@ func (c *countMinSketch) reset() {
 	for i, v := range c.counters {
 		if v != 0 {
 			//divides all by two.
-			c.counters[i] = (v >> 1) & 0x7777777777777777
+			c.counters[i] = (v >> 1) & resetMask
 		}
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache/wtinylfu"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -69,8 +69,8 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 			size = ParamsMaxCapacity
 		}
 		metric := &ParamsMetric{
-			RuleTimeCounter:  cache.NewTinyLfuCacheMap(size),
-			RuleTokenCounter: cache.NewTinyLfuCacheMap(size),
+			RuleTimeCounter:  wtinylfu.NewTinyLfuCacheMap(size),
+			RuleTokenCounter: wtinylfu.NewTinyLfuCacheMap(size),
 		}
 		return newBaseTrafficShapingControllerWithMetric(r, metric)
 	case Concurrency:
@@ -81,7 +81,7 @@ func newBaseTrafficShapingController(r *Rule) *baseTrafficShapingController {
 			size = ConcurrencyMaxCount
 		}
 		metric := &ParamsMetric{
-			ConcurrencyCounter: cache.NewTinyLfuCacheMap(size),
+			ConcurrencyCounter: wtinylfu.NewTinyLfuCacheMap(size),
 		}
 		return newBaseTrafficShapingControllerWithMetric(r, metric)
 	default:

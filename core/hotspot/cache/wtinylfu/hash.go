@@ -1,12 +1,15 @@
-package cache
+package wtinylfu
 
 import (
-	"bytes"
 	"encoding/binary"
-	"encoding/gob"
+	"fmt"
 	"hash/fnv"
 	"math"
 	"reflect"
+)
+
+var (
+	fnv64 = fnv.New64()
 )
 
 func sum(k interface{}) uint64 {
@@ -48,7 +51,7 @@ func sum(k interface{}) uint64 {
 	if h, ok := hashPointer(k); ok {
 		return h
 	}
-	if h, ok := hashWithGob(k); ok {
+	if h, ok := hashWithSprintf(k); ok {
 		return h
 	}
 	return 0
@@ -64,23 +67,19 @@ func hashString(data string) uint64 {
 	return hashByteArray([]byte(data))
 }
 
-func hashWithGob(data interface{}) (uint64, bool) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(data)
-	if err != nil {
-		return 0, false
-	}
-	return hashByteArray(buf.Bytes()), true
+func hashWithSprintf(data interface{}) (uint64, bool) {
+	v := fmt.Sprintf("%v", data)
+	return hashString(v), true
 }
 
 func hashByteArray(bytes []byte) uint64 {
-	f := fnv.New64()
-	_, err := f.Write(bytes)
+	_, err := fnv64.Write(bytes)
 	if err != nil {
 		return 0
 	}
-	return binary.LittleEndian.Uint64(f.Sum(nil))
+	hash := binary.LittleEndian.Uint64(fnv64.Sum(nil))
+	fnv64.Reset()
+	return hash
 }
 
 func hashPointer(k interface{}) (uint64, bool) {

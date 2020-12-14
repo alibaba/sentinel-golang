@@ -1,4 +1,4 @@
-package cache
+package wtinylfu
 
 import (
 	"testing"

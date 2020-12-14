@@ -1,7 +1,9 @@
-package cache
+package lru
 
 import (
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 )
 
 // LruCacheMap use LRU strategy to cache the most frequently accessed hotspot parameter
@@ -76,7 +78,7 @@ func (c *LruCacheMap) Purge() {
 	c.lru.Purge()
 }
 
-func NewLRUCacheMap(size int) ConcurrentCounterCache {
+func NewLRUCacheMap(size int) cache.ConcurrentCounterCache {
 	lru, err := NewLRU(size, nil)
 	if err != nil {
 		return nil
