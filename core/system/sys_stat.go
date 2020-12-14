@@ -22,8 +22,8 @@ import (
 
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/load"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/load"
 )
 
 const (
