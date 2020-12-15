@@ -232,7 +232,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 }
 
 func logRuleUpdate(m map[string][]*Rule) {
-	rules := make([]*Rule, 0, 9)
+	rules := make([]*Rule, 0, 8)
 	for _, rs := range m {
 		if len(rs) == 0 {
 			continue
