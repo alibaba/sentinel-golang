@@ -263,7 +263,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			MaxQueueingTimeMs:      10,
 		}
 		assert.True(t, len(tcMap["abc1"]) == 0)
-		tcs := buildRulesOfRes("abc1", []*Rule{r1, r2})
+		tcs := buildRulesOfRes("abc1", []*Rule{r1, r2}, tcMap)
 		assert.True(t, len(tcs) == 2)
 		assert.True(t, tcs[0].BoundRule() == r1)
 		assert.True(t, tcs[1].BoundRule() == r2)
@@ -413,7 +413,7 @@ func Test_buildRulesOfRes(t *testing.T) {
 			StatIntervalInMs:       50000,
 		}
 
-		tcs := buildRulesOfRes("abc1", []*Rule{r12, r22, r32, r42})
+		tcs := buildRulesOfRes("abc1", []*Rule{r12, r22, r32, r42}, tcMap)
 		assert.True(t, len(tcs) == 4)
 
 		assert.True(t, tcs[0].BoundRule() == r12)
