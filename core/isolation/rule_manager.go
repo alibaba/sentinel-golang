@@ -25,17 +25,18 @@ import (
 )
 
 var (
-	ruleMap      = make(map[string][]*Rule)
-	rwMux        = &sync.RWMutex{}
-	currentRules = make([]*Rule, 0)
+	ruleMap       = make(map[string][]*Rule)
+	rwMux         = &sync.RWMutex{}
+	currentRules  = make([]*Rule, 0)
+	updateRuleMux = new(sync.Mutex)
 )
 
 // LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
-	rwMux.RLock()
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
 	isEqual := reflect.DeepEqual(currentRules, rules)
-	rwMux.RUnlock()
 	if isEqual {
 		logging.Info("[Isolation] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
@@ -60,12 +61,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-	rwMux.Lock()
-	defer func() {
-		rwMux.Unlock()
-		logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(m)
-	}()
 
 	for res, rs := range m {
 		if len(rs) > 0 {
@@ -73,8 +68,15 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
 		}
 	}
+	rwMux.Lock()
 	ruleMap = m
 	currentRules = rules
+	rwMux.Unlock()
+
+	logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
+	rwMux.RLock()
+	logRuleUpdate(m)
+	rwMux.RUnlock()
 	return
 }
 
