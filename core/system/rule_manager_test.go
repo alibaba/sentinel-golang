@@ -73,12 +73,15 @@ func TestClearRules(t *testing.T) {
 	})
 
 	t.Run("NoEmptyOriginRuleMap", func(t *testing.T) {
-		r := map[MetricType][]*Rule{
-			InboundQPS:  {&Rule{MetricType: InboundQPS, TriggerCount: 1}},
-			Concurrency: {&Rule{MetricType: Concurrency, TriggerCount: 2}},
+		r := []*Rule{
+			{MetricType: InboundQPS, TriggerCount: 1},
+			{MetricType: Concurrency, TriggerCount: 2},
 		}
-		ruleMap = r
-		err := ClearRules()
+		isOK, err := LoadRules(r)
+		assert.Equal(t, true, isOK)
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(ruleMap))
+		err = ClearRules()
 		assert.Nil(t, err)
 		assert.Equal(t, 0, len(ruleMap))
 	})
