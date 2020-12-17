@@ -300,9 +300,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	updateMux.Unlock()
 
 	logging.Debug("[CircuitBreaker onRuleUpdate] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
-	updateMux.RLock()
 	logRuleUpdate(newBreakerRules)
-	updateMux.RUnlock()
 	return nil
 }
 

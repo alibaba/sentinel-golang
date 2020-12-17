@@ -98,13 +98,11 @@ func onRuleUpdate(r RuleMap) error {
 	ruleMapMux.Unlock()
 
 	logging.Debug("[System onRuleUpdate] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
-	ruleMapMux.RLock()
 	if len(r) > 0 {
 		logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
 	} else {
 		logging.Info("[SystemRuleManager] System rules were cleared")
 	}
-	ruleMapMux.RUnlock()
 	return nil
 }
 
