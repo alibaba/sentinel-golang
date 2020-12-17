@@ -74,9 +74,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	rwMux.Unlock()
 
 	logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
-	rwMux.RLock()
 	logRuleUpdate(m)
-	rwMux.RUnlock()
 	return
 }
 
