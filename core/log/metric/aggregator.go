@@ -58,11 +58,11 @@ func InitTask() (err error) {
 		// Schedule the log flushing task
 		go util.RunWithRecover(writeTaskLoop)
 		// Schedule the log aggregating task
-		ticker := time.NewTicker(time.Duration(flushInterval) * time.Second)
+		ticker := util.NewTicker(time.Duration(flushInterval) * time.Second)
 		go util.RunWithRecover(func() {
 			for {
 				select {
-				case <-ticker.C:
+				case <-ticker.C():
 					doAggregate()
 				case <-stopChan:
 					ticker.Stop()

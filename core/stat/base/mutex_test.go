@@ -19,12 +19,14 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 func Test_Mutex_TryLock(t *testing.T) {
 	var m mutex
 	m.Lock()
-	time.Sleep(time.Second)
+	util.Sleep(time.Second)
 	if m.TryLock() {
 		t.Error("TryLock get lock error")
 	}

@@ -28,6 +28,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -60,6 +61,8 @@ func (s *StateChangeListenerMock) OnTransformToHalfOpen(prev circuitbreaker.Stat
 //                 when request exit, rollback the state of cb1 to open
 // Third request: same with second request.
 func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
 		t.Fatal(clearErr)
@@ -109,14 +112,14 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	e, b := sentinel.Entry("abc", sentinel.WithSlotChain(sc))
 	assert.True(t, b == nil)
 	sentinel.TraceError(e, errors.New("biz error"))
-	time.Sleep(time.Duration(50) * time.Millisecond)
+	util.Sleep(time.Duration(50) * time.Millisecond)
 	e.Exit()
 	stateListener.AssertNumberOfCalls(t, "OnTransformToOpen", 2)
 	stateListener.AssertNotCalled(t, "OnTransformToClosed")
 	stateListener.AssertNotCalled(t, "OnTransformToHalfOpen")
 
 	// wait circuit breaker1 retry timeout
-	time.Sleep(time.Duration(100) * time.Millisecond)
+	util.Sleep(time.Duration(100) * time.Millisecond)
 
 	// Second circuit breaker1 probes and circuit breaker2 block the request
 	circuitbreaker.ClearStateChangeListeners()
@@ -131,7 +134,7 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	stateListener2.AssertCalled(t, "OnTransformToHalfOpen", circuitbreaker.Open, mock.Anything)
 	stateListener2.AssertNumberOfCalls(t, "OnTransformToOpen", 1)
 	stateListener2.AssertCalled(t, "OnTransformToOpen", circuitbreaker.HalfOpen, mock.Anything, mock.Anything)
-	time.Sleep(time.Duration(100) * time.Millisecond)
+	util.Sleep(time.Duration(100) * time.Millisecond)
 
 	// Third, same with second request.
 	circuitbreaker.ClearStateChangeListeners()
@@ -154,6 +157,8 @@ func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 }
 
 func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
 		t.Fatal(clearErr)
@@ -194,14 +199,14 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 	// First trigger the circuit breaker
 	e, b := sentinel.Entry("abc", sentinel.WithSlotChain(sc))
 	assert.True(t, b == nil)
-	time.Sleep(time.Duration(50) * time.Millisecond)
+	util.Sleep(time.Duration(50) * time.Millisecond)
 	e.Exit()
 	stateListener.AssertNumberOfCalls(t, "OnTransformToOpen", 1)
 	stateListener.AssertNotCalled(t, "OnTransformToClosed")
 	stateListener.AssertNotCalled(t, "OnTransformToHalfOpen")
 
 	// wait circuit breaker1 retry timeout
-	time.Sleep(time.Duration(100) * time.Millisecond)
+	util.Sleep(time.Duration(100) * time.Millisecond)
 
 	// Second circuit breaker1 probes succeed
 	circuitbreaker.ClearStateChangeListeners()
@@ -225,6 +230,8 @@ func TestCircuitBreakerSlotIntegration_Probe_Succeed(t *testing.T) {
 }
 
 func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	logging.ResetGlobalLoggerLevel(logging.InfoLevel)
 	circuitbreaker.ClearStateChangeListeners()
 	if clearErr := circuitbreaker.ClearRules(); clearErr != nil {
@@ -277,13 +284,13 @@ func TestCircuitBreakerSlotIntegration_Concurrency(t *testing.T) {
 	e, b := sentinel.Entry("abc", sentinel.WithSlotChain(sc))
 	assert.True(t, b == nil)
 	sentinel.TraceError(e, errors.New("biz error"))
-	time.Sleep(time.Duration(50) * time.Millisecond)
+	util.Sleep(time.Duration(50) * time.Millisecond)
 	e.Exit()
 	stateListener.AssertNumberOfCalls(t, "OnTransformToOpen", 2)
 	stateListener.AssertNotCalled(t, "OnTransformToClosed")
 	stateListener.AssertNotCalled(t, "OnTransformToHalfOpen")
 	// wait circuit breaker1 retry timeout
-	time.Sleep(time.Duration(100) * time.Millisecond)
+	util.Sleep(time.Duration(100) * time.Millisecond)
 
 	circuitbreaker.ClearStateChangeListeners()
 	stateListener2 := &StateChangeListenerMock{}

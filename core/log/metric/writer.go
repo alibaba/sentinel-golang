@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
@@ -295,7 +294,7 @@ func NewDefaultMetricLogWriterOfApp(maxSize uint64, maxFileAmount uint32, appNam
 	if maxSize == 0 || maxFileAmount == 0 {
 		return nil, errors.New("invalid maxSize or maxFileAmount")
 	}
-	_, offset := time.Now().Zone()
+	_, offset := util.Now().Zone()
 
 	logDir := config.LogBaseDir()
 	if len(logDir) == 0 {

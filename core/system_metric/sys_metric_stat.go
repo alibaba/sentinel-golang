@@ -53,11 +53,11 @@ func InitCollector(intervalMs uint32) {
 		// Initial retrieval.
 		retrieveAndUpdateSystemStat()
 
-		ticker := time.NewTicker(time.Duration(intervalMs) * time.Millisecond)
+		ticker := util.NewTicker(time.Duration(intervalMs) * time.Millisecond)
 		go util.RunWithRecover(func() {
 			for {
 				select {
-				case <-ticker.C:
+				case <-ticker.C():
 					retrieveAndUpdateSystemStat()
 				case <-ssStopChan:
 					ticker.Stop()
