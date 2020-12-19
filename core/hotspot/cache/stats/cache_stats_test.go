@@ -35,7 +35,7 @@ func TestCacheStats(t *testing.T) {
 		}
 
 		assert.True(t, cs.MissCount() == 100)
-		assert.True(t, cs.HitRate() == 100)
+		assert.True(t, cs.HitCount() == 100)
 		assert.True(t, cs.MissRate() == 0.5)
 		assert.True(t, cs.HitRate() == 0.5)
 
