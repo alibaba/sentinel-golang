@@ -58,12 +58,13 @@ func main() {
 	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
 		// Statistic time span=5s, recoveryTimeout=3s, maxErrorRatio=40%
 		{
-			Resource:         "abc",
-			Strategy:         circuitbreaker.ErrorRatio,
-			RetryTimeoutMs:   3000,
-			MinRequestAmount: 10,
-			StatIntervalMs:   5000,
-			Threshold:        0.4,
+			Resource:                     "abc",
+			Strategy:                     circuitbreaker.ErrorRatio,
+			RetryTimeoutMs:               3000,
+			MinRequestAmount:             10,
+			StatIntervalMs:               5000,
+			StatSlidingWindowBucketCount: 10,
+			Threshold:                    0.4,
 		},
 	})
 	if err != nil {
@@ -83,7 +84,7 @@ func main() {
 					sentinel.TraceError(e, errors.New("biz error"))
 				}
 				// g1 passed
-				time.Sleep(time.Duration(rand.Uint64()%80+10) * time.Millisecond)
+				time.Sleep(time.Duration(rand.Uint64()%80+20) * time.Millisecond)
 				e.Exit()
 			}
 		}
@@ -96,7 +97,7 @@ func main() {
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
 				// g2 passed
-				time.Sleep(time.Duration(rand.Uint64()%80) * time.Millisecond)
+				time.Sleep(time.Duration(rand.Uint64()%80+40) * time.Millisecond)
 				e.Exit()
 			}
 		}

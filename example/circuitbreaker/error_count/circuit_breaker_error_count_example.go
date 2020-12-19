@@ -58,12 +58,13 @@ func main() {
 	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
 		// Statistic time span=5s, recoveryTimeout=3s, maxErrorCount=50
 		{
-			Resource:         "abc",
-			Strategy:         circuitbreaker.ErrorCount,
-			RetryTimeoutMs:   3000,
-			MinRequestAmount: 10,
-			StatIntervalMs:   5000,
-			Threshold:        50,
+			Resource:                     "abc",
+			Strategy:                     circuitbreaker.ErrorCount,
+			RetryTimeoutMs:               3000,
+			MinRequestAmount:             10,
+			StatIntervalMs:               5000,
+			StatSlidingWindowBucketCount: 10,
+			Threshold:                    50,
 		},
 	})
 	if err != nil {
