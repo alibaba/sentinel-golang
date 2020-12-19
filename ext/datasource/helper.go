@@ -112,8 +112,8 @@ func SystemRulesUpdater(data interface{}) error {
 			fmt.Sprintf("Fail to type assert data to []system.Rule or []*system.Rule, in fact, data: %+v", data),
 		)
 	}
-	succ, err := system.LoadRules(rules)
-	if succ && err == nil {
+	_, err := system.LoadRules(rules)
+	if err == nil {
 		return nil
 	}
 	return NewError(

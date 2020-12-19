@@ -30,10 +30,11 @@ type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker,
 var (
 	cbGenFuncMap = make(map[Strategy]CircuitBreakerGenFunc, 4)
 
-	breakerRules = make(map[string][]*Rule)
-	breakers     = make(map[string][]CircuitBreaker)
-	updateMux    = &sync.RWMutex{}
-	currentRules = make([]*Rule, 0)
+	breakerRules  = make(map[string][]*Rule)
+	breakers      = make(map[string][]CircuitBreaker)
+	updateMux     = &sync.RWMutex{}
+	currentRules  = make([]*Rule, 0)
+	updateRuleMux = new(sync.Mutex)
 
 	stateChangeListeners = make([]StateChangeListener, 0)
 )
@@ -132,9 +133,9 @@ func ClearRules() error {
 // error: was designed to indicate whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO in order to avoid invalid update, should check consistent with last update rules
-	updateMux.RLock()
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
 	isEqual := reflect.DeepEqual(currentRules, rules)
-	updateMux.RUnlock()
 	if isEqual {
 		logging.Info("[CircuitBreaker] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
@@ -230,20 +231,20 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-	updateMux.Lock()
-	defer func() {
-		updateMux.Unlock()
-		if r := recover(); r != nil {
-			return
-		}
-		logging.Debug("[CircuitBreaker onRuleUpdate] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(newBreakerRules)
-	}()
+
+	updateMux.RLock()
+	breakersClone := make(map[string][]CircuitBreaker, len(newBreakerRules))
+	for res, tcs := range breakers {
+		resTcClone := make([]CircuitBreaker, 0, len(tcs))
+		resTcClone = append(resTcClone, tcs...)
+		breakersClone[res] = resTcClone
+	}
+	updateMux.RUnlock()
 
 	for res, resRules := range newBreakerRules {
 		emptyCircuitBreakerList := make([]CircuitBreaker, 0, 0)
 		for _, r := range resRules {
-			oldResCbs := breakers[res]
+			oldResCbs := breakersClone[res]
 			if oldResCbs == nil {
 				oldResCbs = emptyCircuitBreakerList
 			}
@@ -255,7 +256,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				equalOldCb := oldResCbs[equalIdx]
 				insertCbToCbMap(equalOldCb, res, newBreakers)
 				// remove old cb from oldResCbs
-				breakers[res] = append(oldResCbs[:equalIdx], oldResCbs[equalIdx+1:]...)
+				breakersClone[res] = append(oldResCbs[:equalIdx], oldResCbs[equalIdx+1:]...)
 				continue
 			}
 
@@ -278,7 +279,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			}
 
 			if reuseStatIdx >= 0 {
-				breakers[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
+				breakersClone[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
 			}
 			insertCbToCbMap(cb, res, newBreakers)
 		}
@@ -292,10 +293,14 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}
 
+	updateMux.Lock()
 	breakerRules = newBreakerRules
 	breakers = newBreakers
 	currentRules = rules
+	updateMux.Unlock()
 
+	logging.Debug("[CircuitBreaker onRuleUpdate] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
+	logRuleUpdate(newBreakerRules)
 	return nil
 }
 

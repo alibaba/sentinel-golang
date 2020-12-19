@@ -15,6 +15,7 @@
 package system
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -26,8 +27,10 @@ type RuleMap map[MetricType][]*Rule
 
 // const
 var (
-	ruleMap    = make(RuleMap)
-	ruleMapMux = new(sync.RWMutex)
+	ruleMap       = make(RuleMap)
+	ruleMapMux    = new(sync.RWMutex)
+	currentRules  = make([]*Rule, 0)
+	updateRuleMux = new(sync.Mutex)
 )
 
 // GetRules returns all the rules based on copy.
@@ -64,13 +67,21 @@ func getRules() []*Rule {
 
 // LoadRules loads given system rules to the rule manager, while all previous rules will be replaced.
 func LoadRules(rules []*Rule) (bool, error) {
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
+	isEqual := reflect.DeepEqual(currentRules, rules)
+	if isEqual {
+		logging.Info("[System] Load rules is the same with current rules, so ignore load operation.")
+		return false, nil
+	}
+
 	m := buildRuleMap(rules)
 
 	if err := onRuleUpdate(m); err != nil {
 		logging.Error(err, "Fail to load rules in system.LoadRules()", "rules", rules)
 		return false, err
 	}
-
+	currentRules = rules
 	return true, nil
 }
 
@@ -83,16 +94,15 @@ func ClearRules() error {
 func onRuleUpdate(r RuleMap) error {
 	start := util.CurrentTimeNano()
 	ruleMapMux.Lock()
-	defer func() {
-		ruleMapMux.Unlock()
-		logging.Debug("[System onRuleUpdate] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
-		if len(r) > 0 {
-			logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
-		} else {
-			logging.Info("[SystemRuleManager] System rules were cleared")
-		}
-	}()
 	ruleMap = r
+	ruleMapMux.Unlock()
+
+	logging.Debug("[System onRuleUpdate] Time statistic(ns) for updating system rule", "timeCost", util.CurrentTimeNano()-start)
+	if len(r) > 0 {
+		logging.Info("[SystemRuleManager] System rules loaded", "rules", r)
+	} else {
+		logging.Info("[SystemRuleManager] System rules were cleared")
+	}
 	return nil
 }
 

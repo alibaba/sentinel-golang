@@ -49,7 +49,8 @@ var (
 		readOnlyMetric:    base.NopReadStat(),
 		writeOnlyMetric:   base.NopWriteStat(),
 	}
-	currentRules = make([]*Rule, 0)
+	currentRules  = make([]*Rule, 0)
+	updateRuleMux = new(sync.Mutex)
 )
 
 func init() {
@@ -126,12 +127,18 @@ func init() {
 	}
 }
 
-func logRuleUpdate(m TrafficControllerMap) {
-	rs := rulesFrom(m)
-	if len(rs) == 0 {
+func logRuleUpdate(m map[string][]*Rule) {
+	rules := make([]*Rule, 0, 8)
+	for _, rs := range m {
+		if len(rs) == 0 {
+			continue
+		}
+		rules = append(rules, rs...)
+	}
+	if len(rules) == 0 {
 		logging.Info("[FlowRuleManager] Flow rules were cleared")
 	} else {
-		logging.Info("[FlowRuleManager] Flow rules were loaded", "rules", rs)
+		logging.Info("[FlowRuleManager] Flow rules were loaded", "rules", rules)
 	}
 }
 
@@ -160,17 +167,18 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 	m := make(TrafficControllerMap, len(resRulesMap))
 	start := util.CurrentTimeNano()
-	tcMux.Lock()
-	defer func() {
-		tcMux.Unlock()
-		if r := recover(); r != nil {
-			return
-		}
-		logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
-		logRuleUpdate(m)
-	}()
+
+	tcMux.RLock()
+	tcMapClone := make(TrafficControllerMap, len(resRulesMap))
+	for res, tcs := range tcMap {
+		resTcClone := make([]*TrafficShapingController, 0, len(tcs))
+		resTcClone = append(resTcClone, tcs...)
+		tcMapClone[res] = resTcClone
+	}
+	tcMux.RUnlock()
+
 	for res, rulesOfRes := range resRulesMap {
-		m[res] = buildRulesOfRes(res, rulesOfRes)
+		m[res] = buildRulesOfRes(res, rulesOfRes, tcMapClone)
 	}
 
 	for res, tcs := range m {
@@ -180,8 +188,14 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
 		}
 	}
+
+	tcMux.Lock()
 	tcMap = m
 	currentRules = rules
+	tcMux.Unlock()
+
+	logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+	logRuleUpdate(resRulesMap)
 	return nil
 }
 
@@ -189,9 +203,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
 	// TODO: rethink the design
-	tcMux.RLock()
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
 	isEqual := reflect.DeepEqual(currentRules, rules)
-	tcMux.RUnlock()
 	if isEqual {
 		logging.Info("[Flow] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
@@ -411,7 +425,7 @@ func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equ
 }
 
 // buildRulesOfRes builds TrafficShapingController slice from rules. the resource of rules must be equals to res
-func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController {
+func buildRulesOfRes(res string, rulesOfRes []*Rule, m TrafficControllerMap) []*TrafficShapingController {
 	newTcsOfRes := make([]*TrafficShapingController, 0, len(rulesOfRes))
 	emptyTcs := make([]*TrafficShapingController, 0, 0)
 	for _, rule := range rulesOfRes {
@@ -419,7 +433,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildRulesOfRes()", "rule", rule)
 			continue
 		}
-		oldResTcs, exist := tcMap[res]
+		oldResTcs, exist := m[res]
 		if !exist {
 			oldResTcs = emptyTcs
 		}
@@ -432,7 +446,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 			equalOldTc := oldResTcs[equalIdx]
 			newTcsOfRes = append(newTcsOfRes, equalOldTc)
 			// remove old tc from oldResTcs
-			tcMap[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
+			m[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
 
@@ -458,7 +472,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule) []*TrafficShapingController
 		}
 		if reuseStatIdx >= 0 {
 			// remove old tc from oldResTcs
-			tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
+			m[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
 		newTcsOfRes = append(newTcsOfRes, tc)
 	}
