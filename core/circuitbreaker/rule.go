@@ -61,14 +61,14 @@ type Rule struct {
 	// that can trigger circuit breaking.
 	MinRequestAmount uint64 `json:"minRequestAmount"`
 	// StatIntervalMs represents statistic time interval of the internal circuit breaker (in ms).
-	// Currently the statistic is collected by sliding window.
+	// Currently the statistic interval is collected by sliding window.
 	StatIntervalMs uint32 `json:"statIntervalMs"`
 	// StatSlidingWindowBucketCount represents the bucket count of statistic sliding window.
 	// The statistic will be more precise as the bucket count increases, but the memory cost increases too.
 	// The following must be true — “StatIntervalMs % StatSlidingWindowBucketCount == 0”,
 	// otherwise StatSlidingWindowBucketCount will be replaced by 1.
 	// If it is not set, default value 1 will be used.
-	StatSlidingWindowBucketCount uint32 `json:"slidingWindowBucketCount"`
+	StatSlidingWindowBucketCount uint32 `json:"statSlidingWindowBucketCount"`
 	// MaxAllowedRtMs indicates that any invocation whose response time exceeds this value (in ms)
 	// will be recorded as a slow request.
 	// MaxAllowedRtMs only takes effect for SlowRequestRatio strategy
@@ -123,7 +123,7 @@ func (r *Rule) isEqualsTo(newRule *Rule) bool {
 	}
 }
 
-func (r *Rule) getValidStatSlidingWindowBucketCount() uint32 {
+func getStatSlidingWindowBucketCount(r *Rule) uint32 {
 	interval := r.StatIntervalMs
 	bucketCount := r.StatSlidingWindowBucketCount
 	if bucketCount == 0 {

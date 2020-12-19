@@ -441,7 +441,7 @@ func TestRuleGetValidSlidingWindowBucketCount(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		bucketCount := c.rule.getValidStatSlidingWindowBucketCount()
+		bucketCount := getStatSlidingWindowBucketCount(c.rule)
 		assert.Equal(t, c.expectedBucketCount, bucketCount, fmt.Sprintf("case %d got unexpected result", i))
 	}
 }
