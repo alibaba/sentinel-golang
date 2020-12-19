@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache/stats"
+
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -74,6 +76,11 @@ func (c *counterCacheMock) Len() int {
 func (c *counterCacheMock) Purge() {
 	_ = c.Called()
 	return
+}
+
+func (c *counterCacheMock) Stats() *stats.CacheStats {
+	_ = c.Called()
+	return nil
 }
 
 func Test_baseTrafficShapingController_performCheckingForConcurrencyMetric(t *testing.T) {
