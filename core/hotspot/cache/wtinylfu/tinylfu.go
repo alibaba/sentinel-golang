@@ -17,6 +17,8 @@ package wtinylfu
 import (
 	"container/list"
 	"errors"
+
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache/stats"
 )
 
 const (
@@ -46,6 +48,7 @@ type TinyLfu struct {
 	lru            *lru
 	slru           *slru
 	items          map[interface{}]*list.Element
+	stats          *stats.CacheStats
 }
 
 func NewTinyLfu(cap int) (*TinyLfu, error) {
@@ -67,11 +70,16 @@ func NewTinyLfu(cap int) (*TinyLfu, error) {
 		items:          items,
 		lru:            newLRU(lruCap, items),
 		slru:           newSLRU(slruSize, items),
+		stats:          stats.NewCacheStats(),
 	}, nil
 }
 
 // Get looks up a key's value from the cache.
 func (t *TinyLfu) Get(key interface{}) (interface{}, bool) {
+	return t.get(key, false)
+}
+
+func (t *TinyLfu) get(key interface{}, isInternal bool) (interface{}, bool) {
 	t.additions++
 	if t.additions == t.samples {
 		t.countMinSketch.reset()
@@ -84,6 +92,9 @@ func (t *TinyLfu) Get(key interface{}) (interface{}, bool) {
 		keyHash := sum(key)
 		if t.doorkeeper.put(keyHash) {
 			t.countMinSketch.add(keyHash)
+		}
+		if !isInternal {
+			t.stats.RecordMisses()
 		}
 		return nil, false
 	}
@@ -98,7 +109,9 @@ func (t *TinyLfu) Get(key interface{}) (interface{}, bool) {
 	} else {
 		t.slru.get(val)
 	}
-
+	if !isInternal {
+		t.stats.RecordHits()
+	}
 	return v, true
 }
 
@@ -116,7 +129,7 @@ func (t *TinyLfu) Add(key interface{}, val interface{}) {
 func (t *TinyLfu) AddIfAbsent(key interface{}, val interface{}) (priorValue interface{}) {
 
 	// Check for existing item
-	if v, ok := t.Get(key); ok {
+	if v, ok := t.get(key, true); ok {
 		return v
 	}
 
@@ -138,6 +151,7 @@ func (t *TinyLfu) AddIfAbsent(key interface{}, val interface{}) (priorValue inte
 	if candidateCount > victimCount {
 		t.slru.add(candidate)
 	}
+	t.stats.RecordEviction()
 	return nil
 }
 
@@ -193,4 +207,9 @@ func (t *TinyLfu) Purge() {
 	t.lru.clear()
 	t.doorkeeper.reset()
 	t.countMinSketch.clear()
+}
+
+// Stats copies cache stats.
+func (t *TinyLfu) Stats() *stats.CacheStats {
+	return t.stats.Snapshot()
 }

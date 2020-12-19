@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache/stats"
 )
 
 // TinyLfuCacheMap use tinyLfu strategy to cache the most frequently accessed hotspot parameter
@@ -90,6 +91,12 @@ func (c *TinyLfuCacheMap) Purge() {
 	defer c.Unlock()
 
 	c.tinyLfu.Purge()
+}
+
+func (c *TinyLfuCacheMap) Stats() *stats.CacheStats {
+	c.RUnlock()
+	defer c.RUnlock()
+	return c.tinyLfu.Stats()
 }
 
 func NewTinyLfuCacheMap(size int) cache.ConcurrentCounterCache {

@@ -25,32 +25,28 @@ import (
 func testBySize(cacheSize int, zipf *rand.Zipf) {
 	lfu, _ := NewTinyLfu(cacheSize)
 	lru, _ := lru2.NewLRU(cacheSize, nil)
-	totalLfu := 0
-	missLfu := 0
 	for i := 0; i < 2000000; i++ {
-		totalLfu++
 		key := zipf.Uint64()
 		_, ok := lfu.Get(key)
 		if !ok {
-			missLfu++
 			lfu.Add(key, key)
 		}
 	}
+	s := lfu.Stats()
 
-	fmt.Printf("tinyLfu cache size %d, total %d, miss %d, hitRate %f \n", cacheSize, totalLfu, missLfu, (float64(totalLfu)-float64(missLfu))/float64(totalLfu))
+	fmt.Printf("tinyLfu cache size %d, hit %d, miss %d, evictionCount %d, hitRate %f \n", cacheSize, s.HitCount(),
+		s.MissCount(), s.EvictionCount(), s.HitRate())
 
-	totalLru := 0
-	missLru := 0
 	for i := 0; i < 2000000; i++ {
-		totalLru++
 		key := zipf.Uint64()
 		_, ok := lru.Get(key)
 		if !ok {
-			missLru++
 			lru.Add(key, key)
 		}
 	}
-	fmt.Printf("lru cache size %d, total %d, miss %d, hitRate %f \n \n", cacheSize, totalLru, missLru, (float64(totalLru)-float64(missLru))/float64(totalLru))
+	st := lru.Stats()
+	fmt.Printf("lru cache size %d, hit %d, miss %d, evictionCount %d, hitRate %f \n", cacheSize, st.HitCount(),
+		st.MissCount(), st.EvictionCount(), st.HitRate())
 }
 
 func TestHitRate(t *testing.T) {

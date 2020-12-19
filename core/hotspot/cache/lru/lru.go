@@ -17,6 +17,7 @@ package lru
 import (
 	"container/list"
 
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache/stats"
 	"github.com/pkg/errors"
 )
 
@@ -29,6 +30,7 @@ type LRU struct {
 	evictList *list.List
 	items     map[interface{}]*list.Element
 	onEvict   EvictCallback
+	stats     *stats.CacheStats
 }
 
 // entry is used to hold a value in the evictList
@@ -47,6 +49,7 @@ func NewLRU(size int, onEvict EvictCallback) (*LRU, error) {
 		evictList: list.New(),
 		items:     make(map[interface{}]*list.Element, 64),
 		onEvict:   onEvict,
+		stats:     stats.NewCacheStats(),
 	}
 	return c, nil
 }
@@ -78,6 +81,7 @@ func (c *LRU) Add(key, value interface{}) {
 	evict := c.evictList.Len() > c.size
 	// Verify size not exceeded
 	if evict {
+		c.stats.RecordEviction()
 		c.removeOldest()
 	}
 	return
@@ -100,6 +104,7 @@ func (c *LRU) AddIfAbsent(key interface{}, value interface{}) (priorValue interf
 	evict := c.evictList.Len() > c.size
 	// Verify size not exceeded
 	if evict {
+		c.stats.RecordEviction()
 		c.removeOldest()
 	}
 	return nil
@@ -110,10 +115,13 @@ func (c *LRU) Get(key interface{}) (value interface{}, isFound bool) {
 	if ent, ok := c.items[key]; ok {
 		c.evictList.MoveToFront(ent)
 		if ent.Value.(*entry) == nil {
+			c.stats.RecordMisses()
 			return nil, false
 		}
+		c.stats.RecordHits()
 		return ent.Value.(*entry).value, true
 	}
+	c.stats.RecordMisses()
 	return
 }
 
@@ -216,4 +224,9 @@ func (c *LRU) removeElement(e *list.Element) {
 	if c.onEvict != nil {
 		c.onEvict(kv.key, kv.value)
 	}
+}
+
+// Stats copies cache stats.
+func (c LRU) Stats() *stats.CacheStats {
+	return c.stats.Snapshot()
 }
