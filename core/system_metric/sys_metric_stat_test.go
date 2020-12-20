@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package system
+package system_metric
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ import (
 )
 
 func Test_recordCpuUsage(t *testing.T) {
-	defer currentCpuUsage.Store(notRetrievedValue)
+	defer currentCpuUsage.Store(NotRetrievedValue)
 
 	var emptyStat *cpu.TimesStat = nil
 	// total: 2260, user+nice: 950, system+irqs=210
@@ -53,7 +53,7 @@ func Test_recordCpuUsage(t *testing.T) {
 	expected := float64(1600+430-950-210) / (4180 - 2260)
 
 	recordCpuUsage(emptyStat, cur)
-	assert.True(t, util.Float64Equals(notRetrievedValue, CurrentCpuUsage()))
+	assert.True(t, util.Float64Equals(NotRetrievedValue, CurrentCpuUsage()))
 
 	recordCpuUsage(prev, prev)
 	assert.True(t, util.Float64Equals(0.0, CurrentCpuUsage()))
@@ -63,10 +63,10 @@ func Test_recordCpuUsage(t *testing.T) {
 }
 
 func TestCurrentLoad(t *testing.T) {
-	defer currentLoad.Store(notRetrievedValue)
+	defer currentLoad.Store(NotRetrievedValue)
 
 	cLoad := CurrentLoad()
-	assert.True(t, util.Float64Equals(notRetrievedValue, cLoad))
+	assert.True(t, util.Float64Equals(NotRetrievedValue, cLoad))
 
 	v := float64(1.0)
 	currentLoad.Store(v)
@@ -75,10 +75,10 @@ func TestCurrentLoad(t *testing.T) {
 }
 
 func TestCurrentCpuUsage(t *testing.T) {
-	defer currentCpuUsage.Store(notRetrievedValue)
+	defer currentCpuUsage.Store(NotRetrievedValue)
 
 	cpuUsage := CurrentCpuUsage()
-	assert.Equal(t, notRetrievedValue, cpuUsage)
+	assert.Equal(t, NotRetrievedValue, cpuUsage)
 
 	v := float64(0.3)
 	currentCpuUsage.Store(v)

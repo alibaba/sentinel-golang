@@ -19,7 +19,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
-	"github.com/alibaba/sentinel-golang/core/system"
+	"github.com/alibaba/sentinel-golang/core/system_metric"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
@@ -85,7 +85,7 @@ func initCoreComponents() error {
 	}
 
 	if config.SystemStatCollectIntervalMs() > 0 {
-		system.InitCollector(config.SystemStatCollectIntervalMs())
+		system_metric.InitCollector(config.SystemStatCollectIntervalMs())
 	}
 
 	if config.UseCacheTime() {
