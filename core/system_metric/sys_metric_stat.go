@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package system
+package system_metric
 
 import (
 	"math"
@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	notRetrievedValue float64 = -1.0
+	NotRetrievedValue float64 = -1.0
 )
 
 var (
@@ -41,8 +41,8 @@ var (
 )
 
 func init() {
-	currentLoad.Store(notRetrievedValue)
-	currentCpuUsage.Store(notRetrievedValue)
+	currentLoad.Store(NotRetrievedValue)
+	currentCpuUsage.Store(NotRetrievedValue)
 }
 
 func InitCollector(intervalMs uint32) {
@@ -124,15 +124,25 @@ func calculateKernelCpuTick(stat *cpu.TimesStat) float64 {
 func CurrentLoad() float64 {
 	r, ok := currentLoad.Load().(float64)
 	if !ok {
-		return notRetrievedValue
+		return NotRetrievedValue
 	}
 	return r
+}
+
+// Note: SetSystemLoad is used for unit test, the user shouldn't call this function.
+func SetSystemLoad(load float64) {
+	currentLoad.Store(load)
 }
 
 func CurrentCpuUsage() float64 {
 	r, ok := currentCpuUsage.Load().(float64)
 	if !ok {
-		return notRetrievedValue
+		return NotRetrievedValue
 	}
 	return r
+}
+
+// Note: SetSystemCpuUsage is used for unit test, the user shouldn't call this function.
+func SetSystemCpuUsage(cpuUsage float64) {
+	currentCpuUsage.Store(cpuUsage)
 }

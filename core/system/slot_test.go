@@ -19,6 +19,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/core/system_metric"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -80,38 +81,40 @@ func TestDoCheckRuleLoad(t *testing.T) {
 
 	t.Run("TrueLoad", func(t *testing.T) {
 		isOK, _, v := sas.doCheckRule(rule)
-		assert.True(t, util.Float64Equals(notRetrievedValue, v))
+		assert.True(t, util.Float64Equals(system_metric.NotRetrievedValue, v))
 		assert.Equal(t, true, isOK)
 	})
 
 	t.Run("BBRTrueLoad", func(t *testing.T) {
 		rule.Strategy = BBR
-		currentLoad.Store(float64(1.0))
+		system_metric.SetSystemLoad(1.0)
 		isOK, _, v := sas.doCheckRule(rule)
 		assert.Equal(t, true, isOK)
 		assert.True(t, util.Float64Equals(float64(1.0), v))
-		currentLoad.Store(float64(notRetrievedValue))
+		system_metric.SetSystemLoad(system_metric.NotRetrievedValue)
 	})
 }
 
 func TestDoCheckRuleCpuUsage(t *testing.T) {
 	var sas *AdaptiveSlot
-	rule := &Rule{MetricType: CpuUsage,
-		TriggerCount: 0.5}
+	rule := &Rule{
+		MetricType:   CpuUsage,
+		TriggerCount: 0.5,
+	}
 
 	t.Run("TrueCpuUsage", func(t *testing.T) {
 		isOK, _, v := sas.doCheckRule(rule)
-		assert.True(t, util.Float64Equals(notRetrievedValue, v))
+		assert.True(t, util.Float64Equals(system_metric.NotRetrievedValue, v))
 		assert.Equal(t, true, isOK)
 	})
 
 	t.Run("BBRTrueCpuUsage", func(t *testing.T) {
 		rule.Strategy = BBR
-		currentCpuUsage.Store(float64(0.8))
+		system_metric.SetSystemCpuUsage(0.8)
 		isOK, _, v := sas.doCheckRule(rule)
 		assert.Equal(t, true, isOK)
-		assert.True(t, util.Float64Equals(float64(0.8), v))
-		currentCpuUsage.Store(float64(notRetrievedValue))
+		assert.True(t, util.Float64Equals(0.8, v))
+		system_metric.SetSystemCpuUsage(system_metric.NotRetrievedValue)
 	})
 }
 
