@@ -79,7 +79,10 @@ type Rule struct {
 	// ParamIndex is the index in context arguments slice.
 	// if ParamIndex is great than or equals to zero, ParamIndex means the <ParamIndex>-th parameter
 	// if ParamIndex is the negative, ParamIndex means the reversed <ParamIndex>-th parameter
-	ParamIndex int `json:"paramIndex"`
+	ParamIndex int    `json:"paramIndex"`
+	// ParamKey is the key in context attachments map.
+	// ParamKey can be used as a supplement to ParamIndex to facilitate rules to quickly obtain parameter from a large number of parameters
+	ParamKey   string `json:"paramKey"`
 	// Threshold is the threshold to trigger rejection
 	Threshold int64 `json:"threshold"`
 	// MaxQueueingTimeMs only takes effect when ControlBehavior is Throttling and MetricType is QPS
