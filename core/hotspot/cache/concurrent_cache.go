@@ -47,5 +47,5 @@ type ConcurrentCounterCache interface {
 	Purge()
 
 	// Stats copies cache stats.
-	Stats() *stats.CacheStats
+	Stats() (*stats.CacheStats, error)
 }

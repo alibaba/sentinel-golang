@@ -51,7 +51,7 @@ type TinyLfu struct {
 	stats          *stats.CacheStats
 }
 
-func NewTinyLfu(cap int) (*TinyLfu, error) {
+func NewTinyLfu(cap int, isRecordingStats bool) (*TinyLfu, error) {
 	if cap <= 0 {
 		return nil, errors.New("Must provide a positive size")
 	}
@@ -60,7 +60,10 @@ func NewTinyLfu(cap int) (*TinyLfu, error) {
 	}
 	lruCap := int(float64(cap) * lruRatio)
 	slruSize := cap - lruCap
-
+	var statsCache *stats.CacheStats
+	if isRecordingStats {
+		statsCache = stats.NewCacheStats()
+	}
 	items := make(map[interface{}]*list.Element)
 	return &TinyLfu{
 		countMinSketch: newCountMinSketch(countersFactor * cap),
@@ -70,7 +73,7 @@ func NewTinyLfu(cap int) (*TinyLfu, error) {
 		items:          items,
 		lru:            newLRU(lruCap, items),
 		slru:           newSLRU(slruSize, items),
-		stats:          stats.NewCacheStats(),
+		stats:          statsCache,
 	}, nil
 }
 
@@ -93,7 +96,7 @@ func (t *TinyLfu) get(key interface{}, isInternal bool) (interface{}, bool) {
 		if t.doorkeeper.put(keyHash) {
 			t.countMinSketch.add(keyHash)
 		}
-		if !isInternal {
+		if !isInternal && t.stats != nil {
 			t.stats.RecordMisses()
 		}
 		return nil, false
@@ -109,7 +112,7 @@ func (t *TinyLfu) get(key interface{}, isInternal bool) (interface{}, bool) {
 	} else {
 		t.slru.get(val)
 	}
-	if !isInternal {
+	if !isInternal && t.stats != nil {
 		t.stats.RecordHits()
 	}
 	return v, true
@@ -151,7 +154,9 @@ func (t *TinyLfu) AddIfAbsent(key interface{}, val interface{}) (priorValue inte
 	if candidateCount > victimCount {
 		t.slru.add(candidate)
 	}
-	t.stats.RecordEviction()
+	if t.stats != nil {
+		t.stats.RecordEviction()
+	}
 	return nil
 }
 
@@ -210,6 +215,9 @@ func (t *TinyLfu) Purge() {
 }
 
 // Stats copies cache stats.
-func (t *TinyLfu) Stats() *stats.CacheStats {
-	return t.stats.Snapshot()
+func (t *TinyLfu) Stats() (*stats.CacheStats, error) {
+	if t.stats == nil {
+		return nil, errors.New("RecordingStats Must be enabled")
+	}
+	return t.stats.Snapshot(), nil
 }

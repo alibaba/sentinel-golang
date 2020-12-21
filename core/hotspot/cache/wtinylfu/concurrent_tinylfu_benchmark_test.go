@@ -22,7 +22,7 @@ import (
 const Size = 50000
 
 func Benchmark_TINYLFU_AddIfAbsent(b *testing.B) {
-	c := NewTinyLfuCacheMap(Size)
+	c := NewTinyLfuCacheMap(Size, false)
 	for a := 1; a <= Size; a++ {
 		val := new(int64)
 		*val = int64(a)
@@ -42,7 +42,7 @@ func Benchmark_TINYLFU_AddIfAbsent(b *testing.B) {
 }
 
 func Benchmark_TINYLFU_Add(b *testing.B) {
-	c := NewTinyLfuCacheMap(Size)
+	c := NewTinyLfuCacheMap(Size, false)
 	for a := 1; a <= Size; a++ {
 		val := new(int64)
 		*val = int64(a)
@@ -59,7 +59,7 @@ func Benchmark_TINYLFU_Add(b *testing.B) {
 }
 
 func Benchmark_TINYLFU_Get(b *testing.B) {
-	c := NewTinyLfuCacheMap(Size)
+	c := NewTinyLfuCacheMap(Size, false)
 	for a := 1; a <= Size; a++ {
 		val := new(int64)
 		*val = int64(a)

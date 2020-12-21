@@ -78,9 +78,9 @@ func (c *counterCacheMock) Purge() {
 	return
 }
 
-func (c *counterCacheMock) Stats() *stats.CacheStats {
+func (c *counterCacheMock) Stats() (*stats.CacheStats, error) {
 	_ = c.Called()
-	return nil
+	return nil, nil
 }
 
 func Test_baseTrafficShapingController_performCheckingForConcurrencyMetric(t *testing.T) {

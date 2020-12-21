@@ -49,7 +49,7 @@ func TestTinyLFU(t *testing.T) {
 	t.Run("Test_TinyLFU", func(t *testing.T) {
 
 		s := tinyLFUTest{t: t}
-		s.lfu, _ = NewTinyLfu(200)
+		s.lfu, _ = NewTinyLfu(200, false)
 		s.assertCap(200)
 		s.lfu.slru.protectedCap = 2
 		s.lfu.slru.probationCap = 1

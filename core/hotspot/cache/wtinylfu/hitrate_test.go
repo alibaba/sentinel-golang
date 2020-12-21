@@ -23,8 +23,8 @@ import (
 )
 
 func testBySize(cacheSize int, zipf *rand.Zipf) {
-	lfu, _ := NewTinyLfu(cacheSize)
-	lru, _ := lru2.NewLRU(cacheSize, nil)
+	lfu, _ := NewTinyLfu(cacheSize, true)
+	lru, _ := lru2.NewLRU(cacheSize, nil, true)
 	for i := 0; i < 2000000; i++ {
 		key := zipf.Uint64()
 		_, ok := lfu.Get(key)
@@ -32,7 +32,7 @@ func testBySize(cacheSize int, zipf *rand.Zipf) {
 			lfu.Add(key, key)
 		}
 	}
-	s := lfu.Stats()
+	s, _ := lfu.Stats()
 
 	fmt.Printf("tinyLfu cache size %d, hit %d, miss %d, evictionCount %d, hitRate %f \n", cacheSize, s.HitCount(),
 		s.MissCount(), s.EvictionCount(), s.HitRate())
@@ -44,7 +44,7 @@ func testBySize(cacheSize int, zipf *rand.Zipf) {
 			lru.Add(key, key)
 		}
 	}
-	st := lru.Stats()
+	st, _ := lru.Stats()
 	fmt.Printf("lru cache size %d, hit %d, miss %d, evictionCount %d, hitRate %f \n", cacheSize, st.HitCount(),
 		st.MissCount(), st.EvictionCount(), st.HitRate())
 }

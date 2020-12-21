@@ -93,14 +93,14 @@ func (c *TinyLfuCacheMap) Purge() {
 	c.tinyLfu.Purge()
 }
 
-func (c *TinyLfuCacheMap) Stats() *stats.CacheStats {
+func (c *TinyLfuCacheMap) Stats() (*stats.CacheStats, error) {
 	c.RUnlock()
 	defer c.RUnlock()
 	return c.tinyLfu.Stats()
 }
 
-func NewTinyLfuCacheMap(size int) cache.ConcurrentCounterCache {
-	tinyLfu, err := NewTinyLfu(size)
+func NewTinyLfuCacheMap(size int, isRecordingStats bool) cache.ConcurrentCounterCache {
+	tinyLfu, err := NewTinyLfu(size, isRecordingStats)
 	if err != nil {
 		return nil
 	}

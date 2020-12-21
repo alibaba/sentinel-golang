@@ -93,14 +93,14 @@ func (c *LruCacheMap) Purge() {
 	c.lru.Purge()
 }
 
-func (c *LruCacheMap) Stats() *stats.CacheStats {
+func (c *LruCacheMap) Stats() (*stats.CacheStats, error) {
 	c.RUnlock()
 	defer c.RUnlock()
 	return c.lru.Stats()
 }
 
-func NewLRUCacheMap(size int) cache.ConcurrentCounterCache {
-	lru, err := NewLRU(size, nil)
+func NewLRUCacheMap(size int, isRecordingStats bool) cache.ConcurrentCounterCache {
+	lru, err := NewLRU(size, nil, isRecordingStats)
 	if err != nil {
 		return nil
 	}
