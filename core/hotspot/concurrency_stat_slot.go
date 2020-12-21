@@ -44,25 +44,26 @@ func (s *ConcurrencyStatSlot) Order() uint32 {
 
 func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
-	args := ctx.Input.Args
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
 		if tc.BoundRule().MetricType != Concurrency {
 			continue
 		}
-		arg := matchArg(tc, args)
-		if arg == nil {
+		args := tc.ExtractArgs(ctx)
+		if args == nil || len(args) == 0 {
 			continue
 		}
-		metric := tc.BoundMetric()
-		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
-		if !existed || concurrencyPtr == nil {
-			if logging.DebugEnabled() {
-				logging.Debug("[ConcurrencyStatSlot OnEntryPassed] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+		for _, arg := range args {
+			metric := tc.BoundMetric()
+			concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
+			if !existed || concurrencyPtr == nil {
+				if logging.DebugEnabled() {
+					logging.Debug("[ConcurrencyStatSlot OnEntryPassed] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+				}
+				continue
 			}
-			continue
+			atomic.AddInt64(concurrencyPtr, 1)
 		}
-		atomic.AddInt64(concurrencyPtr, 1)
 	}
 }
 
@@ -72,24 +73,25 @@ func (c *ConcurrencyStatSlot) OnEntryBlocked(ctx *base.EntryContext, blockError 
 
 func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
-	args := ctx.Input.Args
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
 		if tc.BoundRule().MetricType != Concurrency {
 			continue
 		}
-		arg := matchArg(tc, args)
-		if arg == nil {
+		args := tc.ExtractArgs(ctx)
+		if args == nil || len(args) == 0 {
 			continue
 		}
-		metric := tc.BoundMetric()
-		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
-		if !existed || concurrencyPtr == nil {
-			if logging.DebugEnabled() {
-				logging.Debug("[ConcurrencyStatSlot OnCompleted] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+		for _, arg := range args {
+			metric := tc.BoundMetric()
+			concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
+			if !existed || concurrencyPtr == nil {
+				if logging.DebugEnabled() {
+					logging.Debug("[ConcurrencyStatSlot OnCompleted] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+				}
+				continue
 			}
-			continue
+			atomic.AddInt64(concurrencyPtr, -1)
 		}
-		atomic.AddInt64(concurrencyPtr, -1)
 	}
 }

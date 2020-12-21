@@ -15,10 +15,12 @@
 package hotspot
 
 import (
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -317,5 +319,55 @@ func Test_newBaseTrafficShapingController(t *testing.T) {
 		assert.True(t, tc.metric.RuleTokenCounter != nil)
 		assert.True(t, tc.metric.RuleTimeCounter.Len() == ParamsMaxCapacity)
 		assert.True(t, tc.metric.RuleTokenCounter.Len() == ParamsMaxCapacity)
+	})
+}
+
+func Test_baseTrafficShapingController_ExtractArgs(t *testing.T) {
+	t.Run("Test_baseTrafficShapingController_ExtractArgs", func(t *testing.T) {
+
+		c := &baseTrafficShapingController{}
+
+		args := make([]interface{}, 10)
+		attachments := make(map[interface{}]interface{})
+		ctx := base.NewEmptyEntryContext()
+		ctx.Input = &base.SentinelInput{
+			BatchCount:  1,
+			Flag:        0,
+			Args:        args,
+			Attachments: attachments,
+		}
+		// no data
+		ret := c.ExtractArgs(ctx)
+		assert.True(t, reflect.DeepEqual(ret, []interface{}{}), ret)
+
+		// set data
+		args[0] = 1
+		args[1] = 2
+		attachments["test1"] = "v1"
+
+		// set index or key
+		// exist
+		c.paramIndex = 0
+		c.paramKey = "test1"
+		ret = c.ExtractArgs(ctx)
+		assert.True(t, reflect.DeepEqual(ret, []interface{}{1, "v1"}), ret)
+
+		// part exist 1
+		c.paramIndex = 10
+		c.paramKey = "test1"
+		ret = c.ExtractArgs(ctx)
+		assert.True(t, reflect.DeepEqual(ret, []interface{}{"v1"}), ret)
+
+		// part exist 2
+		c.paramIndex = 1
+		c.paramKey = "test2"
+		ret = c.ExtractArgs(ctx)
+		assert.True(t, reflect.DeepEqual(ret, []interface{}{2}), ret)
+
+		// not exist
+		c.paramIndex = 3
+		c.paramKey = "test2"
+		ret = c.ExtractArgs(ctx)
+		assert.True(t, reflect.DeepEqual(ret, []interface{}{}), ret)
 	})
 }

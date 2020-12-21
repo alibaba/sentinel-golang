@@ -33,6 +33,8 @@ type TrafficShapingController interface {
 
 	BoundParamIndex() int
 
+	ExtractArgs(ctx *base.EntryContext) []interface{}
+
 	BoundMetric() *ParamsMetric
 
 	BoundRule() *Rule
@@ -44,6 +46,7 @@ type baseTrafficShapingController struct {
 	res           string
 	metricType    MetricType
 	paramIndex    int
+	paramKey      string
 	threshold     int64
 	specificItems map[interface{}]int64
 	durationInSec int64
@@ -60,6 +63,7 @@ func newBaseTrafficShapingControllerWithMetric(r *Rule, metric *ParamsMetric) *b
 		res:           r.Resource,
 		metricType:    r.MetricType,
 		paramIndex:    r.ParamIndex,
+		paramKey:      r.ParamKey,
 		threshold:     r.Threshold,
 		specificItems: r.SpecificItems,
 		durationInSec: r.DurationInSec,
@@ -153,6 +157,73 @@ func (c *baseTrafficShapingController) BoundRule() *Rule {
 
 func (c *baseTrafficShapingController) BoundParamIndex() int {
 	return c.paramIndex
+}
+
+// ExtractArgs matches the arg from ctx based on TrafficShapingController
+// return nil if match failed.
+func (c *baseTrafficShapingController) ExtractArgs(ctx *base.EntryContext) []interface{} {
+	if c == nil {
+		return nil
+	}
+	args := make([]interface{}, 0)
+
+	indexArg := c.extractArgs(ctx)
+	if indexArg != nil {
+		args = append(args, indexArg)
+	}
+	indexArg = c.extractAttachmentArgs(ctx)
+	if indexArg != nil {
+		args = append(args, indexArg)
+	}
+	return args
+}
+func (c *baseTrafficShapingController) extractArgs(ctx *base.EntryContext) interface{} {
+	args := ctx.Input.Args
+	idx := c.BoundParamIndex()
+	if idx < 0 {
+		idx = len(args) + idx
+	}
+	if idx < 0 {
+		if logging.DebugEnabled() {
+			logging.Debug("[extractArgs] The param index of hotspot traffic shaping controller is invalid",
+				"args", args, "paramIndex", c.BoundParamIndex())
+		}
+		return nil
+	}
+	if idx >= len(args) {
+		if logging.DebugEnabled() {
+			logging.Debug("[extractArgs] The argument in index doesn't exist",
+				"args", args, "paramIndex", c.BoundParamIndex())
+		}
+		return nil
+	}
+	return args[idx]
+}
+func (c *baseTrafficShapingController) extractAttachmentArgs(ctx *base.EntryContext) interface{} {
+	attachments := ctx.Input.Attachments
+
+	if attachments == nil {
+		if logging.DebugEnabled() {
+			logging.Debug("[extractAttachment] The attachments of ctx is nil",
+				"args", attachments, "paramIndex", c.paramKey)
+		}
+	}
+	if c.paramKey == "" {
+		if logging.DebugEnabled() {
+			logging.Debug("[extractAttachment] The param key is nil",
+				"args", attachments, "paramIndex", c.paramKey)
+		}
+		return nil
+	}
+	arg, ok := attachments[c.paramKey]
+	if !ok {
+		if logging.DebugEnabled() {
+			logging.Debug("[extractAttachment] extracted data does not exist",
+				"args", attachments, "paramIndex", c.paramKey)
+		}
+	}
+
+	return arg
 }
 
 func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchCount int64) *base.TokenResult {
