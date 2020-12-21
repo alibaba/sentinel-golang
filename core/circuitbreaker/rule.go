@@ -61,7 +61,14 @@ type Rule struct {
 	// that can trigger circuit breaking.
 	MinRequestAmount uint64 `json:"minRequestAmount"`
 	// StatIntervalMs represents statistic time interval of the internal circuit breaker (in ms).
+	// Currently the statistic interval is collected by sliding window.
 	StatIntervalMs uint32 `json:"statIntervalMs"`
+	// StatSlidingWindowBucketCount represents the bucket count of statistic sliding window.
+	// The statistic will be more precise as the bucket count increases, but the memory cost increases too.
+	// The following must be true — “StatIntervalMs % StatSlidingWindowBucketCount == 0”,
+	// otherwise StatSlidingWindowBucketCount will be replaced by 1.
+	// If it is not set, default value 1 will be used.
+	StatSlidingWindowBucketCount uint32 `json:"statSlidingWindowBucketCount"`
 	// MaxAllowedRtMs indicates that any invocation whose response time exceeds this value (in ms)
 	// will be recorded as a slow request.
 	// MaxAllowedRtMs only takes effect for SlowRequestRatio strategy
@@ -75,15 +82,16 @@ type Rule struct {
 
 func (r *Rule) String() string {
 	// fallback string
-	return fmt.Sprintf("{id=%s,resource=%s, strategy=%s, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d, MaxAllowedRtMs=%d, Threshold=%f}",
-		r.Id, r.Resource, r.Strategy, r.RetryTimeoutMs, r.MinRequestAmount, r.StatIntervalMs, r.MaxAllowedRtMs, r.Threshold)
+	return fmt.Sprintf("{id=%s, resource=%s, strategy=%s, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d, StatSlidingWindowBucketCount=%d, MaxAllowedRtMs=%d, Threshold=%f}",
+		r.Id, r.Resource, r.Strategy, r.RetryTimeoutMs, r.MinRequestAmount, r.StatIntervalMs, r.StatSlidingWindowBucketCount, r.MaxAllowedRtMs, r.Threshold)
 }
 
 func (r *Rule) isStatReusable(newRule *Rule) bool {
 	if newRule == nil {
 		return false
 	}
-	return r.Resource == newRule.Resource && r.Strategy == newRule.Strategy && r.StatIntervalMs == newRule.StatIntervalMs
+	return r.Resource == newRule.Resource && r.Strategy == newRule.Strategy && r.StatIntervalMs == newRule.StatIntervalMs &&
+		r.StatSlidingWindowBucketCount == newRule.StatSlidingWindowBucketCount
 }
 
 func (r *Rule) ResourceName() string {
@@ -95,7 +103,7 @@ func (r *Rule) isEqualsToBase(newRule *Rule) bool {
 		return false
 	}
 	return r.Resource == newRule.Resource && r.Strategy == newRule.Strategy && r.RetryTimeoutMs == newRule.RetryTimeoutMs &&
-		r.MinRequestAmount == newRule.MinRequestAmount && r.StatIntervalMs == newRule.StatIntervalMs
+		r.MinRequestAmount == newRule.MinRequestAmount && r.StatIntervalMs == newRule.StatIntervalMs && r.StatSlidingWindowBucketCount == newRule.StatSlidingWindowBucketCount
 }
 
 func (r *Rule) isEqualsTo(newRule *Rule) bool {
@@ -113,4 +121,17 @@ func (r *Rule) isEqualsTo(newRule *Rule) bool {
 	default:
 		return false
 	}
+}
+
+func getRuleStatSlidingWindowBucketCount(r *Rule) uint32 {
+	interval := r.StatIntervalMs
+	bucketCount := r.StatSlidingWindowBucketCount
+	if bucketCount == 0 {
+		bucketCount = 1
+	} else {
+		if interval%bucketCount != 0 {
+			bucketCount = 1
+		}
+	}
+	return bucketCount
 }

@@ -58,13 +58,14 @@ func main() {
 	_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
 		// Statistic time span=5s, recoveryTimeout=3s, slowRtUpperBound=50ms, maxSlowRequestRatio=50%
 		{
-			Resource:         "abc",
-			Strategy:         circuitbreaker.SlowRequestRatio,
-			RetryTimeoutMs:   3000,
-			MinRequestAmount: 10,
-			StatIntervalMs:   5000,
-			MaxAllowedRtMs:   50,
-			Threshold:        0.5,
+			Resource:                     "abc",
+			Strategy:                     circuitbreaker.SlowRequestRatio,
+			RetryTimeoutMs:               3000,
+			MinRequestAmount:             10,
+			StatIntervalMs:               5000,
+			StatSlidingWindowBucketCount: 10,
+			MaxAllowedRtMs:               50,
+			Threshold:                    0.5,
 		},
 	})
 	if err != nil {
@@ -97,7 +98,7 @@ func main() {
 				time.Sleep(time.Duration(rand.Uint64()%20) * time.Millisecond)
 			} else {
 				// g2 passed
-				time.Sleep(time.Duration(rand.Uint64()%80) * time.Millisecond)
+				time.Sleep(time.Duration(rand.Uint64()%80+10) * time.Millisecond)
 				e.Exit()
 			}
 		}
