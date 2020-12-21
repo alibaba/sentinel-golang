@@ -78,10 +78,10 @@ func main() {
 		return
 	}
 	for _, resource := range []string{"abc", "def", "efg"} {
-		go func() {
-			node := stat.GetOrCreateResourceNode(resource, base.ResTypeCommon)
+		go func(name string) {
+			node := stat.GetOrCreateResourceNode(name, base.ResTypeCommon)
 			for {
-				logging.Info("[HotSpot QPS] "+resource,
+				logging.Info("[HotSpot QPS] "+name,
 					"pass", node.GetQPS(base.MetricEventPass),
 					"block", node.GetQPS(base.MetricEventBlock),
 					"complete", node.GetQPS(base.MetricEventComplete),
@@ -91,7 +91,7 @@ func main() {
 				)
 				time.Sleep(time.Duration(1000) * time.Millisecond)
 			}
-		}()
+		}(resource)
 	}
 
 	logging.Info("[HotSpot Reject] Sentinel Go hot-spot param flow control demo is running. You may see the pass/block metric in the metric log.")
@@ -129,7 +129,6 @@ func main() {
 
 	for {
 		val := fmt.Sprintf("test%v", rand.Int31()%10)
-		//fmt.Printf("====%v\n", val)
 		e, b := sentinel.Entry("efg",
 			sentinel.WithAttachments(map[interface{}]interface{}{
 				testKey: val,
