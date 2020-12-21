@@ -39,6 +39,7 @@ func Test_Rule_String(t *testing.T) {
 			MetricType:        Concurrency,
 			ControlBehavior:   Reject,
 			ParamIndex:        0,
+			ParamKey:          "key",
 			Threshold:         110.0,
 			MaxQueueingTimeMs: 5,
 			BurstCount:        10,
@@ -46,7 +47,7 @@ func Test_Rule_String(t *testing.T) {
 			ParamsMaxCapacity: 10000,
 			SpecificItems:     specific,
 		}
-		assert.True(t, fmt.Sprintf("%+v", []*Rule{r}) == "[{Id:abc, Resource:abc, MetricType:Concurrency, ControlBehavior:Reject, ParamIndex:0, Threshold:110, MaxQueueingTimeMs:5, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[1123:3 sss:1]}]")
+		assert.True(t, fmt.Sprintf("%+v", []*Rule{r}) == "[{Id:abc, Resource:abc, MetricType:Concurrency, ControlBehavior:Reject, ParamIndex:0, ParamKey:key, Threshold:110, MaxQueueingTimeMs:5, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[1123:3 sss:1]}]")
 	})
 }
 

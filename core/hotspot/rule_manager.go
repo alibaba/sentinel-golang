@@ -431,6 +431,9 @@ func IsValidRule(rule *Rule) error {
 	if rule.MetricType == QPS && rule.DurationInSec <= 0 {
 		return errors.New("invalid duration")
 	}
+	if rule.ParamIndex > 0 && rule.ParamKey != "" {
+		return errors.New("invalid param index and param key are mutually exclusive")
+	}
 	return checkControlBehaviorField(rule)
 }
 

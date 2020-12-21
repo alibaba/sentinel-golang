@@ -35,6 +35,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	testKey := "testKey"
 
 	// the max concurrency is 8
 	_, err = hotspot.LoadRules([]*hotspot.Rule{
@@ -42,6 +43,7 @@ func main() {
 			Resource:      "abc",
 			MetricType:    hotspot.Concurrency,
 			ParamIndex:    0,
+			ParamKey:      testKey,
 			Threshold:     8,
 			DurationInSec: 0,
 		},
@@ -79,7 +81,12 @@ func main() {
 	}
 
 	for {
-		e, b := sentinel.Entry("abc", sentinel.WithArgs(false, uint32(9)))
+		e, b := sentinel.Entry("abc",
+			sentinel.WithArgs(false, uint32(9),
+				sentinel.WithAttachments(map[interface{}]interface{}{
+					testKey: rand.Uint64() % 10,
+				}),
+			))
 		if b != nil {
 			// Blocked. We could get the block reason from the BlockError.
 			time.Sleep(time.Duration(rand.Uint64()%10) * time.Millisecond)
