@@ -26,8 +26,7 @@ import (
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
-	"github.com/alibaba/sentinel-golang/logging":q
-
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 type fooStruct struct {
