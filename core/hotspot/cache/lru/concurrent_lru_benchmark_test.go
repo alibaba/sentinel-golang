@@ -22,7 +22,7 @@ import (
 const CacheSize = 50000
 
 func Benchmark_LRU_AddIfAbsent(b *testing.B) {
-	c := NewLRUCacheMap(CacheSize)
+	c := NewLRUCacheMap(CacheSize, false)
 	for a := 1; a <= CacheSize; a++ {
 		val := new(int64)
 		*val = int64(a)
@@ -42,7 +42,7 @@ func Benchmark_LRU_AddIfAbsent(b *testing.B) {
 }
 
 func Benchmark_LRU_Add(b *testing.B) {
-	c := NewLRUCacheMap(CacheSize)
+	c := NewLRUCacheMap(CacheSize, false)
 	for a := 1; a <= CacheSize; a++ {
 		val := new(int64)
 		*val = int64(a)
@@ -59,7 +59,7 @@ func Benchmark_LRU_Add(b *testing.B) {
 }
 
 func Benchmark_LRU_Get(b *testing.B) {
-	c := NewLRUCacheMap(CacheSize)
+	c := NewLRUCacheMap(CacheSize, false)
 	for a := 1; a <= CacheSize; a++ {
 		val := new(int64)
 		*val = int64(a)
