@@ -123,7 +123,7 @@ func (r *Rule) isEqualsTo(newRule *Rule) bool {
 	}
 }
 
-func getStatSlidingWindowBucketCount(r *Rule) uint32 {
+func getRuleStatSlidingWindowBucketCount(r *Rule) uint32 {
 	interval := r.StatIntervalMs
 	bucketCount := r.StatSlidingWindowBucketCount
 	if bucketCount == 0 {
