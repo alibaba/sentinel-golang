@@ -165,7 +165,7 @@ func (c *baseTrafficShapingController) ExtractArgs(ctx *base.EntryContext) []int
 	if c == nil {
 		return nil
 	}
-	args := make([]interface{}, 0)
+	args := make([]interface{}, 0, len(ctx.Input.Args)+len(ctx.Input.Attachments))
 
 	indexArg := c.extractArgs(ctx)
 	if indexArg != nil {
@@ -204,13 +204,14 @@ func (c *baseTrafficShapingController) extractAttachmentArgs(ctx *base.EntryCont
 
 	if attachments == nil {
 		if logging.DebugEnabled() {
-			logging.Debug("[extractAttachment] The attachments of ctx is nil",
+			logging.Debug("[paramKey] The attachments of ctx is nil",
 				"args", attachments, "paramIndex", c.paramKey)
 		}
+		return nil
 	}
 	if c.paramKey == "" {
 		if logging.DebugEnabled() {
-			logging.Debug("[extractAttachment] The param key is nil",
+			logging.Debug("[paramKey] The param key is nil",
 				"args", attachments, "paramIndex", c.paramKey)
 		}
 		return nil
@@ -218,7 +219,7 @@ func (c *baseTrafficShapingController) extractAttachmentArgs(ctx *base.EntryCont
 	arg, ok := attachments[c.paramKey]
 	if !ok {
 		if logging.DebugEnabled() {
-			logging.Debug("[extractAttachment] extracted data does not exist",
+			logging.Debug("[paramKey] extracted data does not exist",
 				"args", attachments, "paramIndex", c.paramKey)
 		}
 	}

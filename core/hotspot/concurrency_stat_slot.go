@@ -15,6 +15,8 @@
 package hotspot
 
 import (
+	"context"
+	"golang.org/x/sync/errgroup"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -44,7 +46,9 @@ func (s *ConcurrencyStatSlot) Order() uint32 {
 
 func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
+	g, _ := errgroup.WithContext(context.Background())
 	tcs := getTrafficControllersFor(res)
+
 	for _, tc := range tcs {
 		if tc.BoundRule().MetricType != Concurrency {
 			continue
@@ -54,17 +58,23 @@ func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
 			continue
 		}
 		for _, arg := range args {
-			metric := tc.BoundMetric()
-			concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
-			if !existed || concurrencyPtr == nil {
-				if logging.DebugEnabled() {
-					logging.Debug("[ConcurrencyStatSlot OnEntryPassed] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+			arg := arg // https://golang.org/doc/faq#closures_and_goroutines
+			g.Go(func() error {
+				metric := tc.BoundMetric()
+				concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
+				if !existed || concurrencyPtr == nil {
+					if logging.DebugEnabled() {
+						logging.Debug("[ConcurrencyStatSlot OnEntryPassed] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+					}
+					return nil
 				}
-				continue
-			}
-			atomic.AddInt64(concurrencyPtr, 1)
+				atomic.AddInt64(concurrencyPtr, 1)
+				return nil
+			})
 		}
 	}
+	g.Wait()
+	return
 }
 
 func (c *ConcurrencyStatSlot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
@@ -73,7 +83,9 @@ func (c *ConcurrencyStatSlot) OnEntryBlocked(ctx *base.EntryContext, blockError 
 
 func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
+	g, _ := errgroup.WithContext(context.Background())
 	tcs := getTrafficControllersFor(res)
+
 	for _, tc := range tcs {
 		if tc.BoundRule().MetricType != Concurrency {
 			continue
@@ -83,15 +95,21 @@ func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
 			continue
 		}
 		for _, arg := range args {
-			metric := tc.BoundMetric()
-			concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
-			if !existed || concurrencyPtr == nil {
-				if logging.DebugEnabled() {
-					logging.Debug("[ConcurrencyStatSlot OnCompleted] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+			arg := arg // https://golang.org/doc/faq#closures_and_goroutines
+			g.Go(func() error {
+				metric := tc.BoundMetric()
+				concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
+				if !existed || concurrencyPtr == nil {
+					if logging.DebugEnabled() {
+						logging.Debug("[ConcurrencyStatSlot OnCompleted] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
+					}
+					return nil
 				}
-				continue
-			}
-			atomic.AddInt64(concurrencyPtr, -1)
+				atomic.AddInt64(concurrencyPtr, -1)
+				return nil
+			})
 		}
 	}
+	g.Wait()
+	return
 }
