@@ -16,9 +16,10 @@ package hotspot
 
 import (
 	"context"
+	"time"
+
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/errgo.v2/fmt/errors"
-	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 )
