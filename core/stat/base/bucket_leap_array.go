@@ -15,7 +15,6 @@
 package base
 
 import (
-	"fmt"
 	"reflect"
 	"sync/atomic"
 
@@ -115,7 +114,7 @@ func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent,
 func (bla *BucketLeapArray) UpdateMaxConcurrency(count int64) {
 	curBucket, err := bla.data.CurrentBucket(bla)
 	if err != nil {
-		logging.Error(err, fmt.Sprintf("Failed to get current bucket, current ts=%d, err: %+v.", errors.WithStack(err)))
+		logging.Error(err, "Failed to get current bucket")
 		return
 	}
 	if curBucket == nil {
