@@ -16,8 +16,9 @@ package hotspot
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"sync/atomic"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
