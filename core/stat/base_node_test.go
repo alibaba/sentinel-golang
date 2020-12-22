@@ -18,22 +18,22 @@ const (
 
 func TestBaseStatNodeGoroutineNum(t *testing.T) {
 	bsn := NewBaseStatNode(SampleCount, IntervalInMs)
-	bsn.IncreaseGoroutineNum()
+	bsn.IncreaseConcurrency()
 	assert.Equal(t, int64(1), bsn.MaxConcurrency())
 	assert.Equal(t, int64(1), bsn.SecondMaxConcurrency())
-	bsn.DecreaseGoroutineNum()
+	bsn.DecreaseConcurrency()
 	assert.Equal(t, int64(1), bsn.MaxConcurrency())
 	assert.Equal(t, int64(1), bsn.SecondMaxConcurrency())
 
-	bsn.IncreaseGoroutineNum()
-	bsn.IncreaseGoroutineNum()
+	bsn.IncreaseConcurrency()
+	bsn.IncreaseConcurrency()
 	assert.Equal(t, int64(2), bsn.MaxConcurrency())
 	assert.Equal(t, int64(2), bsn.SecondMaxConcurrency())
-	bsn.DecreaseGoroutineNum()
-	bsn.DecreaseGoroutineNum()
+	bsn.DecreaseConcurrency()
+	bsn.DecreaseConcurrency()
 
 	time.Sleep(time.Second * 1)
-	bsn.IncreaseGoroutineNum()
+	bsn.IncreaseConcurrency()
 	assert.Equal(t, int64(2), bsn.MaxConcurrency())
 	assert.Equal(t, int64(1), bsn.SecondMaxConcurrency())
 }

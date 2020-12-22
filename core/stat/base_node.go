@@ -96,6 +96,7 @@ func (n *BaseStatNode) CurrentConcurrency() int32 {
 
 func (n *BaseStatNode) IncreaseConcurrency() {
 	atomic.AddInt32(&(n.concurrency), 1)
+	n.arr.UpdateMaxConcurrency(int64(n.CurrentConcurrency()))
 }
 
 func (n *BaseStatNode) DecreaseConcurrency() {

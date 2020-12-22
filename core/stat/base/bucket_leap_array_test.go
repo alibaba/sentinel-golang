@@ -179,6 +179,7 @@ func TestBucketLeapArray_UpdateMaxConcurrency(t *testing.T) {
 	bla.UpdateMaxConcurrency(5)
 	bla.UpdateMaxConcurrency(2)
 	bla.UpdateMaxConcurrency(4)
-	swm := NewSlidingWindowMetric(SampleCount, IntervalInMs, bla)
+	swm, err := NewSlidingWindowMetric(SampleCount, IntervalInMs, bla)
+	assert.Nil(t, err)
 	assert.Equal(t, int64(5), swm.MaxConcurrency())
 }
