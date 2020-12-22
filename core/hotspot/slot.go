@@ -15,6 +15,9 @@
 package hotspot
 
 import (
+	"context"
+	"golang.org/x/sync/errgroup"
+	"gopkg.in/errgo.v2/fmt/errors"
 	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -42,8 +45,8 @@ func (s *Slot) Order() uint32 {
 
 func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	res := ctx.Resource.Name()
-
 	batch := int64(ctx.Input.BatchCount)
+	g, _ := errgroup.WithContext(context.Background())
 
 	result := ctx.RuleCheckResult
 	tcs := getTrafficControllersFor(res)
@@ -53,22 +56,29 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 			continue
 		}
 		for _, arg := range args {
-			r := canPassCheck(tc, arg, batch)
-			if r == nil {
-				continue
-			}
-			if r.Status() == base.ResultStatusBlocked {
-				return r
-			}
-			if r.Status() == base.ResultStatusShouldWait {
-				if nanosToWait := r.NanosToWait(); nanosToWait > 0 {
-					// Handle waiting action.
-					time.Sleep(nanosToWait)
+			arg := arg // https://golang.org/doc/faq#closures_and_goroutines
+			g.Go(func() error {
+				r := canPassCheck(tc, arg, batch)
+				if r == nil {
+					return nil
 				}
-				continue
-			}
+				if r.Status() == base.ResultStatusBlocked {
+					return errors.Newf("concurrent canPassCheck err=%v", r.BlockError())
+				}
+				if r.Status() == base.ResultStatusShouldWait {
+					if nanosToWait := r.NanosToWait(); nanosToWait > 0 {
+						// Handle waiting action.
+						time.Sleep(nanosToWait)
+					}
+					return nil
+				}
+				return nil
+			})
 		}
-
+	}
+	if err := g.Wait(); err != nil {
+		result.ResetToBlockedWithMessage(base.BlockTypeHotSpotParamFlow, err.Error())
+		return result
 	}
 	return result
 }
