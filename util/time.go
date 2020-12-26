@@ -62,43 +62,78 @@ type Clock interface {
 	CurrentTimeNano() uint64
 }
 
+// clockWrapper is used for atomic operation.
+type clockWrapper struct {
+	clock Clock
+}
+
+// RealClock wraps some APIs of time package.
+type RealClock struct{}
+
+func NewRealClock() *RealClock {
+	return &RealClock{}
+}
+
+func (t *RealClock) Now() time.Time {
+	return time.Now()
+}
+
+func (t *RealClock) Sleep(d time.Duration) {
+	time.Sleep(d)
+}
+
+func (t *RealClock) CurrentTimeMillis() uint64 {
+	tickerNow := CurrentTimeMillsWithTicker()
+	if tickerNow > uint64(0) {
+		return tickerNow
+	}
+	return uint64(time.Now().UnixNano()) / UnixTimeUnitOffset
+}
+
+func (t *RealClock) CurrentTimeNano() uint64 {
+	return uint64(t.Now().UnixNano())
+}
+
+// MockClock is used for testing.
+type MockClock struct {
+	lock sync.RWMutex
+	now  time.Time
+}
+
+func NewMockClock() *MockClock {
+	return &MockClock{
+		now: time.Now(),
+	}
+}
+
+func (t *MockClock) Now() time.Time {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	return t.now
+}
+
+func (t *MockClock) Sleep(d time.Duration) {
+	if d <= 0 {
+		return
+	}
+	t.lock.Lock()
+	t.now = t.now.Add(d)
+	t.lock.Unlock()
+	time.Sleep(time.Millisecond)
+}
+
+func (t *MockClock) CurrentTimeMillis() uint64 {
+	return uint64(t.Now().UnixNano()) / UnixTimeUnitOffset
+}
+
+func (t *MockClock) CurrentTimeNano() uint64 {
+	return uint64(t.Now().UnixNano())
+}
+
 // Ticker interface encapsulates operations like time.Ticker.
 type Ticker interface {
 	C() <-chan time.Time
 	Stop()
-}
-
-// TickerCreator is used to create Ticker.
-type TickerCreator interface {
-	NewTicker(d time.Duration) Ticker
-}
-
-// tickerCreatorWrapper is used for atomic operation.
-type tickerCreatorWrapper struct {
-	tickerCreator TickerCreator
-}
-
-// RealTickerCreator is used to creates RealTicker which wraps time.Ticker.
-type RealTickerCreator struct{}
-
-func NewRealTickerCreator() *RealTickerCreator {
-	return &RealTickerCreator{}
-}
-
-func (tc *RealTickerCreator) NewTicker(d time.Duration) Ticker {
-	return NewRealTicker(d)
-}
-
-// MockTickerCreator is used create MockTicker which is usually used for testing.
-// MockTickerCreator and MockClock are usually used together.
-type MockTickerCreator struct{}
-
-func NewMockTickerCreator() *MockTickerCreator {
-	return &MockTickerCreator{}
-}
-
-func (tc *MockTickerCreator) NewTicker(d time.Duration) Ticker {
-	return NewMockTicker(d)
 }
 
 // RealTicker wraps time.Ticker.
@@ -175,77 +210,41 @@ func (t *MockTicker) checkLoop() {
 			return
 		case <-ticker.C:
 		}
-
 		t.check()
 	}
 }
 
-// clockWrapper is used for atomic operation.
-type clockWrapper struct {
-	clock Clock
+// TickerCreator is used to create Ticker.
+type TickerCreator interface {
+	NewTicker(d time.Duration) Ticker
 }
 
-// RealClock wraps some APIs of time package.
-type RealClock struct{}
-
-func NewRealClock() *RealClock {
-	return &RealClock{}
+// tickerCreatorWrapper is used for atomic operation.
+type tickerCreatorWrapper struct {
+	tickerCreator TickerCreator
 }
 
-func (t *RealClock) Now() time.Time {
-	return time.Now()
+// RealTickerCreator is used to creates RealTicker which wraps time.Ticker.
+type RealTickerCreator struct{}
+
+func NewRealTickerCreator() *RealTickerCreator {
+	return &RealTickerCreator{}
 }
 
-func (t *RealClock) Sleep(d time.Duration) {
-	time.Sleep(d)
+func (tc *RealTickerCreator) NewTicker(d time.Duration) Ticker {
+	return NewRealTicker(d)
 }
 
-func (t *RealClock) CurrentTimeMillis() uint64 {
-	tickerNow := CurrentTimeMillsWithTicker()
-	if tickerNow > uint64(0) {
-		return tickerNow
-	}
-	return uint64(time.Now().UnixNano()) / UnixTimeUnitOffset
+// MockTickerCreator is used create MockTicker which is usually used for testing.
+// MockTickerCreator and MockClock are usually used together.
+type MockTickerCreator struct{}
+
+func NewMockTickerCreator() *MockTickerCreator {
+	return &MockTickerCreator{}
 }
 
-func (t *RealClock) CurrentTimeNano() uint64 {
-	return uint64(t.Now().UnixNano())
-}
-
-// MockClock is used for testing.
-type MockClock struct {
-	lock sync.RWMutex
-	now  time.Time
-}
-
-func NewMockClock() *MockClock {
-	return &MockClock{
-		now: time.Now(),
-	}
-}
-
-func (t *MockClock) Now() time.Time {
-	t.lock.RLock()
-	defer t.lock.RUnlock()
-	return t.now
-}
-
-func (t *MockClock) Sleep(d time.Duration) {
-	if d <= 0 {
-		return
-	}
-	t.lock.Lock()
-	t.now = t.now.Add(d)
-	t.lock.Unlock()
-	time.Sleep(time.Millisecond)
-}
-
-func (t *MockClock) CurrentTimeMillis() uint64 {
-	return uint64(t.Now().UnixNano()) / UnixTimeUnitOffset
-}
-
-func (t *MockClock) CurrentTimeNano() uint64 {
-	return uint64(t.Now().UnixNano())
+func (tc *MockTickerCreator) NewTicker(d time.Duration) Ticker {
+	return NewMockTicker(d)
 }
 
 // SetClock sets the clock used by util package.
@@ -261,6 +260,25 @@ func CurrentClock() Clock {
 	} else {
 		return realClock
 	}
+}
+
+// SetClock sets the ticker creator used by util package.
+// In general, no need to set it. It is usually used for testing.
+func SetTickerCreator(tc TickerCreator) {
+	currentTickerCreator.Store(&tickerCreatorWrapper{tc})
+}
+
+// CurrentTickerCreator returns the current ticker creator used by util package.
+func CurrentTickerCreator() TickerCreator {
+	if tcw, ok := currentTickerCreator.Load().(tickerCreatorWrapper); ok {
+		return tcw.tickerCreator
+	} else {
+		return realTickerCreator
+	}
+}
+
+func NewTicker(d time.Duration) Ticker {
+	return CurrentTickerCreator().NewTicker(d)
 }
 
 // FormatTimeMillis formats Unix timestamp (ms) to time string.
@@ -292,23 +310,4 @@ func Now() time.Time {
 // A negative or zero duration causes Sleep to return immediately.
 func Sleep(d time.Duration) {
 	CurrentClock().Sleep(d)
-}
-
-// SetClock sets the ticker creator used by util package.
-// In general, no need to set it. It is usually used for testing.
-func SetTickerCreator(tc TickerCreator) {
-	currentTickerCreator.Store(&tickerCreatorWrapper{tc})
-}
-
-// CurrentTickerCreator returns the current ticker creator used by util package.
-func CurrentTickerCreator() TickerCreator {
-	if tcw, ok := currentTickerCreator.Load().(tickerCreatorWrapper); ok {
-		return tcw.tickerCreator
-	} else {
-		return realTickerCreator
-	}
-}
-
-func NewTicker(d time.Duration) Ticker {
-	return CurrentTickerCreator().NewTicker(d)
 }
