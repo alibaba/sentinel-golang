@@ -252,11 +252,7 @@ func SetClock(c Clock) {
 
 // CurrentClock returns the current clock used by util package.
 func CurrentClock() Clock {
-	if cw, ok := currentClock.Load().(*clockWrapper); ok {
-		return cw.clock
-	} else {
-		return nil
-	}
+	return currentClock.Load().(*clockWrapper).clock
 }
 
 // SetClock sets the ticker creator used by util package.
@@ -267,11 +263,7 @@ func SetTickerCreator(tc TickerCreator) {
 
 // CurrentTickerCreator returns the current ticker creator used by util package.
 func CurrentTickerCreator() TickerCreator {
-	if tcw, ok := currentTickerCreator.Load().(*tickerCreatorWrapper); ok {
-		return tcw.tickerCreator
-	} else {
-		return nil
-	}
+	return currentTickerCreator.Load().(*tickerCreatorWrapper).tickerCreator
 }
 
 func NewTicker(d time.Duration) Ticker {
