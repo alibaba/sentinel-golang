@@ -267,7 +267,7 @@ func SetTickerCreator(tc TickerCreator) {
 
 // CurrentTickerCreator returns the current ticker creator used by util package.
 func CurrentTickerCreator() TickerCreator {
-	if tcw, ok := currentTickerCreator.Load().(tickerCreatorWrapper); ok {
+	if tcw, ok := currentTickerCreator.Load().(*tickerCreatorWrapper); ok {
 		return tcw.tickerCreator
 	} else {
 		return nil
