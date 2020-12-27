@@ -123,6 +123,7 @@ func TestMockClock(t *testing.T) {
 
 func TestMockTicker(t *testing.T) {
 	SetClock(NewMockClock())
+	defer SetClock(NewRealClock())
 
 	d := 23*time.Hour + 59*time.Minute + 59*time.Second + 999*time.Millisecond + 999*time.Microsecond
 
@@ -177,11 +178,28 @@ func TestMockTicker(t *testing.T) {
 }
 
 func BenchmarkCurrentTimeInMs(b *testing.B) {
+	StartTimeTicker()
+	currentTimeMillisDirect := func() uint64 {
+		tickerNow := CurrentTimeMillsWithTicker()
+		if tickerNow > uint64(0) {
+			return tickerNow
+		}
+		return uint64(time.Now().UnixNano()) / UnixTimeUnitOffset
+	}
+
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		CurrentTimeMillis()
-	}
+
+	b.Run("CurrentTimeMillis", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			CurrentTimeMillis()
+		}
+	})
+	b.Run("CurrentTimeMillisDirect", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			currentTimeMillisDirect()
+		}
+	})
 }
 
 func BenchmarkCurrentTimeInMsWithTicker(b *testing.B) {
@@ -190,4 +208,21 @@ func BenchmarkCurrentTimeInMsWithTicker(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		CurrentTimeMillsWithTicker()
 	}
+}
+
+func BenchmarkNow(b *testing.B) {
+	b.Run("util.Now", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			Now()
+		}
+	})
+	b.Run("time.Now", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			time.Now()
+		}
+	})
 }
