@@ -38,19 +38,16 @@ var (
 )
 
 var (
-	realClock    *RealClock
-	currentClock *atomic.Value
-
-	realTickerCreator    *RealTickerCreator
+	currentClock         *atomic.Value
 	currentTickerCreator *atomic.Value
 )
 
 func init() {
-	realClock = NewRealClock()
+	realClock := NewRealClock()
 	currentClock = new(atomic.Value)
 	SetClock(realClock)
 
-	realTickerCreator = NewRealTickerCreator()
+	realTickerCreator := NewRealTickerCreator()
 	currentTickerCreator = new(atomic.Value)
 	SetTickerCreator(realTickerCreator)
 }
@@ -258,7 +255,7 @@ func CurrentClock() Clock {
 	if cw, ok := currentClock.Load().(*clockWrapper); ok {
 		return cw.clock
 	} else {
-		return realClock
+		return nil
 	}
 }
 
@@ -273,7 +270,7 @@ func CurrentTickerCreator() TickerCreator {
 	if tcw, ok := currentTickerCreator.Load().(tickerCreatorWrapper); ok {
 		return tcw.tickerCreator
 	} else {
-		return realTickerCreator
+		return nil
 	}
 }
 
