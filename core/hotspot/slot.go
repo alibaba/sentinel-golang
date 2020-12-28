@@ -15,10 +15,9 @@
 package hotspot
 
 import (
-	"time"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 const (
@@ -88,7 +87,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		if r.Status() == base.ResultStatusShouldWait {
 			if nanosToWait := r.NanosToWait(); nanosToWait > 0 {
 				// Handle waiting action.
-				time.Sleep(nanosToWait)
+				util.Sleep(nanosToWait)
 			}
 			continue
 		}

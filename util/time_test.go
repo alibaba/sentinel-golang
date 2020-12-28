@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 //Time zone should be considered for time related operations
@@ -106,12 +108,98 @@ func TestCurrentTimeNano(t *testing.T) {
 	fmt.Println(got)
 }
 
+func TestMockClock(t *testing.T) {
+	clock := NewMockClock()
+
+	now := clock.Now()
+	assert.Equal(t, clock.CurrentTimeNano(), uint64(now.UnixNano()))
+	assert.Equal(t, clock.CurrentTimeMillis(), uint64(now.UnixNano()/1e6))
+
+	last := now
+	d := 23*time.Hour + 59*time.Minute + 59*time.Second + 999*time.Millisecond + 999*time.Microsecond
+	clock.Sleep(d)
+	assert.Equal(t, last.Add(d), clock.Now())
+}
+
+func TestMockTicker(t *testing.T) {
+	SetClock(NewMockClock())
+	defer SetClock(NewRealClock())
+
+	d := 23*time.Hour + 59*time.Minute + 59*time.Second + 999*time.Millisecond + 999*time.Microsecond
+
+	ticker := NewMockTicker(d)
+	defer ticker.Stop()
+
+	ticked := 0
+
+	ticker.check()
+	select {
+	case <-ticker.C():
+		ticked++
+	default:
+	}
+	assert.Equal(t, ticked, 0)
+
+	Sleep(d - 1)
+	ticker.check()
+	select {
+	case <-ticker.C():
+		ticked++
+	default:
+	}
+	assert.Equal(t, ticked, 0)
+
+	Sleep(1)
+	ticker.check()
+	select {
+	case <-ticker.C():
+		ticked++
+	default:
+	}
+	assert.Equal(t, ticked, 1)
+
+	Sleep(d + 1)
+	ticker.check()
+	select {
+	case <-ticker.C():
+		ticked++
+	default:
+	}
+	assert.Equal(t, ticked, 2)
+
+	Sleep(d - 1)
+	ticker.check()
+	select {
+	case <-ticker.C():
+		ticked++
+	default:
+	}
+	assert.Equal(t, ticked, 3)
+}
+
 func BenchmarkCurrentTimeInMs(b *testing.B) {
+	StartTimeTicker()
+	currentTimeMillisDirect := func() uint64 {
+		tickerNow := CurrentTimeMillsWithTicker()
+		if tickerNow > uint64(0) {
+			return tickerNow
+		}
+		return uint64(time.Now().UnixNano()) / UnixTimeUnitOffset
+	}
+
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		CurrentTimeMillis()
-	}
+
+	b.Run("CurrentTimeMillis", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			CurrentTimeMillis()
+		}
+	})
+	b.Run("CurrentTimeMillisDirect", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			currentTimeMillisDirect()
+		}
+	})
 }
 
 func BenchmarkCurrentTimeInMsWithTicker(b *testing.B) {
@@ -120,4 +208,21 @@ func BenchmarkCurrentTimeInMsWithTicker(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		CurrentTimeMillsWithTicker()
 	}
+}
+
+func BenchmarkNow(b *testing.B) {
+	b.Run("util.Now", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			Now()
+		}
+	})
+	b.Run("time.Now", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			time.Now()
+		}
+	})
 }

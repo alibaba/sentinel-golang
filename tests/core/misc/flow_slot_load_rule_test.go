@@ -25,6 +25,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 func Test_Flow_Slot_LoadRules(t *testing.T) {
@@ -52,7 +53,7 @@ func Test_Flow_Slot_LoadRules(t *testing.T) {
 	}
 
 	go func() {
-		time.Sleep(time.Second * 2)
+		util.Sleep(time.Second * 2)
 		_, err = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
 			// Statistic time span=10s, recoveryTimeout=3s, slowRtUpperBound=50ms, maxSlowRequestRatio=50%
 			{
@@ -70,8 +71,6 @@ func Test_Flow_Slot_LoadRules(t *testing.T) {
 		}
 	}()
 
-	ch := time.NewTicker(time.Second * 3).C
-
 	for i := 0; i < 10; i++ {
 		go func() {
 			for {
@@ -86,5 +85,6 @@ func Test_Flow_Slot_LoadRules(t *testing.T) {
 			}
 		}()
 	}
-	<-ch
+
+	util.Sleep(time.Second * 3)
 }

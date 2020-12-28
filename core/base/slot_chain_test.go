@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -301,6 +302,8 @@ func (m *statisticSlotMock) OnCompleted(ctx *EntryContext) {
 }
 
 func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	sc := NewSlotChain()
 	ctx := sc.GetPooledContext()
 	rw := NewResourceWrapper("abc", ResTypeCommon, Inbound)
@@ -331,7 +334,7 @@ func TestSlotChain_Entry_Pass_And_Exit(t *testing.T) {
 
 	r := sc.Entry(ctx)
 	assert.Equal(t, ResultStatusPass, r.status, "expected to pass but actually blocked")
-	time.Sleep(time.Millisecond * 100)
+	util.Sleep(time.Millisecond * 100)
 
 	sc.exit(ctx)
 

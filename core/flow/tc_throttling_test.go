@@ -21,10 +21,13 @@ import (
 	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	intervalMs := 10000
 	threshold := 50.0
 	timeoutMs := 0
@@ -43,7 +46,7 @@ func TestThrottlingChecker_DoCheckNoQueueingSingleThread(t *testing.T) {
 	for i := 0; i < reqCount; i++ {
 		assert.True(t, tc.DoCheck(nil, 1, threshold).IsBlocked())
 	}
-	time.Sleep(time.Duration(intervalMs/int(threshold)*reqCount+10) * time.Millisecond)
+	util.Sleep(time.Duration(intervalMs/int(threshold)*reqCount+10) * time.Millisecond)
 
 	assert.True(t, tc.DoCheck(nil, 1, threshold) == nil)
 	assert.True(t, tc.DoCheck(nil, 1, threshold).IsBlocked())

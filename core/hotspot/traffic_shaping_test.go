@@ -111,6 +111,8 @@ func Test_baseTrafficShapingController_performCheckingForConcurrencyMetric(t *te
 }
 
 func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	t.Run("Test_defaultTrafficShapingController_performChecking_TimeCounter_Nil", func(t *testing.T) {
 		timeCounter := &counterCacheMock{}
 		tokenCounter := &counterCacheMock{}
@@ -204,7 +206,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 		timeCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(lastAddTokenTime).Times(1)
 
 		tokenCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(nil).Times(1)
-		time.Sleep(time.Duration(10) * time.Millisecond)
+		util.Sleep(time.Duration(10) * time.Millisecond)
 		result := c.PerformChecking(arg, 20)
 		assert.True(t, result == nil)
 		assert.True(t, *lastAddTokenTime > currentTimeInMs)
@@ -239,7 +241,7 @@ func Test_defaultTrafficShapingController_performChecking(t *testing.T) {
 		oldQps := new(int64)
 		*oldQps = 50
 		tokenCounter.On("AddIfAbsent", mock.Anything, mock.Anything).Return(oldQps).Times(1)
-		time.Sleep(time.Duration(10) * time.Millisecond)
+		util.Sleep(time.Duration(10) * time.Millisecond)
 		result := c.PerformChecking(arg, 20)
 		assert.True(t, result == nil)
 		assert.True(t, atomic.LoadInt64(lastAddTokenTime) > currentTimeInMs)

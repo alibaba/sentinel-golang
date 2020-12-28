@@ -141,7 +141,7 @@ func Test_atomicBucketWrapArray_compareAndSet(t *testing.T) {
 }
 
 func taskGet(wg *sync.WaitGroup, at *AtomicBucketWrapArray, t *testing.T) {
-	time.Sleep(time.Millisecond * 3)
+	util.Sleep(time.Millisecond * 3)
 	idx := rand.Int() % 20
 	wwPtr := at.get(idx)
 	vInterface := wwPtr.Value.Load()
@@ -159,6 +159,8 @@ func taskGet(wg *sync.WaitGroup, at *AtomicBucketWrapArray, t *testing.T) {
 }
 
 func Test_atomicBucketWrapArray_Concurrency_Get(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	now := uint64(1596199310000)
 	ret := NewAtomicBucketWrapArrayWithTime(int(SampleCount), BucketLengthInMs, now, &leapArrayMock{})
 	for _, ww := range ret.data {
@@ -189,7 +191,7 @@ func Test_atomicBucketWrapArray_Concurrency_Get(t *testing.T) {
 }
 
 func taskSet(wg *sync.WaitGroup, at *AtomicBucketWrapArray, t *testing.T) {
-	time.Sleep(time.Millisecond * 3)
+	util.Sleep(time.Millisecond * 3)
 	idx := rand.Int() % 20
 	ww := at.get(idx)
 	bucket := new(int64)
@@ -207,6 +209,8 @@ func taskSet(wg *sync.WaitGroup, at *AtomicBucketWrapArray, t *testing.T) {
 }
 
 func Test_atomicBucketWrapArray_Concurrency_Set(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	now := uint64(1596199310000)
 	ret := NewAtomicBucketWrapArrayWithTime(int(SampleCount), BucketLengthInMs, now, &leapArrayMock{})
 	for _, ww := range ret.data {

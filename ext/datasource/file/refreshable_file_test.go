@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/alibaba/sentinel-golang/ext/datasource"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	tmock "github.com/stretchr/testify/mock"
@@ -209,9 +210,9 @@ func TestRefreshableFileDataSource_Close(t *testing.T) {
 			t.Errorf("Fail to Initialize datasource, err: %+v", err)
 		}
 
-		time.Sleep(1 * time.Second)
+		util.Sleep(1 * time.Second)
 		s.Close()
-		time.Sleep(1 * time.Second)
+		util.Sleep(1 * time.Second)
 		e := s.watcher.Add(TestSystemRulesFile)
 		assert.True(t, e != nil && strings.Contains(e.Error(), "closed"))
 
@@ -248,12 +249,12 @@ func TestNewFileDataSource_ALL_For_SystemRule(t *testing.T) {
 
 		f.WriteString("\n" + TestSystemRules)
 		f.Sync()
-		time.Sleep(3 * time.Second)
+		util.Sleep(3 * time.Second)
 		mh1.AssertNumberOfCalls(t, "Handle", 2)
 
 		ds.Close()
 		f.Close()
-		time.Sleep(1 * time.Second)
+		util.Sleep(1 * time.Second)
 		e := ds.watcher.Add(TestSystemRulesFile)
 		assert.True(t, e != nil && strings.Contains(e.Error(), "closed"))
 
@@ -285,11 +286,11 @@ func TestNewFileDataSource_ALL_For_SystemRule(t *testing.T) {
 			t.Errorf("Fail to delete test file, err: %+v", err)
 		}
 
-		time.Sleep(3 * time.Second)
+		util.Sleep(3 * time.Second)
 		mh1.AssertNumberOfCalls(t, "Handle", 2)
 
 		ds.Close()
-		time.Sleep(1 * time.Second)
+		util.Sleep(1 * time.Second)
 		e := ds.watcher.Add(TestSystemRulesFile)
 		assert.True(t, e != nil)
 	})

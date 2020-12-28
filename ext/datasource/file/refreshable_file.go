@@ -107,7 +107,7 @@ func (s *RefreshableFileDataSource) Initialize() error {
 						}
 						retryCount++
 						logging.Error(e, "Failed to add to watcher", "sourceFilePath", s.sourceFilePath)
-						time.Sleep(time.Second)
+						util.Sleep(time.Second)
 					}
 				}
 				if ev.Op&fsnotify.Remove == fsnotify.Remove {

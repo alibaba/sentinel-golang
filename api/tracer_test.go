@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,6 +29,8 @@ var (
 )
 
 func TestTraceErrorToEntry(t *testing.T) {
+	util.SetClock(util.NewMockClock())
+
 	type args struct {
 		entry *base.SentinelEntry
 		err   error
@@ -58,7 +61,7 @@ func TestTraceErrorToEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			TraceError(tt.args.entry, tt.args.err)
-			time.Sleep(time.Millisecond * 10)
+			util.Sleep(time.Millisecond * 10)
 			assert.Equal(t, tests[0].args.entry.Context().Err(), tt.want)
 		})
 	}
