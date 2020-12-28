@@ -154,8 +154,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err.Error())
 			continue
 		}
-		if r.Mode == "" {
-			r.Mode = CLOSE
+		if r.Mode == "" || r.Mode == CLOSE {
+			logging.Warn("[HotSpot onRuleUpdate] Ignoring Close hotspot rule when loading new rules", "rule", r)
+			continue
 		}
 		res := r.ResourceName()
 		ruleSet, ok := newRuleMap[res]

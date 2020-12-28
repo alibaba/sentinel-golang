@@ -97,7 +97,7 @@ type Rule struct {
 	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
 	SpecificItems map[interface{}]int64 `json:"specificItems"`
-	// Mod Switch
+	// Mode Switch
 	Mode Mode `json:"mode"`
 }
 

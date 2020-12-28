@@ -52,9 +52,6 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	result := ctx.RuleCheckResult
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
-		if tc.BoundRule().Mode == CLOSE {
-			continue
-		}
 		args := tc.ExtractArgs(ctx)
 		if args == nil || len(args) == 0 {
 			continue

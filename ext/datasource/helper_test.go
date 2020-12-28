@@ -434,6 +434,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        10,
 			DurationInSec:     1,
 			SpecificItems:     m,
+			Mode:              hotspot.CONTROL,
 		}
 
 		m2 := make(map[interface{}]int64)
@@ -448,6 +449,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        0,
 			DurationInSec:     1,
 			SpecificItems:     m2,
+			Mode:              hotspot.CONTROL,
 		}
 
 		m3 := make(map[interface{}]int64)
@@ -462,6 +464,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        0,
 			DurationInSec:     1,
 			SpecificItems:     m3,
+			Mode:              hotspot.CONTROL,
 		}
 
 		r4 := &hotspot.Rule{
@@ -475,6 +478,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        0,
 			DurationInSec:     2,
 			SpecificItems:     m3,
+			Mode:              hotspot.CONTROL,
 		}
 
 		err := HotSpotParamRulesUpdater([]*hotspot.Rule{r1, r2, r3, r4})
