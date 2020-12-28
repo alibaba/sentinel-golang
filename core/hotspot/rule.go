@@ -97,7 +97,19 @@ type Rule struct {
 	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
 	SpecificItems map[interface{}]int64 `json:"specificItems"`
+	// Mode Switch
+	Mode Mode `json:"mode"`
 }
+
+// Mode represents the switch.
+type Mode string
+
+// defines the mode enum value
+const (
+	MONITOR Mode = "MONITOR"
+	CONTROL Mode = "CONTROL"
+	CLOSE   Mode = "CLOSE"
+)
 
 func (r *Rule) String() string {
 	b, err := json.Marshal(r)

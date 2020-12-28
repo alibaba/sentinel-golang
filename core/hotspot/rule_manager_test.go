@@ -166,6 +166,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        10,
 		DurationInSec:     1,
 		SpecificItems:     specific,
+		Mode:              CONTROL,
 	}
 
 	specific2 := make(map[interface{}]int64)
@@ -182,6 +183,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     1,
 		SpecificItems:     specific2,
+		Mode:              CONTROL,
 	}
 
 	specific3 := make(map[interface{}]int64)
@@ -198,6 +200,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     1,
 		SpecificItems:     specific3,
+		Mode:              CONTROL,
 	}
 
 	r4 := &Rule{
@@ -211,6 +214,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     2,
 		SpecificItems:     specific3,
+		Mode:              CONTROL,
 	}
 
 	updated, err := LoadRules([]*Rule{r1, r2, r3, r4})
@@ -230,6 +234,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        10,
 		DurationInSec:     1,
 		SpecificItems:     specific,
+		Mode:              CONTROL,
 	}
 	r22 := &Rule{
 		ID:                "22",
@@ -242,6 +247,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     1,
 		SpecificItems:     specific2,
+		Mode:              CONTROL,
 	}
 	r23 := &Rule{
 		ID:                "23",
@@ -254,6 +260,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     12,
 		SpecificItems:     specific3,
+		Mode:              CONTROL,
 	}
 
 	oldTc1Ptr := tcMap["abc"][0]
@@ -312,6 +319,7 @@ func TestLoadRules(t *testing.T) {
 				BurstCount:        10,
 				DurationInSec:     1,
 				SpecificItems:     specific,
+				Mode:              CLOSE,
 			},
 		})
 		assert.Nil(t, err)
@@ -327,6 +335,7 @@ func TestLoadRules(t *testing.T) {
 				BurstCount:        10,
 				DurationInSec:     1,
 				SpecificItems:     specific,
+				Mode:              CLOSE,
 			},
 		})
 		assert.Nil(t, err)

@@ -53,6 +53,7 @@ func main() {
 			Threshold:       50,
 			BurstCount:      0,
 			DurationInSec:   1,
+			Mode:            hotspot.CONTROL,
 		},
 		{
 			Resource:        "def",
@@ -62,6 +63,7 @@ func main() {
 			Threshold:       50,
 			BurstCount:      0,
 			DurationInSec:   1,
+			Mode:            hotspot.CONTROL,
 		},
 		{
 			Resource:        "efg",
@@ -71,6 +73,7 @@ func main() {
 			Threshold:       50,
 			BurstCount:      0,
 			DurationInSec:   1,
+			Mode:            hotspot.CONTROL,
 		},
 	})
 	if err != nil {
