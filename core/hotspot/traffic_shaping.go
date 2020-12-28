@@ -232,7 +232,6 @@ func (c *rejectTrafficShapingController) PerformChecking(arg interface{}, batchC
 	if metric == nil {
 		return nil
 	}
-
 	if c.metricType == Concurrency {
 		return c.performCheckingForConcurrencyMetric(arg)
 	} else if c.metricType > QPS {

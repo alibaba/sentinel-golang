@@ -52,10 +52,14 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	result := ctx.RuleCheckResult
 	tcs := getTrafficControllersFor(res)
 	for _, tc := range tcs {
+		if tc.BoundRule().Mode == CLOSE {
+			continue
+		}
 		args := tc.ExtractArgs(ctx)
 		if args == nil || len(args) == 0 {
 			continue
 		}
+
 		for _, arg := range args {
 			arg := arg // https://golang.org/doc/faq#closures_and_goroutines
 			g.Go(func() error {
@@ -63,7 +67,12 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 				if r == nil {
 					return nil
 				}
+
 				if r.Status() == base.ResultStatusBlocked {
+					if tc.BoundRule().Mode == MONITOR {
+						PutOutputAttachment(ctx, KeyIsMonitorBlocked, true)
+						return nil
+					}
 					return errors.Newf("concurrent canPassCheck err=%v", r.BlockError())
 				}
 				if r.Status() == base.ResultStatusShouldWait {
@@ -90,4 +99,13 @@ func canPassCheck(tc TrafficShapingController, arg interface{}, batch int64) *ba
 
 func canPassLocalCheck(tc TrafficShapingController, arg interface{}, batch int64) *base.TokenResult {
 	return tc.PerformChecking(arg, batch)
+}
+
+const KeyIsMonitorBlocked = "isMonitorBlocked"
+
+func PutOutputAttachment(ctx *base.EntryContext, key interface{}, value interface{}) {
+	if ctx.Data == nil {
+		ctx.Data = make(map[interface{}]interface{})
+	}
+	ctx.Data[key] = value
 }
