@@ -119,6 +119,10 @@ func TestThrottlingChecker_DoCheckQueueingParallel(t *testing.T) {
 }
 
 func TestThrottlingChecker_DoCheckParallelPass(t *testing.T) {
+	oldClock := util.CurrentClock()
+	util.SetClock(util.NewMockClock())
+	defer util.SetClock(oldClock)
+
 	intervalMs := 10000
 	threshold := 50.0
 	timeoutMs := 0
@@ -127,7 +131,7 @@ func TestThrottlingChecker_DoCheckParallelPass(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	beginWg := &sync.WaitGroup{}
-	gc := 100000
+	gc := 512
 	wg.Add(gc)
 	beginWg.Add(gc)
 
