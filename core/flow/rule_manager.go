@@ -24,6 +24,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
+	"github.com/alibaba/sentinel-golang/core/system_metric"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -125,6 +126,38 @@ func init() {
 		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: MemoryAdaptive,
+		controlBehavior:        Reject,
+	}] = func(rule *Rule, boundStat *standaloneStatistic) (*TrafficShapingController, error) {
+		if boundStat == nil {
+			var err error
+			boundStat, err = generateStatFor(rule)
+			if err != nil {
+				return nil, err
+			}
+		}
+		tsc, err := NewTrafficShapingController(rule, boundStat)
+		if err != nil || tsc == nil {
+			return nil, err
+		}
+		tsc.flowCalculator = NewMemoryAdaptiveTrafficShapingCalculator(tsc, rule)
+		tsc.flowChecker = NewRejectTrafficShapingChecker(tsc, rule)
+		return tsc, nil
+	}
+	tcGenFuncMap[trafficControllerGenKey{
+		tokenCalculateStrategy: MemoryAdaptive,
+		controlBehavior:        Throttling,
+	}] = func(rule *Rule, _ *standaloneStatistic) (*TrafficShapingController, error) {
+		// MemoryAdaptive token calculate strategy and throttling control behavior don't use stat, so we just give a nop stat.
+		tsc, err := NewTrafficShapingController(rule, nopStat)
+		if err != nil || tsc == nil {
+			return nil, err
+		}
+		tsc.flowCalculator = NewMemoryAdaptiveTrafficShapingCalculator(tsc, rule)
+		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
+		return tsc, nil
+	}
 }
 
 func logRuleUpdate(m map[string][]*Rule) {
@@ -178,7 +211,7 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	tcMux.RUnlock()
 
 	for res, rulesOfRes := range resRulesMap {
-		m[res] = buildRulesOfRes(res, rulesOfRes, tcMapClone)
+		m[res] = buildResourceTrafficShapingController(res, rulesOfRes, tcMapClone)
 	}
 
 	for res, tcs := range m {
@@ -424,13 +457,13 @@ func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equ
 	return equalIdx, reuseStatIdx
 }
 
-// buildRulesOfRes builds TrafficShapingController slice from rules. the resource of rules must be equals to res
-func buildRulesOfRes(res string, rulesOfRes []*Rule, m TrafficControllerMap) []*TrafficShapingController {
+// buildResourceTrafficShapingController builds TrafficShapingController slice from rules. the resource of rules must be equals to res
+func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule, m TrafficControllerMap) []*TrafficShapingController {
 	newTcsOfRes := make([]*TrafficShapingController, 0, len(rulesOfRes))
 	emptyTcs := make([]*TrafficShapingController, 0, 0)
 	for _, rule := range rulesOfRes {
 		if res != rule.Resource {
-			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildRulesOfRes()", "rule", rule)
+			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildResourceTrafficShapingController()", "rule", rule)
 			continue
 		}
 		oldResTcs, exist := m[res]
@@ -455,7 +488,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule, m TrafficControllerMap) []*
 			controlBehavior:        rule.ControlBehavior,
 		}]
 		if !supported || generator == nil {
-			logging.Error(errors.New("unsupported flow control strategy"), "Ignoring the rule due to unsupported control behavior in flow.buildRulesOfRes()", "rule", rule)
+			logging.Error(errors.New("unsupported flow control strategy"), "Ignoring the rule due to unsupported control behavior in flow.buildResourceTrafficShapingController()", "rule", rule)
 			continue
 		}
 		var tc *TrafficShapingController
@@ -467,7 +500,7 @@ func buildRulesOfRes(res string, rulesOfRes []*Rule, m TrafficControllerMap) []*
 		}
 
 		if tc == nil || e != nil {
-			logging.Error(errors.New("bad generated traffic controller"), "Ignoring the rule due to bad generated traffic controller in flow.buildRulesOfRes()", "rule", rule)
+			logging.Error(errors.New("bad generated traffic controller"), "Ignoring the rule due to bad generated traffic controller in flow.buildResourceTrafficShapingController()", "rule", rule)
 			continue
 		}
 		if reuseStatIdx >= 0 {
@@ -513,5 +546,31 @@ func IsValidRule(rule *Rule) error {
 	if rule.StatIntervalInMs > 10*60*1000 {
 		logging.Info("StatIntervalInMs is great than 10 minutes, less than 10 minutes is recommended.")
 	}
+	if rule.TokenCalculateStrategy == MemoryAdaptive {
+		if rule.LowMemUsageThreshold <= 0 {
+			return errors.New("rule.LowMemUsageThreshold <= 0")
+		}
+		if rule.HighMemUsageThreshold <= 0 {
+			return errors.New("rule.HighMemUsageThreshold <= 0")
+		}
+		if rule.HighMemUsageThreshold >= rule.LowMemUsageThreshold {
+			return errors.New("rule.HighMemUsageThreshold >= rule.LowMemUsageThreshold")
+		}
+
+		if rule.MemLowWaterMarkBytes <= 0 {
+			return errors.New("rule.MemLowWaterMarkBytes <= 0")
+		}
+		if rule.MemHighWaterMarkBytes <= 0 {
+			return errors.New("rule.MemHighWaterMarkBytes <= 0")
+		}
+		if rule.MemHighWaterMarkBytes > int64(system_metric.TotalMemorySize) {
+			return errors.New("rule.MemHighWaterMarkBytes should not be greater than current system's total memory size")
+		}
+		if rule.MemLowWaterMarkBytes >= rule.MemHighWaterMarkBytes {
+			// can not be equal to defeat from zero overflow
+			return errors.New("rule.MemLowWaterMarkBytes >= rule.MemHighWaterMarkBytes")
+		}
+	}
+
 	return nil
 }

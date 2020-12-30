@@ -65,6 +65,10 @@ func NewBlockErrorWithCause(blockType BlockType, blockMsg string, rule SentinelR
 }
 
 func (e *BlockError) Error() string {
+	if e == nil {
+		return "nil *BlockError"
+	}
+
 	if len(e.blockMsg) == 0 {
 		return fmt.Sprintf("SentinelBlockError: %s", e.blockType.String())
 	}
