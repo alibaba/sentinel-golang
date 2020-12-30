@@ -81,7 +81,7 @@ func TestDoCheckRuleLoad(t *testing.T) {
 
 	t.Run("TrueLoad", func(t *testing.T) {
 		isOK, _, v := sas.doCheckRule(rule)
-		assert.True(t, util.Float64Equals(system_metric.NotRetrievedValue, v))
+		assert.True(t, util.Float64Equals(system_metric.NotRetrievedLoadValue, v))
 		assert.Equal(t, true, isOK)
 	})
 
@@ -91,7 +91,7 @@ func TestDoCheckRuleLoad(t *testing.T) {
 		isOK, _, v := sas.doCheckRule(rule)
 		assert.Equal(t, true, isOK)
 		assert.True(t, util.Float64Equals(float64(1.0), v))
-		system_metric.SetSystemLoad(system_metric.NotRetrievedValue)
+		system_metric.SetSystemLoad(system_metric.NotRetrievedLoadValue)
 	})
 }
 
@@ -104,7 +104,7 @@ func TestDoCheckRuleCpuUsage(t *testing.T) {
 
 	t.Run("TrueCpuUsage", func(t *testing.T) {
 		isOK, _, v := sas.doCheckRule(rule)
-		assert.True(t, util.Float64Equals(system_metric.NotRetrievedValue, v))
+		assert.True(t, util.Float64Equals(system_metric.NotRetrievedCpuUsageValue, v))
 		assert.Equal(t, true, isOK)
 	})
 
@@ -114,7 +114,7 @@ func TestDoCheckRuleCpuUsage(t *testing.T) {
 		isOK, _, v := sas.doCheckRule(rule)
 		assert.Equal(t, true, isOK)
 		assert.True(t, util.Float64Equals(0.8, v))
-		system_metric.SetSystemCpuUsage(system_metric.NotRetrievedValue)
+		system_metric.SetSystemCpuUsage(system_metric.NotRetrievedCpuUsageValue)
 	})
 }
 

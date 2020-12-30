@@ -15,58 +15,19 @@
 package system_metric
 
 import (
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_recordCpuUsage(t *testing.T) {
-	defer currentCpuUsage.Store(NotRetrievedValue)
-
-	var emptyStat *cpu.TimesStat = nil
-	// total: 2260, user+nice: 950, system+irqs=210
-	prev := &cpu.TimesStat{
-		CPU:     "all",
-		User:    900,
-		System:  200,
-		Idle:    300,
-		Nice:    50,
-		Iowait:  100,
-		Irq:     5,
-		Softirq: 5,
-		Steal:   700,
-	}
-	// total: 4180, user+nice: 1600, system+irqs=430
-	cur := &cpu.TimesStat{
-		CPU:     "all",
-		User:    1500,
-		System:  400,
-		Idle:    400,
-		Nice:    100,
-		Iowait:  150,
-		Irq:     15,
-		Softirq: 15,
-		Steal:   1600,
-	}
-	expected := float64(1600+430-950-210) / (4180 - 2260)
-
-	recordCpuUsage(emptyStat, cur)
-	assert.True(t, util.Float64Equals(NotRetrievedValue, CurrentCpuUsage()))
-
-	recordCpuUsage(prev, prev)
-	assert.True(t, util.Float64Equals(0.0, CurrentCpuUsage()))
-
-	recordCpuUsage(prev, cur)
-	assert.InEpsilon(t, expected, CurrentCpuUsage(), 0.001)
-}
-
 func TestCurrentLoad(t *testing.T) {
-	defer currentLoad.Store(NotRetrievedValue)
+	defer currentLoad.Store(NotRetrievedLoadValue)
 
 	cLoad := CurrentLoad()
-	assert.True(t, util.Float64Equals(NotRetrievedValue, cLoad))
+	assert.True(t, util.Float64Equals(NotRetrievedLoadValue, cLoad))
 
 	v := float64(1.0)
 	currentLoad.Store(v)
@@ -75,13 +36,50 @@ func TestCurrentLoad(t *testing.T) {
 }
 
 func TestCurrentCpuUsage(t *testing.T) {
-	defer currentCpuUsage.Store(NotRetrievedValue)
+	defer currentCpuUsage.Store(NotRetrievedCpuUsageValue)
 
 	cpuUsage := CurrentCpuUsage()
-	assert.Equal(t, NotRetrievedValue, cpuUsage)
+	assert.Equal(t, NotRetrievedCpuUsageValue, cpuUsage)
 
 	v := float64(0.3)
 	currentCpuUsage.Store(v)
 	cpuUsage = CurrentCpuUsage()
 	assert.True(t, util.Float64Equals(v, cpuUsage))
+}
+
+func Test_getProcessCpuStat(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		i := 0
+		wg.Done()
+		for i < 10000000000 {
+			i++
+			if i == 1000000000 {
+				i = 0
+			}
+		}
+	}()
+	wg.Wait()
+
+	got, err := getProcessCpuStat()
+	if err != nil {
+		t.Error(err)
+	}
+	assert.True(t, int(got) == 0)
+	time.Sleep(time.Millisecond * 200)
+
+	got, err = getProcessCpuStat()
+	if err != nil {
+		t.Error(err)
+	}
+	assert.True(t, int(got) > 0)
+	time.Sleep(time.Millisecond * 200)
+
+	got, err = getProcessCpuStat()
+	if err != nil {
+		t.Error(err)
+	}
+	assert.True(t, int(got) > 0)
+	time.Sleep(time.Millisecond * 200)
 }
