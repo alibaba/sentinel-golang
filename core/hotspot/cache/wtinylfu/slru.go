@@ -62,7 +62,7 @@ func (slru *slru) access(v *list.Element) {
 	if slru.protectedLs.Len() < slru.protectedCap {
 		slru.probationLs.Remove(v)
 		item.listType = protectedSegment
-		slru.protectedLs.PushFront(item)
+		slru.data[item.key] = slru.protectedLs.PushFront(item)
 		return
 	}
 	back := slru.protectedLs.Back()
