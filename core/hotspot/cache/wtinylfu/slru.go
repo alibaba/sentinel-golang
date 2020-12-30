@@ -16,7 +16,7 @@ package wtinylfu
 
 import "container/list"
 
-type listType int32
+type listType uint8
 
 const (
 	admissionWindow listType = iota
