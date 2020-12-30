@@ -107,10 +107,10 @@ func (t *TinyLfu) get(key interface{}, isInternal bool) (interface{}, bool) {
 	}
 
 	v := item.value
-	if item.listId == admissionWindow {
-		t.lru.get(val)
+	if item.listType == admissionWindow {
+		t.lru.access(val)
 	} else {
-		t.slru.get(val)
+		t.slru.access(val)
 	}
 	if !isInternal && t.stats != nil {
 		t.stats.RecordHits()
@@ -177,7 +177,7 @@ func (t *TinyLfu) Remove(key interface{}) (isFound bool) {
 	}
 
 	item := val.Value.(*slruItem)
-	if item.listId == admissionWindow {
+	if item.listType == admissionWindow {
 		t.lru.Remove(key)
 		return true
 	} else {

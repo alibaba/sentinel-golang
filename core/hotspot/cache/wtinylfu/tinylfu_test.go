@@ -36,13 +36,13 @@ func (t *tinyLFUTest) assertLen(admission, protected, probation int) {
 	assert.True(t.t, sz == admission+protected+probation && tz == protected && bz == probation)
 }
 
-func (t *tinyLFUTest) assertLRUValue(k int, id uint8) {
+func (t *tinyLFUTest) assertLRUValue(k int, id listType) {
 	v := t.lfu.items[k].Value.(*slruItem).value
 	assert.True(t.t, v != nil)
 	ak := k
 	av := v
-	listId := t.lfu.items[k].Value.(*slruItem).listId
-	assert.True(t.t, ak == av && listId == id)
+	listType := t.lfu.items[k].Value.(*slruItem).listType
+	assert.True(t.t, ak == av && listType == id)
 }
 
 func TestTinyLFU(t *testing.T) {

@@ -16,8 +16,10 @@ package wtinylfu
 
 import "container/list"
 
+type listType int32
+
 const (
-	admissionWindow uint8 = iota
+	admissionWindow listType = iota
 	probationSegment
 	protectedSegment
 )
@@ -25,10 +27,10 @@ const (
 const protectedRatio = 0.8
 
 type slruItem struct {
-	listId  uint8
-	key     interface{}
-	value   interface{}
-	keyHash uint64
+	listType listType
+	key      interface{}
+	value    interface{}
+	keyHash  uint64
 }
 
 // slru is a segmented LRU.
@@ -50,17 +52,17 @@ func newSLRU(cap int, data map[interface{}]*list.Element) *slru {
 	}
 }
 
-// Get looks up a key's value from the cache.
-func (slru *slru) get(v *list.Element) {
+// access access a value from the cache
+func (slru *slru) access(v *list.Element) {
 	item := v.Value.(*slruItem)
-	if item.listId == protectedSegment {
+	if item.listType == protectedSegment {
 		slru.protectedLs.MoveToFront(v)
 		return
 	}
 	if slru.protectedLs.Len() < slru.protectedCap {
 		slru.probationLs.Remove(v)
-		item.listId = protectedSegment
-		slru.data[item.key] = slru.protectedLs.PushFront(item)
+		item.listType = protectedSegment
+		slru.protectedLs.PushFront(item)
 		return
 	}
 	back := slru.protectedLs.Back()
@@ -68,8 +70,8 @@ func (slru *slru) get(v *list.Element) {
 
 	// swap the two item
 	*backItem, *item = *item, *backItem
-	backItem.listId = protectedSegment
-	item.listId = probationSegment
+	backItem.listType = protectedSegment
+	item.listType = probationSegment
 	slru.data[item.key] = v
 	slru.data[backItem.key] = back
 
@@ -80,7 +82,7 @@ func (slru *slru) get(v *list.Element) {
 
 // add set a value in the cache
 func (slru *slru) add(newItem slruItem) {
-	newItem.listId = probationSegment
+	newItem.listType = probationSegment
 	if slru.probationLs.Len() < slru.probationCap || slru.Len() < slru.probationCap+slru.protectedCap {
 		slru.data[newItem.key] = slru.probationLs.PushFront(&newItem)
 		return
@@ -113,7 +115,7 @@ func (slru *slru) Remove(key interface{}) (interface{}, bool) {
 		return nil, false
 	}
 	item := v.Value.(*slruItem)
-	if item.listId == protectedSegment {
+	if item.listType == protectedSegment {
 		slru.protectedLs.Remove(v)
 	} else {
 		slru.probationLs.Remove(v)
@@ -142,8 +144,8 @@ func newLRU(cap int, data map[interface{}]*list.Element) *lru {
 	}
 }
 
-// Get returns a value from the cache
-func (lru *lru) get(v *list.Element) {
+// access access a value from the cache
+func (lru *lru) access(v *list.Element) {
 	lru.evictList.MoveToFront(v)
 }
 
