@@ -79,21 +79,23 @@ func (c *ThrottlingChecker) DoCheck(_ base.StatNode, batchCount uint32, threshol
 	// The interval between two requests (in nanoseconds).
 	intervalNs := int64(math.Ceil(float64(batchCount) / threshold * float64(c.statIntervalNs)))
 
+	loadedLastPassedTime := atomic.LoadInt64(&c.lastPassedTime)
 	// Expected pass time of this request.
-	expectedTime := atomic.LoadInt64(&c.lastPassedTime) + intervalNs
+	expectedTime := loadedLastPassedTime + intervalNs
 	if expectedTime <= curNano {
-		// Contention may exist here, but it's okay.
-		atomic.StoreInt64(&c.lastPassedTime, curNano)
-		return nil
+		if swapped := atomic.CompareAndSwapInt64(&c.lastPassedTime, loadedLastPassedTime, curNano); swapped {
+			// nil means pass
+			return nil
+		}
 	}
 
-	estimatedQueueingDuration := atomic.LoadInt64(&c.lastPassedTime) + intervalNs - int64(util.CurrentTimeNano())
+	estimatedQueueingDuration := atomic.LoadInt64(&c.lastPassedTime) + intervalNs - curNano
 	if estimatedQueueingDuration > c.maxQueueingTimeNs {
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeFlow, BlockMsgQueueing, rule, nil)
 	}
 
 	oldTime := atomic.AddInt64(&c.lastPassedTime, intervalNs)
-	estimatedQueueingDuration = oldTime - int64(util.CurrentTimeNano())
+	estimatedQueueingDuration = oldTime - curNano
 	if estimatedQueueingDuration > c.maxQueueingTimeNs {
 		// Subtract the interval.
 		atomic.AddInt64(&c.lastPassedTime, -intervalNs)
