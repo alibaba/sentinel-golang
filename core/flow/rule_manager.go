@@ -50,7 +50,7 @@ var (
 		readOnlyMetric:    base.NopReadStat(),
 		writeOnlyMetric:   base.NopWriteStat(),
 	}
-	currentRules  = make([]*Rule, 0)
+	currentRules  = make(map[string][]*Rule, 0)
 	updateRuleMux = new(sync.Mutex)
 )
 
@@ -175,7 +175,7 @@ func logRuleUpdate(m map[string][]*Rule) {
 	}
 }
 
-func onRuleUpdate(rules []*Rule) (err error) {
+func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -186,23 +186,28 @@ func onRuleUpdate(rules []*Rule) (err error) {
 		}
 	}()
 
-	resRulesMap := make(map[string][]*Rule, len(rules))
-	for _, rule := range rules {
-		if err := IsValidRule(rule); err != nil {
-			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+	// ignore invalid rules
+	validResRulesMap := make(map[string][]*Rule, len(rawResRulesMap))
+	for res, rules := range rawResRulesMap {
+		if len(res) == 0 {
+			logging.Warn("[Flow onRuleUpdate] Ignoring empty resource", "rules", rules)
 			continue
 		}
-		resRules, exist := resRulesMap[rule.Resource]
-		if !exist {
-			resRules = make([]*Rule, 0, 1)
+		validResRules := make([]*Rule, 0, len(rules))
+		for _, rule := range rules {
+			if err := IsValidRule(rule); err != nil {
+				logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+				continue
+			}
+			validResRules = append(validResRules, rule)
 		}
-		resRulesMap[rule.Resource] = append(resRules, rule)
+		validResRulesMap[res] = validResRules
 	}
-	m := make(TrafficControllerMap, len(resRulesMap))
+
 	start := util.CurrentTimeNano()
 
 	tcMux.RLock()
-	tcMapClone := make(TrafficControllerMap, len(resRulesMap))
+	tcMapClone := make(TrafficControllerMap, len(validResRulesMap))
 	for res, tcs := range tcMap {
 		resTcClone := make([]*TrafficShapingController, 0, len(tcs))
 		resTcClone = append(resTcClone, tcs...)
@@ -210,8 +215,9 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	}
 	tcMux.RUnlock()
 
-	for res, rulesOfRes := range resRulesMap {
-		m[res] = buildResourceTrafficShapingController(res, rulesOfRes, tcMapClone)
+	m := make(TrafficControllerMap, len(validResRulesMap))
+	for res, rulesOfRes := range validResRulesMap {
+		m[res] = buildResourceTrafficShapingController(res, rulesOfRes, tcMapClone[res])
 	}
 
 	for res, tcs := range m {
@@ -224,27 +230,106 @@ func onRuleUpdate(rules []*Rule) (err error) {
 
 	tcMux.Lock()
 	tcMap = m
-	currentRules = rules
 	tcMux.Unlock()
+	currentRules = rawResRulesMap
 
 	logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
-	logRuleUpdate(resRulesMap)
+	logRuleUpdate(validResRulesMap)
 	return nil
 }
 
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
-	// TODO: rethink the design
+	resRulesMap := make(map[string][]*Rule, 9)
+	for _, rule := range rules {
+		resRules, exist := resRulesMap[rule.Resource]
+		if !exist {
+			resRules = make([]*Rule, 0, 1)
+		}
+		resRulesMap[rule.Resource] = append(resRules, rule)
+	}
+
 	updateRuleMux.Lock()
 	defer updateRuleMux.Unlock()
-	isEqual := reflect.DeepEqual(currentRules, rules)
+	isEqual := reflect.DeepEqual(currentRules, resRulesMap)
 	if isEqual {
 		logging.Info("[Flow] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
+	err := onRuleUpdate(resRulesMap)
+	return true, err
+}
 
-	err := onRuleUpdate(rules)
+func onResourceRuleUpdate(res string, resRules []*Rule) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+
+	validResRules := make([]*Rule, 0, len(resRules))
+	for _, rule := range resRules {
+		if err := IsValidRule(rule); err != nil {
+			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+			continue
+		}
+		validResRules = append(validResRules, rule)
+	}
+
+	start := util.CurrentTimeNano()
+	oldResTcs := make([]*TrafficShapingController, 0)
+	tcMux.RLock()
+	oldResTcs = append(oldResTcs, tcMap[res]...)
+	tcMux.RUnlock()
+	newResTcs := buildResourceTrafficShapingController(res, validResRules, oldResTcs)
+
+	if len(newResTcs) > 0 {
+		// update resource slot chain
+		misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+		misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
+	}
+
+	tcMux.Lock()
+	tcMap[res] = newResTcs
+	tcMux.Unlock()
+	currentRules[res] = resRules
+	logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+	logging.Info("[Flow] load resource level rules", "resource", res, "resRules", resRules)
+	return nil
+}
+
+// LoadRulesOfResource loads the given resource's flow rules to the rule manager, while all previous resource's rules will be replaced.
+// the first returned value indicates whether do real load operation, if the rules is the same with previous resource's rules, return false
+func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
+	if len(res) == 0 {
+		return false, errors.New("empty resource")
+	}
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
+	// clear resource rules
+	if len(rules) == 0 {
+		// clear resource's currentRules
+		delete(currentRules, res)
+		// clear tcMap
+		tcMux.Lock()
+		delete(tcMap, res)
+		tcMux.Unlock()
+		logging.Info("[Flow] clear resource level rules", "resource", res, "rules", rules)
+		return true, nil
+	}
+	// load resource level rules
+	isEqual := reflect.DeepEqual(currentRules[res], rules)
+	if isEqual {
+		logging.Info("[Flow] Load resource level rules is the same with current resource level rules, so ignore load operation.")
+		return false, nil
+	}
+
+	err := onResourceRuleUpdate(res, rules)
 	return true, err
 }
 
@@ -299,6 +384,12 @@ func GetRulesOfResource(res string) []Rule {
 // ClearRules clears all the rules in flow module.
 func ClearRules() error {
 	_, err := LoadRules(nil)
+	return err
+}
+
+// ClearRulesOfResource clears resource level rules in flow module.
+func ClearRulesOfResource(res string) error {
+	_, err := LoadRulesOfResource(res, nil)
 	return err
 }
 
@@ -458,19 +549,13 @@ func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equ
 }
 
 // buildResourceTrafficShapingController builds TrafficShapingController slice from rules. the resource of rules must be equals to res
-func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule, m TrafficControllerMap) []*TrafficShapingController {
+func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule, oldResTcs []*TrafficShapingController) []*TrafficShapingController {
 	newTcsOfRes := make([]*TrafficShapingController, 0, len(rulesOfRes))
-	emptyTcs := make([]*TrafficShapingController, 0, 0)
 	for _, rule := range rulesOfRes {
 		if res != rule.Resource {
 			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildResourceTrafficShapingController()", "rule", rule)
 			continue
 		}
-		oldResTcs, exist := m[res]
-		if !exist {
-			oldResTcs = emptyTcs
-		}
-
 		equalIdx, reuseStatIdx := calculateReuseIndexFor(rule, oldResTcs)
 
 		// First check equals scenario
@@ -479,7 +564,7 @@ func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule, m Tra
 			equalOldTc := oldResTcs[equalIdx]
 			newTcsOfRes = append(newTcsOfRes, equalOldTc)
 			// remove old tc from oldResTcs
-			m[res] = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
+			oldResTcs = append(oldResTcs[:equalIdx], oldResTcs[equalIdx+1:]...)
 			continue
 		}
 
@@ -505,7 +590,7 @@ func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule, m Tra
 		}
 		if reuseStatIdx >= 0 {
 			// remove old tc from oldResTcs
-			m[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
+			oldResTcs = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
 		newTcsOfRes = append(newTcsOfRes, tc)
 	}

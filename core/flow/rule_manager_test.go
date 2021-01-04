@@ -263,12 +263,13 @@ func Test_buildResourceTrafficShapingController(t *testing.T) {
 			MaxQueueingTimeMs:      10,
 		}
 		assert.True(t, len(tcMap["abc1"]) == 0)
-		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r1, r2}, tcMap)
+		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r1, r2}, tcMap["abc1"])
 		assert.True(t, len(tcs) == 2)
 		assert.True(t, tcs[0].BoundRule() == r1)
 		assert.True(t, tcs[1].BoundRule() == r2)
 		assert.True(t, reflect.DeepEqual(tcs[0].BoundRule(), r1))
 		assert.True(t, reflect.DeepEqual(tcs[1].BoundRule(), r2))
+		tcMap = make(TrafficControllerMap)
 	})
 
 	t.Run("Test_buildResourceTrafficShapingController_reuse_stat", func(t *testing.T) {
@@ -413,7 +414,7 @@ func Test_buildResourceTrafficShapingController(t *testing.T) {
 			StatIntervalInMs:       50000,
 		}
 
-		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r12, r22, r32, r42}, tcMap)
+		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r12, r22, r32, r42}, tcMap["abc1"])
 		assert.True(t, len(tcs) == 4)
 
 		assert.True(t, tcs[0].BoundRule() == r12)
@@ -430,6 +431,7 @@ func Test_buildResourceTrafficShapingController(t *testing.T) {
 		assert.True(t, tcs[1].boundStat != stat2)
 		assert.True(t, tcs[2] == fakeTc3)
 		assert.True(t, tcs[3].boundStat == stat4)
+		tcMap = make(TrafficControllerMap)
 	})
 }
 
