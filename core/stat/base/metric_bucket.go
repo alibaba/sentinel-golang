@@ -26,13 +26,15 @@ import (
 // Note that all operations of the MetricBucket are required to be thread-safe.
 type MetricBucket struct {
 	// Value of statistic
-	counter [base.MetricEventTotal]int64
-	minRt   int64
+	counter        [base.MetricEventTotal]int64
+	minRt          int64
+	maxConcurrency int32
 }
 
 func NewMetricBucket() *MetricBucket {
 	mb := &MetricBucket{
-		minRt: base.DefaultStatisticMaxRt,
+		minRt:          base.DefaultStatisticMaxRt,
+		maxConcurrency: base.DefaultStatisticMinConcurrency,
 	}
 	return mb
 }
@@ -45,6 +47,10 @@ func (mb *MetricBucket) Add(event base.MetricEvent, count int64) {
 	}
 	if event == base.MetricEventRt {
 		mb.AddRt(count)
+		return
+	}
+	if event == base.MetricEventConcurrency {
+		mb.AddConcurrency(count)
 		return
 	}
 	mb.addCount(event, count)
@@ -68,6 +74,7 @@ func (mb *MetricBucket) reset() {
 		atomic.StoreInt64(&mb.counter[i], 0)
 	}
 	atomic.StoreInt64(&mb.minRt, base.DefaultStatisticMaxRt)
+	atomic.StoreInt32(&mb.maxConcurrency, base.DefaultStatisticMinConcurrency)
 }
 
 func (mb *MetricBucket) AddRt(rt int64) {
@@ -79,4 +86,14 @@ func (mb *MetricBucket) AddRt(rt int64) {
 
 func (mb *MetricBucket) MinRt() int64 {
 	return atomic.LoadInt64(&mb.minRt)
+}
+
+func (mb *MetricBucket) AddConcurrency(concurrency int64) {
+	if int32(concurrency) > atomic.LoadInt32(&mb.maxConcurrency) {
+		atomic.StoreInt32(&mb.maxConcurrency, int32(concurrency))
+	}
+}
+
+func (mb *MetricBucket) MaxConcurrency() int32 {
+	return atomic.LoadInt32(&mb.maxConcurrency)
 }

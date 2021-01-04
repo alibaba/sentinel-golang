@@ -80,12 +80,17 @@ func (n *BaseStatNode) MinRT() float64 {
 	return float64(n.metric.MinRT())
 }
 
+func (n *BaseStatNode) MaxConcurrency() int32 {
+	return n.metric.MaxConcurrency()
+}
+
 func (n *BaseStatNode) CurrentConcurrency() int32 {
 	return atomic.LoadInt32(&(n.concurrency))
 }
 
 func (n *BaseStatNode) IncreaseConcurrency() {
 	atomic.AddInt32(&(n.concurrency), 1)
+	n.AddCount(base.MetricEventConcurrency, int64(atomic.LoadInt32(&(n.concurrency))))
 }
 
 func (n *BaseStatNode) DecreaseConcurrency() {
