@@ -22,7 +22,9 @@ func Benchmark_Hash_Num(b *testing.B) {
 	num := 100020000
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		sum(num)
+		for j := 1; j < 10000; j++ {
+			sum(num)
+		}
 	}
 }
 func Benchmark_Hash_String(b *testing.B) {

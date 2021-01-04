@@ -23,7 +23,8 @@ import (
 )
 
 var (
-	fnv64 = fnv.New64()
+	fnv64   = fnv.New64()
+	byteSum = make([]byte, 0, 8)
 )
 
 func sum(k interface{}) uint64 {
@@ -65,7 +66,7 @@ func sum(k interface{}) uint64 {
 	if h, ok := hashPointer(k); ok {
 		return h
 	}
-	if h, ok := hashWithSprintf(k); ok {
+	if h, ok := hashOtherWithSprintf(k); ok {
 		return h
 	}
 	return 0
@@ -81,7 +82,7 @@ func hashString(data string) uint64 {
 	return hashByteArray([]byte(data))
 }
 
-func hashWithSprintf(data interface{}) (uint64, bool) {
+func hashOtherWithSprintf(data interface{}) (uint64, bool) {
 	v := fmt.Sprintf("%v", data)
 	return hashString(v), true
 }
@@ -91,7 +92,7 @@ func hashByteArray(bytes []byte) uint64 {
 	if err != nil {
 		return 0
 	}
-	hash := binary.LittleEndian.Uint64(fnv64.Sum(nil))
+	hash := binary.LittleEndian.Uint64(fnv64.Sum(byteSum))
 	fnv64.Reset()
 	return hash
 }
