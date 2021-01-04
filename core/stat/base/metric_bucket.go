@@ -50,7 +50,7 @@ func (mb *MetricBucket) Add(event base.MetricEvent, count int64) {
 		return
 	}
 	if event == base.MetricEventConcurrency {
-		mb.AddConcurrency(count)
+		mb.SetConcurrency(count)
 		return
 	}
 	mb.addCount(event, count)
@@ -88,7 +88,7 @@ func (mb *MetricBucket) MinRt() int64 {
 	return atomic.LoadInt64(&mb.minRt)
 }
 
-func (mb *MetricBucket) AddConcurrency(concurrency int64) {
+func (mb *MetricBucket) SetConcurrency(concurrency int64) {
 	if int32(concurrency) > atomic.LoadInt32(&mb.maxConcurrency) {
 		atomic.StoreInt32(&mb.maxConcurrency, int32(concurrency))
 	}
