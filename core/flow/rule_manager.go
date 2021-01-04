@@ -189,10 +189,6 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	// ignore invalid rules
 	validResRulesMap := make(map[string][]*Rule, len(rawResRulesMap))
 	for res, rules := range rawResRulesMap {
-		if len(res) == 0 {
-			logging.Warn("[Flow onRuleUpdate] Ignoring empty resource", "rules", rules)
-			continue
-		}
 		validResRules := make([]*Rule, 0, len(rules))
 		for _, rule := range rules {
 			if err := IsValidRule(rule); err != nil {
@@ -201,7 +197,9 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 			}
 			validResRules = append(validResRules, rule)
 		}
-		validResRulesMap[res] = validResRules
+		if len(validResRules) > 0 {
+			validResRulesMap[res] = validResRules
+		}
 	}
 
 	start := util.CurrentTimeNano()
@@ -217,7 +215,10 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 
 	m := make(TrafficControllerMap, len(validResRulesMap))
 	for res, rulesOfRes := range validResRulesMap {
-		m[res] = buildResourceTrafficShapingController(res, rulesOfRes, tcMapClone[res])
+		newTcsOfRes := buildResourceTrafficShapingController(res, rulesOfRes, tcMapClone[res])
+		if len(newTcsOfRes) > 0 {
+			m[res] = newTcsOfRes
+		}
 	}
 
 	for res, tcs := range m {
@@ -241,7 +242,7 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 // LoadRules loads the given flow rules to the rule manager, while all previous rules will be replaced.
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
-	resRulesMap := make(map[string][]*Rule, 9)
+	resRulesMap := make(map[string][]*Rule, 16)
 	for _, rule := range rules {
 		resRules, exist := resRulesMap[rule.Resource]
 		if !exist {
@@ -261,7 +262,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
-func onResourceRuleUpdate(res string, resRules []*Rule) (err error) {
+func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -272,10 +273,10 @@ func onResourceRuleUpdate(res string, resRules []*Rule) (err error) {
 		}
 	}()
 
-	validResRules := make([]*Rule, 0, len(resRules))
-	for _, rule := range resRules {
+	validResRules := make([]*Rule, 0, len(rawResRules))
+	for _, rule := range rawResRules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("[Flow onRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+			logging.Warn("[Flow onResourceRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
 			continue
 		}
 		validResRules = append(validResRules, rule)
@@ -295,11 +296,15 @@ func onResourceRuleUpdate(res string, resRules []*Rule) (err error) {
 	}
 
 	tcMux.Lock()
-	tcMap[res] = newResTcs
+	if len(newResTcs) == 0 {
+		delete(tcMap, res)
+	} else {
+		tcMap[res] = newResTcs
+	}
 	tcMux.Unlock()
-	currentRules[res] = resRules
+	currentRules[res] = rawResRules
 	logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
-	logging.Info("[Flow] load resource level rules", "resource", res, "resRules", resRules)
+	logging.Info("[Flow] load resource level rules", "resource", res, "validResRules", validResRules)
 	return nil
 }
 
@@ -319,7 +324,7 @@ func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
 		tcMux.Lock()
 		delete(tcMap, res)
 		tcMux.Unlock()
-		logging.Info("[Flow] clear resource level rules", "resource", res, "rules", rules)
+		logging.Info("[Flow] clear resource level rules", "resource", res)
 		return true, nil
 	}
 	// load resource level rules

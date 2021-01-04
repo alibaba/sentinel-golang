@@ -529,19 +529,19 @@ func TestLoadRulesOfResource(t *testing.T) {
 	succ, err := LoadRules([]*Rule{r11, r12, r21, r22})
 	assert.True(t, succ && err == nil)
 
-	t.Run("LoadRulesOfResource-empty-resource", func(t *testing.T) {
+	t.Run("LoadRulesOfResource_empty_resource", func(t *testing.T) {
 		succ, err = LoadRulesOfResource("", []*Rule{r11, r12})
 		assert.True(t, !succ && err != nil)
 	})
 
-	t.Run("LoadRulesOfResource-cache-hit", func(t *testing.T) {
+	t.Run("LoadRulesOfResource_cache_hit", func(t *testing.T) {
 		r111 := *r11
 		r122 := *r12
 		succ, err = LoadRulesOfResource("abc1", []*Rule{&r111, &r122})
 		assert.True(t, !succ && err == nil)
 	})
 
-	t.Run("LoadRulesOfResource-clear", func(t *testing.T) {
+	t.Run("LoadRulesOfResource_clear", func(t *testing.T) {
 		succ, err = LoadRulesOfResource("abc1", []*Rule{})
 		assert.True(t, succ && err == nil)
 		assert.True(t, len(tcMap["abc1"]) == 0 && len(currentRules["abc1"]) == 0)
@@ -579,7 +579,7 @@ func Test_onResourceRuleUpdate(t *testing.T) {
 	succ, err := LoadRules([]*Rule{&r11, &r12, &r21, &r22})
 	assert.True(t, succ && err == nil)
 
-	t.Run("Test_onResourceRuleUpdate-", func(t *testing.T) {
+	t.Run("Test_onResourceRuleUpdate_normal", func(t *testing.T) {
 		r111 := r11
 		r111.Threshold = 100
 		err = onResourceRuleUpdate("abc1", []*Rule{&r111})
@@ -624,7 +624,7 @@ func TestClearRulesOfResource(t *testing.T) {
 	succ, err := LoadRules([]*Rule{&r11, &r12, &r21, &r22})
 	assert.True(t, succ && err == nil)
 
-	t.Run("TestClearRulesOfResource-", func(t *testing.T) {
+	t.Run("TestClearRulesOfResource_normal", func(t *testing.T) {
 		assert.True(t, ClearRulesOfResource("abc1") == nil)
 
 		assert.True(t, len(tcMap["abc1"]) == 0)
