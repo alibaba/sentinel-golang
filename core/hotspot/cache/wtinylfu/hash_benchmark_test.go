@@ -43,7 +43,7 @@ func Benchmark_Hash_Pointer(b *testing.B) {
 		sum(pointer)
 	}
 }
-func Benchmark_Hash_WithSprintf(b *testing.B) {
+func Benchmark_Hash_OtherWithSprintf(b *testing.B) {
 	type test struct {
 		test1 uint32
 		test2 string
