@@ -89,8 +89,9 @@ func (mb *MetricBucket) MinRt() int64 {
 }
 
 func (mb *MetricBucket) SetConcurrency(concurrency int64) {
-	if int32(concurrency) > atomic.LoadInt32(&mb.maxConcurrency) {
-		atomic.StoreInt32(&mb.maxConcurrency, int32(concurrency))
+	cc := int32(concurrency)
+	if cc > atomic.LoadInt32(&mb.maxConcurrency) {
+		atomic.StoreInt32(&mb.maxConcurrency, cc)
 	}
 }
 
