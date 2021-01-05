@@ -134,6 +134,7 @@ func Test_ResourceRuleUpdate(t *testing.T) {
 		r111.Threshold = 100
 		err = onResourceRuleUpdate("abc1", []*Rule{r111})
 
+		assert.True(t, err == nil)
 		assert.True(t, len(ruleMap["abc1"]) == 1)
 		assert.True(t, len(currentRules["abc1"]) == 1)
 		assert.True(t, ruleMap["abc1"][0] == r111)
