@@ -303,7 +303,7 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	}
 	tcMux.Unlock()
 	currentRules[res] = rawResRules
-	logging.Debug("[Flow onRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+	logging.Debug("[Flow onResourceRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
 	logging.Info("[Flow] load resource level rules", "resource", res, "validResRules", validResRules)
 	return nil
 }

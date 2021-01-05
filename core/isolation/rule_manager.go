@@ -27,7 +27,7 @@ import (
 var (
 	ruleMap       = make(map[string][]*Rule)
 	rwMux         = &sync.RWMutex{}
-	currentRules  = make([]*Rule, 0)
+	currentRules  = make(map[string][]*Rule, 0)
 	updateRuleMux = new(sync.Mutex)
 )
 
@@ -36,51 +36,128 @@ var (
 func LoadRules(rules []*Rule) (bool, error) {
 	updateRuleMux.Lock()
 	defer updateRuleMux.Unlock()
-	isEqual := reflect.DeepEqual(currentRules, rules)
+
+	resRulesMap := make(map[string][]*Rule, 16)
+	for _, rule := range rules {
+		resRules, exist := resRulesMap[rule.Resource]
+		if !exist {
+			resRules = make([]*Rule, 0, 1)
+		}
+		resRulesMap[rule.Resource] = append(resRules, rule)
+	}
+
+	isEqual := reflect.DeepEqual(currentRules, resRulesMap)
 	if isEqual {
 		logging.Info("[Isolation] Load rules is the same with current rules, so ignore load operation.")
 		return false, nil
 	}
 
-	err := onRuleUpdate(rules)
+	err := onRuleUpdate(resRulesMap)
 	return true, err
 }
 
-func onRuleUpdate(rules []*Rule) (err error) {
-	m := make(map[string][]*Rule, len(rules))
-	for _, r := range rules {
-		if e := IsValid(r); e != nil {
-			logging.Error(e, "Invalid isolation rule in isolation.LoadRules()", "rule", r)
-			continue
+func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
+	validResRulesMap := make(map[string][]*Rule, len(rawResRulesMap))
+	for res, rules := range rawResRulesMap {
+		validResRules := make([]*Rule, 0, len(rules))
+		for _, rule := range rules {
+			if err := IsValidRule(rule); err != nil {
+				logging.Warn("[Isolation onRuleUpdate] Ignoring invalid isolation rule", "rule", rule, "reason", err.Error())
+				continue
+			}
+			validResRules = append(validResRules, rule)
 		}
-		resRules, ok := m[r.Resource]
-		if !ok {
-			resRules = make([]*Rule, 0, 1)
+		if len(validResRules) > 0 {
+			validResRulesMap[res] = validResRules
 		}
-		m[r.Resource] = append(resRules, r)
 	}
 
 	start := util.CurrentTimeNano()
 
-	for res, rs := range m {
+	for res, rs := range validResRulesMap {
 		if len(rs) > 0 {
 			// update resource slot chain
 			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
 		}
 	}
 	rwMux.Lock()
-	ruleMap = m
-	currentRules = rules
+	ruleMap = validResRulesMap
 	rwMux.Unlock()
+	currentRules = rawResRulesMap
 
 	logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
-	logRuleUpdate(m)
+	logRuleUpdate(validResRulesMap)
 	return
+}
+
+// LoadRulesOfResource loads the given resource's isolation rules to the rule manager, while all previous resource's rules will be replaced.
+// the first returned value indicates whether do real load operation, if the rules is the same with previous resource's rules, return false
+func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
+	if len(res) == 0 {
+		return false, errors.New("empty resource")
+	}
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
+	// clear resource rules
+	if len(rules) == 0 {
+		// clear resource's currentRules
+		delete(currentRules, res)
+		// clear ruleMap
+		rwMux.Lock()
+		delete(ruleMap, res)
+		rwMux.Unlock()
+		logging.Info("[Isolation] clear resource level rules", "resource", res)
+		return true, nil
+	}
+	// load resource level rules
+	isEqual := reflect.DeepEqual(currentRules[res], rules)
+	if isEqual {
+		logging.Info("[Isolation] Load resource level rules is the same with current resource level rules, so ignore load operation.")
+		return false, nil
+	}
+
+	err := onResourceRuleUpdate(res, rules)
+	return true, err
+}
+
+func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
+	validResRules := make([]*Rule, 0, len(rawResRules))
+	for _, rule := range rawResRules {
+		if err := IsValidRule(rule); err != nil {
+			logging.Warn("[Isolation onResourceRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+			continue
+		}
+		validResRules = append(validResRules, rule)
+	}
+
+	start := util.CurrentTimeNano()
+	if len(validResRules) > 0 {
+		// update resource slot chain
+		misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
+	}
+
+	rwMux.Lock()
+	if len(validResRules) == 0 {
+		delete(ruleMap, res)
+	} else {
+		ruleMap[res] = validResRules
+	}
+	rwMux.Unlock()
+	currentRules[res] = rawResRules
+	logging.Debug("[Isolation onResourceRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+	logging.Info("[Isolation] load resource level rules", "resource", res, "validResRules", validResRules)
+	return nil
 }
 
 // ClearRules clears all the rules in isolation module.
 func ClearRules() error {
 	_, err := LoadRules(nil)
+	return err
+}
+
+// ClearRulesOfResource clears resource level rules in isolation module.
+func ClearRulesOfResource(res string) error {
+	_, err := LoadRulesOfResource(res, nil)
 	return err
 }
 
@@ -157,7 +234,7 @@ func logRuleUpdate(m map[string][]*Rule) {
 }
 
 // IsValidRule checks whether the given Rule is valid.
-func IsValid(r *Rule) error {
+func IsValidRule(r *Rule) error {
 	if r == nil {
 		return errors.New("nil isolation rule")
 	}

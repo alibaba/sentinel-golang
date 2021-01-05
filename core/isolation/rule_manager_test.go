@@ -21,6 +21,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func clearData() {
+	ruleMap = make(map[string][]*Rule)
+	currentRules = make(map[string][]*Rule, 0)
+}
+
 func TestLoadRules(t *testing.T) {
 	t.Run("TestLoadRules_1", func(t *testing.T) {
 		logging.ResetGlobalLoggerLevel(logging.DebugLevel)
@@ -47,8 +52,7 @@ func TestLoadRules(t *testing.T) {
 		assert.True(t, len(ruleMap["abc2"]) == 1)
 		assert.True(t, ruleMap["abc2"][0] == r2)
 
-		err = ClearRules()
-		assert.True(t, err == nil)
+		clearData()
 	})
 
 	t.Run("loadSameRules", func(t *testing.T) {
@@ -69,5 +73,105 @@ func TestLoadRules(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.False(t, ok)
+		clearData()
+	})
+
+	t.Run("TestClearRules_normal", func(t *testing.T) {
+		r1 := &Rule{
+			Resource:   "abc1",
+			MetricType: Concurrency,
+			Threshold:  100,
+		}
+		r2 := &Rule{
+			Resource:   "abc2",
+			MetricType: Concurrency,
+			Threshold:  200,
+		}
+		r3 := &Rule{
+			Resource:   "abc3",
+			MetricType: MetricType(1),
+			Threshold:  200,
+		}
+
+		succ, err := LoadRules([]*Rule{r1, r2, r3})
+		assert.True(t, succ && err == nil)
+
+		assert.True(t, ClearRules() == nil)
+
+		assert.True(t, len(ruleMap["abc1"]) == 0)
+		assert.True(t, len(currentRules["abc1"]) == 0)
+		assert.True(t, len(ruleMap["abc2"]) == 0)
+		assert.True(t, len(currentRules["abc2"]) == 0)
+		assert.True(t, len(ruleMap["abc3"]) == 0)
+		assert.True(t, len(currentRules["abc3"]) == 0)
+		clearData()
+	})
+}
+
+func Test_ResourceRuleUpdate(t *testing.T) {
+	logging.ResetGlobalLoggerLevel(logging.DebugLevel)
+	t.Run("Test_onResourceRuleUpdate_normal", func(t *testing.T) {
+		r1 := &Rule{
+			Resource:   "abc1",
+			MetricType: Concurrency,
+			Threshold:  100,
+		}
+		r2 := &Rule{
+			Resource:   "abc2",
+			MetricType: Concurrency,
+			Threshold:  200,
+		}
+		r3 := &Rule{
+			Resource:   "abc3",
+			MetricType: MetricType(1),
+			Threshold:  200,
+		}
+
+		succ, err := LoadRules([]*Rule{r1, r2, r3})
+		assert.True(t, succ && err == nil)
+
+		r111 := r1
+		r111.Threshold = 100
+		err = onResourceRuleUpdate("abc1", []*Rule{r111})
+
+		assert.True(t, len(ruleMap["abc1"]) == 1)
+		assert.True(t, len(currentRules["abc1"]) == 1)
+		assert.True(t, ruleMap["abc1"][0] == r111)
+
+		assert.True(t, len(ruleMap["abc2"]) == 1)
+		assert.True(t, len(currentRules["abc2"]) == 1)
+
+		clearData()
+	})
+
+	t.Run("TestClearRulesOfResource_normal", func(t *testing.T) {
+		r1 := &Rule{
+			Resource:   "abc1",
+			MetricType: Concurrency,
+			Threshold:  100,
+		}
+		r2 := &Rule{
+			Resource:   "abc2",
+			MetricType: Concurrency,
+			Threshold:  200,
+		}
+		r3 := &Rule{
+			Resource:   "abc3",
+			MetricType: MetricType(1),
+			Threshold:  200,
+		}
+
+		succ, err := LoadRules([]*Rule{r1, r2, r3})
+		assert.True(t, succ && err == nil)
+
+		assert.True(t, ClearRulesOfResource("abc1") == nil)
+
+		assert.True(t, len(ruleMap["abc1"]) == 0)
+		assert.True(t, len(currentRules["abc1"]) == 0)
+		assert.True(t, len(ruleMap["abc2"]) == 1)
+		assert.True(t, len(currentRules["abc2"]) == 1)
+		assert.True(t, len(ruleMap["abc3"]) == 0)
+		assert.True(t, len(currentRules["abc3"]) == 1)
+		clearData()
 	})
 }
