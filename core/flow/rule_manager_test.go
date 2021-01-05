@@ -23,6 +23,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func clearData() {
+	tcMap = make(TrafficControllerMap)
+	currentRules = make(map[string][]*Rule, 0)
+}
 func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	tsc := &TrafficShapingController{}
 
@@ -61,7 +65,7 @@ func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotContains(t, tcGenFuncMap, cs)
 
-	_, _ = LoadRules([]*Rule{})
+	clearData()
 }
 
 func TestIsValidFlowRule(t *testing.T) {
@@ -124,9 +128,7 @@ func TestGetRules(t *testing.T) {
 			assert.True(t, reflect.DeepEqual(&rs1[0], r2))
 			assert.True(t, reflect.DeepEqual(&rs1[1], r1))
 		}
-		if err := ClearRules(); err != nil {
-			t.Fatal(err)
-		}
+		clearData()
 	})
 
 	t.Run("getRules", func(t *testing.T) {
@@ -169,9 +171,7 @@ func TestGetRules(t *testing.T) {
 		assert.True(t, len(tcMap["abc2"]) == 1 && !tcMap["abc2"][0].boundStat.reuseResourceStat)
 		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.readOnlyMetric, nopStat.readOnlyMetric))
 		assert.True(t, reflect.DeepEqual(tcMap["abc2"][0].boundStat.writeOnlyMetric, nopStat.writeOnlyMetric))
-		if err := ClearRules(); err != nil {
-			t.Fatal(err)
-		}
+		clearData()
 	})
 }
 
@@ -263,12 +263,14 @@ func Test_buildResourceTrafficShapingController(t *testing.T) {
 			MaxQueueingTimeMs:      10,
 		}
 		assert.True(t, len(tcMap["abc1"]) == 0)
-		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r1, r2}, tcMap)
+		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r1, r2}, tcMap["abc1"])
 		assert.True(t, len(tcs) == 2)
 		assert.True(t, tcs[0].BoundRule() == r1)
 		assert.True(t, tcs[1].BoundRule() == r2)
 		assert.True(t, reflect.DeepEqual(tcs[0].BoundRule(), r1))
 		assert.True(t, reflect.DeepEqual(tcs[1].BoundRule(), r2))
+
+		clearData()
 	})
 
 	t.Run("Test_buildResourceTrafficShapingController_reuse_stat", func(t *testing.T) {
@@ -413,7 +415,7 @@ func Test_buildResourceTrafficShapingController(t *testing.T) {
 			StatIntervalInMs:       50000,
 		}
 
-		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r12, r22, r32, r42}, tcMap)
+		tcs := buildResourceTrafficShapingController("abc1", []*Rule{r12, r22, r32, r42}, tcMap["abc1"])
 		assert.True(t, len(tcs) == 4)
 
 		assert.True(t, tcs[0].BoundRule() == r12)
@@ -430,6 +432,8 @@ func Test_buildResourceTrafficShapingController(t *testing.T) {
 		assert.True(t, tcs[1].boundStat != stat2)
 		assert.True(t, tcs[2] == fakeTc3)
 		assert.True(t, tcs[3].boundStat == stat4)
+
+		clearData()
 	})
 }
 
@@ -454,6 +458,8 @@ func TestLoadRules(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.False(t, ok)
+
+		clearData()
 	})
 }
 
@@ -492,4 +498,139 @@ func TestIsValidRule(t *testing.T) {
 	assert.NotNil(t, IsValidRule(rule1))
 	rule1.MemHighWaterMarkBytes = 300 * 1024 * 1024
 	assert.Nil(t, IsValidRule(rule1))
+}
+
+func TestLoadRulesOfResource(t *testing.T) {
+	r11 := &Rule{
+		Resource:               "abc1",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		Threshold:              10,
+	}
+	r12 := &Rule{
+		Resource:               "abc1",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		Threshold:              20,
+	}
+	r21 := &Rule{
+		Resource:               "abc2",
+		Threshold:              10,
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+	}
+	r22 := &Rule{
+		Resource:               "abc2",
+		Threshold:              20,
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+	}
+
+	succ, err := LoadRules([]*Rule{r11, r12, r21, r22})
+	assert.True(t, succ && err == nil)
+
+	t.Run("LoadRulesOfResource_empty_resource", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("", []*Rule{r11, r12})
+		assert.True(t, !succ && err != nil)
+	})
+
+	t.Run("LoadRulesOfResource_cache_hit", func(t *testing.T) {
+		r111 := *r11
+		r122 := *r12
+		succ, err = LoadRulesOfResource("abc1", []*Rule{&r111, &r122})
+		assert.True(t, !succ && err == nil)
+	})
+
+	t.Run("LoadRulesOfResource_clear", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("abc1", []*Rule{})
+		assert.True(t, succ && err == nil)
+		assert.True(t, len(tcMap["abc1"]) == 0 && len(currentRules["abc1"]) == 0)
+		assert.True(t, len(tcMap["abc2"]) == 2 && len(currentRules["abc2"]) == 2)
+	})
+	clearData()
+}
+
+func Test_onResourceRuleUpdate(t *testing.T) {
+	r11 := Rule{
+		Resource:               "abc1",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		Threshold:              10,
+	}
+	r12 := Rule{
+		Resource:               "abc1",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		Threshold:              20,
+	}
+	r21 := Rule{
+		Resource:               "abc2",
+		Threshold:              10,
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+	}
+	r22 := Rule{
+		Resource:               "abc2",
+		Threshold:              20,
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+	}
+
+	succ, err := LoadRules([]*Rule{&r11, &r12, &r21, &r22})
+	assert.True(t, succ && err == nil)
+
+	t.Run("Test_onResourceRuleUpdate_normal", func(t *testing.T) {
+		r111 := r11
+		r111.Threshold = 100
+		err = onResourceRuleUpdate("abc1", []*Rule{&r111})
+
+		assert.True(t, len(tcMap["abc1"]) == 1)
+		assert.True(t, len(currentRules["abc1"]) == 1)
+		assert.True(t, tcMap["abc1"][0].rule == &r111)
+
+		assert.True(t, len(tcMap["abc2"]) == 2)
+		assert.True(t, len(currentRules["abc2"]) == 2)
+
+		clearData()
+	})
+}
+
+func TestClearRulesOfResource(t *testing.T) {
+	r11 := Rule{
+		Resource:               "abc1",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		Threshold:              10,
+	}
+	r12 := Rule{
+		Resource:               "abc1",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		Threshold:              20,
+	}
+	r21 := Rule{
+		Resource:               "abc2",
+		Threshold:              10,
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+	}
+	r22 := Rule{
+		Resource:               "abc2",
+		Threshold:              20,
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+	}
+
+	succ, err := LoadRules([]*Rule{&r11, &r12, &r21, &r22})
+	assert.True(t, succ && err == nil)
+
+	t.Run("TestClearRulesOfResource_normal", func(t *testing.T) {
+		assert.True(t, ClearRulesOfResource("abc1") == nil)
+
+		assert.True(t, len(tcMap["abc1"]) == 0)
+		assert.True(t, len(currentRules["abc1"]) == 0)
+		assert.True(t, len(tcMap["abc2"]) == 2)
+		assert.True(t, len(currentRules["abc2"]) == 2)
+		clearData()
+	})
 }

@@ -145,7 +145,7 @@ func (r *Rule) isStatReusable(newRule *Rule) bool {
 }
 
 func (r *Rule) needStatistic() bool {
-	return !((r.TokenCalculateStrategy == Direct && r.ControlBehavior == Throttling) || (r.TokenCalculateStrategy == MemoryAdaptive && r.ControlBehavior == Throttling))
+	return r.TokenCalculateStrategy == WarmUp || r.ControlBehavior == Reject
 }
 
 func (r *Rule) String() string {
