@@ -82,10 +82,10 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 	return tcMap[res]
 }
 
-// LoadRules replaces old rules with the given hotspot parameter flow control rules. Return value:
-//
-// bool: indicates whether the internal map has been changed;
-// error: indicates whether occurs the error.
+// LoadRules replaces all old hotspot param flow rules with the given rules.
+// Return value:
+//   bool: indicates whether the internal map has been changed;
+//   error: indicates whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	resRulesMap := make(map[string][]*Rule, 16)
 	for _, rule := range rules {
@@ -108,10 +108,10 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
-// GetRules returns all the rules based on copy.
-// It doesn't take effect for hotspot module if user changes the rule.
+// GetRules returns all the hotspot param flow rules based on copy.
+// It doesn't take effect for hotspot module if user changes the returned rules.
 // GetRules need to compete hotspot module's global lock and the high performance losses of copy,
-// 		reduce or do not call GetRules if possible
+// 		reduce or do not call GetRules if possible.
 func GetRules() []Rule {
 	tcMux.RLock()
 	rules := rulesFrom(tcMap)
@@ -124,10 +124,10 @@ func GetRules() []Rule {
 	return ret
 }
 
-// GetRulesOfResource returns specific resource's rules based on copy.
-// It doesn't take effect for hotspot module if user changes the rule.
+// GetRulesOfResource returns specific resource's hotspot parameter flow control rules based on copy.
+// It doesn't take effect for hotspot module if user changes the returned rules.
 // GetRulesOfResource need to compete hotspot module's global lock and the high performance losses of copy,
-// 		reduce or do not call GetRulesOfResource frequently if possible
+// 		reduce or do not call GetRulesOfResource frequently if possible.
 func GetRulesOfResource(res string) []Rule {
 	tcMux.RLock()
 	resTcs := tcMap[res]
@@ -140,13 +140,13 @@ func GetRulesOfResource(res string) []Rule {
 	return ret
 }
 
-// ClearRules clears all parameter flow rules.
+// ClearRules clears all hotspot param flow rules.
 func ClearRules() error {
 	_, err := LoadRules(nil)
 	return err
 }
 
-// ClearRulesOfResource clears resource level parameter flow rules.
+// ClearRulesOfResource clears resource level hotspot param flow rules.
 func ClearRulesOfResource(res string) error {
 	_, err := LoadRulesOfResource(res, nil)
 	return err
@@ -169,7 +169,7 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 		validResRules := make([]*Rule, 0, len(rules))
 		for _, rule := range rules {
 			if err := IsValidRule(rule); err != nil {
-				logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", rule, "err", err.Error())
+				logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot param flow rule when loading new rules", "rule", rule, "err", err.Error())
 				continue
 			}
 			validResRules = append(validResRules, rule)
@@ -213,7 +213,7 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	currentRules = rawResRulesMap
 	tcMux.Unlock()
 
-	logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotSpot rule", "timeCost", util.CurrentTimeNano()-start)
+	logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotspot param flow rules", "timeCost", util.CurrentTimeNano()-start)
 	logRuleUpdate(validResRulesMap)
 	return nil
 }
@@ -232,7 +232,7 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	validResRules := make([]*Rule, 0, len(rawResRules))
 	for _, rule := range rawResRules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("[HotSpot onResourceRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+			logging.Warn("[HotSpot onResourceRuleUpdate] Ignoring invalid hotspot param flow rule", "rule", rule, "reason", err.Error())
 			continue
 		}
 		validResRules = append(validResRules, rule)
@@ -264,13 +264,14 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	}
 	tcMux.Unlock()
 	currentRules[res] = rawResRules
-	logging.Debug("[HotSpot onResourceRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
-	logging.Info("[HotSpot] load resource level rules", "resource", res, "validResRules", validResRules)
+	logging.Debug("[HotSpot onResourceRuleUpdate] Time statistic(ns) for updating hotspot param flow rules", "timeCost", util.CurrentTimeNano()-start)
+	logging.Info("[HotSpot] load resource level hotspot param flow rules", "resource", res, "validResRules", validResRules)
 	return nil
 }
 
-// LoadRulesOfResource loads the given resource's hotspot rules to the rule manager, while all previous resource's rules will be replaced.
-// The first returned value indicates whether do real load operation, if the rules is the same with previous resource's rules, return false.
+// LoadRulesOfResource loads the given resource's hotspot param flow rules to the rule manager,
+// while all previous resource's rules will be replaced. The first returned value indicates whether
+// do real load operation, if the rules is the same with previous resource's rules, return false.
 func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
 	if len(res) == 0 {
 		return false, errors.New("empty resource")
@@ -287,14 +288,14 @@ func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
 		tcMux.Lock()
 		delete(tcMap, res)
 		tcMux.Unlock()
-		logging.Info("[HotSpot] clear resource level rules", "resource", res)
+		logging.Info("[HotSpot] clear resource level hotspot param flow rules", "resource", res)
 		return true, nil
 	}
 
 	// load resource level rules
 	isEqual := reflect.DeepEqual(currentRules[res], rules)
 	if isEqual {
-		logging.Info("[HotSpot] Load resource level rules is the same with current resource level rules, so ignore load operation.")
+		logging.Info("[HotSpot] Load resource level hotspot param flow rules is the same with current resource level rules, so ignore load operation.")
 		return false, nil
 	}
 
@@ -311,9 +312,9 @@ func logRuleUpdate(m map[string][]*Rule) {
 		rules = append(rules, rs...)
 	}
 	if len(rules) == 0 {
-		logging.Info("[HotspotRuleManager] Hotspot rules were cleared")
+		logging.Info("[HotspotRuleManager] Hotspot param flow rules were cleared")
 	} else {
-		logging.Info("[HotspotRuleManager] Hotspot rules were loaded", "rules", rules)
+		logging.Info("[HotspotRuleManager] Hotspot param flow rules were loaded", "rules", rules)
 	}
 }
 
@@ -361,7 +362,7 @@ func calculateReuseIndexFor(r *Rule, oldResTcs []TrafficShapingController) (equa
 	return equalIdx, reuseStatIdx
 }
 
-// buildResourceTrafficShapingController builds TrafficShapingController slice from rules. the resource of rules must be equals to res
+// buildResourceTrafficShapingController builds TrafficShapingController slice from rules. the resource of rules must be equals to res.
 func buildResourceTrafficShapingController(res string, resRules []*Rule, oldResTcs []TrafficShapingController) []TrafficShapingController {
 	newTcsOfRes := make([]TrafficShapingController, 0, len(resRules))
 	for _, rule := range resRules {
@@ -383,7 +384,7 @@ func buildResourceTrafficShapingController(res string, resRules []*Rule, oldResT
 		// generate new traffic shaping controller
 		generator, supported := tcGenFuncMap[rule.ControlBehavior]
 		if !supported {
-			logging.Warn("[HotSpot buildResourceTrafficShapingController] Ignoring the frequent param flow rule due to unsupported control behavior", "rule", rule)
+			logging.Warn("[HotSpot buildResourceTrafficShapingController] Ignoring the hotspot param flow rule due to unsupported control behavior", "rule", rule)
 			continue
 		}
 		var tc TrafficShapingController
@@ -396,7 +397,7 @@ func buildResourceTrafficShapingController(res string, resRules []*Rule, oldResT
 			tc = generator(rule, nil)
 		}
 		if tc == nil {
-			logging.Debug("[HotSpot buildResourceTrafficShapingController] Ignoring the frequent param flow rule due to bad generated traffic controller", "rule", rule)
+			logging.Debug("[HotSpot buildResourceTrafficShapingController] Ignoring the hotspot param flow rule due to bad generated traffic controller", "rule", rule)
 			continue
 		}
 
