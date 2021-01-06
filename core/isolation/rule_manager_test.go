@@ -108,6 +108,53 @@ func TestLoadRules(t *testing.T) {
 	})
 }
 
+func TestLoadRulesOfResource(t *testing.T) {
+	r1 := &Rule{
+		Resource:   "abc1",
+		MetricType: Concurrency,
+		Threshold:  100,
+	}
+	r2 := &Rule{
+		Resource:   "abc2",
+		MetricType: Concurrency,
+		Threshold:  200,
+	}
+	r3 := &Rule{
+		Resource:   "abc3",
+		MetricType: MetricType(1),
+		Threshold:  200,
+	}
+
+	r4 := &Rule{
+		Resource:   "abc2",
+		MetricType: MetricType(1),
+		Threshold:  300,
+	}
+
+	succ, err := LoadRules([]*Rule{r1, r2, r3, r4})
+	assert.True(t, succ && err == nil)
+
+	t.Run("LoadRulesOfResource_empty_resource", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("", []*Rule{r1, r2})
+		assert.True(t, !succ && err != nil)
+	})
+
+	t.Run("LoadRulesOfResource_cache_hit", func(t *testing.T) {
+		r111 := *r2
+		r122 := *r4
+		succ, err = LoadRulesOfResource("abc2", []*Rule{&r111, &r122})
+		assert.True(t, !succ && err == nil)
+	})
+
+	t.Run("LoadRulesOfResource_clear", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("abc1", []*Rule{})
+		assert.True(t, succ && err == nil)
+		assert.True(t, len(ruleMap["abc1"]) == 0 && len(currentRules["abc1"]) == 0)
+		assert.True(t, len(ruleMap["abc2"]) == 1 && len(currentRules["abc2"]) == 2)
+	})
+	clearData()
+}
+
 func Test_ResourceRuleUpdate(t *testing.T) {
 	logging.ResetGlobalLoggerLevel(logging.DebugLevel)
 	t.Run("Test_onResourceRuleUpdate_normal", func(t *testing.T) {
