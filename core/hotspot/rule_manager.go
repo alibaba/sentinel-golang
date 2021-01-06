@@ -210,8 +210,9 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 
 	tcMux.Lock()
 	tcMap = m
-	currentRules = rawResRulesMap
 	tcMux.Unlock()
+
+	currentRules = rawResRulesMap
 
 	logging.Debug("[HotSpot onRuleUpdate] Time statistic(ns) for updating hotspot param flow rules", "timeCost", util.CurrentTimeNano()-start)
 	logRuleUpdate(validResRulesMap)
@@ -263,7 +264,9 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 		tcMap[res] = newResTcs
 	}
 	tcMux.Unlock()
+
 	currentRules[res] = rawResRules
+
 	logging.Debug("[HotSpot onResourceRuleUpdate] Time statistic(ns) for updating hotspot param flow rules", "timeCost", util.CurrentTimeNano()-start)
 	logging.Info("[HotSpot] load resource level hotspot param flow rules", "resource", res, "validResRules", validResRules)
 	return nil
