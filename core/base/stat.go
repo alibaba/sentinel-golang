@@ -35,8 +35,6 @@ const (
 	MetricEventError
 	// request execute rt, unit is millisecond
 	MetricEventRt
-	// the Concurrency statistic
-	MetricEventConcurrency
 	// hack for the number of event
 	MetricEventTotal
 )
