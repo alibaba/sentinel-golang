@@ -29,6 +29,4 @@ const (
 	DefaultIntervalMsTotal uint32 = 10000
 
 	DefaultStatisticMaxRt = int64(60000)
-
-	DefaultStatisticMinConcurrency = int32(0)
 )

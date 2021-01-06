@@ -68,6 +68,10 @@ func (n *BaseStatNode) AddCount(event base.MetricEvent, count int64) {
 	n.arr.AddCount(event, count)
 }
 
+func (n *BaseStatNode) UpdateConcurrency(concurrency int32) {
+	n.arr.UpdateConcurrency(concurrency)
+}
+
 func (n *BaseStatNode) AvgRT() float64 {
 	complete := n.metric.GetSum(base.MetricEventComplete)
 	if complete <= 0 {
@@ -90,7 +94,7 @@ func (n *BaseStatNode) CurrentConcurrency() int32 {
 
 func (n *BaseStatNode) IncreaseConcurrency() {
 	atomic.AddInt32(&(n.concurrency), 1)
-	n.AddCount(base.MetricEventConcurrency, int64(atomic.LoadInt32(&(n.concurrency))))
+	n.UpdateConcurrency(atomic.LoadInt32(&(n.concurrency)))
 }
 
 func (n *BaseStatNode) DecreaseConcurrency() {

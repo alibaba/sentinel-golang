@@ -47,7 +47,7 @@ func Test_metricBucket_Normal(t *testing.T) {
 		} else if i%6 == 4 {
 			mb.AddRt(100)
 		} else if i%6 == 5 {
-			mb.SetConcurrency(int64(i))
+			mb.UpdateConcurrency(int32(i))
 		} else {
 			t.Error("unexpect idx")
 		}
@@ -140,5 +140,5 @@ func Test_Reset(t *testing.T) {
 	rt := mb.MinRt()
 	mc := mb.MaxConcurrency()
 	assert.True(t, rt == base.DefaultStatisticMaxRt)
-	assert.True(t, mc == base.DefaultStatisticMinConcurrency)
+	assert.True(t, mc == int32(0))
 }

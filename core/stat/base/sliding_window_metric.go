@@ -165,7 +165,7 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 func (m *SlidingWindowMetric) MaxConcurrency() int32 {
 	now := util.CurrentTimeMillis()
 	satisfiedBuckets := m.getSatisfiedBuckets(now)
-	maxConcurrency := base.DefaultStatisticMinConcurrency
+	maxConcurrency := int32(0)
 	for _, w := range satisfiedBuckets {
 		mb := w.Value.Load()
 		if mb == nil {

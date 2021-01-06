@@ -225,6 +225,16 @@ func TestMinRT(t *testing.T) {
 	assert.True(t, util.Float64Equals(minRt, float64(base.DefaultStatisticMaxRt)))
 }
 
+func TestMaxConcurrency(t *testing.T) {
+	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
+	assert.True(t, err == nil && got != nil)
+	got.real.UpdateConcurrency(1)
+	got.real.UpdateConcurrency(3)
+	got.real.UpdateConcurrency(2)
+	mc := got.MaxConcurrency()
+	assert.True(t, mc == int32(3))
+}
+
 func TestAvgRT(t *testing.T) {
 	got, err := NewSlidingWindowMetric(4, 2000, NewBucketLeapArray(SampleCount, IntervalInMs))
 	assert.True(t, err == nil && got != nil)
