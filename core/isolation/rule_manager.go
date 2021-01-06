@@ -123,7 +123,7 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	validResRules := make([]*Rule, 0, len(rawResRules))
 	for _, rule := range rawResRules {
 		if err := IsValidRule(rule); err != nil {
-			logging.Warn("[Isolation onResourceRuleUpdate] Ignoring invalid flow rule", "rule", rule, "reason", err.Error())
+			logging.Warn("[Isolation onResourceRuleUpdate] Ignoring invalid isolation rule", "rule", rule, "reason", err.Error())
 			continue
 		}
 		validResRules = append(validResRules, rule)
@@ -143,7 +143,7 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	}
 	rwMux.Unlock()
 	currentRules[res] = rawResRules
-	logging.Debug("[Isolation onResourceRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
+	logging.Debug("[Isolation onResourceRuleUpdate] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
 	logging.Info("[Isolation] load resource level rules", "resource", res, "validResRules", validResRules)
 	return nil
 }

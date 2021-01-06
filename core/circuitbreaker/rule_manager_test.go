@@ -21,6 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func clearData() {
+	breakerRules = make(map[string][]*Rule)
+	breakers = make(map[string][]CircuitBreaker)
+	currentRules = make(map[string][]*Rule, 0)
+}
+
 func Test_isApplicableRule_valid(t *testing.T) {
 	type args struct {
 		rule *Rule
@@ -76,7 +82,7 @@ func Test_isApplicableRule_valid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsValid(tt.args.rule); got != tt.want {
+			if got := IsValidRule(tt.args.rule); got != tt.want {
 				t.Errorf("RuleManager.isApplicable() = %v, want %v", got, tt.want)
 			}
 		})
@@ -94,7 +100,7 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 			MaxAllowedRtMs:   5,
 			Threshold:        -1.0,
 		}
-		if got := IsValid(rule); got == nil {
+		if got := IsValidRule(rule); got == nil {
 			t.Errorf("RuleManager.isApplicable() = %v", got)
 		}
 	})
@@ -107,7 +113,7 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 			StatIntervalMs:   1000,
 			Threshold:        -0.3,
 		}
-		if got := IsValid(rule); got == nil {
+		if got := IsValidRule(rule); got == nil {
 			t.Errorf("RuleManager.isApplicable() = %v", got)
 		}
 	})
@@ -120,7 +126,7 @@ func Test_isApplicableRule_invalid(t *testing.T) {
 			StatIntervalMs:   1000,
 			Threshold:        0.0,
 		}
-		if got := IsValid(rule); got == nil {
+		if got := IsValidRule(rule); got == nil {
 			t.Errorf("RuleManager.isApplicable() = %v", got)
 		}
 	})
@@ -155,23 +161,27 @@ func Test_onUpdateRules(t *testing.T) {
 			Threshold:        10.0,
 		}
 		rules = append(rules, r1, r2, r3)
-		err := onRuleUpdate(rules)
+		resRulesMap := make(map[string][]*Rule)
+		resRulesMap["abc01"] = rules
+		err := onRuleUpdate(resRulesMap)
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.True(t, len(breakers["abc01"]) == 3)
 		assert.True(t, len(breakerRules["abc01"]) == 3)
-		breakers = make(map[string][]CircuitBreaker)
-		breakerRules = make(map[string][]*Rule)
+		clearData()
 	})
 
 	t.Run("Test_onUpdateRules_invalid", func(t *testing.T) {
 		r1 := &Rule{
 			Resource: "abc",
 		}
-		err := onRuleUpdate([]*Rule{r1})
+		resRulesMap := make(map[string][]*Rule)
+		resRulesMap["abc01"] = []*Rule{r1}
+		err := onRuleUpdate(resRulesMap)
 		assert.Nil(t, err)
 		assert.True(t, len(GetRules()) == 0)
+		clearData()
 	})
 }
 
@@ -253,6 +263,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(newCbs[1].BoundStat(), b2.BoundStat()))
 		assert.True(t, reflect.DeepEqual(newCbs[2].BoundRule(), r6))
 		assert.True(t, reflect.DeepEqual(newCbs[3].BoundRule(), r7))
+		clearData()
 	})
 }
 
@@ -305,7 +316,7 @@ func TestGetRules(t *testing.T) {
 		_, _ = LoadRules([]*Rule{r1})
 		rules := GetRules()
 		assert.True(t, len(rules) == 1 && rules[0].Resource == r1.Resource && rules[0].Strategy == r1.Strategy)
-		_ = ClearRules()
+		clearData()
 	})
 }
 
@@ -324,7 +335,7 @@ func TestGetBreakersOfResource(t *testing.T) {
 
 	cbs := getBreakersOfResource("abc")
 	assert.True(t, len(cbs) == 1 && cbs[0].BoundRule() == r1)
-	_ = ClearRules()
+	clearData()
 }
 
 func TestSetCircuitBreakerGenerator(t *testing.T) {
@@ -382,5 +393,145 @@ func TestLoadRules(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.False(t, ok)
+		clearData()
+	})
+}
+
+func TestLoadRulesOfResource(t *testing.T) {
+	r1 := &Rule{
+		Resource:         "abc1",
+		Strategy:         SlowRequestRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		MaxAllowedRtMs:   20,
+		Threshold:        0.1,
+	}
+	r2 := &Rule{
+		Resource:         "abc1",
+		Strategy:         ErrorRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        0.3,
+	}
+	r3 := &Rule{
+		Resource:         "abc2",
+		Strategy:         ErrorCount,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        10.0,
+	}
+	succ, err := LoadRules([]*Rule{r1, r2, r3})
+	assert.True(t, succ && err == nil)
+
+	t.Run("LoadRulesOfResource_empty_resource", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("", []*Rule{r1, r2})
+		assert.True(t, !succ && err != nil)
+	})
+
+	t.Run("LoadRulesOfResource_cache_hit", func(t *testing.T) {
+		r11 := *r1
+		r12 := *r2
+		succ, err = LoadRulesOfResource("abc1", []*Rule{&r11, &r12})
+		assert.True(t, !succ && err == nil)
+	})
+
+	t.Run("LoadRulesOfResource_clear", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("abc1", []*Rule{})
+		assert.True(t, succ && err == nil)
+		assert.True(t, len(breakerRules["abc1"]) == 0 && len(currentRules["abc1"]) == 0)
+		assert.True(t, len(breakerRules["abc2"]) == 1 && len(currentRules["abc2"]) == 1)
+	})
+	clearData()
+}
+
+func Test_onResourceRuleUpdate(t *testing.T) {
+	r1 := Rule{
+		Resource:         "abc1",
+		Strategy:         SlowRequestRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		MaxAllowedRtMs:   20,
+		Threshold:        0.1,
+	}
+	r2 := Rule{
+		Resource:         "abc1",
+		Strategy:         ErrorRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        0.3,
+	}
+	r3 := Rule{
+		Resource:         "abc2",
+		Strategy:         ErrorCount,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        10.0,
+	}
+	succ, err := LoadRules([]*Rule{&r1, &r2, &r3})
+	assert.True(t, succ && err == nil)
+
+	t.Run("Test_onResourceRuleUpdate_normal", func(t *testing.T) {
+		r11 := r1
+		r11.Threshold = 0.5
+		err = onResourceRuleUpdate("abc1", []*Rule{&r11})
+
+		assert.True(t, len(breakerRules["abc1"]) == 1)
+		assert.True(t, len(breakers["abc1"]) == 1)
+		assert.True(t, len(currentRules["abc1"]) == 1)
+		assert.True(t, breakers["abc1"][0].BoundRule() == &r11)
+
+		assert.True(t, len(breakerRules["abc2"]) == 1)
+		assert.True(t, len(breakers["abc2"]) == 1)
+		assert.True(t, len(currentRules["abc2"]) == 1)
+
+		clearData()
+	})
+}
+
+func TestClearRulesOfResource(t *testing.T) {
+	r1 := Rule{
+		Resource:         "abc1",
+		Strategy:         SlowRequestRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		MaxAllowedRtMs:   20,
+		Threshold:        0.1,
+	}
+	r2 := Rule{
+		Resource:         "abc1",
+		Strategy:         ErrorRatio,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        0.3,
+	}
+	r3 := Rule{
+		Resource:         "abc2",
+		Strategy:         ErrorCount,
+		RetryTimeoutMs:   1000,
+		MinRequestAmount: 5,
+		StatIntervalMs:   1000,
+		Threshold:        10.0,
+	}
+	succ, err := LoadRules([]*Rule{&r1, &r2, &r3})
+	assert.True(t, succ && err == nil)
+
+	t.Run("TestClearRulesOfResource_normal", func(t *testing.T) {
+		assert.True(t, ClearRulesOfResource("abc1") == nil)
+
+		assert.True(t, len(breakerRules["abc1"]) == 0)
+		assert.True(t, len(breakers["abc1"]) == 0)
+		assert.True(t, len(currentRules["abc1"]) == 0)
+		assert.True(t, len(breakerRules["abc2"]) == 1)
+		assert.True(t, len(breakers["abc2"]) == 1)
+		assert.True(t, len(currentRules["abc2"]) == 1)
+		clearData()
 	})
 }
