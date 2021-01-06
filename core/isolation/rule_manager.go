@@ -34,9 +34,6 @@ var (
 // LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
 // the first returned value indicates whether do real load operation, if the rules is the same with previous rules, return false
 func LoadRules(rules []*Rule) (bool, error) {
-	updateRuleMux.Lock()
-	defer updateRuleMux.Unlock()
-
 	resRulesMap := make(map[string][]*Rule, 16)
 	for _, rule := range rules {
 		resRules, exist := resRulesMap[rule.Resource]
@@ -46,6 +43,8 @@ func LoadRules(rules []*Rule) (bool, error) {
 		resRulesMap[rule.Resource] = append(resRules, rule)
 	}
 
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
 	isEqual := reflect.DeepEqual(currentRules, resRulesMap)
 	if isEqual {
 		logging.Info("[Isolation] Load rules is the same with current rules, so ignore load operation.")
@@ -85,7 +84,7 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	rwMux.Unlock()
 	currentRules = rawResRulesMap
 
-	logging.Debug("[Isolation LoadRules] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
+	logging.Debug("[Isolation onRuleUpdate] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
 	logRuleUpdate(validResRulesMap)
 	return
 }
