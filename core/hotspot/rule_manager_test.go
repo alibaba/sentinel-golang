@@ -23,6 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func clearData() {
+	tcMap = make(trafficControllerMap)
+	currentRules = make(map[string][]*Rule, 0)
+}
+
 func Test_tcGenFuncMap(t *testing.T) {
 	t.Run("Test_tcGenFuncMap_withoutMetric", func(t *testing.T) {
 		specific := make(map[interface{}]int64)
@@ -150,7 +155,8 @@ func Test_IsValidRule(t *testing.T) {
 }
 
 func Test_onRuleUpdate(t *testing.T) {
-	tcMap = make(trafficControllerMap)
+	clearData()
+	defer clearData()
 
 	specific := make(map[interface{}]int64)
 	specific["sss"] = 1
@@ -215,7 +221,7 @@ func Test_onRuleUpdate(t *testing.T) {
 
 	updated, err := LoadRules([]*Rule{r1, r2, r3, r4})
 	if !updated || err != nil {
-		t.Errorf("Fail to prepare data, err: %+v", err)
+		t.Fatalf("Fail to prepare data, err: %+v", err)
 	}
 	assert.True(t, len(tcMap["abc"]) == 4)
 
@@ -271,7 +277,10 @@ func Test_onRuleUpdate(t *testing.T) {
 	oldTc2MetricPtrAddr := fmt.Sprintf("%p", tcMap["abc"][1].BoundMetric())
 	fmt.Println("oldTc2MetricPtr:", oldTc2MetricPtrAddr)
 
-	err = onRuleUpdate([]*Rule{r21, r22, r23})
+	rulesMap := map[string][]*Rule{
+		"abc": {r21, r22, r23},
+	}
+	err = onRuleUpdate(rulesMap)
 	assert.True(t, err == nil)
 	assert.True(t, len(tcMap) == 1)
 	abcTcs := tcMap["abc"]
@@ -290,11 +299,12 @@ func Test_onRuleUpdate(t *testing.T) {
 	assert.True(t, newTc1PtrAddr == oldTc1PtrAddr && newTc2MetricPtrAddr == oldTc2MetricPtrAddr)
 	assert.True(t, abcTcs[0].BoundRule() == r1 && abcTcs[0] == oldTc1Ptr)
 	assert.True(t, abcTcs[1].BoundMetric() == oldTc2Ptr.BoundMetric())
-
-	tcMap = make(trafficControllerMap)
 }
 
 func TestLoadRules(t *testing.T) {
+	clearData()
+	defer clearData()
+
 	t.Run("loadSameRules", func(t *testing.T) {
 		specific := make(map[interface{}]int64)
 		specific["sss"] = 1
@@ -331,5 +341,229 @@ func TestLoadRules(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.False(t, ok)
+	})
+}
+
+func TestLoadRulesOfResource(t *testing.T) {
+	clearData()
+	defer clearData()
+
+	specific := make(map[interface{}]int64)
+	specific["sss"] = 1
+	specific["123"] = 3
+	r11 := Rule{
+		ID:                "1",
+		Resource:          "abc1",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         100.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r12 := Rule{
+		ID:                "2",
+		Resource:          "abc1",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         200.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r21 := Rule{
+		ID:                "3",
+		Resource:          "abc2",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         100.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r22 := Rule{
+		ID:                "4",
+		Resource:          "abc2",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         200.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+
+	succ, err := LoadRules([]*Rule{&r11, &r12, &r21, &r22})
+	assert.True(t, succ && err == nil)
+
+	t.Run("LoadRulesOfResource_empty_resource", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("", []*Rule{&r11, &r12})
+		assert.True(t, !succ && err != nil)
+	})
+
+	t.Run("LoadRulesOfResource_cache_hit", func(t *testing.T) {
+		r11Copy := r11
+		r12Copy := r12
+		succ, err = LoadRulesOfResource("abc1", []*Rule{&r11Copy, &r12Copy})
+		assert.True(t, !succ && err == nil)
+	})
+
+	t.Run("LoadRulesOfResource_clear", func(t *testing.T) {
+		succ, err = LoadRulesOfResource("abc1", []*Rule{})
+		assert.True(t, succ && err == nil)
+		assert.True(t, len(tcMap["abc1"]) == 0 && len(currentRules["abc1"]) == 0)
+		assert.True(t, len(tcMap["abc2"]) == 2 && len(currentRules["abc2"]) == 2)
+	})
+}
+
+func Test_onResourceRuleUpdate(t *testing.T) {
+	clearData()
+	defer clearData()
+
+	specific := make(map[interface{}]int64)
+	specific["sss"] = 1
+	specific["123"] = 3
+	r11 := Rule{
+		ID:                "1",
+		Resource:          "abc1",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         100.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r12 := Rule{
+		ID:                "2",
+		Resource:          "abc1",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         200.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r21 := Rule{
+		ID:                "3",
+		Resource:          "abc2",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         100.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r22 := Rule{
+		ID:                "4",
+		Resource:          "abc2",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         200.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+
+	succ, err := LoadRules([]*Rule{&r11, &r12, &r21, &r22})
+	assert.True(t, succ && err == nil)
+
+	t.Run("Test_onResourceRuleUpdate_normal", func(t *testing.T) {
+		r11Copy := r11
+		r11Copy.Threshold = 500
+		err = onResourceRuleUpdate("abc1", []*Rule{&r11Copy})
+
+		assert.True(t, len(tcMap["abc1"]) == 1)
+		assert.True(t, len(currentRules["abc1"]) == 1)
+		assert.True(t, tcMap["abc1"][0].BoundRule() == &r11Copy)
+
+		assert.True(t, len(tcMap["abc2"]) == 2)
+		assert.True(t, len(currentRules["abc2"]) == 2)
+
+		clearData()
+	})
+}
+
+func TestClearRulesOfResource(t *testing.T) {
+	clearData()
+	defer clearData()
+
+	specific := make(map[interface{}]int64)
+	specific["sss"] = 1
+	specific["123"] = 3
+	r11 := Rule{
+		ID:                "1",
+		Resource:          "abc1",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         100.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r12 := Rule{
+		ID:                "2",
+		Resource:          "abc1",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         200.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r21 := Rule{
+		ID:                "3",
+		Resource:          "abc2",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         100.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+	r22 := Rule{
+		ID:                "4",
+		Resource:          "abc2",
+		MetricType:        Concurrency,
+		ControlBehavior:   Reject,
+		ParamIndex:        0,
+		Threshold:         200.0,
+		MaxQueueingTimeMs: 0,
+		BurstCount:        10,
+		DurationInSec:     1,
+		SpecificItems:     specific,
+	}
+
+	succ, err := LoadRules([]*Rule{&r11, &r12, &r21, &r22})
+	assert.True(t, succ && err == nil)
+
+	t.Run("TestClearRulesOfResource_normal", func(t *testing.T) {
+		assert.True(t, ClearRulesOfResource("abc1") == nil)
+
+		assert.True(t, len(tcMap["abc1"]) == 0)
+		assert.True(t, len(currentRules["abc1"]) == 0)
+		assert.True(t, len(tcMap["abc2"]) == 2)
+		assert.True(t, len(currentRules["abc2"]) == 2)
+		clearData()
 	})
 }
