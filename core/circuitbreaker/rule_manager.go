@@ -153,6 +153,8 @@ func LoadRules(rules []*Rule) (bool, error) {
 	return true, err
 }
 
+// LoadRulesOfResource loads the given resource's circuitBreaker rules to the rule manager, while all previous resource's rules will be replaced.
+// the first returned value indicates whether do real load operation, if the rules is the same with previous resource's rules, return false
 func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
 	if len(res) == 0 {
 		return false, errors.New("empty resource")
@@ -262,11 +264,6 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 		newCbsOfRes := buildResourceCircuitBreaker(res, resRules, breakersClone[res])
 		if len(newCbsOfRes) > 0 {
 			newBreakers[res] = newCbsOfRes
-		}
-	}
-
-	for res, cbs := range newBreakers {
-		if len(cbs) > 0 {
 			// update resource slot chain
 			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
 			misc.RegisterStatSlotForResource(res, DefaultMetricStatSlot)
@@ -276,8 +273,8 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	updateMux.Lock()
 	breakerRules = validResRulesMap
 	breakers = newBreakers
-	currentRules = rawResRulesMap
 	updateMux.Unlock()
+	currentRules = rawResRulesMap
 
 	logging.Debug("[CircuitBreaker onRuleUpdate] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
 	logRuleUpdate(validResRulesMap)
@@ -319,8 +316,13 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	}
 
 	updateMux.Lock()
-	breakerRules[res] = validResRules
-	breakers[res] = newCbsOfRes
+	if len(newCbsOfRes) == 0 {
+		delete(breakerRules, res)
+		delete(breakers, res)
+	} else {
+		breakerRules[res] = validResRules
+		breakers[res] = newCbsOfRes
+	}
 	updateMux.Unlock()
 	currentRules[res] = rawResRules
 
