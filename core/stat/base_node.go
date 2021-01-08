@@ -93,8 +93,7 @@ func (n *BaseStatNode) CurrentConcurrency() int32 {
 }
 
 func (n *BaseStatNode) IncreaseConcurrency() {
-	atomic.AddInt32(&(n.concurrency), 1)
-	n.UpdateConcurrency(atomic.LoadInt32(&(n.concurrency)))
+	n.UpdateConcurrency(atomic.AddInt32(&(n.concurrency), 1))
 }
 
 func (n *BaseStatNode) DecreaseConcurrency() {
