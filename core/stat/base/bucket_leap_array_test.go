@@ -147,6 +147,15 @@ func TestAddCount(t *testing.T) {
 	assert.True(t, passCount == 1)
 }
 
+func TestUpdateConcurrency(t *testing.T) {
+	bla := NewBucketLeapArray(SampleCount, IntervalInMs)
+	bla.UpdateConcurrency(1)
+	bla.UpdateConcurrency(3)
+	bla.UpdateConcurrency(2)
+	mc := bla.MaxConcurrency()
+	assert.True(t, mc == 3)
+}
+
 func TestMinRt(t *testing.T) {
 	t.Run("TestMinRt_Default", func(t *testing.T) {
 		bla := NewBucketLeapArray(SampleCount, IntervalInMs)

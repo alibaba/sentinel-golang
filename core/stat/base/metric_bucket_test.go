@@ -27,7 +27,7 @@ func Test_metricBucket_MemSize(t *testing.T) {
 	mb := NewMetricBucket()
 	t.Log("mb:", mb)
 	size := unsafe.Sizeof(*mb)
-	if size != 48 {
+	if size != 56 {
 		t.Error("unexpect memory size of MetricBucket")
 	}
 }
@@ -35,17 +35,19 @@ func Test_metricBucket_MemSize(t *testing.T) {
 func Test_metricBucket_Normal(t *testing.T) {
 	mb := NewMetricBucket()
 
-	for i := 0; i < 100; i++ {
-		if i%5 == 0 {
+	for i := 0; i < 120; i++ {
+		if i%6 == 0 {
 			mb.Add(base.MetricEventPass, 1)
-		} else if i%5 == 1 {
+		} else if i%6 == 1 {
 			mb.Add(base.MetricEventBlock, 1)
-		} else if i%5 == 2 {
+		} else if i%6 == 2 {
 			mb.Add(base.MetricEventComplete, 1)
-		} else if i%5 == 3 {
+		} else if i%6 == 3 {
 			mb.Add(base.MetricEventError, 1)
-		} else if i%5 == 4 {
+		} else if i%6 == 4 {
 			mb.AddRt(100)
+		} else if i%6 == 5 {
+			mb.UpdateConcurrency(int32(i))
 		} else {
 			t.Error("unexpect idx")
 		}
@@ -65,6 +67,9 @@ func Test_metricBucket_Normal(t *testing.T) {
 	}
 	if mb.Get(base.MetricEventRt) != 20*100 {
 		t.Error("unexpect count MetricEventRt")
+	}
+	if mb.MaxConcurrency() != 119 {
+		t.Error("unexpect count MetricEventConcurrency")
 	}
 }
 
@@ -133,5 +138,7 @@ func Test_Reset(t *testing.T) {
 	mb.AddRt(100)
 	mb.reset()
 	rt := mb.MinRt()
+	mc := mb.MaxConcurrency()
 	assert.True(t, rt == base.DefaultStatisticMaxRt)
+	assert.True(t, mc == int32(0))
 }

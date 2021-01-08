@@ -162,6 +162,29 @@ func (m *SlidingWindowMetric) MinRT() float64 {
 	return float64(minRt)
 }
 
+func (m *SlidingWindowMetric) MaxConcurrency() int32 {
+	now := util.CurrentTimeMillis()
+	satisfiedBuckets := m.getSatisfiedBuckets(now)
+	maxConcurrency := int32(0)
+	for _, w := range satisfiedBuckets {
+		mb := w.Value.Load()
+		if mb == nil {
+			logging.Error(errors.New("nil BucketWrap"), "Current bucket value is nil in SlidingWindowMetric.MaxConcurrency()")
+			continue
+		}
+		counter, ok := mb.(*MetricBucket)
+		if !ok {
+			logging.Error(errors.New("type assert failed"), "Fail to do type assert in SlidingWindowMetric.MaxConcurrency()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
+			continue
+		}
+		v := counter.MaxConcurrency()
+		if v > maxConcurrency {
+			maxConcurrency = v
+		}
+	}
+	return maxConcurrency
+}
+
 func (m *SlidingWindowMetric) AvgRT() float64 {
 	return float64(m.GetSum(base.MetricEventRt)) / float64(m.GetSum(base.MetricEventComplete))
 }
@@ -214,6 +237,10 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 		item.BlockQps += uint64(mb.Get(base.MetricEventBlock))
 		item.ErrorQps += uint64(mb.Get(base.MetricEventError))
 		item.CompleteQps += uint64(mb.Get(base.MetricEventComplete))
+		mc := uint32(mb.MaxConcurrency())
+		if mc > item.Concurrency {
+			item.Concurrency = mc
+		}
 		allRt += mb.Get(base.MetricEventRt)
 	}
 	if item.CompleteQps > 0 {

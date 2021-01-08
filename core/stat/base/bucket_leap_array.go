@@ -89,26 +89,46 @@ func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
 }
 
 func (bla *BucketLeapArray) addCountWithTime(now uint64, event base.MetricEvent, count int64) {
-	curBucket, err := bla.data.currentBucketOfTime(now, bla)
-	if err != nil {
-		logging.Error(err, "Failed to get current bucket in BucketLeapArray.addCountWithTime()", "now", now)
-		return
-	}
-	if curBucket == nil {
-		logging.Error(errors.New("current bucket is nil"), "Nil curBucket in BucketLeapArray.addCountWithTime()")
-		return
-	}
-	mb := curBucket.Value.Load()
-	if mb == nil {
-		logging.Error(errors.New("nil bucket"), "Current bucket atomic Value is nil in BucketLeapArray.addCountWithTime()")
-		return
-	}
-	b, ok := mb.(*MetricBucket)
-	if !ok {
-		logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.addCountWithTime()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
+	b := bla.currentBucketWithTime(now)
+	if b == nil {
 		return
 	}
 	b.Add(event, count)
+}
+
+func (bla *BucketLeapArray) UpdateConcurrency(concurrency int32) {
+	bla.updateConcurrencyWithTime(util.CurrentTimeMillis(), concurrency)
+}
+
+func (bla *BucketLeapArray) updateConcurrencyWithTime(now uint64, concurrency int32) {
+	b := bla.currentBucketWithTime(now)
+	if b == nil {
+		return
+	}
+	b.UpdateConcurrency(concurrency)
+}
+
+func (bla *BucketLeapArray) currentBucketWithTime(now uint64) *MetricBucket {
+	curBucket, err := bla.data.currentBucketOfTime(now, bla)
+	if err != nil {
+		logging.Error(err, "Failed to get current bucket in BucketLeapArray.currentBucketWithTime()", "now", now)
+		return nil
+	}
+	if curBucket == nil {
+		logging.Error(errors.New("current bucket is nil"), "Nil curBucket in BucketLeapArray.currentBucketWithTime()")
+		return nil
+	}
+	mb := curBucket.Value.Load()
+	if mb == nil {
+		logging.Error(errors.New("nil bucket"), "Current bucket atomic Value is nil in BucketLeapArray.currentBucketWithTime()")
+		return nil
+	}
+	b, ok := mb.(*MetricBucket)
+	if !ok {
+		logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.currentBucketWithTime()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
+		return nil
+	}
+	return b
 }
 
 // Read method, need to adapt upper application
@@ -174,6 +194,33 @@ func (bla *BucketLeapArray) MinRt() int64 {
 		mr := b.MinRt()
 		if ret > mr {
 			ret = mr
+		}
+	}
+	return ret
+}
+
+func (bla *BucketLeapArray) MaxConcurrency() int32 {
+	_, err := bla.data.CurrentBucket(bla)
+	if err != nil {
+		logging.Error(err, "Failed to get current bucket in BucketLeapArray.MaxConcurrency()")
+	}
+
+	ret := int32(0)
+
+	for _, v := range bla.data.Values() {
+		mb := v.Value.Load()
+		if mb == nil {
+			logging.Error(errors.New("current bucket is nil"), "Failed to load current bucket in BucketLeapArray.MaxConcurrency()")
+			continue
+		}
+		b, ok := mb.(*MetricBucket)
+		if !ok {
+			logging.Error(errors.New("fail to type assert"), "Bucket data type error in BucketLeapArray.MaxConcurrency()", "expectType", "*MetricBucket", "actualType", reflect.TypeOf(mb).Name())
+			continue
+		}
+		mc := b.MaxConcurrency()
+		if ret < mc {
+			ret = mc
 		}
 	}
 	return ret
