@@ -34,7 +34,7 @@ type MetricBucket struct {
 func NewMetricBucket() *MetricBucket {
 	mb := &MetricBucket{
 		minRt:          base.DefaultStatisticMaxRt,
-		maxConcurrency: int32(0),
+		maxConcurrency: 0,
 	}
 	return mb
 }
@@ -76,6 +76,7 @@ func (mb *MetricBucket) reset() {
 func (mb *MetricBucket) AddRt(rt int64) {
 	mb.addCount(base.MetricEventRt, rt)
 	if rt < atomic.LoadInt64(&mb.minRt) {
+		// Might not be accurate here.
 		atomic.StoreInt64(&mb.minRt, rt)
 	}
 }
@@ -87,6 +88,7 @@ func (mb *MetricBucket) MinRt() int64 {
 func (mb *MetricBucket) UpdateConcurrency(concurrency int32) {
 	cc := concurrency
 	if cc > atomic.LoadInt32(&mb.maxConcurrency) {
+		// Might not be accurate here.
 		atomic.StoreInt32(&mb.maxConcurrency, cc)
 	}
 }
