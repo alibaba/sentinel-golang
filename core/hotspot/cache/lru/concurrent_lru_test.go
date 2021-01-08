@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cache
+package lru
 
 import (
 	"strconv"
@@ -23,7 +23,7 @@ import (
 
 func Test_concurrentLruCounterCacheMap_Add_Get(t *testing.T) {
 	t.Run("Test_concurrentLruCounterCacheMap_Add_Get", func(t *testing.T) {
-		c := NewLRUCacheMap(100)
+		c := NewLRUCacheMap(100, false)
 		for i := 1; i <= 100; i++ {
 			val := int64(i)
 			c.Add(strconv.Itoa(i), &val)
@@ -36,7 +36,7 @@ func Test_concurrentLruCounterCacheMap_Add_Get(t *testing.T) {
 
 func Test_concurrentLruCounterCacheMap_AddIfAbsent(t *testing.T) {
 	t.Run("Test_concurrentLruCounterCacheMap_AddIfAbsent", func(t *testing.T) {
-		c := NewLRUCacheMap(100)
+		c := NewLRUCacheMap(100, false)
 		for i := 1; i <= 99; i++ {
 			val := int64(i)
 			c.Add(strconv.Itoa(i), &val)
@@ -52,7 +52,7 @@ func Test_concurrentLruCounterCacheMap_AddIfAbsent(t *testing.T) {
 
 func Test_concurrentLruCounterCacheMap_Contains(t *testing.T) {
 	t.Run("Test_concurrentLruCounterCacheMap_Contains", func(t *testing.T) {
-		c := NewLRUCacheMap(100)
+		c := NewLRUCacheMap(100, false)
 		for i := 1; i <= 100; i++ {
 			val := int64(i)
 			c.Add(strconv.Itoa(i), &val)
@@ -69,7 +69,7 @@ func Test_concurrentLruCounterCacheMap_Contains(t *testing.T) {
 
 func Test_concurrentLruCounterCacheMap_Keys(t *testing.T) {
 	t.Run("Test_concurrentLruCounterCacheMap_Add", func(t *testing.T) {
-		c := NewLRUCacheMap(100)
+		c := NewLRUCacheMap(100, false)
 		for i := 1; i <= 100; i++ {
 			val := int64(i)
 			c.Add(strconv.Itoa(i), &val)
@@ -82,7 +82,7 @@ func Test_concurrentLruCounterCacheMap_Keys(t *testing.T) {
 
 func Test_concurrentLruCounterCacheMap_Purge(t *testing.T) {
 	t.Run("Test_concurrentLruCounterCacheMap_Add", func(t *testing.T) {
-		c := NewLRUCacheMap(100)
+		c := NewLRUCacheMap(100, false)
 		for i := 1; i <= 100; i++ {
 			val := int64(i)
 			c.Add(strconv.Itoa(i), &val)
@@ -95,7 +95,7 @@ func Test_concurrentLruCounterCacheMap_Purge(t *testing.T) {
 
 func Test_concurrentLruCounterCacheMap_Remove(t *testing.T) {
 	t.Run("Test_concurrentLruCounterCacheMap_Add", func(t *testing.T) {
-		c := NewLRUCacheMap(100)
+		c := NewLRUCacheMap(100, false)
 		for i := 1; i <= 100; i++ {
 			val := int64(i)
 			c.Add(strconv.Itoa(i), &val)

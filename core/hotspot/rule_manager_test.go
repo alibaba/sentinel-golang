@@ -19,7 +19,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache/wtinylfu"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,9 +79,9 @@ func Test_tcGenFuncMap(t *testing.T) {
 			size = ParamsMaxCapacity
 		}
 		metric := &ParamsMetric{
-			RuleTimeCounter:    cache.NewLRUCacheMap(size),
-			RuleTokenCounter:   cache.NewLRUCacheMap(size),
-			ConcurrencyCounter: cache.NewLRUCacheMap(ConcurrencyMaxCount),
+			RuleTimeCounter:    wtinylfu.NewTinyLfuCacheMap(size, false),
+			RuleTokenCounter:   wtinylfu.NewTinyLfuCacheMap(size, false),
+			ConcurrencyCounter: wtinylfu.NewTinyLfuCacheMap(ConcurrencyMaxCount, false),
 		}
 
 		tc := generator(r1, metric)

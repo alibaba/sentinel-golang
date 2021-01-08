@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cache
+package lru
 
 import (
 	"container/list"
 
+	"github.com/alibaba/sentinel-golang/core/hotspot/cache/stats"
 	"github.com/pkg/errors"
 )
 
@@ -29,6 +30,7 @@ type LRU struct {
 	evictList *list.List
 	items     map[interface{}]*list.Element
 	onEvict   EvictCallback
+	stats     *stats.CacheStats
 }
 
 // entry is used to hold a value in the evictList
@@ -38,15 +40,20 @@ type entry struct {
 }
 
 // NewLRU constructs an LRU of the given size
-func NewLRU(size int, onEvict EvictCallback) (*LRU, error) {
+func NewLRU(size int, onEvict EvictCallback, isRecordingStats bool) (*LRU, error) {
 	if size <= 0 {
 		return nil, errors.New("must provide a positive size")
+	}
+	var statsCache *stats.CacheStats
+	if isRecordingStats {
+		statsCache = stats.NewCacheStats()
 	}
 	c := &LRU{
 		size:      size,
 		evictList: list.New(),
 		items:     make(map[interface{}]*list.Element, 64),
 		onEvict:   onEvict,
+		stats:     statsCache,
 	}
 	return c, nil
 }
@@ -78,6 +85,9 @@ func (c *LRU) Add(key, value interface{}) {
 	evict := c.evictList.Len() > c.size
 	// Verify size not exceeded
 	if evict {
+		if c.stats != nil {
+			c.stats.RecordEviction()
+		}
 		c.removeOldest()
 	}
 	return
@@ -100,6 +110,9 @@ func (c *LRU) AddIfAbsent(key interface{}, value interface{}) (priorValue interf
 	evict := c.evictList.Len() > c.size
 	// Verify size not exceeded
 	if evict {
+		if c.stats != nil {
+			c.stats.RecordEviction()
+		}
 		c.removeOldest()
 	}
 	return nil
@@ -110,9 +123,18 @@ func (c *LRU) Get(key interface{}) (value interface{}, isFound bool) {
 	if ent, ok := c.items[key]; ok {
 		c.evictList.MoveToFront(ent)
 		if ent.Value.(*entry) == nil {
+			if c.stats != nil {
+				c.stats.RecordMisses()
+			}
 			return nil, false
 		}
+		if c.stats != nil {
+			c.stats.RecordHits()
+		}
 		return ent.Value.(*entry).value, true
+	}
+	if c.stats != nil {
+		c.stats.RecordMisses()
 	}
 	return
 }
@@ -216,4 +238,12 @@ func (c *LRU) removeElement(e *list.Element) {
 	if c.onEvict != nil {
 		c.onEvict(kv.key, kv.value)
 	}
+}
+
+// Stats copies cache stats.
+func (c LRU) Stats() (*stats.CacheStats, error) {
+	if c.stats == nil {
+		return nil, errors.New("RecordingStats Must be enabled")
+	}
+	return c.stats.Snapshot(), nil
 }

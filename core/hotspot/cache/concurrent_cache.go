@@ -14,6 +14,8 @@
 
 package cache
 
+import "github.com/alibaba/sentinel-golang/core/hotspot/cache/stats"
+
 // ConcurrentCounterCache cache the hotspot parameter
 type ConcurrentCounterCache interface {
 	// Add add a value to the cache,
@@ -43,4 +45,7 @@ type ConcurrentCounterCache interface {
 
 	// Purge clears all cache entries.
 	Purge()
+
+	// Stats copies cache stats.
+	Stats() (*stats.CacheStats, error)
 }
