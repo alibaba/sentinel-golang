@@ -44,6 +44,23 @@ func NewBaseStatNode(sampleCount uint32, intervalInMs uint32) *BaseStatNode {
 	}
 }
 
+// NewCustomizedBaseStatNode creates the BaseStatNode with specified sampleCount
+// and intervalInMs.
+func NewCustomizedBaseStatNode(sampleCount uint32, intervalInMs uint32) (*BaseStatNode, error) {
+	la := sbase.NewBucketLeapArray(sampleCount, intervalInMs)
+	metric, err := sbase.NewSlidingWindowMetric(sampleCount, intervalInMs, la)
+	if err != nil {
+		return nil, err
+	}
+	return &BaseStatNode{
+		concurrency: 0,
+		sampleCount: sampleCount,
+		intervalMs:  intervalInMs,
+		arr:         la,
+		metric:      metric,
+	}, nil
+}
+
 func (n *BaseStatNode) MetricsOnCondition(predicate base.TimePredicate) []*base.MetricItem {
 	return n.metric.SecondMetricsOnCondition(predicate)
 }
