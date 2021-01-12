@@ -21,7 +21,6 @@ import (
 )
 
 const (
-	StatSlotName  = "sentinel-core-flow-standalone-stat-slot"
 	StatSlotOrder = 3000
 )
 
@@ -30,10 +29,6 @@ var (
 )
 
 type StandaloneStatSlot struct {
-}
-
-func (s *StandaloneStatSlot) Name() string {
-	return StatSlotName
 }
 
 func (s *StandaloneStatSlot) Order() uint32 {

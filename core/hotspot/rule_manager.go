@@ -19,7 +19,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -219,18 +218,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				tcMap[res] = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 			}
 			insertTcToTcMap(tc, res, m)
-		}
-	}
-	for res, tcs := range m {
-		if len(tcs) > 0 {
-			// update resource slot chain
-			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			for _, tc := range tcs {
-				if tc.BoundRule().MetricType == Concurrency {
-					misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
-					break
-				}
-			}
 		}
 	}
 	tcMap = m

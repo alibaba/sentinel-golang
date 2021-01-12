@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	RuleCheckSlotName  = "sentinel-core-circuit-breaker-rule-check-slot"
 	RuleCheckSlotOrder = 5000
 )
 
@@ -28,10 +27,6 @@ var (
 )
 
 type Slot struct {
-}
-
-func (s *Slot) Name() string {
-	return RuleCheckSlotName
 }
 
 func (s *Slot) Order() uint32 {
