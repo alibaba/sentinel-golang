@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alibaba/sentinel-golang/core/base"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,4 +38,14 @@ func TestBaseStatNodeGoroutineNum(t *testing.T) {
 	bsn.IncreaseConcurrency()
 	assert.Equal(t, int64(2), bsn.MaxConcurrency())
 	assert.Equal(t, int64(1), bsn.SecondMaxConcurrency())
+}
+
+func TestNewCustomizedBaseStatNode(t *testing.T) {
+	bsn, err := NewCustomizedBaseStatNode(8, 2000)
+	assert.Nil(t, err)
+	assert.NotNil(t, bsn)
+	bsn.AddCount(base.MetricEventPass, 1)
+	assert.Equal(t, int64(1), bsn.GetSum(base.MetricEventPass))
+	time.Sleep(time.Second * 2)
+	assert.Equal(t, int64(0), bsn.GetSum(base.MetricEventPass))
 }
