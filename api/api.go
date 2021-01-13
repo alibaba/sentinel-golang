@@ -18,7 +18,6 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/misc"
 )
 
 var entryOptsPool = sync.Pool{
@@ -142,10 +141,7 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 		opt(options)
 	}
 	if options.slotChain == nil {
-		options.slotChain = misc.GetResourceSlotChain(resource)
-		if options.slotChain == nil {
-			options.slotChain = GlobalSlotChain()
-		}
+		options.slotChain = GlobalSlotChain()
 	}
 	return entry(resource, options)
 }

@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	RuleCheckSlotName  = "sentinel-core-system-adaptive-rule-check-slot"
 	RuleCheckSlotOrder = 1000
 )
 
@@ -29,10 +28,6 @@ var (
 )
 
 type AdaptiveSlot struct {
-}
-
-func (s *AdaptiveSlot) Name() string {
-	return RuleCheckSlotName
 }
 
 func (s *AdaptiveSlot) Order() uint32 {

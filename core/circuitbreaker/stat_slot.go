@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	StatSlotName  = "sentinel-core-circuit-breaker-metric-stat-slot"
 	StatSlotOrder = 5000
 )
 
@@ -30,10 +29,6 @@ var (
 // MetricStatSlot records metrics for circuit breaker on invocation completed.
 // MetricStatSlot must be filled into slot chain if circuit breaker is alive.
 type MetricStatSlot struct {
-}
-
-func (s *MetricStatSlot) Name() string {
-	return StatSlotName
 }
 
 func (s *MetricStatSlot) Order() uint32 {

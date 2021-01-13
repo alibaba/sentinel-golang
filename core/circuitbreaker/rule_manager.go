@@ -19,7 +19,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -281,14 +280,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 				breakers[res] = append(oldResCbs[:reuseStatIdx], oldResCbs[reuseStatIdx+1:]...)
 			}
 			insertCbToCbMap(cb, res, newBreakers)
-		}
-	}
-
-	for res, cbs := range newBreakers {
-		if len(cbs) > 0 {
-			// update resource slot chain
-			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			misc.RegisterStatSlotForResource(res, DefaultMetricStatSlot)
 		}
 	}
 

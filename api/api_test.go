@@ -26,10 +26,6 @@ type prepareSlotMock struct {
 	mock.Mock
 }
 
-func (m *prepareSlotMock) Name() string {
-	return "mock-sentinel-prepare-slot"
-}
-
 func (m *prepareSlotMock) Order() uint32 {
 	return 0
 }
@@ -41,10 +37,6 @@ func (m *prepareSlotMock) Prepare(ctx *base.EntryContext) {
 
 type mockRuleCheckSlot1 struct {
 	mock.Mock
-}
-
-func (m *mockRuleCheckSlot1) Name() string {
-	return "mock-sentinel-rule-check-slot1"
 }
 
 func (m *mockRuleCheckSlot1) Order() uint32 {
@@ -60,10 +52,6 @@ type mockRuleCheckSlot2 struct {
 	mock.Mock
 }
 
-func (m *mockRuleCheckSlot2) Name() string {
-	return "mock-sentinel-rule-check-slot2"
-}
-
 func (m *mockRuleCheckSlot2) Order() uint32 {
 	return 0
 }
@@ -75,10 +63,6 @@ func (m *mockRuleCheckSlot2) Check(ctx *base.EntryContext) *base.TokenResult {
 
 type statisticSlotMock struct {
 	mock.Mock
-}
-
-func (m *statisticSlotMock) Name() string {
-	return "mock-sentinel-stat-check-slot"
 }
 
 func (m *statisticSlotMock) Order() uint32 {
