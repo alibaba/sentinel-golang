@@ -345,20 +345,21 @@ func Test_baseTrafficShapingController_ExtractArgs(t *testing.T) {
 		// set data
 		args[0] = 1
 		args[1] = 2
-		attachments["test1"] = "v1"
+		value1 := "v1"
+		attachments["test1"] = value1
 
 		// set index or key
 		// exist
 		c.paramIndex = 0
 		c.paramKey = "test1"
 		ret = c.ExtractArgs(ctx)
-		assert.True(t, reflect.DeepEqual(ret, 1), ret)
+		assert.True(t, reflect.DeepEqual(ret, value1), ret)
 
 		// part exist 1
 		c.paramIndex = 10
 		c.paramKey = "test1"
 		ret = c.ExtractArgs(ctx)
-		assert.True(t, reflect.DeepEqual(ret, "v1"), ret)
+		assert.True(t, reflect.DeepEqual(ret, value1), ret)
 
 		// part exist 2
 		c.paramIndex = 1

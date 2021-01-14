@@ -165,11 +165,11 @@ func (c *baseTrafficShapingController) ExtractArgs(ctx *base.EntryContext) (valu
 	if c == nil {
 		return nil
 	}
-	value = c.extractArgs(ctx)
+	value = c.extractAttachmentArgs(ctx)
 	if value != nil {
 		return
 	}
-	value = c.extractAttachmentArgs(ctx)
+	value = c.extractArgs(ctx)
 	if value != nil {
 		return
 	}

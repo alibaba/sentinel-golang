@@ -82,7 +82,7 @@ type Rule struct {
 	ParamIndex int `json:"paramIndex"`
 	// ParamKey is the key in context attachments map.
 	// ParamKey can be used as a supplement to ParamIndex to facilitate rules to quickly obtain parameter from a large number of parameters
-	// Mutually exclusive with ParamIndex
+	// Mutually exclusive with ParamIndex,The extraction priority is higher than ParamIndex to avoid the problem of ParamIndex default value 0
 	ParamKey string `json:"paramKey"`
 	// Threshold is the threshold to trigger rejection
 	Threshold int64 `json:"threshold"`
@@ -120,7 +120,7 @@ func (r *Rule) IsStatReusable(newRule *Rule) bool {
 
 // Equals checks whether current rule is consistent with the given rule.
 func (r *Rule) Equals(newRule *Rule) bool {
-	baseCheck := r.Resource == newRule.Resource && r.MetricType == newRule.MetricType && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.ParamIndex == newRule.ParamIndex && r.Threshold == newRule.Threshold && r.DurationInSec == newRule.DurationInSec && reflect.DeepEqual(r.SpecificItems, newRule.SpecificItems)
+	baseCheck := r.Resource == newRule.Resource && r.MetricType == newRule.MetricType && r.ControlBehavior == newRule.ControlBehavior && r.ParamsMaxCapacity == newRule.ParamsMaxCapacity && r.ParamIndex == newRule.ParamIndex && r.ParamKey == newRule.ParamKey && r.Threshold == newRule.Threshold && r.DurationInSec == newRule.DurationInSec && reflect.DeepEqual(r.SpecificItems, newRule.SpecificItems)
 	if !baseCheck {
 		return false
 	}
