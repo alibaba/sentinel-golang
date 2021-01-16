@@ -20,6 +20,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
+	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -46,6 +47,17 @@ const (
 	HalfOpen
 	Open
 )
+
+var (
+	stateChangeCounter = metric_exporter.NewCounter(
+		"circuit_breaker_state_change",
+		"Circuit breaker state change count",
+		[]string{"resource", "previous_state", "current_state"})
+)
+
+func init() {
+	metric_exporter.MustRegister(stateChangeCounter)
+}
 
 func newState() *State {
 	var state State
@@ -152,6 +164,8 @@ func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
 		for _, listener := range stateChangeListeners {
 			listener.OnTransformToOpen(Closed, *b.rule, snapshot)
 		}
+
+		stateChangeCounter.Add(float64(1), b.BoundRule().Resource, "Closed", "Open")
 		return true
 	}
 	return false
@@ -181,6 +195,8 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen(ctx *base.EntryContext) bool {
 				return nil
 			})
 		}
+
+		stateChangeCounter.Add(float64(1), b.BoundRule().Resource, "Open", "HalfOpen")
 		return true
 	}
 	return false
@@ -194,6 +210,8 @@ func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 		for _, listener := range stateChangeListeners {
 			listener.OnTransformToOpen(HalfOpen, *b.rule, snapshot)
 		}
+
+		stateChangeCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Open")
 		return true
 	}
 	return false
