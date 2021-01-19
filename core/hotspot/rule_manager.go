@@ -425,11 +425,11 @@ func IsValidRule(rule *Rule) error {
 	if rule.ControlBehavior < 0 {
 		return errors.New("invalid control strategy")
 	}
-	if rule.ParamIndex < 0 {
-		return errors.New("invalid param index")
-	}
 	if rule.MetricType == QPS && rule.DurationInSec <= 0 {
 		return errors.New("invalid duration")
+	}
+	if rule.ParamIndex > 0 && rule.ParamKey != "" {
+		return errors.New("invalid param index and param key are mutually exclusive")
 	}
 	return checkControlBehaviorField(rule)
 }
