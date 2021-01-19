@@ -18,7 +18,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -72,13 +71,6 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-
-	for res, rs := range validResRulesMap {
-		if len(rs) > 0 {
-			// update resource slot chain
-			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-		}
-	}
 	rwMux.Lock()
 	ruleMap = validResRulesMap
 	rwMux.Unlock()
@@ -130,11 +122,6 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	}
 
 	start := util.CurrentTimeNano()
-	if len(validResRules) > 0 {
-		// update resource slot chain
-		misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-	}
-
 	rwMux.Lock()
 	if len(validResRules) == 0 {
 		delete(ruleMap, res)

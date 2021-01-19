@@ -19,7 +19,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -195,19 +194,6 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 		m[res] = buildResourceTrafficShapingController(res, rules, tcMapClone[res])
 	}
 
-	for res, tcs := range m {
-		if len(tcs) > 0 {
-			// update resource slot chain
-			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			for _, tc := range tcs {
-				if tc.BoundRule().MetricType == Concurrency {
-					misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
-					break
-				}
-			}
-		}
-	}
-
 	tcMux.Lock()
 	tcMap = m
 	tcMux.Unlock()
@@ -246,16 +232,6 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	tcMux.RUnlock()
 
 	newResTcs := buildResourceTrafficShapingController(res, validResRules, oldResTcs)
-	if len(newResTcs) > 0 {
-		// update resource slot chain
-		misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-		for _, tc := range newResTcs {
-			if tc.BoundRule().MetricType == Concurrency {
-				misc.RegisterStatSlotForResource(res, DefaultConcurrencyStatSlot)
-				break
-			}
-		}
-	}
 
 	tcMux.Lock()
 	if len(newResTcs) == 0 {

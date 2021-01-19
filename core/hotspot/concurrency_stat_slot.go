@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	StatSlotName  = "sentinel-core-hotspot-concurrency-stat-slot"
 	StatSlotOrder = 4000
 )
 
@@ -32,10 +31,6 @@ var (
 
 // ConcurrencyStatSlot is to record the Concurrency statistic for all arguments
 type ConcurrencyStatSlot struct {
-}
-
-func (c *ConcurrencyStatSlot) Name() string {
-	return StatSlotName
 }
 
 func (s *ConcurrencyStatSlot) Order() uint32 {

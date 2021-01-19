@@ -21,7 +21,6 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
-	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
 	"github.com/alibaba/sentinel-golang/core/system_metric"
@@ -221,14 +220,6 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 		}
 	}
 
-	for res, tcs := range m {
-		if len(tcs) > 0 {
-			// update resource slot chain
-			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
-		}
-	}
-
 	tcMux.Lock()
 	tcMap = m
 	tcMux.Unlock()
@@ -288,12 +279,6 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	oldResTcs = append(oldResTcs, tcMap[res]...)
 	tcMux.RUnlock()
 	newResTcs := buildResourceTrafficShapingController(res, validResRules, oldResTcs)
-
-	if len(newResTcs) > 0 {
-		// update resource slot chain
-		misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-		misc.RegisterStatSlotForResource(res, DefaultStandaloneStatSlot)
-	}
 
 	tcMux.Lock()
 	if len(newResTcs) == 0 {
