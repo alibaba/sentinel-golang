@@ -80,9 +80,9 @@ type Rule struct {
 	// if ParamIndex is great than or equals to zero, ParamIndex means the <ParamIndex>-th parameter
 	// if ParamIndex is the negative, ParamIndex means the reversed <ParamIndex>-th parameter
 	ParamIndex int `json:"paramIndex"`
-	// ParamKey is the key in context attachments map.
+	// ParamKey is the key in EntryContext.Input.Attachments map.
 	// ParamKey can be used as a supplement to ParamIndex to facilitate rules to quickly obtain parameter from a large number of parameters
-	// Mutually exclusive with ParamIndex,The extraction priority is higher than ParamIndex to avoid the problem of ParamIndex default value 0
+	// ParamKey is mutually exclusive with ParamIndex, ParamKey has the higher priority than ParamIndex
 	ParamKey string `json:"paramKey"`
 	// Threshold is the threshold to trigger rejection
 	Threshold int64 `json:"threshold"`
