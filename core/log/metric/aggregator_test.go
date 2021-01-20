@@ -16,9 +16,11 @@ package metric
 
 import (
 	"testing"
+	"time"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -265,4 +267,44 @@ func Test_currentMetricItems(t *testing.T) {
 			}
 		})
 	}
+}
+
+type writeData struct {
+	ts    uint64
+	items []*base.MetricItem
+}
+
+type MockMetricLogWriter struct {
+	dataChan chan *writeData
+}
+
+func (sw *MockMetricLogWriter) Write(ts uint64, items []*base.MetricItem) error {
+	sw.dataChan <- &writeData{ts, items}
+	return nil
+}
+
+func Test_Aggregate(t *testing.T) {
+	t.Run("Test_aggregate", func(t *testing.T) {
+		util.SetClock(util.NewMockClock())
+		m := &MockMetricLogWriter{make(chan *writeData, 100)}
+		err := InitTask()
+		metricWriter = m
+		assert.True(t, err == nil)
+		node := stat.GetOrCreateResourceNode("test", base.ResTypeCommon)
+		node.AddCount(base.MetricEventPass, 2)
+		node.AddCount(base.MetricEventBlock, 3)
+
+		util.Sleep(time.Duration(1) * time.Second)
+		data := <-m.dataChan
+		assert.True(t, data.items[0].Resource == "test")
+		assert.True(t, data.items[0].BlockQps == 3)
+		assert.True(t, data.items[0].PassQps == 2)
+		node.AddCount(base.MetricEventBlock, 3)
+
+		util.Sleep(time.Duration(1) * time.Second)
+		data2 := <-m.dataChan
+		assert.True(t, data2.ts-data.ts < 1100)
+		assert.True(t, data2.items[0].BlockQps == 3)
+		assert.True(t, data2.items[0].Resource == "test")
+	})
 }
