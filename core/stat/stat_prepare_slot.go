@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	PrepareSlotName  = "sentinel-core-stat-resource-node-prepare-slot"
 	PrepareSlotOrder = 1000
 )
 
@@ -28,10 +27,6 @@ var (
 )
 
 type ResourceNodePrepareSlot struct {
-}
-
-func (s *ResourceNodePrepareSlot) Name() string {
-	return PrepareSlotName
 }
 
 func (s *ResourceNodePrepareSlot) Order() uint32 {

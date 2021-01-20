@@ -19,7 +19,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -264,9 +263,6 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 		newCbsOfRes := buildResourceCircuitBreaker(res, resRules, breakersClone[res])
 		if len(newCbsOfRes) > 0 {
 			newBreakers[res] = newCbsOfRes
-			// update resource slot chain
-			misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-			misc.RegisterStatSlotForResource(res, DefaultMetricStatSlot)
 		}
 	}
 
@@ -308,12 +304,6 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	updateMux.RUnlock()
 
 	newCbsOfRes := buildResourceCircuitBreaker(res, rawResRules, oldResCbs)
-
-	if len(newCbsOfRes) > 0 {
-		// update resource slot chain
-		misc.RegisterRuleCheckSlotForResource(res, DefaultSlot)
-		misc.RegisterStatSlotForResource(res, DefaultMetricStatSlot)
-	}
 
 	updateMux.Lock()
 	if len(newCbsOfRes) == 0 {

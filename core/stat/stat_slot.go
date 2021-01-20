@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	StatSlotName  = "sentinel-core-stat-slot"
 	StatSlotOrder = 1000
 )
 
@@ -29,10 +28,6 @@ var (
 )
 
 type Slot struct {
-}
-
-func (s *Slot) Name() string {
-	return StatSlotName
 }
 
 func (s *Slot) Order() uint32 {
