@@ -1,0 +1,7 @@
+This directory contains the all cluster flow control modules:
+
+1. client: cluster flow control client side common logic
+2. flow: request number based cluster flow control implementation
+3. hotspot: hotspot parameters cluster flow control implementation
+4. isolation: concurrency cluster flow control implementation
+5. server: cluster flow control server side common logic
