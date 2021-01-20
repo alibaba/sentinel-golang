@@ -124,15 +124,6 @@ func (sc *SlotChain) RefurbishContext(c *EntryContext) {
 	}
 }
 
-// RangeStatPrepareSlot iterates the SlotChain.[]StatPrepareSlot and call f function for each StatPrepareSlot
-// RangeStatPrepareSlot is non-thread safe,
-// In concurrency scenario, RangeStatPrepareSlot must be guarded by SlotChain.RWMutex#RLock
-func (sc *SlotChain) RangeStatPrepareSlot(f func(slot StatPrepareSlot)) {
-	for _, slot := range sc.statPres {
-		f(slot)
-	}
-}
-
 // AddStatPrepareSlot adds the StatPrepareSlot slot to the StatPrepareSlot list of the SlotChain.
 // All StatPrepareSlot in the list will be sorted according to StatPrepareSlot.Order() in ascending order.
 // AddStatPrepareSlot is non-thread safe,
