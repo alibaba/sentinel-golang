@@ -1,0 +1,126 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: hotspotrules.datasource.sentinel.io
+spec:
+  group: datasource.sentinel.io
+  names:
+    kind: HotspotRules
+    listKind: HotspotRulesList
+    plural: hotspotrules
+    singular: hotspotrules
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: HotspotRules is the Schema for the hotspotrules API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: HotspotRulesSpec defines the desired state of HotspotRules
+          properties:
+            rules:
+              items:
+                properties:
+                  burstCount:
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  controlBehavior:
+                    enum:
+                      - Reject
+                      - Throttling
+                    type: string
+                  durationInSec:
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  id:
+                    maxLength: 32
+                    minLength: 0
+                    type: string
+                  maxQueueingTimeMs:
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  metricType:
+                    enum:
+                      - Concurrency
+                      - QPS
+                    type: string
+                  paramIndex:
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  paramsMaxCapacity:
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  resource:
+                    maxLength: 64
+                    minLength: 1
+                    type: string
+                  specificItems:
+                    items:
+                      properties:
+                        threshold:
+                          format: int64
+                          minimum: 1
+                          type: integer
+                        valKind:
+                          enum:
+                            - KindInt
+                            - KindString
+                            - KindBool
+                            - KindFloat64
+                          type: string
+                        valStr:
+                          minLength: 1
+                          type: string
+                      required:
+                        - threshold
+                        - valKind
+                        - valStr
+                      type: object
+                    type: array
+                  threshold:
+                    format: int64
+                    minimum: 0
+                    type: integer
+                required:
+                  - metricType
+                  - paramIndex
+                  - resource
+                  - threshold
+                type: object
+              type: array
+          type: object
+        status:
+          description: HotspotRulesStatus defines the observed state of HotspotRules
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

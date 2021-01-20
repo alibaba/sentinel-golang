@@ -1,0 +1,10 @@
+apiVersion: datasource.sentinel.io/v1alpha1
+kind: IsolationRules
+metadata:
+  name: isolationrules-sample
+spec:
+  rules:
+    - resource: test1
+      threshold: 100
+    - resource: test2
+      threshold: 200

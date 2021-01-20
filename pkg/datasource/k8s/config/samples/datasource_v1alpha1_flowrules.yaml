@@ -1,0 +1,21 @@
+apiVersion: datasource.sentinel.io/v1alpha1
+kind: FlowRules
+metadata:
+  name: sentinel-go-flow-rules
+spec:
+  rules:
+    - resource: simple-resource
+      threshold: 500
+    - resource: abcde
+      threshold: 100
+      relationStrategy: CurrentResource
+      controlBehavior: Throttling
+      maxQueueingTimeMs: 500
+    - resource: abcd
+      threshold: 200
+      relationStrategy: CurrentResource
+      tokenCalculateStrategy: WarmUp
+      controlBehavior: Reject
+      warmUpPeriodSec: 20
+      warmUpColdFactor: 3
+

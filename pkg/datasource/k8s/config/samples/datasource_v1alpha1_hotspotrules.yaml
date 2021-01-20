@@ -1,0 +1,35 @@
+apiVersion: datasource.sentinel.io/v1alpha1
+kind: HotspotRules
+metadata:
+  name: sentinel-go-hotspot-rules
+spec:
+  rules:
+    - resource: test1
+      metricType: Concurrency
+      controlBehavior: Reject
+      paramIndex: 0
+      threshold: 100
+      burstCount: 20
+      durationInSec: 10
+      paramsMaxCapacity: 10000
+      specificItems:
+        - valKind: KindInt
+          valStr: "100"
+          threshold: 101
+        - valKind: KindInt
+          valStr: "200"
+          threshold: 102
+    - resource: test1
+      metricType: QPS
+      controlBehavior: Throttling
+      paramIndex: 1
+      threshold: 200
+      maxQueueingTimeMs: 100
+      paramsMaxCapacity: 20000
+      specificItems:
+        - valKind: KindString
+          valStr: ximu1
+          threshold: 201
+        - valKind: KindString
+          valStr: ximu2
+          threshold: 202

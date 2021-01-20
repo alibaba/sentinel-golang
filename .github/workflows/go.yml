@@ -55,6 +55,14 @@ jobs:
         diff -u <(echo -n) <(gofmt -d -s .)
         diff -u <(echo -n) <(goimports -d .)
         go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ./pkg/datasource/consul
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ../etcdv3
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ../k8s
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ../nacos
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
 
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)

@@ -1,0 +1,71 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
+  creationTimestamp: null
+  name: isolationrules.datasource.sentinel.io
+spec:
+  group: datasource.sentinel.io
+  names:
+    kind: IsolationRules
+    listKind: IsolationRulesList
+    plural: isolationrules
+    singular: isolationrules
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: IsolationRules is the Schema for the isolationrules API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: IsolationRulesSpec defines the desired state of IsolationRules
+          properties:
+            rules:
+              items:
+                properties:
+                  id:
+                    maxLength: 32
+                    minLength: 0
+                    type: string
+                  resource:
+                    maxLength: 64
+                    minLength: 1
+                    type: string
+                  threshold:
+                    format: int32
+                    minimum: 0
+                    type: integer
+                required:
+                  - resource
+                  - threshold
+                type: object
+              type: array
+          type: object
+        status:
+          description: IsolationRulesStatus defines the observed state of IsolationRules
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
