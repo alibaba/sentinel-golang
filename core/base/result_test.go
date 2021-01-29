@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ func BenchmarkBlockType_String(b *testing.B) {
 	})
 	b.Run("Slice", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			BlockTypeTmp.String()
+			BlockTypeTmp.string()
 		}
 	})
 	b.Run("Map", func(b *testing.B) {
@@ -91,6 +92,13 @@ func (t BlockType) stringMap() string {
 		return name
 	}
 	return fmt.Sprintf("%d", t)
+}
+
+func (t BlockType) string() string {
+	if int(t) >= len(blockTypeNames) {
+		return strconv.Itoa(int(t))
+	}
+	return blockTypeNames[t]
 }
 
 func TestRegistryBlockType(t *testing.T) {
