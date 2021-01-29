@@ -16,6 +16,7 @@ package base
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -28,25 +29,38 @@ const (
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
 	BlockTypeHotSpotParamFlow
+	// BlockTypeRegistryStart convenient to expand the type to avoid conflicts
+	BlockTypeRegistryStart
 )
 
-func (t BlockType) String() string {
-	switch t {
-	case BlockTypeUnknown:
-		return "Unknown"
-	case BlockTypeFlow:
-		return "FlowControl"
-	case BlockTypeIsolation:
-		return "BlockTypeIsolation"
-	case BlockTypeCircuitBreaking:
-		return "CircuitBreaking"
-	case BlockTypeSystemFlow:
-		return "System"
-	case BlockTypeHotSpotParamFlow:
-		return "HotSpotParamFlow"
-	default:
-		return fmt.Sprintf("%d", t)
+var (
+	blockTypeNames = []string{
+		"Unknown",
+		"FlowControl",
+		"BlockTypeIsolation",
+		"CircuitBreaking",
+		"System",
+		"HotSpotParamFlow",
+		"BlockTypeRegistryStart",
 	}
+
+	blockTypeErr = fmt.Errorf("block type err")
+)
+
+// RegistryBlockType adds block type and corresponding description in order.
+func RegistryBlockType(blockType BlockType, desc string) error {
+	if int(blockType) != len(blockTypeNames) {
+		return blockTypeErr
+	}
+	blockTypeNames = append(blockTypeNames, desc)
+	return nil
+}
+
+func (t BlockType) String() string {
+	if int(t) >= len(blockTypeNames) {
+		return strconv.Itoa(int(t))
+	}
+	return blockTypeNames[t]
 }
 
 type TokenResultStatus uint8
@@ -95,50 +109,32 @@ func (r *TokenResult) DeepCopyFrom(newResult *TokenResult) {
 		r.blockErr.snapshotValue = newResult.blockErr.snapshotValue
 	}
 }
-
 func (r *TokenResult) ResetToPass() {
 	r.status = ResultStatusPass
 	r.blockErr = nil
 	r.nanosToWait = 0
 }
 
-func (r *TokenResult) ResetToBlocked(blockType BlockType) {
+func (r *TokenResult) ResetToBlockedWith(opts ...BlockErrorOption) {
 	r.status = ResultStatusBlocked
 	if r.blockErr == nil {
-		r.blockErr = NewBlockError(blockType)
+		r.blockErr = NewBlockError(opts...)
 	} else {
-		r.blockErr.blockType = blockType
-		r.blockErr.blockMsg = ""
-		r.blockErr.rule = nil
-		r.blockErr.snapshotValue = nil
+		r.blockErr.ResetBlockError(opts...)
 	}
 	r.nanosToWait = 0
+}
+
+func (r *TokenResult) ResetToBlocked(blockType BlockType) {
+	r.ResetToBlockedWith(WithBlockType(blockType))
 }
 
 func (r *TokenResult) ResetToBlockedWithMessage(blockType BlockType, blockMsg string) {
-	r.status = ResultStatusBlocked
-	if r.blockErr == nil {
-		r.blockErr = NewBlockErrorWithMessage(blockType, blockMsg)
-	} else {
-		r.blockErr.blockType = blockType
-		r.blockErr.blockMsg = blockMsg
-		r.blockErr.rule = nil
-		r.blockErr.snapshotValue = nil
-	}
-	r.nanosToWait = 0
+	r.ResetToBlockedWith(WithBlockType(blockType), WithBlockMsg(blockMsg))
 }
 
 func (r *TokenResult) ResetToBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) {
-	r.status = ResultStatusBlocked
-	if r.blockErr == nil {
-		r.blockErr = NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot)
-	} else {
-		r.blockErr.blockType = blockType
-		r.blockErr.blockMsg = blockMsg
-		r.blockErr.rule = rule
-		r.blockErr.snapshotValue = snapshot
-	}
-	r.nanosToWait = 0
+	r.ResetToBlockedWith(WithBlockType(blockType), WithBlockMsg(blockMsg), WithRule(rule), WithSnapshotValue(snapshot))
 }
 
 func (r *TokenResult) IsPass() bool {
@@ -182,7 +178,7 @@ func NewTokenResultPass() *TokenResult {
 func NewTokenResultBlocked(blockType BlockType) *TokenResult {
 	return &TokenResult{
 		status:      ResultStatusBlocked,
-		blockErr:    NewBlockError(blockType),
+		blockErr:    NewBlockError(WithBlockType(blockType)),
 		nanosToWait: 0,
 	}
 }
