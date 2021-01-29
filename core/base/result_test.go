@@ -23,7 +23,7 @@ func BenchmarkBlockType_String(b *testing.B) {
 
 	b.Run("Switch", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			BlockTypeTmp.StringSwitch()
+			BlockTypeTmp.stringSwitch()
 		}
 	})
 	b.Run("Slice", func(b *testing.B) {
@@ -33,7 +33,7 @@ func BenchmarkBlockType_String(b *testing.B) {
 	})
 	b.Run("Map", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			BlockTypeTmp.StringMap()
+			BlockTypeTmp.stringMap()
 		}
 	})
 }
@@ -55,7 +55,7 @@ func BenchmarkBlockType_Registry_String(b *testing.B) {
 	})
 }
 
-func (t BlockType) StringSwitch() string {
+func (t BlockType) stringSwitch() string {
 	switch t {
 	case BlockTypeUnknown:
 		return "Unknown"
@@ -85,7 +85,7 @@ var (
 	}
 )
 
-func (t BlockType) StringMap() string {
+func (t BlockType) stringMap() string {
 	name, ok := blockTypeMap[t]
 	if ok {
 		return name
