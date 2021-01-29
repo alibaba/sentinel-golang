@@ -51,7 +51,7 @@ func BenchmarkBlockType_Registry_String(b *testing.B) {
 
 	b.Run("Registry_String", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			BlockTypeTmp.String()
+			BlockTypeTmp.string()
 		}
 	})
 }
