@@ -123,7 +123,7 @@ func onConfigUpdate(rawConfigs []*Config) (err error) {
 	return nil
 }
 
-// IsValidRule checks whether the given Rule is valid.
+// IsValidConfig checks whether the given config is valid.
 func IsValidConfig(config *Config) error {
 	if config == nil {
 		return errors.New("nil Config")
