@@ -65,6 +65,7 @@ func main() {
 			ControlBehavior:        flow.Reject,
 			StatIntervalInMs:       1000,
 			Threshold:              1000,
+			AdaptiveConfigName:     "test",
 		},
 	})
 	if err != nil {
