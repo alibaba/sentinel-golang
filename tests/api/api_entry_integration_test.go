@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/adaptive"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/flow"
@@ -36,16 +37,29 @@ func TestAdaptiveFlowControl(t *testing.T) {
 	initSentinel()
 	util.SetClock(util.NewMockClock())
 
+	_, err := adaptive.LoadAdaptiveConfigs([]*adaptive.Config{
+		{
+			AdaptiveConfigName: "test",
+			AdaptiveType:       adaptive.Memory,
+			LowRatio:           1.0,
+			HighRatio:          0.2,
+			LowWaterMark:       1 * 1024,
+			HighWaterMark:      2 * 1024,
+		},
+	})
+	if err != nil {
+		log.Fatalf("Unexpected error: %+v", err)
+		return
+	}
+
 	rs := "hello0"
 	rule := flow.Rule{
 		Resource:               rs,
-		TokenCalculateStrategy: flow.MemoryAdaptive,
+		TokenCalculateStrategy: flow.Direct,
 		ControlBehavior:        flow.Reject,
 		StatIntervalInMs:       1000,
-		LowMemUsageThreshold:   5,
-		HighMemUsageThreshold:  1,
-		MemLowWaterMarkBytes:   1 * 1024,
-		MemHighWaterMarkBytes:  2 * 1024,
+		Threshold:              5,
+		AdaptiveConfigName:     "test",
 	}
 	rule1 := rule
 	ok, err := flow.LoadRules([]*flow.Rule{&rule1})
@@ -110,15 +124,28 @@ func TestAdaptiveFlowControl2(t *testing.T) {
 	debug.SetGCPercent(-1)
 	initSentinel()
 	rs := "hello0"
+
+	_, err := adaptive.LoadAdaptiveConfigs([]*adaptive.Config{
+		{
+			AdaptiveConfigName: "test",
+			AdaptiveType:       adaptive.Memory,
+			LowRatio:           15,
+			HighRatio:          1,
+			LowWaterMark:       1 * 1024,
+			HighWaterMark:      2 * 1024,
+		},
+	})
+	if err != nil {
+		log.Fatalf("Unexpected error: %+v", err)
+		return
+	}
+
 	rule := flow.Rule{
 		Resource:               rs,
-		TokenCalculateStrategy: flow.MemoryAdaptive,
+		TokenCalculateStrategy: flow.Direct,
 		ControlBehavior:        flow.Reject,
 		StatIntervalInMs:       1000,
-		LowMemUsageThreshold:   150,
-		HighMemUsageThreshold:  10,
-		MemLowWaterMarkBytes:   100998840320,
-		MemHighWaterMarkBytes:  268435456000,
+		Threshold:              10,
 	}
 	ok, err := flow.LoadRules([]*flow.Rule{&rule})
 	assert.True(t, ok)
