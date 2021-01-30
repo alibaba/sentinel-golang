@@ -19,11 +19,11 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/adaptive"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-	"github.com/alibaba/sentinel-golang/core/system_metric"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -122,38 +122,6 @@ func init() {
 			return nil, err
 		}
 		tsc.flowCalculator = NewWarmUpTrafficShapingCalculator(tsc, rule)
-		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
-		return tsc, nil
-	}
-	tcGenFuncMap[trafficControllerGenKey{
-		tokenCalculateStrategy: MemoryAdaptive,
-		controlBehavior:        Reject,
-	}] = func(rule *Rule, boundStat *standaloneStatistic) (*TrafficShapingController, error) {
-		if boundStat == nil {
-			var err error
-			boundStat, err = generateStatFor(rule)
-			if err != nil {
-				return nil, err
-			}
-		}
-		tsc, err := NewTrafficShapingController(rule, boundStat)
-		if err != nil || tsc == nil {
-			return nil, err
-		}
-		tsc.flowCalculator = NewMemoryAdaptiveTrafficShapingCalculator(tsc, rule)
-		tsc.flowChecker = NewRejectTrafficShapingChecker(tsc, rule)
-		return tsc, nil
-	}
-	tcGenFuncMap[trafficControllerGenKey{
-		tokenCalculateStrategy: MemoryAdaptive,
-		controlBehavior:        Throttling,
-	}] = func(rule *Rule, _ *standaloneStatistic) (*TrafficShapingController, error) {
-		// MemoryAdaptive token calculate strategy and throttling control behavior don't use stat, so we just give a nop stat.
-		tsc, err := NewTrafficShapingController(rule, nopStat)
-		if err != nil || tsc == nil {
-			return nil, err
-		}
-		tsc.flowCalculator = NewMemoryAdaptiveTrafficShapingCalculator(tsc, rule)
 		tsc.flowChecker = NewThrottlingChecker(tsc, rule.MaxQueueingTimeMs, rule.StatIntervalInMs)
 		return tsc, nil
 	}
@@ -618,34 +586,16 @@ func IsValidRule(rule *Rule) error {
 			return errors.New("WarmUpColdFactor must be great than 1")
 		}
 	}
+	if rule.AdaptiveConfigName != "" {
+		if rule.TokenCalculateStrategy != Direct {
+			return errors.New("TokenCalculateStrategy must support adaptive adjustment")
+		}
+		if adaptive.GetAdaptiveController(rule.AdaptiveConfigName) == nil {
+			return errors.New("AdaptiveConfigName must be configured in adaptive module")
+		}
+	}
 	if rule.StatIntervalInMs > 10*60*1000 {
 		logging.Info("StatIntervalInMs is great than 10 minutes, less than 10 minutes is recommended.")
 	}
-	if rule.TokenCalculateStrategy == MemoryAdaptive {
-		if rule.LowMemUsageThreshold <= 0 {
-			return errors.New("rule.LowMemUsageThreshold <= 0")
-		}
-		if rule.HighMemUsageThreshold <= 0 {
-			return errors.New("rule.HighMemUsageThreshold <= 0")
-		}
-		if rule.HighMemUsageThreshold >= rule.LowMemUsageThreshold {
-			return errors.New("rule.HighMemUsageThreshold >= rule.LowMemUsageThreshold")
-		}
-
-		if rule.MemLowWaterMarkBytes <= 0 {
-			return errors.New("rule.MemLowWaterMarkBytes <= 0")
-		}
-		if rule.MemHighWaterMarkBytes <= 0 {
-			return errors.New("rule.MemHighWaterMarkBytes <= 0")
-		}
-		if rule.MemHighWaterMarkBytes > int64(system_metric.TotalMemorySize) {
-			return errors.New("rule.MemHighWaterMarkBytes should not be greater than current system's total memory size")
-		}
-		if rule.MemLowWaterMarkBytes >= rule.MemHighWaterMarkBytes {
-			// can not be equal to defeat from zero overflow
-			return errors.New("rule.MemLowWaterMarkBytes >= rule.MemHighWaterMarkBytes")
-		}
-	}
-
 	return nil
 }
