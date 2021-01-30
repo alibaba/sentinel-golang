@@ -124,6 +124,7 @@ func TestOnConfigUpdate(t *testing.T) {
 	assert.True(t, acMap["test1"].BoundConfig().IsEqualsTo(config1))
 	err = onConfigUpdate([]*Config{})
 	assert.True(t, len(acMap) == 0)
+	assert.True(t, len(acMap) == 0)
 }
 
 func clearData() {
