@@ -65,7 +65,7 @@ func newMemoryAdaptiveController(c *Config) *MemoryAdaptiveController {
 }
 
 func (mc *MemoryAdaptiveController) CalculateSystemAdaptiveCount(count float64) float64 {
-	var threshold float64
+	var adaptiveCount float64
 	lowMemUsageCount := count * mc.lowMemUsageRatio
 	highMemUsageCount := count * mc.highMemUsageRatio
 	mem := system_metric.CurrentMemoryUsage()
@@ -74,11 +74,11 @@ func (mc *MemoryAdaptiveController) CalculateSystemAdaptiveCount(count float64) 
 		return lowMemUsageCount
 	}
 	if mem <= mc.memLowWaterMark {
-		threshold = lowMemUsageCount
+		adaptiveCount = lowMemUsageCount
 	} else if mem >= mc.memHighWaterMark {
-		threshold = highMemUsageCount
+		adaptiveCount = highMemUsageCount
 	} else {
-		threshold = ((highMemUsageCount-lowMemUsageCount)/float64(mc.memHighWaterMark-mc.memLowWaterMark))*float64(mem-mc.memLowWaterMark) + lowMemUsageCount
+		adaptiveCount = ((highMemUsageCount-lowMemUsageCount)/float64(mc.memHighWaterMark-mc.memLowWaterMark))*float64(mem-mc.memLowWaterMark) + lowMemUsageCount
 	}
-	return threshold
+	return adaptiveCount
 }
