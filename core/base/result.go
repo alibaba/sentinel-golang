@@ -35,13 +35,13 @@ const (
 
 var (
 	blockTypeNames = []string{
-		"Unknown",
-		"FlowControl",
-		"BlockTypeIsolation",
-		"CircuitBreaking",
-		"System",
-		"HotSpotParamFlow",
-		"BlockTypeRegistryStart",
+		BlockTypeUnknown:          "Unknown",
+		BlockTypeFlow:             "FlowControl",
+		BlockTypeIsolation:        "BlockTypeIsolation",
+		BlockTypeCircuitBreaking:  "CircuitBreaking",
+		BlockTypeSystemFlow:       "System",
+		BlockTypeHotSpotParamFlow: "HotSpotParamFlow",
+		BlockTypeRegistryStart:    "BlockTypeRegistryStart",
 	}
 
 	blockTypeErr = fmt.Errorf("block type err")
@@ -168,41 +168,31 @@ func (r *TokenResult) String() string {
 }
 
 func NewTokenResultPass() *TokenResult {
-	return &TokenResult{
-		status:      ResultStatusPass,
-		blockErr:    nil,
-		nanosToWait: 0,
-	}
+	return NewTokenResult(ResultStatusPass)
 }
 
 func NewTokenResultBlocked(blockType BlockType) *TokenResult {
-	return &TokenResult{
-		status:      ResultStatusBlocked,
-		blockErr:    NewBlockError(WithBlockType(blockType)),
-		nanosToWait: 0,
-	}
+	return NewTokenResult(ResultStatusBlocked, WithBlockType(blockType))
 }
 
 func NewTokenResultBlockedWithMessage(blockType BlockType, blockMsg string) *TokenResult {
-	return &TokenResult{
-		status:      ResultStatusBlocked,
-		blockErr:    NewBlockErrorWithMessage(blockType, blockMsg),
-		nanosToWait: 0,
-	}
+	return NewTokenResult(ResultStatusBlocked, WithBlockType(blockType), WithBlockMsg(blockMsg))
 }
 
 func NewTokenResultBlockedWithCause(blockType BlockType, blockMsg string, rule SentinelRule, snapshot interface{}) *TokenResult {
+	return NewTokenResult(ResultStatusBlocked, WithBlockType(blockType), WithBlockMsg(blockMsg), WithRule(rule), WithSnapshotValue(snapshot))
+}
+
+func NewTokenResult(status TokenResultStatus, blockErrOpts ...BlockErrorOption) *TokenResult {
 	return &TokenResult{
-		status:      ResultStatusBlocked,
-		blockErr:    NewBlockErrorWithCause(blockType, blockMsg, rule, snapshot),
+		status:      status,
+		blockErr:    NewBlockError(blockErrOpts...),
 		nanosToWait: 0,
 	}
 }
 
 func NewTokenResultShouldWait(waitNs time.Duration) *TokenResult {
-	return &TokenResult{
-		status:      ResultStatusShouldWait,
-		blockErr:    nil,
-		nanosToWait: waitNs,
-	}
+	result := NewTokenResult(ResultStatusShouldWait)
+	result.nanosToWait = waitNs
+	return result
 }
