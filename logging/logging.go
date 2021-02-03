@@ -15,6 +15,7 @@
 package logging
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -133,7 +134,8 @@ func caller(depth int) (file string, line int) {
 
 	// extract
 	if osType := runtime.GOOS; osType == "windows" {
-		file = strings.ReplaceAll(file, "\\", "/")
+		//FIXME: fit fc go1.8
+		file = strings.Replace(file, "\\", "/", -1)
 	}
 	idx := strings.LastIndex(file, "/")
 	file = file[idx+1:]
@@ -150,58 +152,60 @@ func toSafeJSONString(s string) []byte {
 }
 
 func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...interface{}) string {
-	sb := strings.Builder{}
-	sb.Grow(defaultLogMsgBufferSize)
+	//FIXME: fit fc go1.8
+	//sb := strings.Builder{}
+	//sb.Grow(defaultLogMsgBufferSize)
+	buf := new(bytes.Buffer)
 
 	file, line := caller(depth)
 	timeStr := time.Now().Format("2006-01-02 15:04:05.520")
 	caller := fmt.Sprintf("%s:%d", file, line)
-	sb.WriteString("{")
+	buf.WriteString("{")
 
-	sb.WriteByte('"')
-	sb.WriteString("timestamp")
-	sb.WriteByte('"')
-	sb.WriteByte(':')
-	sb.WriteByte('"')
-	sb.WriteString(timeStr)
-	sb.WriteByte('"')
-	sb.WriteByte(',')
+	buf.WriteByte('"')
+	buf.WriteString("timestamp")
+	buf.WriteByte('"')
+	buf.WriteByte(':')
+	buf.WriteByte('"')
+	buf.WriteString(timeStr)
+	buf.WriteByte('"')
+	buf.WriteByte(',')
 
-	sb.WriteByte('"')
-	sb.WriteString("caller")
-	sb.WriteByte('"')
-	sb.WriteByte(':')
-	sb.WriteByte('"')
-	sb.WriteString(caller)
-	sb.WriteByte('"')
-	sb.WriteByte(',')
+	buf.WriteByte('"')
+	buf.WriteString("caller")
+	buf.WriteByte('"')
+	buf.WriteByte(':')
+	buf.WriteByte('"')
+	buf.WriteString(caller)
+	buf.WriteByte('"')
+	buf.WriteByte(',')
 
-	sb.WriteByte('"')
-	sb.WriteString("logLevel")
-	sb.WriteByte('"')
-	sb.WriteByte(':')
-	sb.WriteByte('"')
-	sb.WriteString(logLevel)
-	sb.WriteByte('"')
-	sb.WriteByte(',')
+	buf.WriteByte('"')
+	buf.WriteString("logLevel")
+	buf.WriteByte('"')
+	buf.WriteByte(':')
+	buf.WriteByte('"')
+	buf.WriteString(logLevel)
+	buf.WriteByte('"')
+	buf.WriteByte(',')
 
-	sb.WriteByte('"')
-	sb.WriteString("msg")
-	sb.WriteByte('"')
-	sb.WriteByte(':')
+	buf.WriteByte('"')
+	buf.WriteString("msg")
+	buf.WriteByte('"')
+	buf.WriteByte(':')
 	data := toSafeJSONString(msg)
-	sb.Write(data)
+	buf.Write(data)
 
 	kvLen := len(keysAndValues)
 	if kvLen&1 != 0 {
-		sb.WriteByte(',')
-		sb.WriteByte('"')
-		sb.WriteString("kvs")
-		sb.WriteByte('"')
-		sb.WriteByte(':')
+		buf.WriteByte(',')
+		buf.WriteByte('"')
+		buf.WriteString("kvs")
+		buf.WriteByte('"')
+		buf.WriteByte(':')
 		s := fmt.Sprintf("%+v", keysAndValues)
 		data := toSafeJSONString(s)
-		sb.Write(data)
+		buf.Write(data)
 	} else if kvLen != 0 {
 		for i := 0; i < kvLen; {
 			k := keysAndValues[i]
@@ -210,35 +214,35 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 			if !kIsStr {
 				kStr = fmt.Sprintf("%+v", k)
 			}
-			sb.WriteByte(',')
+			buf.WriteByte(',')
 			data := toSafeJSONString(kStr)
-			sb.Write(data)
-			sb.WriteByte(':')
+			buf.Write(data)
+			buf.WriteByte(':')
 			switch v.(type) {
 			case string:
 				data := toSafeJSONString(v.(string))
-				sb.Write(data)
+				buf.Write(data)
 			case error:
 				data := toSafeJSONString(v.(error).Error())
-				sb.Write(data)
+				buf.Write(data)
 			default:
 				if vbs, err := json.Marshal(v); err != nil {
 					s := fmt.Sprintf("%+v", v)
 					data := toSafeJSONString(s)
-					sb.Write(data)
+					buf.Write(data)
 				} else {
-					sb.Write(vbs)
+					buf.Write(vbs)
 				}
 			}
 			i = i + 2
 		}
 	}
-	sb.WriteByte('}')
+	buf.WriteByte('}')
 	if err != nil {
-		sb.WriteString("\n")
-		sb.WriteString(fmt.Sprintf("%+v", err))
+		buf.WriteString("\n")
+		buf.WriteString(fmt.Sprintf("%+v", err))
 	}
-	return sb.String()
+	return buf.String()
 }
 
 func (l *DefaultLogger) Debug(msg string, keysAndValues ...interface{}) {
