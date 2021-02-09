@@ -1,0 +1,13 @@
+apiVersion: datasource.sentinel.io/v1alpha1
+kind: SystemRules
+metadata:
+  name: sentinel-go-system-rules
+spec:
+  # Add fields here
+  rules:
+    - metricType: AvgRT
+      strategy: NoAdaptive
+      triggerCount: 123
+    - metricType: Concurrency
+      strategy: NoAdaptive
+      triggerCount: 100
