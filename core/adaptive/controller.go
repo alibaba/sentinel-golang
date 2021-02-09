@@ -46,7 +46,7 @@ func (bc BaseController) BoundConfig() *Config {
 // If the watermark is greater than Config.memHighWaterMark, the count is Config.highMemUsageRatio * count.
 // Otherwise, the count is ((watermark - memLowWaterMark)/(memHighWaterMark - memLowWaterMark)) *
 //	(highMemUsageRatio * count - lowMemUsageRatio * count) + lowMemUsageRatio * count.
-type MemoryAdaptiveController struct {
+type MemoryLinearAdaptiveController struct {
 	BaseController
 	lowMemUsageRatio  float64
 	highMemUsageRatio float64
@@ -54,8 +54,8 @@ type MemoryAdaptiveController struct {
 	memHighWaterMark  int64
 }
 
-func newMemoryAdaptiveController(c *Config) *MemoryAdaptiveController {
-	return &MemoryAdaptiveController{
+func newMemoryLinearAdaptiveController(c *Config) *MemoryLinearAdaptiveController {
+	return &MemoryLinearAdaptiveController{
 		BaseController:    *newBaseController(c),
 		lowMemUsageRatio:  c.LowRatio,
 		highMemUsageRatio: c.HighRatio,
@@ -64,7 +64,7 @@ func newMemoryAdaptiveController(c *Config) *MemoryAdaptiveController {
 	}
 }
 
-func (mc *MemoryAdaptiveController) CalculateSystemAdaptiveCount(count float64) float64 {
+func (mc *MemoryLinearAdaptiveController) CalculateSystemAdaptiveCount(count float64) float64 {
 	var adaptiveCount float64
 	lowMemUsageCount := count * mc.lowMemUsageRatio
 	highMemUsageCount := count * mc.highMemUsageRatio

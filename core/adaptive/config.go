@@ -28,8 +28,23 @@ const (
 	Memory AdaptiveType = iota
 )
 
-func (s AdaptiveType) String() string {
-	switch s {
+type CalculateStrategy int32
+
+const (
+	Linear CalculateStrategy = iota
+)
+
+func (c CalculateStrategy) String() string {
+	switch c {
+	case Linear:
+		return "Linear"
+	default:
+		return "Undefined"
+	}
+}
+
+func (a AdaptiveType) String() string {
+	switch a {
 	case Memory:
 		return "Memory"
 	default:
@@ -41,8 +56,9 @@ type Config struct {
 	// ID is the unique id
 	ID string `json:"id,omitempty"`
 	// user-defined name to uniquely determine adaptive strategy
-	AdaptiveConfigName string       `json:"adaptiveConfigName"`
-	AdaptiveType       AdaptiveType `json:"adaptiveType"`
+	AdaptiveConfigName string            `json:"adaptiveConfigName"`
+	AdaptiveType       AdaptiveType      `json:"adaptiveType"`
+	CalculateStrategy  CalculateStrategy `json:"calculateStrategy"`
 
 	// adaptive algorithm related parameters
 	// limitation: count * LowRatio > count * HighRatio && HighWaterMark > LowWaterMark
@@ -61,17 +77,18 @@ func (c *Config) IsEqualsTo(newConfig *Config) bool {
 		return false
 	}
 	return c.AdaptiveConfigName == newConfig.AdaptiveConfigName && c.AdaptiveType == newConfig.AdaptiveType &&
-		util.Float64Equals(c.LowRatio, newConfig.LowRatio) && util.Float64Equals(c.HighRatio, newConfig.HighRatio) &&
+		c.CalculateStrategy == newConfig.CalculateStrategy && util.Float64Equals(c.LowRatio, newConfig.LowRatio) && util.Float64Equals(c.HighRatio, newConfig.HighRatio) &&
 		util.Float64Equals(c.LowWaterMark, newConfig.LowWaterMark) && util.Float64Equals(c.HighWaterMark, newConfig.HighWaterMark)
+
 }
 
 func (c *Config) String() string {
 	b, err := json.Marshal(c)
 	if err != nil {
 		// Return the fallback string
-		return fmt.Sprintf("Config{AdaptiveConfigName=%s, AdaptiveType=%s, LowRatio=%.2f, "+
+		return fmt.Sprintf("Config{AdaptiveConfigName=%s, AdaptiveType=%s, CalculateStrategy=%s, LowRatio=%.2f, "+
 			"HighRatio=%.2f, LowWaterMark=%.2f, HighWaterMark=%.2f}",
-			c.AdaptiveConfigName, c.AdaptiveType, c.LowRatio, c.HighRatio, c.LowWaterMark, c.HighWaterMark)
+			c.AdaptiveConfigName, c.AdaptiveType, c.CalculateStrategy, c.LowRatio, c.HighRatio, c.LowWaterMark, c.HighWaterMark)
 	}
 	return string(b)
 }

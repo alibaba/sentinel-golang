@@ -31,7 +31,7 @@ func TestMemoryAdaptiveController(t *testing.T) {
 		LowWaterMark:       1024,
 		HighWaterMark:      2048,
 	}
-	mc := newMemoryAdaptiveController(c1)
+	mc := newMemoryLinearAdaptiveController(c1)
 	system_metric.SetSystemMemoryUsage(100)
 	assert.True(t, util.Float64Equals(mc.CalculateSystemAdaptiveCount(1000), 1000))
 	system_metric.SetSystemMemoryUsage(1024)

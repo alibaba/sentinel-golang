@@ -26,7 +26,7 @@ import (
 )
 
 // ControllerGenFunc represents the Controller generator function of a specific adaptive type.
-type ControllerGenFunc func(r *Config) Controller
+type ControllerGenFunc func(r *Config) (Controller, error)
 
 var (
 	acMap             = make(map[string]Controller, 0)
@@ -38,8 +38,11 @@ var (
 
 func init() {
 	// Initialize the controller generator map for existing adaptive types.
-	controllerGenFunc[Memory] = func(c *Config) Controller {
-		return newMemoryAdaptiveController(c)
+	controllerGenFunc[Memory] = func(c *Config) (Controller, error) {
+		if c.CalculateStrategy == Linear {
+			return newMemoryLinearAdaptiveController(c), nil
+		}
+		return nil, errors.Errorf("invalid CalculateStrategy:%s in adaptive.controllerGenFunc[Memory]", c.CalculateStrategy)
 	}
 }
 
@@ -103,7 +106,13 @@ func onConfigUpdate(rawConfigs []*Config) (err error) {
 			logging.Warn("[Adaptive onConfigUpdate] Ignoring the adaptive config due to unsupported adaptive type", "config", config)
 			continue
 		}
-		m[config.AdaptiveConfigName] = generator(config)
+
+		controller, err := generator(config)
+		if controller == nil || err != nil {
+			logging.Error(err, "Ignoring the rule due to bad generated controller in adaptive.onConfigUpdate()", "config", config)
+			continue
+		}
+		m[config.AdaptiveConfigName] = controller
 	}
 
 	acMux.RUnlock()
@@ -133,6 +142,9 @@ func IsValidConfig(config *Config) error {
 	}
 	if config.AdaptiveType != Memory {
 		return errors.New("invalid AdaptiveType")
+	}
+	if config.CalculateStrategy != Linear {
+		return errors.New("invalid CalculateStrategy")
 	}
 	if config.AdaptiveType == Memory {
 		if config.LowRatio <= 0 {
