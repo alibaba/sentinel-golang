@@ -155,7 +155,8 @@ func AssembleMsg(depth int, logLevel, msg string, err error, keysAndValues ...in
 	//FIXME: fit fc go1.8
 	//sb := strings.Builder{}
 	//sb.Grow(defaultLogMsgBufferSize)
-	buf := new(bytes.Buffer)
+	var buf bytes.Buffer
+	buf.Grow(defaultLogMsgBufferSize)
 
 	file, line := caller(depth)
 	timeStr := time.Now().Format("2006-01-02 15:04:05.520")
