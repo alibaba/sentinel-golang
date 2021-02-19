@@ -348,7 +348,10 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 		msg := fmt.Sprintf("hotspot throttling check blocked, threshold is <= 0, arg: %v", arg)
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), nil)
 	}
-	intervalCostTime := int64(math.Round(float64(batchCount * c.durationInSec * 1000 / tokenCount)))
+	// FIXME: fit fc go1.8
+	// replace math.Round()
+	round := math.Floor(float64(batchCount*c.durationInSec*1000/tokenCount) + 0.5)
+	intervalCostTime := int64(round)
 	for {
 		currentTimeInMs := int64(util.CurrentTimeMillis())
 		lastPassTimePtr := timeCounter.AddIfAbsent(arg, &currentTimeInMs)

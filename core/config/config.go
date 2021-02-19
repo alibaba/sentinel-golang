@@ -176,10 +176,13 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 }
 
 func GetDefaultLogDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
+	// FIXME: fit fc go1.8
+	// replace os.UserHomeDir()
+	//home, err := os.UserHomeDir()
+	//if err != nil {
+	//	return ""
+	//}
+	home := os.Getenv("HOME")
 	return filepath.Join(home, logging.DefaultDirName)
 }
 
