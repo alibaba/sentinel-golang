@@ -140,7 +140,7 @@ func Test_listMetricFiles(t *testing.T) {
 			}
 			if osType := runtime.GOOS; osType == "windows" {
 				for i := 0; i < len(got); i++ {
-					got[i] = strings.ReplaceAll(got[i], "\\", "/")
+					got[i] = strings.Replace(got[i], "\\", "/", -1)
 				}
 			}
 			if !reflect.DeepEqual(got, tt.want) {

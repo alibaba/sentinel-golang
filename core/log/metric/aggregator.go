@@ -26,7 +26,9 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 )
 
-type metricTimeMap = map[uint64][]*base.MetricItem
+// FIXME: fit fc go1.8
+// remove "="
+type metricTimeMap map[uint64][]*base.MetricItem
 
 const (
 	logFlushQueueSize = 60

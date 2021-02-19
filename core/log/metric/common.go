@@ -58,7 +58,7 @@ func FormMetricFileName(serviceName string, withPid bool) string {
 	dot := "."
 	separator := "-"
 	if strings.Contains(serviceName, dot) {
-		serviceName = strings.ReplaceAll(serviceName, dot, separator)
+		serviceName = strings.Replace(serviceName, dot, separator, -1)
 	}
 	filename := serviceName + separator + MetricFileNameSuffix
 	if withPid {
