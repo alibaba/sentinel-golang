@@ -350,7 +350,7 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 	}
 	// FIXME: fit fc go1.8
 	// replace math.Round()
-	round := math.Floor(float64(batchCount * c.durationInSec * 1000 / tokenCount) + 0.5)
+	round := math.Floor(float64(batchCount*c.durationInSec*1000/tokenCount) + 0.5)
 	intervalCostTime := int64(round)
 	for {
 		currentTimeInMs := int64(util.CurrentTimeMillis())
