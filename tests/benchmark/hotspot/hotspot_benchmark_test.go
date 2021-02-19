@@ -15,11 +15,11 @@
 package hotspot
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"math"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -106,7 +106,7 @@ func setRules(n int) {
 }
 func buildAttachments(n int) map[interface{}]interface{} {
 	data := make(map[interface{}]interface{})
-	buf := strings.Builder{}
+	var buf bytes.Buffer
 	for i := 0; i < n; i++ {
 		buf.Reset()
 		buf.WriteString(hotspotParamKey)

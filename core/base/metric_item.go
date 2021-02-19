@@ -15,6 +15,7 @@
 package base
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strconv"
@@ -45,10 +46,12 @@ type MetricItemRetriever interface {
 }
 
 func (m *MetricItem) ToFatString() (string, error) {
-	b := strings.Builder{}
+	//FIXME: fit fc go1.8
+	//b := strings.Builder{}
+	var b bytes.Buffer
 	timeStr := util.FormatTimeMillis(m.Timestamp)
 	// All "|" in the resource name will be replaced with "_"
-	finalName := strings.ReplaceAll(m.Resource, "|", "_")
+	finalName := strings.Replace(m.Resource, "|", "_", -1)
 	_, err := fmt.Fprintf(&b, "%d|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d",
 		m.Timestamp, timeStr, finalName, m.PassQps,
 		m.BlockQps, m.CompleteQps, m.ErrorQps, m.AvgRt,
@@ -60,8 +63,10 @@ func (m *MetricItem) ToFatString() (string, error) {
 }
 
 func (m *MetricItem) ToThinString() (string, error) {
-	b := strings.Builder{}
-	finalName := strings.ReplaceAll(m.Resource, "|", "_")
+	//FIXME: fit fc go1.8
+	//b := strings.Builder{}
+	var b bytes.Buffer
+	finalName := strings.Replace(m.Resource, "|", "_", -1)
 	_, err := fmt.Fprintf(&b, "%d|%s|%d|%d|%d|%d|%d|%d|%d|%d",
 		m.Timestamp, finalName, m.PassQps,
 		m.BlockQps, m.CompleteQps, m.ErrorQps, m.AvgRt,
