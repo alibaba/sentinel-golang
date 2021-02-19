@@ -76,7 +76,7 @@ func (t BlockType) stringSwitch() string {
 }
 
 var (
-	blockTypeMap = map[BlockType]string{
+	blockTypeNames = []string{
 		BlockTypeUnknown:          "Unknown",
 		BlockTypeFlow:             "FlowControl",
 		BlockTypeIsolation:        "BlockTypeIsolation",
@@ -84,6 +84,7 @@ var (
 		BlockTypeSystemFlow:       "System",
 		BlockTypeHotSpotParamFlow: "HotSpotParamFlow",
 	}
+	blockTypeErr = fmt.Errorf("block type err")
 )
 
 func (t BlockType) stringMap() string {
@@ -108,8 +109,8 @@ func TestRegistryBlockType(t *testing.T) {
 	}
 
 	var (
-		New1BlockType = BlockType(BlockTypeRegistryStart + 1)
-		New2BlockType = BlockType(BlockTypeRegistryStart + 2)
+		New1BlockType = BlockType(100)
+		New2BlockType = BlockType(200)
 	)
 
 	tests := []struct {
@@ -117,14 +118,6 @@ func TestRegistryBlockType(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{
-			name: "Unknown",
-			args: struct {
-				blockType BlockType
-				desc      string
-			}{blockType: BlockType(0), desc: "Unknown"},
-			wantErr: true,
-		},
 		{
 			name: "New1",
 			args: struct {
@@ -142,11 +135,11 @@ func TestRegistryBlockType(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "invalid",
+			name: "existed",
 			args: struct {
 				blockType BlockType
 				desc      string
-			}{blockType: BlockType(12), desc: "12"},
+			}{blockType: BlockTypeHotSpotParamFlow, desc: "BlockTypeHotSpotParamFlow"},
 			wantErr: true,
 		},
 	}

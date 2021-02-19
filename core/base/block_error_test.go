@@ -1,8 +1,9 @@
 package base
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewBlockError(t *testing.T) {
@@ -30,9 +31,11 @@ func TestNewBlockError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewBlockError(tt.args.opts...); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewBlockError() = %v, want %v", got, tt.want)
-			}
+			got := NewBlockError(tt.args.opts...)
+			assert.Equal(t, got.blockType, BlockTypeFlow)
+			assert.Equal(t, got.blockMsg, "test")
+			assert.Equal(t, got.rule, new(MockRule))
+			assert.Equal(t, got.snapshotValue, "snapshot")
 		})
 	}
 }

@@ -16,7 +16,6 @@ package base
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -29,38 +28,36 @@ const (
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
 	BlockTypeHotSpotParamFlow
-	// BlockTypeRegistryStart convenient to expand the type to avoid conflicts
-	BlockTypeRegistryStart
 )
 
 var (
-	blockTypeNames = []string{
-		BlockTypeUnknown:          "Unknown",
-		BlockTypeFlow:             "FlowControl",
+	blockTypeMap = map[BlockType]string{
+		BlockTypeUnknown:          "BlockTypeUnknown",
+		BlockTypeFlow:             "BlockTypeFlowControl",
 		BlockTypeIsolation:        "BlockTypeIsolation",
-		BlockTypeCircuitBreaking:  "CircuitBreaking",
-		BlockTypeSystemFlow:       "System",
-		BlockTypeHotSpotParamFlow: "HotSpotParamFlow",
-		BlockTypeRegistryStart:    "BlockTypeRegistryStart",
+		BlockTypeCircuitBreaking:  "BlockTypeCircuitBreaking",
+		BlockTypeSystemFlow:       "BlockTypeSystem",
+		BlockTypeHotSpotParamFlow: "BlockTypeHotSpotParamFlow",
 	}
-
-	blockTypeErr = fmt.Errorf("block type err")
+	blockTypeExisted = fmt.Errorf("block type existed")
 )
 
 // RegistryBlockType adds block type and corresponding description in order.
 func RegistryBlockType(blockType BlockType, desc string) error {
-	if int(blockType) != len(blockTypeNames) {
-		return blockTypeErr
+	_, exist := blockTypeMap[blockType]
+	if exist {
+		return blockTypeExisted
 	}
-	blockTypeNames = append(blockTypeNames, desc)
+	blockTypeMap[blockType] = desc
 	return nil
 }
 
 func (t BlockType) String() string {
-	if int(t) >= len(blockTypeNames) {
-		return strconv.Itoa(int(t))
+	name, ok := blockTypeMap[t]
+	if ok {
+		return name
 	}
-	return blockTypeNames[t]
+	return fmt.Sprintf("%d", t)
 }
 
 type TokenResultStatus uint8
