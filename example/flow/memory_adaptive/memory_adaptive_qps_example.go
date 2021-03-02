@@ -46,12 +46,15 @@ func main() {
 
 	_, err = adaptive.LoadAdaptiveConfigs([]*adaptive.Config{
 		{
-			AdaptiveConfigName: "test",
-			AdaptiveType:       adaptive.Memory,
-			LowRatio:           1.0,
-			HighRatio:          0.1,
-			LowWaterMark:       1024,
-			HighWaterMark:      2048,
+			ConfigName:        "test",
+			MetricType:        adaptive.Memory,
+			CalculateStrategy: adaptive.Linear,
+			LinearStrategyParameters: &adaptive.LinearStrategyParameters{
+				LowRatio:      1.0,
+				HighRatio:     0.1,
+				LowWaterMark:  1024,
+				HighWaterMark: 2048,
+			},
 		},
 	})
 	if err != nil {

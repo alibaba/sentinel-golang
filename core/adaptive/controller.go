@@ -57,10 +57,10 @@ type MemoryLinearAdaptiveController struct {
 func newMemoryLinearAdaptiveController(c *Config) *MemoryLinearAdaptiveController {
 	return &MemoryLinearAdaptiveController{
 		BaseController:    *newBaseController(c),
-		lowMemUsageRatio:  c.LowRatio,
-		highMemUsageRatio: c.HighRatio,
-		memLowWaterMark:   int64(c.LowWaterMark),
-		memHighWaterMark:  int64(c.HighWaterMark),
+		lowMemUsageRatio:  c.LinearStrategyParameters.LowRatio,
+		highMemUsageRatio: c.LinearStrategyParameters.HighRatio,
+		memLowWaterMark:   int64(c.LinearStrategyParameters.LowWaterMark),
+		memHighWaterMark:  int64(c.LinearStrategyParameters.HighWaterMark),
 	}
 }
 

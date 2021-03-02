@@ -24,12 +24,15 @@ import (
 
 func TestMemoryAdaptiveController(t *testing.T) {
 	c1 := &Config{
-		AdaptiveConfigName: "test1",
-		AdaptiveType:       Memory,
-		LowRatio:           1,
-		HighRatio:          0.1,
-		LowWaterMark:       1024,
-		HighWaterMark:      2048,
+		ConfigName:        "test1",
+		MetricType:        Memory,
+		CalculateStrategy: Linear,
+		LinearStrategyParameters: &LinearStrategyParameters{
+			LowRatio:      1,
+			HighRatio:     0.1,
+			LowWaterMark:  1024,
+			HighWaterMark: 2048,
+		},
 	}
 	mc := newMemoryLinearAdaptiveController(c1)
 	system_metric.SetSystemMemoryUsage(100)

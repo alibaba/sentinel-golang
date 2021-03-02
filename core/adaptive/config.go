@@ -17,50 +17,87 @@ package adaptive
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/alibaba/sentinel-golang/util"
 )
 
-// AdaptiveType indicates the adaptive type.
-type AdaptiveType int32
+// MetricType indicates the metric type.
+type MetricType int32
 
 const (
-	Memory AdaptiveType = iota
+	MetricTypeUnknown MetricType = iota
+	Memory
 )
+
+var (
+	metricTypeMap = map[MetricType]string{
+		MetricTypeUnknown: "MetricTypeUnknown",
+		Memory:            "Memory",
+	}
+	metricTypeExisted = fmt.Errorf("metirc type existed")
+)
+
+// RegistryMetricType adds metric type and corresponding description in order.
+func RegistryMetricType(metricType MetricType, desc string) error {
+	_, exist := metricTypeMap[metricType]
+	if exist {
+		return metricTypeExisted
+	}
+	metricTypeMap[metricType] = desc
+	return nil
+}
+
+func (m MetricType) String() string {
+	name, ok := metricTypeMap[m]
+	if ok {
+		return name
+	}
+	return fmt.Sprintf("%d", m)
+}
 
 type CalculateStrategy int32
 
 const (
-	Linear CalculateStrategy = iota
+	CalculateStrategyUnknown CalculateStrategy = iota
+	Linear
 )
 
-func (c CalculateStrategy) String() string {
-	switch c {
-	case Linear:
-		return "Linear"
-	default:
-		return "Undefined"
+var (
+	calculateStrategyMap = map[CalculateStrategy]string{
+		CalculateStrategyUnknown: "CalculateStrategyUnknown",
+		Linear:                   "Linear",
 	}
+	calculateStrategyExisted = fmt.Errorf("calculate strategy existed")
+)
+
+// RegistryMetricType adds metric type and corresponding description in order.
+func RegistryCalculateStrategy(calculateStrategy CalculateStrategy, desc string) error {
+	_, exist := calculateStrategyMap[calculateStrategy]
+	if exist {
+		return calculateStrategyExisted
+	}
+	calculateStrategyMap[calculateStrategy] = desc
+	return nil
 }
 
-func (a AdaptiveType) String() string {
-	switch a {
-	case Memory:
-		return "Memory"
-	default:
-		return "Undefined"
+func (c CalculateStrategy) String() string {
+	name, ok := calculateStrategyMap[c]
+	if ok {
+		return name
 	}
+	return fmt.Sprintf("%d", c)
 }
 
 type Config struct {
 	// ID is the unique id
 	ID string `json:"id,omitempty"`
 	// user-defined name to uniquely determine adaptive strategy
-	AdaptiveConfigName string            `json:"adaptiveConfigName"`
-	AdaptiveType       AdaptiveType      `json:"adaptiveType"`
-	CalculateStrategy  CalculateStrategy `json:"calculateStrategy"`
+	ConfigName               string                    `json:"configName"`
+	MetricType               MetricType                `json:"metricType"`
+	CalculateStrategy        CalculateStrategy         `json:"calculateStrategy"`
+	LinearStrategyParameters *LinearStrategyParameters `json:"LinearStrategyParameters"`
+}
 
-	// adaptive algorithm related parameters
+type LinearStrategyParameters struct {
+	// linear algorithm related parameters
 	// limitation: count * LowRatio > count * HighRatio && HighWaterMark > LowWaterMark
 	// if the current water mark is less than or equals to LowWaterMark, count == count * LowRatio
 	// if the current water mark is more than or equals to HighWaterMark, count == count * HighRatio
@@ -72,23 +109,18 @@ type Config struct {
 	HighWaterMark float64 `json:"highWaterMark"`
 }
 
-func (c *Config) IsEqualsTo(newConfig *Config) bool {
-	if newConfig == nil {
-		return false
-	}
-	return c.AdaptiveConfigName == newConfig.AdaptiveConfigName && c.AdaptiveType == newConfig.AdaptiveType &&
-		c.CalculateStrategy == newConfig.CalculateStrategy && util.Float64Equals(c.LowRatio, newConfig.LowRatio) && util.Float64Equals(c.HighRatio, newConfig.HighRatio) &&
-		util.Float64Equals(c.LowWaterMark, newConfig.LowWaterMark) && util.Float64Equals(c.HighWaterMark, newConfig.HighWaterMark)
-
-}
-
 func (c *Config) String() string {
 	b, err := json.Marshal(c)
 	if err != nil {
+		linearStrategyParameters := "{}"
+		if c.CalculateStrategy == Linear && c.LinearStrategyParameters != nil {
+			linearStrategyParameters = fmt.Sprintf("{LowRatio=%.2f, HighRatio=%.2f, LowWaterMark=%.2f, HighWaterMark=%.2f}",
+				c.LinearStrategyParameters.LowRatio, c.LinearStrategyParameters.HighRatio,
+				c.LinearStrategyParameters.LowWaterMark, c.LinearStrategyParameters.HighWaterMark)
+		}
 		// Return the fallback string
-		return fmt.Sprintf("Config{AdaptiveConfigName=%s, AdaptiveType=%s, CalculateStrategy=%s, LowRatio=%.2f, "+
-			"HighRatio=%.2f, LowWaterMark=%.2f, HighWaterMark=%.2f}",
-			c.AdaptiveConfigName, c.AdaptiveType, c.CalculateStrategy, c.LowRatio, c.HighRatio, c.LowWaterMark, c.HighWaterMark)
+		return fmt.Sprintf("Config{ConfigName=%s, MetricType=%s, CalculateStrategy=%s, LinearStrategyParameters=%s}",
+			c.ConfigName, c.MetricType, c.CalculateStrategy, linearStrategyParameters)
 	}
 	return string(b)
 }

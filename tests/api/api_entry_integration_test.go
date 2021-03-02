@@ -39,12 +39,15 @@ func TestAdaptiveFlowControl(t *testing.T) {
 
 	_, err := adaptive.LoadAdaptiveConfigs([]*adaptive.Config{
 		{
-			AdaptiveConfigName: "test",
-			AdaptiveType:       adaptive.Memory,
-			LowRatio:           1.0,
-			HighRatio:          0.2,
-			LowWaterMark:       1 * 1024,
-			HighWaterMark:      2 * 1024,
+			ConfigName:        "test",
+			MetricType:        adaptive.Memory,
+			CalculateStrategy: adaptive.Linear,
+			LinearStrategyParameters: &adaptive.LinearStrategyParameters{
+				LowRatio:      1.0,
+				HighRatio:     0.2,
+				LowWaterMark:  1 * 1024,
+				HighWaterMark: 2 * 1024,
+			},
 		},
 	})
 	if err != nil {
@@ -127,12 +130,15 @@ func TestAdaptiveFlowControl2(t *testing.T) {
 
 	_, err := adaptive.LoadAdaptiveConfigs([]*adaptive.Config{
 		{
-			AdaptiveConfigName: "test",
-			AdaptiveType:       adaptive.Memory,
-			LowRatio:           15,
-			HighRatio:          1,
-			LowWaterMark:       1 * 1024,
-			HighWaterMark:      2 * 1024,
+			ConfigName:        "test",
+			MetricType:        adaptive.Memory,
+			CalculateStrategy: adaptive.Linear,
+			LinearStrategyParameters: &adaptive.LinearStrategyParameters{
+				LowRatio:      15,
+				HighRatio:     1,
+				LowWaterMark:  1 * 1024,
+				HighWaterMark: 2 * 1024,
+			},
 		},
 	})
 	if err != nil {

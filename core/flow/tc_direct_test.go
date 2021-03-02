@@ -25,12 +25,15 @@ import (
 
 func TestDirectTrafficShapingCalculator_CalculateAllowedTokens(t *testing.T) {
 	c := &adaptive.Config{
-		AdaptiveConfigName: "test",
-		AdaptiveType:       adaptive.Memory,
-		LowRatio:           1,
-		HighRatio:          0.1,
-		LowWaterMark:       1024,
-		HighWaterMark:      2048,
+		ConfigName:        "test",
+		MetricType:        adaptive.Memory,
+		CalculateStrategy: adaptive.Linear,
+		LinearStrategyParameters: &adaptive.LinearStrategyParameters{
+			LowRatio:      1,
+			HighRatio:     0.1,
+			LowWaterMark:  1024,
+			HighWaterMark: 2048,
+		},
 	}
 
 	ok, err := adaptive.LoadAdaptiveConfigs([]*adaptive.Config{c})
