@@ -68,7 +68,7 @@ var (
 	calculateStrategyExisted = fmt.Errorf("calculate strategy existed")
 )
 
-// RegistryMetricType adds metric type and corresponding description in order.
+// RegistryCalculateStrategy adds metric type and corresponding description in order.
 func RegistryCalculateStrategy(calculateStrategy CalculateStrategy, desc string) error {
 	_, exist := calculateStrategyMap[calculateStrategy]
 	if exist {
