@@ -26,11 +26,11 @@ func TestConcurrency(t *testing.T) {
 	})
 	_, _ = circuitbreaker.LoadRules([]*circuitbreaker.Rule{
 		{
-			Resource:         resource,
-			Strategy:         circuitbreaker.ErrorRatio,
-			RetryTimeoutMs:   uint32(5000),
-			StatIntervalMs:   5000,
-			Threshold:        0.5,
+			Resource:       resource,
+			Strategy:       circuitbreaker.ErrorRatio,
+			RetryTimeoutMs: uint32(5000),
+			StatIntervalMs: 5000,
+			Threshold:      0.5,
 		},
 	})
 	for isContinue {
@@ -38,7 +38,7 @@ func TestConcurrency(t *testing.T) {
 			entry, err := sentinel.Entry(resource)
 			if err != nil {
 				isContinue = false
-			}else {
+			} else {
 				defer entry.Exit()
 				// when passing, passNum++
 				atomic.AddInt32(&passNum, 1)
