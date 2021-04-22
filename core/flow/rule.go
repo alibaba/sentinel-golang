@@ -63,10 +63,12 @@ func (s TokenCalculateStrategy) String() string {
 	}
 }
 
+// ControlBehavior defines the behavior when requests have reached the capacity of the resource.
 type ControlBehavior int32
 
 const (
 	Reject ControlBehavior = iota
+	// Throttling indicates that pending requests will be throttled, wait in queue (until free capacity is available)
 	Throttling
 )
 

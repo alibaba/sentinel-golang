@@ -23,7 +23,7 @@ import (
 type MetricType int32
 
 const (
-	// Concurrency represents concurrency count.
+	// Concurrency represents concurrency (in-flight requests).
 	Concurrency MetricType = iota
 )
 
@@ -36,11 +36,14 @@ func (s MetricType) String() string {
 	}
 }
 
-// Rule describes the concurrency num control, that is similar to semaphore
+// Rule describes the isolation policy (e.g. semaphore isolation).
 type Rule struct {
 	// ID represents the unique ID of the rule (optional).
-	ID         string     `json:"id,omitempty"`
-	Resource   string     `json:"resource"`
+	ID string `json:"id,omitempty"`
+	// Resource represents the target resource definition.
+	Resource string `json:"resource"`
+	// MetricType indicates the metric type for checking logic.
+	// Currently Concurrency is supported for concurrency limiting.
 	MetricType MetricType `json:"metricType"`
 	Threshold  uint32     `json:"threshold"`
 }

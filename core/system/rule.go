@@ -28,8 +28,11 @@ const (
 	AvgRT
 	// Concurrency represents the concurrency of all inbound requests.
 	Concurrency
+	// InboundQPS represents the QPS of all inbound requests.
 	InboundQPS
+	// CpuUsage represents the CPU usage percentage of the system.
 	CpuUsage
+
 	// MetricTypeSize indicates the enum size of MetricType.
 	MetricTypeSize
 )
@@ -55,7 +58,7 @@ type AdaptiveStrategy int32
 
 const (
 	NoAdaptive AdaptiveStrategy = -1
-	// 1
+	// BBR represents the adaptive strategy based on ideas of TCP BBR.
 	BBR AdaptiveStrategy = iota
 )
 
@@ -70,11 +73,17 @@ func (t AdaptiveStrategy) String() string {
 	}
 }
 
+// Rule describes the policy for system resiliency.
 type Rule struct {
-	ID           string           `json:"id,omitempty"`
-	MetricType   MetricType       `json:"metricType"`
-	TriggerCount float64          `json:"triggerCount"`
-	Strategy     AdaptiveStrategy `json:"strategy"`
+	// ID represents the unique ID of the rule (optional).
+	ID string `json:"id,omitempty"`
+	// MetricType indicates the type of the trigger metric.
+	MetricType MetricType `json:"metricType"`
+	// TriggerCount represents the lower bound trigger of the adaptive strategy.
+	// Adaptive strategies will not be activated until target metric has reached the trigger count.
+	TriggerCount float64 `json:"triggerCount"`
+	// Strategy represents the adaptive strategy.
+	Strategy AdaptiveStrategy `json:"strategy"`
 }
 
 func (r *Rule) String() string {
