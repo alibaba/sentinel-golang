@@ -36,7 +36,6 @@ func NewMetricBucket() *MetricBucket {
 		minRt:          base.DefaultStatisticMaxRt,
 		maxConcurrency: 0,
 	}
-	mb.reset()
 	return mb
 }
 
@@ -70,6 +69,8 @@ func (mb *MetricBucket) reset() {
 	for i := 0; i < int(base.MetricEventTotal); i++ {
 		atomic.StoreInt64(&mb.counter[i], 0)
 	}
+	atomic.StoreInt64(&mb.minRt, base.DefaultStatisticMaxRt)
+	atomic.StoreInt32(&mb.maxConcurrency, int32(0))
 }
 
 func (mb *MetricBucket) AddRt(rt int64) {
