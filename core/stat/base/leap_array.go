@@ -214,12 +214,15 @@ func (la *LeapArray) currentBucketOfTime(now uint64, bg BucketGenerator) (*Bucke
 				runtime.Gosched()
 			}
 		} else if bucketStart < atomic.LoadUint64(&old.BucketStart) {
-			if la.sampleCount == 1 {
-				// if sampleCount==1 in leap array, in concurrency scenario, this case is possible
+			if la.updateLock.TryLock() {
+				old = bg.ResetBucketTo(old, bucketStart)
+				la.updateLock.Unlock()
+				logging.Warn(fmt.Sprintf("Provided time timeMillis=%d is already behind old.BucketStart=%d, resetting bucket",
+					bucketStart, old.BucketStart))
 				return old, nil
+			} else {
+				runtime.Gosched()
 			}
-			// TODO: reserve for some special case (e.g. when occupying "future" buckets).
-			return nil, errors.New(fmt.Sprintf("Provided time timeMillis=%d is already behind old.BucketStart=%d.", bucketStart, old.BucketStart))
 		}
 	}
 }
