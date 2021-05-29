@@ -42,6 +42,10 @@ type nacosClientMock struct {
 	mock.Mock
 }
 
+func (n *nacosClientMock) PublishAggr(param vo.ConfigParam) (published bool, err error) {
+	panic("implement me")
+}
+
 func (n *nacosClientMock) GetConfig(param vo.ConfigParam) (string, error) {
 	ret := n.Called(param)
 	return ret.String(0), ret.Error(1)
@@ -67,7 +71,7 @@ func (n *nacosClientMock) CancelListenConfig(params vo.ConfigParam) (err error) 
 	return ret.Error(0)
 }
 
-func (n *nacosClientMock) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (n *nacosClientMock) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	ret := n.Called(param)
 	return ret.Get(0).(*model.ConfigPage), ret.Error(1)
 }
