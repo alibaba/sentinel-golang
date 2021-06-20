@@ -15,7 +15,13 @@
 package system_metric
 
 import (
+	"bufio"
+	"github.com/pkg/errors"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,6 +38,9 @@ const (
 	NotRetrievedLoadValue     float64 = -1.0
 	NotRetrievedCpuUsageValue float64 = -1.0
 	NotRetrievedMemoryValue   int64   = -1
+	CGroupPath                        = "/proc/1/cgroup"
+	DockerPath                        = "/docker"
+	KubepodsPath                      = "/kubepods"
 )
 
 var (
@@ -49,6 +58,11 @@ var (
 	TotalMemorySize    = getTotalMemorySize()
 
 	ssStopChan = make(chan struct{})
+
+	isContainer             bool
+	preSysTotalCpuUsage     atomic.Value
+	preContainerCpuUsage    atomic.Value
+	onlineContainerCpuCount float64
 )
 
 func init() {
@@ -64,6 +78,62 @@ func init() {
 	currentProcessOnce.Do(func() {
 		currentProcess.Store(p)
 	})
+
+	isContainer = isContainerRunning()
+	if isContainer {
+		var (
+			currentSysCpuTotal       float64
+			currentContainerCpuTotal float64
+		)
+
+		currentSysCpuTotal, err = getSysCpuUsage()
+		if err != nil {
+			logging.Error(err, "Fail to getSysCpuUsage when initializing system metric")
+			return
+		}
+		currentContainerCpuTotal, err = getContainerCpuUsage()
+		if err != nil {
+			logging.Error(err, "Fail to getContainerCpuUsage when initializing system metric")
+			return
+		}
+		preContainerCpuUsage.Store(currentContainerCpuTotal)
+		preSysTotalCpuUsage.Store(currentSysCpuTotal)
+		onlineContainerCpuCount, err = getContainerCpuCount()
+		if err != nil {
+			logging.Error(err, "Fail to getContainerCpuCount when initializing system metric")
+			return
+		}
+	}
+}
+
+func isContainerRunning() bool {
+	f, err := os.Open(CGroupPath)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	buff := bufio.NewReader(f)
+	for {
+		line, _, err := buff.ReadLine()
+		if err != nil {
+			return false
+		}
+		if strings.Contains(string(line), DockerPath) ||
+			strings.Contains(string(line), KubepodsPath) {
+			return true
+		}
+	}
+}
+
+func getContainerCpuCount() (float64, error) {
+	path := "/sys/fs/cgroup/cpuacct/cpuacct.usage_percpu"
+	usage, err := ioutil.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+	perCpuUsages := strings.Fields(string(usage))
+
+	return float64(len(perCpuUsages)), nil
 }
 
 // getMemoryStat returns the current machine's memory statistic
@@ -156,13 +226,84 @@ func InitCpuCollector(intervalMs uint32) {
 }
 
 func retrieveAndUpdateCpuStat() {
-	cpuPercent, err := getProcessCpuStat()
-	if err != nil {
-		logging.Error(err, "Fail to retrieve and update cpu statistic")
-		return
+	var (
+		cpuPercent float64
+		err        error
+	)
+	if isContainer {
+		cpuPercent, err = getContainerCpuStat()
+		if err != nil {
+			logging.Error(err, "Fail to retrieve and update cpu statistic")
+			return
+		}
+	} else {
+		cpuPercent, err = getProcessCpuStat()
+		if err != nil {
+			logging.Error(err, "Fail to retrieve and update cpu statistic")
+			return
+		}
 	}
+
 	metrics.SetCPURatio(cpuPercent)
 	currentCpuUsage.Store(cpuPercent)
+}
+
+func getContainerCpuStat() (float64, error) {
+
+	var (
+		currentSysCpuTotal       float64
+		currentContainerCpuTotal float64
+		err                      error
+	)
+
+	currentSysCpuTotal, err = getSysCpuUsage()
+	if err != nil {
+		return 0, err
+	}
+	currentContainerCpuTotal, err = getContainerCpuUsage()
+	if err != nil {
+		return 0, err
+	}
+
+	preSysTotalCpu, ok := preSysTotalCpuUsage.Load().(float64)
+	if !ok {
+		return 0, errors.New("preSysTotalCpuUsage load is not float64")
+	}
+	preContainerCpu, ok := preContainerCpuUsage.Load().(float64)
+
+	if !ok {
+		return 0, errors.New("preContainerCpuUsage load is not float64")
+	}
+
+	return (currentContainerCpuTotal - preContainerCpu) * onlineContainerCpuCount / (currentSysCpuTotal - preSysTotalCpu), err
+}
+
+func getSysCpuUsage() (float64, error) {
+	var (
+		currentSysCpuTotal float64
+	)
+	currentCpuStatArr, err := cpu.Times(false)
+	if err != nil {
+		return 0, err
+	}
+	for _, stat := range currentCpuStatArr {
+		currentSysCpuTotal = stat.User + stat.System + stat.Idle + stat.Nice + stat.Iowait + stat.Irq +
+			stat.Softirq + stat.Steal + stat.Guest + stat.GuestNice
+	}
+	return currentSysCpuTotal, nil
+}
+
+func getContainerCpuUsage() (float64, error) {
+	path := "/sys/fs/cgroup/cpuacct/cpuacct.usage"
+	usage, err := ioutil.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+	ns, err := strconv.ParseFloat(string(usage), 64)
+	if err != nil {
+		return 0, err
+	}
+	return ns / 1e9, nil
 }
 
 // getProcessCpuStat gets current process's cpu usage in Bytes
