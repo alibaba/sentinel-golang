@@ -83,3 +83,4 @@ func Test_getProcessCpuStat(t *testing.T) {
 	assert.True(t, int(got) > 0)
 	time.Sleep(time.Millisecond * 200)
 }
+

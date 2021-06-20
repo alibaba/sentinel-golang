@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v3/cpu"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -100,6 +99,7 @@ func init() {
 		preContainerCpuUsage.Store(currentContainerCpuTotal)
 		preSysTotalCpuUsage.Store(currentSysCpuTotal)
 		onlineContainerCpuCount, err = getContainerCpuCount()
+		logging.Debug("the container cpu count is ", onlineContainerCpuCount)
 		if err != nil {
 			logging.Error(err, "Fail to getContainerCpuCount when initializing system metric")
 			return
@@ -128,7 +128,13 @@ func isContainerRunning() bool {
 
 func getContainerCpuCount() (float64, error) {
 	path := "/sys/fs/cgroup/cpuacct/cpuacct.usage_percpu"
-	usage, err := ioutil.ReadFile(path)
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	reader := bufio.NewReader(f)
+	usage, _, err := reader.ReadLine()
 	if err != nil {
 		return 0, err
 	}
@@ -171,13 +177,44 @@ func InitMemoryCollector(intervalMs uint32) {
 }
 
 func retrieveAndUpdateMemoryStat() {
-	memoryUsedBytes, err := GetProcessMemoryStat()
-	if err != nil {
-		logging.Error(err, "Fail to retrieve and update cpu statistic")
-		return
+	var (
+		memoryUsedBytes int64
+		err             error
+	)
+	if isContainer {
+		memoryUsedBytes, err = GetContainerMemoryStat()
+		if err != nil {
+			logging.Error(err, "Fail to retrieve and update container memory statistic")
+			return
+		}
+	} else {
+		memoryUsedBytes, err = GetProcessMemoryStat()
+		if err != nil {
+			logging.Error(err, "Fail to retrieve and update memory statistic")
+			return
+		}
 	}
 	metrics.SetProcessMemorySize(memoryUsedBytes)
 	currentMemoryUsage.Store(memoryUsedBytes)
+}
+
+func GetContainerMemoryStat() (int64, error) {
+	path := "/sys/fs/cgroup/memory/memory.usage_in_bytes"
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	reader := bufio.NewReader(f)
+	usage, _, err := reader.ReadLine()
+	if err != nil {
+		return 0, err
+	}
+	ns, err := strconv.ParseInt(strings.TrimSpace(string(usage)), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return ns, nil
 }
 
 // GetProcessMemoryStat gets current process's memory usage in Bytes
@@ -232,7 +269,7 @@ func retrieveAndUpdateCpuStat() {
 		err        error
 	)
 	if isContainer {
-		cpuPercent, err = getContainerCpuStat()
+		cpuPercent, err = GetContainerCpuStat()
 		if err != nil {
 			logging.Error(err, "Fail to retrieve and update cpu statistic")
 			return
@@ -245,12 +282,12 @@ func retrieveAndUpdateCpuStat() {
 		}
 	}
 
-	log.Println("cpu percent",cpuPercent)
+	log.Println("cpu percent", cpuPercent)
 	metrics.SetCPURatio(cpuPercent)
 	currentCpuUsage.Store(cpuPercent)
 }
 
-func getContainerCpuStat() (float64, error) {
+func GetContainerCpuStat() (float64, error) {
 
 	var (
 		currentSysCpuTotal       float64
@@ -276,7 +313,11 @@ func getContainerCpuStat() (float64, error) {
 	if !ok {
 		return 0, errors.New("preContainerCpuUsage load is not float64")
 	}
-
+	if currentSysCpuTotal-preSysTotalCpu == 0 {
+		log.Println("pre_sys ", preSysTotalCpu, "pre_con ", preContainerCpu, "cur_sys ", currentSysCpuTotal, "cur_con ", currentContainerCpuTotal)
+		return 0, err
+	}
+	log.Println("pre_sys ", preSysTotalCpu, "pre_con ", preContainerCpu, "cur_sys ", currentSysCpuTotal, "cur_con ", currentContainerCpuTotal)
 	return (currentContainerCpuTotal - preContainerCpu) * onlineContainerCpuCount / (currentSysCpuTotal - preSysTotalCpu), err
 }
 
@@ -297,11 +338,17 @@ func getSysCpuUsage() (float64, error) {
 
 func getContainerCpuUsage() (float64, error) {
 	path := "/sys/fs/cgroup/cpuacct/cpuacct.usage"
-	usage, err := ioutil.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
 		return 0, err
 	}
-	ns, err := strconv.ParseFloat(string(usage), 64)
+	defer f.Close()
+	reader := bufio.NewReader(f)
+	usage, _, err := reader.ReadLine()
+	if err != nil {
+		return 0, err
+	}
+	ns, err := strconv.ParseFloat(strings.TrimSpace(string(usage)), 64)
 	if err != nil {
 		return 0, err
 	}
