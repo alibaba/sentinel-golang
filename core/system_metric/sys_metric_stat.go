@@ -165,7 +165,7 @@ func retrieveAndUpdateCpuStat() {
 	currentCpuUsage.Store(cpuPercent)
 }
 
-// getProcessCpuStat gets current process's memory usage in Bytes
+// getProcessCpuStat gets current process's cpu usage in Bytes
 func getProcessCpuStat() (float64, error) {
 	curProcess := currentProcess.Load()
 	if curProcess == nil {
