@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -244,6 +245,7 @@ func retrieveAndUpdateCpuStat() {
 		}
 	}
 
+	log.Println("cpu percent",cpuPercent)
 	metrics.SetCPURatio(cpuPercent)
 	currentCpuUsage.Store(cpuPercent)
 }
