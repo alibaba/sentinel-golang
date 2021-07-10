@@ -39,6 +39,7 @@ func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {
 	if ctx.Resource.FlowType() == base.Inbound {
 		s.recordPassFor(InboundNode(), ctx.Input.BatchCount)
 	}
+	ctx.StatNode.TryDecreasePreConcurrency()
 }
 
 func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
@@ -46,6 +47,7 @@ func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockErro
 	if ctx.Resource.FlowType() == base.Inbound {
 		s.recordBlockFor(InboundNode(), ctx.Input.BatchCount)
 	}
+	ctx.StatNode.TryDecreasePreConcurrency()
 }
 
 func (s *Slot) OnCompleted(ctx *base.EntryContext) {

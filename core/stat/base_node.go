@@ -26,7 +26,8 @@ type BaseStatNode struct {
 	sampleCount uint32
 	intervalMs  uint32
 
-	concurrency int32
+	concurrency    int32
+	preConcurrency int32
 
 	arr    *sbase.BucketLeapArray
 	metric *sbase.SlidingWindowMetric
@@ -98,6 +99,16 @@ func (n *BaseStatNode) IncreaseConcurrency() {
 
 func (n *BaseStatNode) DecreaseConcurrency() {
 	atomic.AddInt32(&(n.concurrency), -1)
+}
+
+func (n *BaseStatNode) IncreasePreConcurrency() int32 {
+	return atomic.AddInt32(&(n.preConcurrency), 1)
+}
+
+func (n *BaseStatNode) TryDecreasePreConcurrency() {
+	if atomic.LoadInt32(&(n.preConcurrency)) > 0 {
+		atomic.AddInt32(&(n.preConcurrency), -1)
+	}
 }
 
 func (n *BaseStatNode) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (base.ReadStat, error) {
