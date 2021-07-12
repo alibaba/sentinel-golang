@@ -16,7 +16,6 @@ package system_metric
 
 import (
 	"bufio"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -282,7 +281,6 @@ func retrieveAndUpdateCpuStat() {
 		}
 	}
 
-	log.Println("cpu percent", cpuPercent)
 	metrics.SetCPURatio(cpuPercent)
 	currentCpuUsage.Store(cpuPercent)
 }
@@ -314,10 +312,8 @@ func GetContainerCpuStat() (float64, error) {
 		return 0, errors.New("preContainerCpuUsage load is not float64")
 	}
 	if currentSysCpuTotal-preSysTotalCpu == 0 {
-		log.Println("pre_sys ", preSysTotalCpu, "pre_con ", preContainerCpu, "cur_sys ", currentSysCpuTotal, "cur_con ", currentContainerCpuTotal)
 		return 0, err
 	}
-	log.Println("pre_sys ", preSysTotalCpu, "pre_con ", preContainerCpu, "cur_sys ", currentSysCpuTotal, "cur_con ", currentContainerCpuTotal)
 	return (currentContainerCpuTotal - preContainerCpu) * onlineContainerCpuCount / (currentSysCpuTotal - preSysTotalCpu), err
 }
 
