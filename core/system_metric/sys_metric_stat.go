@@ -16,8 +16,6 @@ package system_metric
 
 import (
 	"bufio"
-	"github.com/pkg/errors"
-	"github.com/shirou/gopsutil/v3/cpu"
 	"log"
 	"os"
 	"strconv"
@@ -25,6 +23,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/shirou/gopsutil/v3/cpu"
 
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/metrics"
