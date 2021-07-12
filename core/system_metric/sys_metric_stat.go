@@ -99,7 +99,6 @@ func init() {
 		preContainerCpuUsage.Store(currentContainerCpuTotal)
 		preSysTotalCpuUsage.Store(currentSysCpuTotal)
 		onlineContainerCpuCount, err = getContainerCpuCount()
-		logging.Debug("the container cpu count is ", onlineContainerCpuCount)
 		if err != nil {
 			logging.Error(err, "Fail to getContainerCpuCount when initializing system metric")
 			return
