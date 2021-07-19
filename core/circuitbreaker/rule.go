@@ -126,12 +126,8 @@ func (r *Rule) isEqualsTo(newRule *Rule) bool {
 func getRuleStatSlidingWindowBucketCount(r *Rule) uint32 {
 	interval := r.StatIntervalMs
 	bucketCount := r.StatSlidingWindowBucketCount
-	if bucketCount == 0 {
+	if bucketCount == 0 || interval%bucketCount != 0 {
 		bucketCount = 1
-	} else {
-		if interval%bucketCount != 0 {
-			bucketCount = 1
-		}
 	}
 	return bucketCount
 }
