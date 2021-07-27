@@ -297,4 +297,9 @@ func TestNewLeapArray(t *testing.T) {
 		assert.Nil(t, leapArray)
 		assert.Error(t, err, "Invalid parameters, intervalInMs is 10000, sampleCount is 30")
 	})
+	t.Run("TestNewLeapArray_Invalid_Parameters_sampleCount0", func(t *testing.T) {
+		leapArray, err := NewLeapArray(0, IntervalInMs, nil)
+		assert.Nil(t, leapArray)
+		assert.Error(t, err, "Invalid parameters, intervalInMs is 10000, sampleCount is 0")
+	})
 }

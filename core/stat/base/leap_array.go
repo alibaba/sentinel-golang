@@ -159,7 +159,7 @@ type LeapArray struct {
 }
 
 func NewLeapArray(sampleCount uint32, intervalInMs uint32, generator BucketGenerator) (*LeapArray, error) {
-	if intervalInMs%sampleCount != 0 {
+	if sampleCount == 0 || intervalInMs%sampleCount != 0 {
 		return nil, errors.Errorf("Invalid parameters, intervalInMs is %d, sampleCount is %d", intervalInMs, sampleCount)
 	}
 	if generator == nil {
