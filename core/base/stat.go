@@ -100,6 +100,11 @@ type ConcurrencyStat interface {
 	DecreaseConcurrency()
 }
 
+type PreConcurrencyStat interface {
+	IncreasePreConcurrency() int32
+	TryDecreasePreConcurrency()
+}
+
 // StatNode holds real-time statistics for resources.
 type StatNode interface {
 	MetricItemRetriever
@@ -107,6 +112,7 @@ type StatNode interface {
 	ReadStat
 	WriteStat
 	ConcurrencyStat
+	PreConcurrencyStat
 
 	// GenerateReadStat generates the readonly metric statistic based on resource level global statistic
 	// If parameters, sampleCount and intervalInMs, are not suitable for resource level global statistic, return (nil, error)

@@ -79,6 +79,14 @@ func (m *StatNodeMock) DecreaseConcurrency() {
 	return
 }
 
+func (m *StatNodeMock) IncreasePreConcurrency() int32 {
+	return 0
+}
+
+func (m *StatNodeMock) TryDecreasePreConcurrency() {
+	return
+}
+
 func (m *StatNodeMock) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (ReadStat, error) {
 	args := m.Called(sampleCount, intervalInMs)
 	return args.Get(0).(ReadStat), args.Error(1)
