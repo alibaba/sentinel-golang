@@ -20,10 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v3/cpu"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -32,6 +30,7 @@ import (
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/process"
+	"go.uber.org/atomic"
 )
 
 const (
@@ -60,8 +59,8 @@ var (
 	ssStopChan = make(chan struct{})
 
 	isContainer             bool
-	preSysTotalCpuUsage     atomic.Value
-	preContainerCpuUsage    atomic.Value
+	preSysTotalCpuUsage     atomic.Float64
+	preContainerCpuUsage    atomic.Float64
 	onlineContainerCpuCount float64
 )
 
@@ -98,48 +97,48 @@ func init() {
 		}
 		preContainerCpuUsage.Store(currentContainerCpuTotal)
 		preSysTotalCpuUsage.Store(currentSysCpuTotal)
-		onlineContainerCpuCount, err = getContainerCpuCount()
-		if err != nil {
-			logging.Error(err, "Fail to getContainerCpuCount when initializing system metric")
-			return
-		}
+		onlineContainerCpuCount = getContainerCpuCount()
 	}
 }
 
-func isContainerRunning() bool {
-	f, err := os.Open(CGroupPath)
+func readLineFromFile(filepath string) []string {
+	res := make([]string, 0)
+	f, err := os.Open(filepath)
 	if err != nil {
-		return false
+		return nil
 	}
 	defer f.Close()
 	buff := bufio.NewReader(f)
 	for {
 		line, _, err := buff.ReadLine()
 		if err != nil {
-			return false
+			return res
 		}
-		if strings.Contains(string(line), DockerPath) ||
-			strings.Contains(string(line), KubepodsPath) {
-			return true
-		}
+		res = append(res, string(line))
 	}
 }
 
-func getContainerCpuCount() (float64, error) {
-	path := "/sys/fs/cgroup/cpuacct/cpuacct.usage_percpu"
-	f, err := os.Open(path)
-	if err != nil {
-		return 0, err
-	}
-	defer f.Close()
-	reader := bufio.NewReader(f)
-	usage, _, err := reader.ReadLine()
-	if err != nil {
-		return 0, err
-	}
-	perCpuUsages := strings.Fields(string(usage))
+func isContainerRunning() bool {
 
-	return float64(len(perCpuUsages)), nil
+	lines := readLineFromFile(CGroupPath)
+	for _, line := range lines {
+		if strings.Contains(line, DockerPath) ||
+			strings.Contains(line, KubepodsPath) {
+			return true
+		}
+	}
+	return false
+}
+
+func getContainerCpuCount() float64 {
+	path := "/sys/fs/cgroup/cpuacct/cpuacct.usage_percpu"
+	usage := readLineFromFile(path)
+	if len(usage) == 0 {
+		return 0
+	}
+	perCpuUsages := strings.Fields(usage[0])
+
+	return float64(len(perCpuUsages))
 }
 
 // getMemoryStat returns the current machine's memory statistic
@@ -181,11 +180,7 @@ func retrieveAndUpdateMemoryStat() {
 		err             error
 	)
 	if isContainer {
-		memoryUsedBytes, err = GetContainerMemoryStat()
-		if err != nil {
-			logging.Error(err, "Fail to retrieve and update container memory statistic")
-			return
-		}
+		memoryUsedBytes = GetContainerMemoryStat()
 	} else {
 		memoryUsedBytes, err = GetProcessMemoryStat()
 		if err != nil {
@@ -197,23 +192,17 @@ func retrieveAndUpdateMemoryStat() {
 	currentMemoryUsage.Store(memoryUsedBytes)
 }
 
-func GetContainerMemoryStat() (int64, error) {
+func GetContainerMemoryStat() int64 {
 	path := "/sys/fs/cgroup/memory/memory.usage_in_bytes"
-	f, err := os.Open(path)
-	if err != nil {
-		return 0, err
+	usage := readLineFromFile(path)
+	if len(usage) == 0 {
+		return 0
 	}
-	defer f.Close()
-	reader := bufio.NewReader(f)
-	usage, _, err := reader.ReadLine()
+	ns, err := strconv.ParseInt(strings.TrimSpace(usage[0]), 10, 64)
 	if err != nil {
-		return 0, err
+		return 0
 	}
-	ns, err := strconv.ParseInt(strings.TrimSpace(string(usage)), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return ns, nil
+	return ns
 }
 
 // GetProcessMemoryStat gets current process's memory usage in Bytes
@@ -302,15 +291,13 @@ func GetContainerCpuStat() (float64, error) {
 		return 0, err
 	}
 
-	preSysTotalCpu, ok := preSysTotalCpuUsage.Load().(float64)
-	if !ok {
-		return 0, errors.New("preSysTotalCpuUsage load is not float64")
-	}
-	preContainerCpu, ok := preContainerCpuUsage.Load().(float64)
+	preSysTotalCpu := preSysTotalCpuUsage.Load()
 
-	if !ok {
-		return 0, errors.New("preContainerCpuUsage load is not float64")
-	}
+	preContainerCpu := preContainerCpuUsage.Load()
+
+	preSysTotalCpuUsage.Store(currentSysCpuTotal)
+	preContainerCpuUsage.Store(currentContainerCpuTotal)
+
 	if currentSysCpuTotal-preSysTotalCpu == 0 {
 		return 0, err
 	}
