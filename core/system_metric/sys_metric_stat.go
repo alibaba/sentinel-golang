@@ -16,13 +16,12 @@ package system_metric
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/shirou/gopsutil/v3/cpu"
 
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/metrics"
@@ -90,11 +89,8 @@ func init() {
 			logging.Error(err, "Fail to getSysCpuUsage when initializing system metric")
 			return
 		}
-		currentContainerCpuTotal, err = getContainerCpuUsage()
-		if err != nil {
-			logging.Error(err, "Fail to getContainerCpuUsage when initializing system metric")
-			return
-		}
+		currentContainerCpuTotal = getContainerCpuUsage()
+
 		preContainerCpuUsage.Store(currentContainerCpuTotal)
 		preSysTotalCpuUsage.Store(currentSysCpuTotal)
 		onlineContainerCpuCount = getContainerCpuCount()
@@ -286,10 +282,7 @@ func GetContainerCpuStat() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	currentContainerCpuTotal, err = getContainerCpuUsage()
-	if err != nil {
-		return 0, err
-	}
+	currentContainerCpuTotal = getContainerCpuUsage()
 
 	preSysTotalCpu := preSysTotalCpuUsage.Load()
 
@@ -305,37 +298,40 @@ func GetContainerCpuStat() (float64, error) {
 }
 
 func getSysCpuUsage() (float64, error) {
-	var (
-		currentSysCpuTotal float64
-	)
-	currentCpuStatArr, err := cpu.Times(false)
-	if err != nil {
-		return 0, err
+	path := "/proc/stat"
+	lines := readLineFromFile(path)
+	for _, line := range lines {
+		parts := strings.Fields(line)
+		switch parts[0] {
+		case "cpu":
+			if len(parts) < 8 {
+				return 0, fmt.Errorf("invalid number of cpu fields")
+			}
+			var totalClockTicks float64
+			for _, i := range parts[1:8] {
+				v, err := strconv.ParseFloat(i, 64)
+				if err != nil {
+					return 0, fmt.Errorf("Unable to convert value %s to int: %s", i, err)
+				}
+				totalClockTicks += v
+			}
+			return totalClockTicks / 100, nil
+		}
 	}
-	for _, stat := range currentCpuStatArr {
-		currentSysCpuTotal = stat.User + stat.System + stat.Idle + stat.Nice + stat.Iowait + stat.Irq +
-			stat.Softirq + stat.Steal + stat.Guest + stat.GuestNice
-	}
-	return currentSysCpuTotal, nil
+	return 0, nil
 }
 
-func getContainerCpuUsage() (float64, error) {
+func getContainerCpuUsage() float64 {
 	path := "/sys/fs/cgroup/cpuacct/cpuacct.usage"
-	f, err := os.Open(path)
-	if err != nil {
-		return 0, err
+	usage := readLineFromFile(path)
+	if len(usage) == 0 {
+		return 0
 	}
-	defer f.Close()
-	reader := bufio.NewReader(f)
-	usage, _, err := reader.ReadLine()
+	ns, err := strconv.ParseFloat(strings.TrimSpace(usage[0]), 64)
 	if err != nil {
-		return 0, err
+		return 0
 	}
-	ns, err := strconv.ParseFloat(strings.TrimSpace(string(usage)), 64)
-	if err != nil {
-		return 0, err
-	}
-	return ns / 1e9, nil
+	return ns / 1e9
 }
 
 // getProcessCpuStat gets current process's cpu usage in Bytes
