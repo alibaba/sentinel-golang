@@ -49,14 +49,14 @@ const (
 )
 
 var (
-	stateChangeCounter = metric_exporter.NewCounter(
-		"circuit_breaker_state_change",
-		"Circuit breaker state change count",
-		[]string{"resource", "previous_state", "current_state"})
+	stateChangedCounter = metric_exporter.NewCounter(
+		"circuit_breaker_state_changed_total",
+		"Circuit breaker total state change count",
+		[]string{"resource", "from_state", "to_state"})
 )
 
 func init() {
-	metric_exporter.MustRegister(stateChangeCounter)
+	metric_exporter.Register(stateChangedCounter)
 }
 
 func newState() *State {
@@ -165,7 +165,7 @@ func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
 			listener.OnTransformToOpen(Closed, *b.rule, snapshot)
 		}
 
-		stateChangeCounter.Add(float64(1), b.BoundRule().Resource, "Closed", "Open")
+		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "Closed", "Open")
 		return true
 	}
 	return false
@@ -196,7 +196,7 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen(ctx *base.EntryContext) bool {
 			})
 		}
 
-		stateChangeCounter.Add(float64(1), b.BoundRule().Resource, "Open", "HalfOpen")
+		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "Open", "HalfOpen")
 		return true
 	}
 	return false
@@ -211,7 +211,7 @@ func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 			listener.OnTransformToOpen(HalfOpen, *b.rule, snapshot)
 		}
 
-		stateChangeCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Open")
+		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Open")
 		return true
 	}
 	return false
@@ -224,6 +224,8 @@ func (b *circuitBreakerBase) fromHalfOpenToClosed() bool {
 		for _, listener := range stateChangeListeners {
 			listener.OnTransformToClosed(HalfOpen, *b.rule)
 		}
+
+		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Closed")
 		return true
 	}
 	return false

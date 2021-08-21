@@ -74,8 +74,8 @@ func init() {
 		currentProcess.Store(p)
 	})
 
-	metric_exporter.MustRegister(cpuRatioGauge)
-	metric_exporter.MustRegister(processMemoryGauge)
+	metric_exporter.Register(cpuRatioGauge)
+	metric_exporter.Register(processMemoryGauge)
 }
 
 // getMemoryStat returns the current machine's memory statistic

@@ -27,7 +27,7 @@ var (
 )
 
 func init() {
-	metric_exporter.MustRegister(resourceFlowThresholdGauge)
+	metric_exporter.Register(resourceFlowThresholdGauge)
 }
 
 // TrafficShapingCalculator calculates the actual traffic shaping threshold

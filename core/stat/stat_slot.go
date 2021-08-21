@@ -23,40 +23,21 @@ import (
 const (
 	StatSlotName  = "sentinel-core-stat-slot"
 	StatSlotOrder = 1000
+	ResultPass    = "pass"
+	ResultBlock   = "block"
 )
 
 var (
 	DefaultSlot = &Slot{}
 
-	passCounter = metric_exporter.NewCounter(
-		"pass",
-		"Total pass count",
-		[]string{"resource"})
-	blockCounter = metric_exporter.NewCounter(
-		"block",
-		"Total block count",
-		[]string{"resource", "block_type"})
-	completeCounter = metric_exporter.NewCounter(
-		"complete",
-		"Total complete count",
-		[]string{"resource"})
-	errorCounter = metric_exporter.NewCounter(
-		"error",
-		"Total error count",
-		[]string{"resource"})
-	rtHistogram = metric_exporter.NewHistogram(
-		"rt",
-		"Rt histogram",
-		[]float64{1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000, 5000},
-		[]string{"resource"})
+	handledCounter = metric_exporter.NewCounter(
+		"handled_total",
+		"Total handled count",
+		[]string{"resource", "result", "block_type"})
 )
 
 func init() {
-	metric_exporter.MustRegister(passCounter)
-	metric_exporter.MustRegister(blockCounter)
-	metric_exporter.MustRegister(completeCounter)
-	metric_exporter.MustRegister(errorCounter)
-	metric_exporter.MustRegister(rtHistogram)
+	metric_exporter.Register(handledCounter)
 }
 
 type Slot struct {
@@ -76,7 +57,7 @@ func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {
 		s.recordPassFor(InboundNode(), ctx.Input.BatchCount)
 	}
 
-	passCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name())
+	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultPass, "")
 }
 
 func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
@@ -85,7 +66,7 @@ func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockErro
 		s.recordBlockFor(InboundNode(), ctx.Input.BatchCount)
 	}
 
-	blockCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), blockError.BlockType().String())
+	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultBlock, blockError.BlockType().String())
 }
 
 func (s *Slot) OnCompleted(ctx *base.EntryContext) {
@@ -95,12 +76,6 @@ func (s *Slot) OnCompleted(ctx *base.EntryContext) {
 	if ctx.Resource.FlowType() == base.Inbound {
 		s.recordCompleteFor(InboundNode(), ctx.Input.BatchCount, rt, ctx.Err())
 	}
-
-	completeCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name())
-	if ctx.Err() != nil {
-		errorCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name())
-	}
-	rtHistogram.Observe(float64(rt), ctx.Resource.Name())
 }
 
 func (s *Slot) recordPassFor(sn base.StatNode, count uint32) {
