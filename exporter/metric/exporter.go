@@ -36,9 +36,12 @@ func init() {
 	exporter = newPrometheusExporter()
 
 	host, _ = os.Hostname()
+	if host == "" {
+		host = "unknown"
+	}
 	app = config.AppName()
 	pid = strconv.Itoa(os.Getpid())
-	namespace = "sentinel"
+	namespace = "sentinel-go"
 }
 
 // Metric models basic operations of metric being exported.
