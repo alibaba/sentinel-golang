@@ -55,10 +55,10 @@ type ExporterConfig struct {
 
 // MetricExporterConfig represents configuration of metric exporter.
 type MetricExporterConfig struct {
-	// HTTPAddr is the http server listen address, like ":8080".
-	HTTPAddr string `yaml:"http_addr"`
-	// HTTPPath is the http request path of access metrics, like "/metrics".
-	HTTPPath string `yaml:"http_path"`
+	// HttpAddr is the http server listen address, like ":8080".
+	HttpAddr string `yaml:"http_addr"`
+	// HttpPath is the http request path of access metrics, like "/metrics".
+	HttpPath string `yaml:"http_path"`
 }
 
 // LogConfig represent the configuration of logging in Sentinel.
@@ -206,11 +206,11 @@ func (entity *Entity) LogUsePid() bool {
 }
 
 func (entity *Entity) MetricExportHTTPAddr() string {
-	return entity.Sentinel.Exporter.Metric.HTTPAddr
+	return entity.Sentinel.Exporter.Metric.HttpAddr
 }
 
 func (entity *Entity) MetricExportHTTPPath() string {
-	return entity.Sentinel.Exporter.Metric.HTTPPath
+	return entity.Sentinel.Exporter.Metric.HttpPath
 }
 
 func (entity *Entity) MetricLogFlushIntervalSec() uint32 {

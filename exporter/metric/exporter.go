@@ -41,7 +41,7 @@ func init() {
 	}
 	app = config.AppName()
 	pid = strconv.Itoa(os.Getpid())
-	namespace = "sentinel-go"
+	namespace = "sentinel_go"
 }
 
 // Metric models basic operations of metric being exported.
