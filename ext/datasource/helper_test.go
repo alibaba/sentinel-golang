@@ -22,6 +22,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/core/base"
+
 	cb "github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
@@ -434,7 +436,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        10,
 			DurationInSec:     1,
 			SpecificItems:     m,
-			Mode:              hotspot.CONTROL,
+			RuleBase:          base.RuleBase{Mode: base.CONTROL},
 		}
 
 		m2 := make(map[interface{}]int64)
@@ -449,7 +451,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        0,
 			DurationInSec:     1,
 			SpecificItems:     m2,
-			Mode:              hotspot.CONTROL,
+			RuleBase:          base.RuleBase{Mode: base.CONTROL},
 		}
 
 		m3 := make(map[interface{}]int64)
@@ -464,7 +466,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        0,
 			DurationInSec:     1,
 			SpecificItems:     m3,
-			Mode:              hotspot.CONTROL,
+			RuleBase:          base.RuleBase{Mode: base.CONTROL},
 		}
 
 		r4 := &hotspot.Rule{
@@ -478,7 +480,7 @@ func TestHotSpotParamRuleListJsonUpdater(t *testing.T) {
 			BurstCount:        0,
 			DurationInSec:     2,
 			SpecificItems:     m3,
-			Mode:              hotspot.CONTROL,
+			RuleBase:          base.RuleBase{Mode: base.CONTROL},
 		}
 
 		err := HotSpotParamRulesUpdater([]*hotspot.Rule{r1, r2, r3, r4})

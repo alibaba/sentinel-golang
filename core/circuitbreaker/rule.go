@@ -17,6 +17,8 @@ package circuitbreaker
 import (
 	"fmt"
 
+	"github.com/alibaba/sentinel-golang/core/base"
+
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -48,6 +50,7 @@ func (s Strategy) String() string {
 
 // Rule encompasses the fields of circuit breaking rule.
 type Rule struct {
+	base.RuleBase
 	// unique id
 	Id string `json:"id,omitempty"`
 	// resource name

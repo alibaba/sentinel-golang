@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/alibaba/sentinel-golang/core/base"
+
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -80,6 +82,7 @@ func (s ControlBehavior) String() string {
 
 // Rule describes the strategy of flow control, the flow control strategy is based on QPS statistic metric
 type Rule struct {
+	base.RuleBase
 	// ID represents the unique ID of the rule (optional).
 	ID string `json:"id,omitempty"`
 	// Resource represents the resource name.

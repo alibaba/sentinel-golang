@@ -66,7 +66,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 				}
 
 				if r.Status() == base.ResultStatusBlocked {
-					if tc.BoundRule().Mode == MONITOR {
+					if tc.BoundRule().IsMonitorMode() {
 						PutOutputAttachment(ctx, KeyIsMonitorBlocked, true)
 						return nil
 					}

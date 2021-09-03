@@ -60,6 +60,10 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 			continue
 		}
 		if r.Status() == base.ResultStatusBlocked {
+			if tc.rule.IsMonitorMode() {
+				base.RecordMonitorBlock(ctx)
+				continue
+			}
 			return r
 		}
 		if r.Status() == base.ResultStatusShouldWait {

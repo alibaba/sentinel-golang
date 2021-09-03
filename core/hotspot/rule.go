@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 // ControlBehavior indicates the traffic shaping behaviour.
@@ -63,6 +65,7 @@ func (t MetricType) String() string {
 
 // Rule represents the hotspot(frequent) parameter flow control rule
 type Rule struct {
+	base.RuleBase
 	// ID is the unique id
 	ID string `json:"id,omitempty"`
 	// Resource is the resource name
@@ -97,19 +100,7 @@ type Rule struct {
 	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
 	SpecificItems map[interface{}]int64 `json:"specificItems"`
-	// Mode Switch
-	Mode Mode `json:"mode"`
 }
-
-// Mode represents the switch.
-type Mode string
-
-// defines the mode enum value
-const (
-	MONITOR Mode = "MONITOR"
-	CONTROL Mode = "CONTROL"
-	CLOSE   Mode = "CLOSE"
-)
 
 func (r *Rule) String() string {
 	b, err := json.Marshal(r)

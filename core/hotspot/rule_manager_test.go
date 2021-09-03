@@ -19,6 +19,8 @@ import (
 	"math"
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/core/base"
+
 	"github.com/alibaba/sentinel-golang/core/hotspot/cache"
 	"github.com/stretchr/testify/assert"
 )
@@ -166,7 +168,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        10,
 		DurationInSec:     1,
 		SpecificItems:     specific,
-		Mode:              CONTROL,
+		RuleBase:          base.RuleBase{Mode: base.CONTROL},
 	}
 
 	specific2 := make(map[interface{}]int64)
@@ -183,7 +185,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     1,
 		SpecificItems:     specific2,
-		Mode:              CONTROL,
+		RuleBase:          base.RuleBase{Mode: base.CONTROL},
 	}
 
 	specific3 := make(map[interface{}]int64)
@@ -200,7 +202,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     1,
 		SpecificItems:     specific3,
-		Mode:              CONTROL,
+		RuleBase:          base.RuleBase{Mode: base.CONTROL},
 	}
 
 	r4 := &Rule{
@@ -214,7 +216,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     2,
 		SpecificItems:     specific3,
-		Mode:              CONTROL,
+		RuleBase:          base.RuleBase{Mode: base.CONTROL},
 	}
 
 	updated, err := LoadRules([]*Rule{r1, r2, r3, r4})
@@ -234,7 +236,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        10,
 		DurationInSec:     1,
 		SpecificItems:     specific,
-		Mode:              CONTROL,
+		RuleBase:          base.RuleBase{Mode: base.CONTROL},
 	}
 	r22 := &Rule{
 		ID:                "22",
@@ -247,7 +249,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     1,
 		SpecificItems:     specific2,
-		Mode:              CONTROL,
+		RuleBase:          base.RuleBase{Mode: base.CONTROL},
 	}
 	r23 := &Rule{
 		ID:                "23",
@@ -260,7 +262,7 @@ func Test_onRuleUpdate(t *testing.T) {
 		BurstCount:        0,
 		DurationInSec:     12,
 		SpecificItems:     specific3,
-		Mode:              CONTROL,
+		RuleBase:          base.RuleBase{Mode: base.CONTROL},
 	}
 
 	oldTc1Ptr := tcMap["abc"][0]
@@ -319,7 +321,7 @@ func TestLoadRules(t *testing.T) {
 				BurstCount:        10,
 				DurationInSec:     1,
 				SpecificItems:     specific,
-				Mode:              CLOSE,
+				RuleBase:          base.RuleBase{Mode: base.CLOSE},
 			},
 		})
 		assert.Nil(t, err)
@@ -335,7 +337,7 @@ func TestLoadRules(t *testing.T) {
 				BurstCount:        10,
 				DurationInSec:     1,
 				SpecificItems:     specific,
-				Mode:              CLOSE,
+				RuleBase:          base.RuleBase{Mode: base.CLOSE},
 			},
 		})
 		assert.Nil(t, err)

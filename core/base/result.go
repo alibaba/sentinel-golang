@@ -196,3 +196,16 @@ func NewTokenResultShouldWait(waitNs time.Duration) *TokenResult {
 	result.nanosToWait = waitNs
 	return result
 }
+
+func RecordMonitorBlock(ctx *EntryContext) {
+	PutOutputAttachment(ctx, KeyIsMonitorBlocked, true)
+}
+
+const KeyIsMonitorBlocked = "isMonitorBlocked"
+
+func PutOutputAttachment(ctx *EntryContext, key interface{}, value interface{}) {
+	if ctx.Data == nil {
+		ctx.Data = make(map[interface{}]interface{})
+	}
+	ctx.Data[key] = value
+}

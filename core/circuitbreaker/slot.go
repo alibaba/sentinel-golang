@@ -46,8 +46,12 @@ func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	}
 	if passed, rule := checkPass(ctx); !passed {
 		msg := "circuit breaker check blocked"
+		if rule.IsMonitorMode() {
+			base.RecordMonitorBlock(ctx)
+			return result
+		}
 		if result == nil {
-			result = base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
+			return base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
 		} else {
 			result.ResetToBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
 		}
