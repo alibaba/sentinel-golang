@@ -23,17 +23,16 @@ type SentinelRule interface {
 }
 
 type RuleBase struct {
-	Mode Mode
+	Mode Mode `json:"mode"`
 }
 
 // Mode represents the rule mode.
 type Mode string
 
-// defines the mode enum value
+// defines the mode enum value, empty string is equivalent to control mode.
 const (
 	MONITOR Mode = "MONITOR"
 	CONTROL Mode = "CONTROL"
-	CLOSE   Mode = "CLOSE"
 )
 
 // IsMonitorMode judges whether current rule run mode is the monitor mode.

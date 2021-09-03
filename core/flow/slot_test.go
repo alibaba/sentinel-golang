@@ -66,3 +66,101 @@ func Test_FlowSlot_StandaloneStat(t *testing.T) {
 	}
 	assert.True(t, getTrafficControllerListFor("abc")[0].boundStat.readOnlyMetric.GetSum(base.MetricEventPass) == 50)
 }
+
+func Test_FlowSlot_StandaloneStat_Block(t *testing.T) {
+	slot := &Slot{}
+	statSLot := &StandaloneStatSlot{}
+	res := base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound)
+	resNode := stat.GetOrCreateResourceNode("abc", base.ResTypeCommon)
+	ctx := &base.EntryContext{
+		Resource: res,
+		StatNode: resNode,
+		Input: &base.SentinelInput{
+			BatchCount: 1,
+		},
+		RuleCheckResult: nil,
+		Data:            nil,
+	}
+
+	slot.Check(ctx)
+
+	r1 := &Rule{
+		Resource:               "abc",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		// Use standalone statistic, using single-bucket-sliding-windows
+		StatIntervalInMs: 20000,
+		Threshold:        10,
+		RelationStrategy: CurrentResource,
+	}
+	_, e := LoadRules([]*Rule{r1})
+	if e != nil {
+		logging.Error(e, "")
+		t.Fail()
+		return
+	}
+
+	for i := 0; i < 10; i++ {
+		ret := slot.Check(ctx)
+		if ret != nil {
+			t.Fail()
+			return
+		}
+		statSLot.OnEntryPassed(ctx)
+	}
+	assert.True(t, getTrafficControllerListFor("abc")[0].boundStat.readOnlyMetric.GetSum(base.MetricEventPass) == 10)
+	// more than 10 requests, should be blocked.
+	ret := slot.Check(ctx)
+	assert.NotNil(t, ret)
+}
+
+func Test_FlowSlot_StandaloneStat_Monitor_Block(t *testing.T) {
+	slot := &Slot{}
+	statSLot := &StandaloneStatSlot{}
+	res := base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound)
+	resNode := stat.GetOrCreateResourceNode("abc", base.ResTypeCommon)
+	ctx := &base.EntryContext{
+		Resource: res,
+		StatNode: resNode,
+		Input: &base.SentinelInput{
+			BatchCount: 1,
+		},
+		RuleCheckResult: nil,
+		Data:            nil,
+	}
+
+	slot.Check(ctx)
+
+	r1 := &Rule{
+		Resource:               "abc",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		// Use standalone statistic, using single-bucket-sliding-windows
+		StatIntervalInMs: 20000,
+		Threshold:        10,
+		RelationStrategy: CurrentResource,
+		RuleBase:         base.RuleBase{Mode: base.MONITOR},
+	}
+	_, e := LoadRules([]*Rule{r1})
+	if e != nil {
+		logging.Error(e, "")
+		t.Fail()
+		return
+	}
+
+	for i := 0; i < 10; i++ {
+		ret := slot.Check(ctx)
+		if ret != nil {
+			t.Fail()
+			return
+		}
+		statSLot.OnEntryPassed(ctx)
+		_, ok := ctx.Data[base.KeyIsMonitorBlocked].(bool)
+		assert.False(t, ok)
+	}
+	assert.True(t, getTrafficControllerListFor("abc")[0].boundStat.readOnlyMetric.GetSum(base.MetricEventPass) == 10)
+	// more than 10 requests, should be blocked.
+	ret := slot.Check(ctx)
+	assert.Nil(t, ret)
+	assert.True(t, ctx.Data[base.KeyIsMonitorBlocked].(bool))
+}

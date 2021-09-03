@@ -321,7 +321,6 @@ func TestLoadRules(t *testing.T) {
 				BurstCount:        10,
 				DurationInSec:     1,
 				SpecificItems:     specific,
-				RuleBase:          base.RuleBase{Mode: base.CLOSE},
 			},
 		})
 		assert.Nil(t, err)
@@ -337,7 +336,6 @@ func TestLoadRules(t *testing.T) {
 				BurstCount:        10,
 				DurationInSec:     1,
 				SpecificItems:     specific,
-				RuleBase:          base.RuleBase{Mode: base.CLOSE},
 			},
 		})
 		assert.Nil(t, err)

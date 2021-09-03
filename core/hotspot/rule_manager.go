@@ -19,8 +19,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/core/base"
-
 	"github.com/alibaba/sentinel-golang/core/misc"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
@@ -154,10 +152,6 @@ func onRuleUpdate(rules []*Rule) (err error) {
 	for _, r := range rules {
 		if err := IsValidRule(r); err != nil {
 			logging.Warn("[HotSpot onRuleUpdate] Ignoring invalid hotspot rule when loading new rules", "rule", r, "err", err.Error())
-			continue
-		}
-		if r.Mode == "" || r.Mode == base.CLOSE {
-			logging.Warn("[HotSpot onRuleUpdate] Ignoring Close hotspot rule when loading new rules", "rule", r)
 			continue
 		}
 		res := r.ResourceName()
