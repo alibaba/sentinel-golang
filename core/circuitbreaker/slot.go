@@ -51,7 +51,7 @@ func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 			return result
 		}
 		if result == nil {
-			return base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
+			result = base.NewTokenResultBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
 		} else {
 			result.ResetToBlockedWithCause(base.BlockTypeCircuitBreaking, msg, rule, nil)
 		}
