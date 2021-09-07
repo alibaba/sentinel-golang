@@ -38,12 +38,27 @@ type SentinelConfig struct {
 		// Type indicates the classification of the service (e.g. web service, API gateway).
 		Type int32
 	}
+	// Exporter represents configuration items related to exporter, like metric exporter.
+	Exporter ExporterConfig
 	// Log represents configuration items related to logging.
 	Log LogConfig
 	// Stat represents configuration items related to statistics.
 	Stat StatConfig
 	// UseCacheTime indicates whether to cache time(ms)
 	UseCacheTime bool `yaml:"useCacheTime"`
+}
+
+// ExporterConfig represents configuration items related to exporter, like metric exporter.
+type ExporterConfig struct {
+	Metric MetricExporterConfig
+}
+
+// MetricExporterConfig represents configuration of metric exporter.
+type MetricExporterConfig struct {
+	// HttpAddr is the http server listen address, like ":8080".
+	HttpAddr string `yaml:"http_addr"`
+	// HttpPath is the http request path of access metrics, like "/metrics".
+	HttpPath string `yaml:"http_path"`
 }
 
 // LogConfig represent the configuration of logging in Sentinel.
@@ -188,6 +203,14 @@ func (entity *Entity) Logger() logging.Logger {
 // LogUsePid returns whether the log file name contains the PID suffix.
 func (entity *Entity) LogUsePid() bool {
 	return entity.Sentinel.Log.UsePid
+}
+
+func (entity *Entity) MetricExportHTTPAddr() string {
+	return entity.Sentinel.Exporter.Metric.HttpAddr
+}
+
+func (entity *Entity) MetricExportHTTPPath() string {
+	return entity.Sentinel.Exporter.Metric.HttpPath
 }
 
 func (entity *Entity) MetricLogFlushIntervalSec() uint32 {

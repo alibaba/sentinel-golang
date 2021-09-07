@@ -20,8 +20,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/metrics"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -49,6 +49,15 @@ var (
 	TotalMemorySize    = getTotalMemorySize()
 
 	ssStopChan = make(chan struct{})
+
+	cpuRatioGauge = metric_exporter.NewGauge(
+		"cpu_ratio",
+		"Process cpu ratio",
+		[]string{})
+	processMemoryGauge = metric_exporter.NewGauge(
+		"process_memory_bytes",
+		"Process memory in bytes",
+		[]string{})
 )
 
 func init() {
@@ -64,6 +73,9 @@ func init() {
 	currentProcessOnce.Do(func() {
 		currentProcess.Store(p)
 	})
+
+	metric_exporter.Register(cpuRatioGauge)
+	metric_exporter.Register(processMemoryGauge)
 }
 
 // getMemoryStat returns the current machine's memory statistic
@@ -105,7 +117,9 @@ func retrieveAndUpdateMemoryStat() {
 		logging.Error(err, "Fail to retrieve and update cpu statistic")
 		return
 	}
-	metrics.SetProcessMemorySize(memoryUsedBytes)
+
+	processMemoryGauge.Set(float64(memoryUsedBytes))
+
 	currentMemoryUsage.Store(memoryUsedBytes)
 }
 
@@ -161,7 +175,9 @@ func retrieveAndUpdateCpuStat() {
 		logging.Error(err, "Fail to retrieve and update cpu statistic")
 		return
 	}
-	metrics.SetCPURatio(cpuPercent)
+
+	cpuRatioGauge.Set(cpuPercent)
+
 	currentCpuUsage.Store(cpuPercent)
 }
 

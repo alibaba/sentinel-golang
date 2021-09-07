@@ -16,16 +16,28 @@ package stat
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
+	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
 const (
 	StatSlotOrder = 1000
+	ResultPass    = "pass"
+	ResultBlock   = "block"
 )
 
 var (
 	DefaultSlot = &Slot{}
+
+	handledCounter = metric_exporter.NewCounter(
+		"handled_total",
+		"Total handled count",
+		[]string{"resource", "result", "block_type"})
 )
+
+func init() {
+	metric_exporter.Register(handledCounter)
+}
 
 type Slot struct {
 }
@@ -39,6 +51,8 @@ func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {
 	if ctx.Resource.FlowType() == base.Inbound {
 		s.recordPassFor(InboundNode(), ctx.Input.BatchCount)
 	}
+
+	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultPass, "")
 }
 
 func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
@@ -46,6 +60,8 @@ func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockErro
 	if ctx.Resource.FlowType() == base.Inbound {
 		s.recordBlockFor(InboundNode(), ctx.Input.BatchCount)
 	}
+
+	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultBlock, blockError.BlockType().String())
 }
 
 func (s *Slot) OnCompleted(ctx *base.EntryContext) {
