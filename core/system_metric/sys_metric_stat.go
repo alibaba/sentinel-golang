@@ -114,7 +114,7 @@ func InitMemoryCollector(intervalMs uint32) {
 func retrieveAndUpdateMemoryStat() {
 	memoryUsedBytes, err := GetProcessMemoryStat()
 	if err != nil {
-		logging.Error(err, "Fail to retrieve and update cpu statistic")
+		logging.Error(err, "Fail to retrieve and update memory statistic")
 		return
 	}
 
