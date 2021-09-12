@@ -78,6 +78,11 @@ type Rule struct {
 	// for ErrorRatio, it represents the max error request ratio
 	// for ErrorCount, it represents the max error request count
 	Threshold float64 `json:"threshold"`
+	//ProbeNum is number of probes required when the circuit breaker is half-open.
+	//when the probe num are set  and circuit breaker in the half-open state.
+	//if err occurs during the probe, the circuit breaker is opened immediately.
+	//otherwise,the circuit breaker is closed only after the number of probes is reached
+	ProbeNum uint64 `json:"probeNum"`
 }
 
 func (r *Rule) String() string {

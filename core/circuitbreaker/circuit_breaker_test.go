@@ -61,18 +61,15 @@ type StateChangeListenerMock struct {
 }
 
 func (s *StateChangeListenerMock) OnTransformToClosed(prev State, rule Rule) {
-	_ = s.Called(prev, rule)
 	logging.Debug("transform to closed", "strategy", rule.Strategy, "prevState", prev.String())
 	return
 }
 
 func (s *StateChangeListenerMock) OnTransformToOpen(prev State, rule Rule, snapshot interface{}) {
-	_ = s.Called(prev, rule, snapshot)
 	logging.Debug("transform to open", "strategy", rule.Strategy, "prevState", prev.String(), "snapshot", snapshot)
 }
 
 func (s *StateChangeListenerMock) OnTransformToHalfOpen(prev State, rule Rule) {
-	_ = s.Called(prev, rule)
 	logging.Debug("transform to Half-Open", "strategy", rule.Strategy, "prevState", prev.String())
 }
 
@@ -140,6 +137,35 @@ func TestSlowRtCircuitBreaker_TryPass(t *testing.T) {
 		assert.True(t, pass)
 		assert.True(t, b.state.get() == HalfOpen)
 	})
+
+	t.Run("TryPass_ProbeNum", func(t *testing.T) {
+		r := &Rule{
+			Resource:         "abc",
+			Strategy:         SlowRequestRatio,
+			RetryTimeoutMs:   3000,
+			MinRequestAmount: 10,
+			StatIntervalMs:   10000,
+			MaxAllowedRtMs:   50,
+			Threshold:        0.5,
+			ProbeNum:         10,
+		}
+		b, err := newSlowRtCircuitBreaker(r)
+		assert.Nil(t, err)
+
+		b.state.set(Open)
+		ctx := &base.EntryContext{
+			Resource: base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound),
+		}
+		e := base.NewSentinelEntry(ctx, base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound), nil)
+		ctx.SetEntry(e)
+		for i := 0; i < 10; i++ {
+			pass := b.TryPass(ctx)
+			assert.True(t, pass)
+			assert.True(t, b.state.get() == HalfOpen)
+			b.OnRequestComplete(1, nil)
+		}
+		assert.True(t, b.state.get() == Closed)
+	})
 }
 
 func TestSlowRt_OnRequestComplete(t *testing.T) {
@@ -168,6 +194,20 @@ func TestSlowRt_OnRequestComplete(t *testing.T) {
 		b.state.set(HalfOpen)
 		b.OnRequestComplete(10, nil)
 		assert.True(t, b.CurrentState() == Closed)
+	})
+	t.Run("OnRequestComplete_ProbeNum_Success", func(t *testing.T) {
+		b.probeNumber = 2
+		b.state.set(HalfOpen)
+		b.OnRequestComplete(10, nil)
+		assert.True(t, b.CurrentState() == HalfOpen)
+		assert.True(t, b.curProbeNumber == 1)
+	})
+	t.Run("OnRequestComplete_ProbeNum_Failed", func(t *testing.T) {
+		b.probeNumber = 2
+		b.state.set(HalfOpen)
+		b.OnRequestComplete(base.NewEmptyEntryContext().Rt(), nil)
+		assert.True(t, b.CurrentState() == Open)
+		assert.True(t, b.curProbeNumber == 0)
 	})
 }
 
@@ -227,6 +267,33 @@ func TestErrorRatioCircuitBreaker_TryPass(t *testing.T) {
 		assert.True(t, pass)
 		assert.True(t, b.state.get() == HalfOpen)
 	})
+	t.Run("TryPass_ProbeNum", func(t *testing.T) {
+		r := &Rule{
+			Resource:         "abc",
+			Strategy:         ErrorRatio,
+			RetryTimeoutMs:   3000,
+			MinRequestAmount: 10,
+			StatIntervalMs:   10000,
+			Threshold:        0.5,
+			ProbeNum:         10,
+		}
+		b, err := newErrorRatioCircuitBreaker(r)
+		assert.Nil(t, err)
+
+		b.state.set(Open)
+		ctx := &base.EntryContext{
+			Resource: base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound),
+		}
+		e := base.NewSentinelEntry(ctx, base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound), nil)
+		ctx.SetEntry(e)
+		for i := 0; i < 10; i++ {
+			pass := b.TryPass(ctx)
+			assert.True(t, pass)
+			assert.True(t, b.state.get() == HalfOpen)
+			b.OnRequestComplete(1, nil)
+		}
+		assert.True(t, b.state.get() == Closed)
+	})
 }
 
 func TestErrorRatio_OnRequestComplete(t *testing.T) {
@@ -253,6 +320,20 @@ func TestErrorRatio_OnRequestComplete(t *testing.T) {
 		b.state.set(HalfOpen)
 		b.OnRequestComplete(0, errors.New("errorRatio"))
 		assert.True(t, b.CurrentState() == Open)
+	})
+	t.Run("OnRequestComplete_ProbeNum_Success", func(t *testing.T) {
+		b.probeNumber = 2
+		b.state.set(HalfOpen)
+		b.OnRequestComplete(base.NewEmptyEntryContext().Rt(), nil)
+		assert.True(t, b.CurrentState() == HalfOpen)
+		assert.True(t, b.curProbeNumber == 1)
+	})
+	t.Run("OnRequestComplete_ProbeNum_Failed", func(t *testing.T) {
+		b.probeNumber = 2
+		b.state.set(HalfOpen)
+		b.OnRequestComplete(0, errors.New("errorRatio"))
+		assert.True(t, b.CurrentState() == Open)
+		assert.True(t, b.curProbeNumber == 0)
 	})
 }
 
@@ -312,6 +393,34 @@ func TestErrorCountCircuitBreaker_TryPass(t *testing.T) {
 		assert.True(t, pass)
 		assert.True(t, b.state.get() == HalfOpen)
 	})
+
+	t.Run("TryPass_ProbeNum", func(t *testing.T) {
+		r := &Rule{
+			Resource:         "abc",
+			Strategy:         ErrorCount,
+			RetryTimeoutMs:   3000,
+			MinRequestAmount: 10,
+			StatIntervalMs:   10000,
+			Threshold:        1.0,
+			ProbeNum:         10,
+		}
+		b, err := newErrorCountCircuitBreaker(r)
+		assert.Nil(t, err)
+
+		b.state.set(Open)
+		ctx := &base.EntryContext{
+			Resource: base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound),
+		}
+		e := base.NewSentinelEntry(ctx, base.NewResourceWrapper("abc", base.ResTypeCommon, base.Inbound), nil)
+		ctx.SetEntry(e)
+		for i := 0; i < 10; i++ {
+			pass := b.TryPass(ctx)
+			assert.True(t, pass)
+			assert.True(t, b.state.get() == HalfOpen)
+			b.OnRequestComplete(1, nil)
+		}
+		assert.True(t, b.state.get() == Closed)
+	})
 }
 
 func TestErrorCount_OnRequestComplete(t *testing.T) {
@@ -338,6 +447,20 @@ func TestErrorCount_OnRequestComplete(t *testing.T) {
 		b.state.set(HalfOpen)
 		b.OnRequestComplete(0, errors.New("errorCount"))
 		assert.True(t, b.CurrentState() == Open)
+	})
+	t.Run("OnRequestComplete_ProbeNum_Success", func(t *testing.T) {
+		b.probeNumber = 2
+		b.state.set(HalfOpen)
+		b.OnRequestComplete(base.NewEmptyEntryContext().Rt(), nil)
+		assert.True(t, b.CurrentState() == HalfOpen)
+		assert.True(t, b.curProbeNumber == 1)
+	})
+	t.Run("OnRequestComplete_ProbeNum_Failed", func(t *testing.T) {
+		b.probeNumber = 2
+		b.state.set(HalfOpen)
+		b.OnRequestComplete(0, errors.New("errorCount"))
+		assert.True(t, b.CurrentState() == Open)
+		assert.True(t, b.curProbeNumber == 0)
 	})
 }
 
