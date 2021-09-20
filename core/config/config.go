@@ -175,6 +175,10 @@ func reconfigureRecordLogger(logBaseDir string, withPid bool) error {
 	return nil
 }
 
+func SetMonitorMode(monitorMode bool) {
+	globalCfg.Sentinel.MonitorMode.Store(monitorMode)
+}
+
 func GetDefaultLogDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -261,4 +265,8 @@ func MetricStatisticIntervalMs() uint32 {
 }
 func MetricStatisticSampleCount() uint32 {
 	return globalCfg.MetricStatisticSampleCount()
+}
+
+func MonitorMode() bool {
+	return globalCfg.MonitorMode()
 }

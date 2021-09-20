@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.uber.org/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
@@ -46,6 +48,8 @@ type SentinelConfig struct {
 	Stat StatConfig
 	// UseCacheTime indicates whether to cache time(ms)
 	UseCacheTime bool `yaml:"useCacheTime"`
+	// MonitorMode In monitoring mode, Sentinel won't actually block the requests, but only record the relevant metrics (for observation).
+	MonitorMode *atomic.Bool
 }
 
 // ExporterConfig represents configuration items related to exporter, like metric exporter.
@@ -141,6 +145,7 @@ func NewDefaultConfig() *Entity {
 				},
 			},
 			UseCacheTime: true,
+			MonitorMode:  atomic.NewBool(false),
 		},
 	}
 }
@@ -258,4 +263,8 @@ func (entity *Entity) MetricStatisticIntervalMs() uint32 {
 }
 func (entity *Entity) MetricStatisticSampleCount() uint32 {
 	return entity.Sentinel.Stat.MetricStatisticSampleCount
+}
+
+func (entity *Entity) MonitorMode() bool {
+	return entity.Sentinel.MonitorMode.Load()
 }

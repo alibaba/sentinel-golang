@@ -21,10 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/util"
+
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
-	"github.com/alibaba/sentinel-golang/util"
 )
 
 func Benchmark_qps(b *testing.B) {
@@ -39,6 +41,7 @@ func doTest() {
 	if err != nil {
 		log.Fatalf("Unexpected error: %+v", err)
 	}
+	config.SetMonitorMode(true)
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
@@ -58,6 +61,7 @@ func doTest() {
 			for {
 				e, b := sentinel.Entry("some-test", sentinel.WithTrafficType(base.Inbound))
 				if b != nil {
+					fmt.Println(util.CurrentTimeMillis(), "blocked")
 					// Blocked. We could get the block reason from the BlockError.
 					time.Sleep(time.Duration(rand.Uint64()%10) * time.Millisecond)
 				} else {

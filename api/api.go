@@ -17,6 +17,8 @@ package api
 import (
 	"sync"
 
+	"github.com/alibaba/sentinel-golang/core/config"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
@@ -169,6 +171,9 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 	r := sc.Entry(ctx)
 	if r == nil {
 		// This indicates internal error in some slots, so just pass
+		return e, nil
+	}
+	if config.MonitorMode() {
 		return e, nil
 	}
 	if r.Status() == base.ResultStatusBlocked {
