@@ -26,10 +26,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	PtrSize = int(8)
-)
-
 // BucketWrap represent a slot to record metrics
 // In order to reduce the usage of memory, BucketWrap don't hold length of BucketWrap
 // The length of BucketWrap could be seen in LeapArray.
@@ -115,7 +111,7 @@ func (aa *AtomicBucketWrapArray) elementOffset(idx int) (unsafe.Pointer, bool) {
 		return nil, false
 	}
 	basePtr := aa.base
-	return unsafe.Pointer(uintptr(basePtr) + uintptr(idx*PtrSize)), true
+	return unsafe.Pointer(uintptr(basePtr) + uintptr(idx)*unsafe.Sizeof(basePtr)), true
 }
 
 func (aa *AtomicBucketWrapArray) get(idx int) *BucketWrap {
