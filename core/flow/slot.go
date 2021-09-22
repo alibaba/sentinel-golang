@@ -67,7 +67,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		}
 		if r.Status() == base.ResultStatusShouldWait {
 			if nanosToWait := r.NanosToWait(); nanosToWait > 0 {
-				flowWaitCount.Add(1, ctx.Resource.Name())
+				flowWaitCount.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name())
 				// Handle waiting action.
 				util.Sleep(nanosToWait)
 			}
