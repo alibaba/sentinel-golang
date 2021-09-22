@@ -33,9 +33,9 @@ var (
 )
 
 func init() {
-	if config.MetricExportHTTPAddr() != ""{
+	if config.MetricExportHTTPAddr() != "" {
 		exporter = newPrometheusExporter()
-	}else {
+	} else {
 		exporter = newEmptyExporter()
 	}
 
