@@ -15,6 +15,8 @@
 package flow
 
 import (
+	"sync/atomic"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/logging"
@@ -85,9 +87,9 @@ func selectNodeByRelStrategy(rule *Rule, node base.StatNode) base.StatNode {
 func checkInLocal(tc *TrafficShapingController, resStat base.StatNode, batchCount uint32, flag int32) *base.TokenResult {
 	actual := selectNodeByRelStrategy(tc.rule, resStat)
 	if actual == nil {
-		logging.FrequentErrorOnce.Do(func() {
+		if ok := atomic.CompareAndSwapUint32(&logging.FrequentErrorOnce, 0, 1); ok {
 			logging.Error(errors.Errorf("nil resource node"), "No resource node for flow rule in FlowSlot.checkInLocal()", "rule", tc.rule)
-		})
+		}
 		return base.NewTokenResultPass()
 	}
 	return tc.PerformChecking(actual, batchCount, flag)
