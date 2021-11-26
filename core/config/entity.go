@@ -140,7 +140,7 @@ func NewDefaultConfig() *Entity {
 					CollectMemoryIntervalMs: DefaultMemoryStatCollectIntervalMs,
 				},
 			},
-			UseCacheTime: true,
+			UseCacheTime: false,
 		},
 	}
 }
