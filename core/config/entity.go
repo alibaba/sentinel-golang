@@ -116,7 +116,7 @@ func NewDefaultConfig() *Entity {
 					CollectIntervalMs: DefaultSystemStatCollectIntervalMs,
 				},
 			},
-			UseCacheTime: true,
+			UseCacheTime: false,
 		},
 	}
 }
