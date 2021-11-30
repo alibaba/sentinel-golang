@@ -1,9 +1,10 @@
 package apollo
 
 import (
+	"testing"
+
 	"github.com/apolloconfig/agollo/v4/env/config"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 // must run an apollo server before test

@@ -21,28 +21,28 @@ type options struct {
 	client   *agollo.Client
 }
 
-//WithPropertyHandlers set property handlers
+// WithPropertyHandlers set property handlers
 func WithPropertyHandlers(handlers ...datasource.PropertyHandler) Option {
 	return func(o *options) {
 		o.handlers = handlers
 	}
 }
 
-//WithLogger set apollo logger
+// WithLogger set apollo logger
 func WithLogger(logger log.LoggerInterface) Option {
 	return func(o *options) {
 		o.logger = logger
 	}
 }
 
-//apolloDatasource implements datasource.Datasource
+// apolloDatasource implements datasource.Datasource
 type apolloDatasource struct {
 	datasource.Base
 	client      *agollo.Client
 	propertyKey string
 }
 
-//NewDatasource create apollo datasource
+// NewDatasource create apollo datasource
 func NewDatasource(conf *config.AppConfig, propertyKey string, opts ...Option) (datasource.DataSource, error) {
 	if conf == nil {
 		return nil, ErrMissConfig
