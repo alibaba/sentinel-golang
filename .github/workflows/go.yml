@@ -63,6 +63,8 @@ jobs:
         go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
         cd ../nacos
         go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ../apollo
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
         cd ../../adapters/echo
         go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
         cd ../gear
