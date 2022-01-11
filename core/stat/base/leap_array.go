@@ -26,15 +26,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-// BucketWrap represent a slot to record metrics
-// In order to reduce the usage of memory, BucketWrap don't hold length of BucketWrap
+// BucketWrap represents a slot to record metrics.
+//
+// In order to reduce memory footprint, BucketWrap does not hold the length of the bucket.
 // The length of BucketWrap could be seen in LeapArray.
-// The scope of time is [startTime, startTime+bucketLength)
-// The size of BucketWrap is 24(8+16) bytes
+// The scope of time is [startTime, startTime+bucketLength).
+// The size of BucketWrap is 24(8+16) bytes.
 type BucketWrap struct {
-	// The start timestamp of this statistic bucket wrapper.
+	// BucketStart represents start timestamp of this statistic bucket wrapper.
 	BucketStart uint64
-	// The actual data structure to record the metrics (e.g. MetricBucket).
+	// Value represents the actual data structure of the metrics (e.g. MetricBucket).
 	Value atomic.Value
 }
 
@@ -50,8 +51,9 @@ func calculateStartTime(now uint64, bucketLengthInMs uint32) uint64 {
 	return now - (now % uint64(bucketLengthInMs))
 }
 
-// atomic BucketWrap array to resolve race condition
-// AtomicBucketWrapArray can not append or delete element after initializing
+// AtomicBucketWrapArray represents a thread-safe circular array.
+//
+// The length of the array should be provided on-create and cannot be modified.
 type AtomicBucketWrapArray struct {
 	// The base address for real data array
 	base unsafe.Pointer
@@ -94,11 +96,11 @@ func NewAtomicBucketWrapArrayWithTime(len int, bucketLengthInMs uint32, now uint
 	return ret
 }
 
-// New AtomicBucketWrapArray with initializing field data
-// Default, automatically initialize each BucketWrap
-// len: length of array
-// bucketLengthInMs: bucket length of BucketWrap
-// generator: generator to generate bucket
+// NewAtomicBucketWrapArray creates an AtomicBucketWrapArray and initializes data of each BucketWrap.
+//
+// The len represents the length of the circular array.
+// The bucketLengthInMs represents bucket length of each bucket (in milliseconds).
+// The generator accepts a BucketGenerator to generate and refresh buckets.
 func NewAtomicBucketWrapArray(len int, bucketLengthInMs uint32, generator BucketGenerator) *AtomicBucketWrapArray {
 	return NewAtomicBucketWrapArrayWithTime(len, bucketLengthInMs, util.CurrentTimeMillis(), generator)
 }
@@ -133,23 +135,30 @@ func (aa *AtomicBucketWrapArray) compareAndSet(idx int, except, update *BucketWr
 	return false
 }
 
-// The BucketWrap leap array,
-// sampleCount represent the number of BucketWrap
-// intervalInMs represent the interval of LeapArray.
-// For example, bucketLengthInMs is 200ms, intervalInMs is 1000ms, so sampleCount is 5.
-// Give a diagram to illustrate
-// Suppose current time is 888, bucketLengthInMs is 200ms, intervalInMs is 1000ms, LeapArray will build the below windows
+// LeapArray represents the fundamental implementation of a sliding window data-structure.
+//
+// Some important attributes: the sampleCount represents the number of buckets,
+// while intervalInMs represents the total time span of the sliding window.
+//
+// For example, assuming sampleCount=5, intervalInMs is 1000ms, so the bucketLength is 200ms.
+// Let's give a diagram to illustrate.
+// Suppose current timestamp is 1188, bucketLength is 200ms, intervalInMs is 1000ms, then
+// time span of current bucket is [1000, 1200). The representation of the underlying structure:
+//
 //   B0       B1      B2     B3      B4
 //   |_______|_______|_______|_______|_______|
-//  1000    1200    1400    1600    800    (1000)
-//                                        ^
-//                                      time=888
+//  1000    1200    400     600     800    (1000) ms
+//         ^
+//      time=1188
 type LeapArray struct {
 	bucketLengthInMs uint32
-	sampleCount      uint32
-	intervalInMs     uint32
-	array            *AtomicBucketWrapArray
-	// update lock
+	// sampleCount represents the number of BucketWrap.
+	sampleCount uint32
+	// intervalInMs represents the total time span of the sliding window (in milliseconds).
+	intervalInMs uint32
+	// array represents the internal circular array.
+	array *AtomicBucketWrapArray
+	// updateLock is the internal lock for update operations.
 	updateLock mutex
 }
 
@@ -224,7 +233,8 @@ func (la *LeapArray) calculateTimeIdx(now uint64) int {
 	return int(timeId) % la.array.length
 }
 
-//  Get all BucketWrap between [current time - leap array interval, current time]
+// Values returns all valid (non-expired) buckets between [curBucketEnd-windowInterval, curBucketEnd],
+// where curBucketEnd=curBucketStart+bucketLength.
 func (la *LeapArray) Values() []*BucketWrap {
 	return la.valuesWithTime(util.CurrentTimeMillis())
 }
@@ -244,6 +254,8 @@ func (la *LeapArray) valuesWithTime(now uint64) []*BucketWrap {
 	return ret
 }
 
+// ValuesConditional returns all buckets of which the startTimestamp satisfies the given timestamp condition (predicate).
+// The function uses the parameter "now" as the target timestamp.
 func (la *LeapArray) ValuesConditional(now uint64, predicate base.TimePredicate) []*BucketWrap {
 	if now <= 0 {
 		return make([]*BucketWrap, 0)
@@ -259,17 +271,17 @@ func (la *LeapArray) ValuesConditional(now uint64, predicate base.TimePredicate)
 	return ret
 }
 
-// Judge whether the BucketWrap is expired
+// isBucketDeprecated checks whether the BucketWrap is expired, according to given timestamp.
 func (la *LeapArray) isBucketDeprecated(now uint64, ww *BucketWrap) bool {
 	ws := atomic.LoadUint64(&ww.BucketStart)
 	return (now - ws) > uint64(la.intervalInMs)
 }
 
-// Generic interface to generate bucket
+// BucketGenerator represents the "generic" interface for generating and refreshing buckets.
 type BucketGenerator interface {
-	// called when timestamp entry a new slot interval
+	// NewEmptyBucket creates new raw data inside the bucket.
 	NewEmptyBucket() interface{}
 
-	// reset the BucketWrap, clear all data of BucketWrap
-	ResetBucketTo(bw *BucketWrap, startTime uint64) *BucketWrap
+	// ResetBucketTo refreshes the BucketWrap to provided startTime and resets all data inside the given bucket.
+	ResetBucketTo(bucket *BucketWrap, startTime uint64) *BucketWrap
 }

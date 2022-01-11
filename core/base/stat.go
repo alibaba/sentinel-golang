@@ -81,6 +81,7 @@ func (rs *nopReadStat) AvgRT() float64 {
 }
 
 type WriteStat interface {
+	// AddCount adds given count to the metric of provided MetricEvent.
 	AddCount(event MetricEvent, count int64)
 }
 
@@ -94,6 +95,7 @@ type nopWriteStat struct {
 func (ws *nopWriteStat) AddCount(_ MetricEvent, _ int64) {
 }
 
+// ConcurrencyStat provides read/update operation for concurrency statistics.
 type ConcurrencyStat interface {
 	CurrentConcurrency() int32
 	IncreaseConcurrency()
@@ -126,10 +128,13 @@ func CheckValidityForStatistic(sampleCount, intervalInMs uint32) error {
 	return nil
 }
 
-// CheckValidityForReuseStatistic check the compliance whether readonly metric statistic can be built based on resource's global statistic
-// The parameters, sampleCount and intervalInMs, are the parameters of the metric statistic you want to build
-// The parameters, parentSampleCount and parentIntervalInMs, are the parameters of the resource's global statistic
-// If compliance passes, return nil, if not returns specific error
+// CheckValidityForReuseStatistic checks whether the read-only stat-metric with given attributes
+// (i.e. sampleCount and intervalInMs) can be built based on underlying global statistics data-structure
+// with given attributes (parentSampleCount and parentIntervalInMs). Returns nil if the attributes
+// satisfy the validation, or return specific error if not.
+//
+// The parameters, sampleCount and intervalInMs, are the attributes of the stat-metric view you want to build.
+// The parameters, parentSampleCount and parentIntervalInMs, are the attributes of the underlying statistics data-structure.
 func CheckValidityForReuseStatistic(sampleCount, intervalInMs uint32, parentSampleCount, parentIntervalInMs uint32) error {
 	if intervalInMs == 0 || sampleCount == 0 || intervalInMs%sampleCount != 0 {
 		return IllegalStatisticParamsError
@@ -141,11 +146,11 @@ func CheckValidityForReuseStatistic(sampleCount, intervalInMs uint32, parentSamp
 	}
 	parentBucketLengthInMs := parentIntervalInMs / parentSampleCount
 
-	//SlidingWindowMetric's intervalInMs is not divisible by BucketLeapArray's intervalInMs
+	// intervalInMs of the SlidingWindowMetric is not divisible by BucketLeapArray's intervalInMs
 	if parentIntervalInMs%intervalInMs != 0 {
 		return GlobalStatisticNonReusableError
 	}
-	// BucketLeapArray's BucketLengthInMs is not divisible by SlidingWindowMetric's BucketLengthInMs
+	// BucketLeapArray's BucketLengthInMs is not divisible by BucketLengthInMs of SlidingWindowMetric
 	if bucketLengthInMs%parentBucketLengthInMs != 0 {
 		return GlobalStatisticNonReusableError
 	}

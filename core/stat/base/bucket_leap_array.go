@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// The implementation of sliding window based on LeapArray (as the sliding window infrastructure)
+// BucketLeapArray is the sliding window implementation based on LeapArray (as the sliding window infrastructure)
 // and MetricBucket (as the data type). The MetricBucket is used to record statistic
 // metrics per minimum time unit (i.e. the bucket time span).
 type BucketLeapArray struct {
@@ -42,11 +42,14 @@ func (bla *BucketLeapArray) ResetBucketTo(bw *BucketWrap, startTime uint64) *Buc
 	return bw
 }
 
-// sampleCount is the number of slots
-// intervalInMs is the time length of sliding window
-// sampleCount and intervalInMs must be positive and intervalInMs%sampleCount == 0,
-// the validation must be done before call NewBucketLeapArray
+// NewBucketLeapArray creates a BucketLeapArray with given attributes.
+//
+// The sampleCount represents the number of buckets, while intervalInMs represents
+// the total time span of sliding window. Note that the sampleCount and intervalInMs must be positive
+// and satisfies the condition that intervalInMs%sampleCount == 0.
+// The validation must be done before call NewBucketLeapArray.
 func NewBucketLeapArray(sampleCount uint32, intervalInMs uint32) *BucketLeapArray {
+	// TODO: also check params here.
 	bucketLengthInMs := intervalInMs / sampleCount
 	ret := &BucketLeapArray{
 		data: LeapArray{
@@ -82,9 +85,8 @@ func (bla *BucketLeapArray) GetIntervalInSecond() float64 {
 	return float64(bla.IntervalInMs()) / 1000.0
 }
 
-// Write method
-// It might panic
 func (bla *BucketLeapArray) AddCount(event base.MetricEvent, count int64) {
+	// It might panic?
 	bla.addCountWithTime(util.CurrentTimeMillis(), event, count)
 }
 
@@ -131,9 +133,9 @@ func (bla *BucketLeapArray) currentBucketWithTime(now uint64) *MetricBucket {
 	return b
 }
 
-// Read method, need to adapt upper application
-// it might panic
+// Count returns the sum count for the given MetricEvent within all valid (non-expired) buckets.
 func (bla *BucketLeapArray) Count(event base.MetricEvent) int64 {
+	// it might panic?
 	return bla.CountWithTime(util.CurrentTimeMillis(), event)
 }
 
@@ -159,12 +161,14 @@ func (bla *BucketLeapArray) CountWithTime(now uint64, event base.MetricEvent) in
 	return count
 }
 
-// Read method, get all BucketWrap.
+// Values returns all valid (non-expired) buckets.
 func (bla *BucketLeapArray) Values(now uint64) []*BucketWrap {
+	// Refresh current bucket if necessary.
 	_, err := bla.data.currentBucketOfTime(now, bla)
 	if err != nil {
-		logging.Error(err, "Failed to get current bucket in BucketLeapArray.Values()", "now", now)
+		logging.Error(err, "Failed to refresh current bucket in BucketLeapArray.Values()", "now", now)
 	}
+
 	return bla.data.valuesWithTime(now)
 }
 

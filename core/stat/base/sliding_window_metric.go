@@ -25,9 +25,9 @@ import (
 )
 
 // SlidingWindowMetric represents the sliding window metric wrapper.
-// It does not store any data and is the wrapper of BucketLeapArray to adapt to different internal bucket
-// SlidingWindowMetric is used for SentinelRules and BucketLeapArray is used for monitor
-// BucketLeapArray is per resource, and SlidingWindowMetric support only read operation.
+// It does not store any data and is the wrapper of BucketLeapArray to adapt to different internal bucket.
+//
+// SlidingWindowMetric is designed as a high-level, read-only statistic structure for functionalities of Sentinel
 type SlidingWindowMetric struct {
 	bucketLengthInMs uint32
 	sampleCount      uint32
@@ -35,7 +35,8 @@ type SlidingWindowMetric struct {
 	real             *BucketLeapArray
 }
 
-// It must pass the parameter point to the real storage entity
+// NewSlidingWindowMetric creates a SlidingWindowMetric with given attributes.
+// The pointer to the internal statistic BucketLeapArray should be valid.
 func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapArray) (*SlidingWindowMetric, error) {
 	if real == nil {
 		return nil, errors.New("nil BucketLeapArray")
@@ -53,7 +54,7 @@ func NewSlidingWindowMetric(sampleCount, intervalInMs uint32, real *BucketLeapAr
 	}, nil
 }
 
-// Get the start time range of the bucket for the provided time.
+// getBucketStartRange returns start time range of the bucket for the provided time.
 // The actual time span is: [start, end + in.bucketTimeLength)
 func (m *SlidingWindowMetric) getBucketStartRange(timeMs uint64) (start, end uint64) {
 	curBucketStartTime := calculateStartTime(timeMs, m.real.BucketLengthInMs())
@@ -107,6 +108,8 @@ func (m *SlidingWindowMetric) getQPSWithTime(now uint64, event base.MetricEvent)
 
 func (m *SlidingWindowMetric) getSatisfiedBuckets(now uint64) []*BucketWrap {
 	start, end := m.getBucketStartRange(now)
+	// Extracts the buckets of which the startTime is between [start, end]
+	// which means the time view of the buckets is [firstStart, endStart+bucketLength)
 	satisfiedBuckets := m.real.ValuesConditional(now, func(ws uint64) bool {
 		return ws >= start && ws <= end
 	})
