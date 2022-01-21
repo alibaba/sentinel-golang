@@ -37,6 +37,8 @@ const (
 	MetricEventRt
 	// Specific for verifying mode
 	MetricEventMonitorBlock
+	// timeout counter
+	MetricEventTimeout
 	// hack for the number of event
 	MetricEventTotal
 )
