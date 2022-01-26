@@ -20,13 +20,15 @@ import (
 )
 
 var (
+	resourceFlowThresholdGauge metric_exporter.Gauge
+)
+
+func Init() {
 	resourceFlowThresholdGauge = metric_exporter.NewGauge(
 		"resource_flow_threshold",
 		"Resource flow threshold",
-		[]string{"resource"})
-)
-
-func init() {
+		[]string{"resource"},
+	)
 	metric_exporter.Register(resourceFlowThresholdGauge)
 }
 

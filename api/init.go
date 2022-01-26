@@ -19,8 +19,11 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/config"
+	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
+	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system_metric"
 	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/util"
@@ -86,6 +89,11 @@ func initCoreComponents() error {
 			return err
 		}
 	}
+
+	flow.Init()
+	stat.Init()
+	system_metric.Init()
+	circuitbreaker.Init()
 
 	systemStatInterval := config.SystemStatCollectIntervalMs()
 	loadStatInterval := systemStatInterval

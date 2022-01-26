@@ -49,19 +49,20 @@ const (
 )
 
 var (
+	stateChangedCounter metric_exporter.Counter
+)
+
+func Init() {
 	stateChangedCounter = metric_exporter.NewCounter(
 		"circuit_breaker_state_changed_total",
 		"Circuit breaker total state change count",
-		[]string{"resource", "from_state", "to_state"})
-)
-
-func init() {
+		[]string{"resource", "from_state", "to_state"},
+	)
 	metric_exporter.Register(stateChangedCounter)
 }
 
 func newState() *State {
-	var state State
-	state = Closed
+	state := Closed
 
 	return &state
 }
