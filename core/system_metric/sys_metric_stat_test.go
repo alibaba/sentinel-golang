@@ -15,6 +15,7 @@
 package system_metric
 
 import (
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -22,6 +23,11 @@ import (
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	Init()
+	os.Exit(m.Run())
+}
 
 func TestCurrentLoad(t *testing.T) {
 	defer currentLoad.Store(NotRetrievedLoadValue)
