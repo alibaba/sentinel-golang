@@ -29,13 +29,15 @@ const (
 var (
 	DefaultSlot = &Slot{}
 
+	handledCounter metric_exporter.Counter
+)
+
+func Init() {
 	handledCounter = metric_exporter.NewCounter(
 		"handled_total",
 		"Total handled count",
-		[]string{"resource", "result", "block_type"})
-)
-
-func init() {
+		[]string{"resource", "result", "block_type"},
+	)
 	metric_exporter.Register(handledCounter)
 }
 

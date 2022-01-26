@@ -27,7 +27,6 @@ var (
 	exporter Exporter
 
 	host      string
-	app       string
 	pid       string
 	namespace string
 )
@@ -39,7 +38,6 @@ func init() {
 	if host == "" {
 		host = "unknown"
 	}
-	app = config.AppName()
 	pid = strconv.Itoa(os.Getpid())
 	namespace = "sentinel_go"
 }
@@ -111,8 +109,8 @@ func (e *prometheusExporter) HTTPHandler() http.Handler {
 func newConstLabels() map[string]string {
 	return map[string]string{
 		"host": host,
-		"app":  app,
 		"pid":  pid,
+		"app":  config.AppName(),
 	}
 }
 

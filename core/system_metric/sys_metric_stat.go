@@ -50,14 +50,8 @@ var (
 
 	ssStopChan = make(chan struct{})
 
-	cpuRatioGauge = metric_exporter.NewGauge(
-		"cpu_ratio",
-		"Process cpu ratio",
-		[]string{})
-	processMemoryGauge = metric_exporter.NewGauge(
-		"process_memory_bytes",
-		"Process memory in bytes",
-		[]string{})
+	cpuRatioGauge      metric_exporter.Gauge
+	processMemoryGauge metric_exporter.Gauge
 )
 
 func init() {
@@ -73,8 +67,21 @@ func init() {
 	currentProcessOnce.Do(func() {
 		currentProcess.Store(p)
 	})
+}
 
+func Init() {
+	cpuRatioGauge = metric_exporter.NewGauge(
+		"cpu_ratio",
+		"Process cpu ratio",
+		[]string{},
+	)
 	metric_exporter.Register(cpuRatioGauge)
+
+	processMemoryGauge = metric_exporter.NewGauge(
+		"process_memory_bytes",
+		"Process memory in bytes",
+		[]string{},
+	)
 	metric_exporter.Register(processMemoryGauge)
 }
 
