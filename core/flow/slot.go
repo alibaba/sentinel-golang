@@ -17,6 +17,7 @@ package flow
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -27,8 +28,16 @@ const (
 )
 
 var (
-	DefaultSlot = &Slot{}
+	DefaultSlot   = &Slot{}
+	flowWaitCount = metric_exporter.NewCounter(
+		"flow_wait_total",
+		"Flow wait count",
+		[]string{"resource"})
 )
+
+func init() {
+	metric_exporter.Register(flowWaitCount)
+}
 
 type Slot struct {
 }
@@ -58,6 +67,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		}
 		if r.Status() == base.ResultStatusShouldWait {
 			if nanosToWait := r.NanosToWait(); nanosToWait > 0 {
+				flowWaitCount.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name())
 				// Handle waiting action.
 				util.Sleep(nanosToWait)
 			}
