@@ -1,0 +1,147 @@
+package go_zero
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/flow"
+
+	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/rest"
+	"github.com/zeromicro/go-zero/rest/httpx"
+)
+
+func createSentinel() {
+	err := sentinel.InitDefault()
+	if err != nil {
+		fmt.Printf("Unexpected error: %+v", err)
+	}
+
+	_, err = flow.LoadRules([]*flow.Rule{
+		{
+			Resource:               "GET:/ping",
+			Threshold:              0.0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			StatIntervalInMs:       1000,
+		},
+		{
+			Resource:               "GET:/",
+			Threshold:              1.0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			StatIntervalInMs:       1000,
+		},
+		{
+			Resource:               "/from/me",
+			Threshold:              0.0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			StatIntervalInMs:       1000,
+		},
+		{
+			Resource:               "GET:/from/you",
+			Threshold:              0.0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			StatIntervalInMs:       1000,
+		},
+	})
+	if err != nil {
+		fmt.Printf("Unexpected error: %+v", err)
+		return
+	}
+}
+
+func main() {
+	type args struct {
+		method  string
+		path    string
+		reqPath string
+		handler http.HandlerFunc
+		body    io.Reader
+	}
+	type want struct {
+		code int
+	}
+	var (
+		tests = []struct {
+			name string
+			args args
+			want want
+		}{
+			{
+				name: "default get",
+				args: args{
+					method:  http.MethodGet,
+					path:    "/",
+					reqPath: "http://localhost:8888/",
+					handler: func(w http.ResponseWriter, r *http.Request) {
+						resp := "index page"
+						httpx.OkJson(w, &resp)
+					},
+					body: nil,
+				},
+				want: want{
+					code: http.StatusOK,
+				},
+			},
+		}
+	)
+	createSentinel()
+	for _, tt := range tests {
+		var c rest.RestConf
+		conf.MustLoad("./test.yml", &c)
+		server := rest.MustNewServer(c)
+		// global middleware
+		server.Use(SentinelMiddleware())
+		server.AddRoutes(
+			[]rest.Route{
+				{
+					Method:  tt.args.method,
+					Path:    tt.args.path,
+					Handler: tt.args.handler,
+				},
+			},
+		)
+		defer server.Stop()
+		go server.Start()
+		time.Sleep(time.Duration(2) * time.Second)
+		r, err := http.Get(tt.args.reqPath)
+
+		fmt.Printf("%+v\n", r)
+		fmt.Printf("%d\n", r.StatusCode)
+		fmt.Printf("%+v\n", err)
+		for {
+
+		}
+	}
+}
+
+func SentinelMiddleware() rest.Middleware {
+	fmt.Printf("created\n")
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			resourceName := r.Method + ":" + r.URL.Path
+			fmt.Printf("%s\n", resourceName)
+			fmt.Printf("%s\n", resourceName)
+			entry, blockErr := sentinel.Entry(
+				resourceName,
+				sentinel.WithResourceType(base.ResTypeWeb),
+				sentinel.WithTrafficType(base.Inbound),
+			)
+			if blockErr != nil {
+				// default error response
+				http.Error(w, "Blocked by Sentinel", http.StatusTooManyRequests)
+				return
+			}
+			defer entry.Exit()
+
+			next(w, r)
+		}
+	}
+}
