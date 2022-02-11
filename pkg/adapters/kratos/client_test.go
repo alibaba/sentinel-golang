@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
-	"net/http/httptest"
 	"testing"
+	"time"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/flow"
@@ -17,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func initServerSentinel(t *testing.T) {
+func initClientSentinel(t *testing.T) {
 	err := sentinel.InitDefault()
 	if err != nil {
 		t.Fatalf("Unexpected error: %+v", err)
@@ -25,7 +26,7 @@ func initServerSentinel(t *testing.T) {
 
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
-			Resource:               "GET:/ping",
+			Resource:               "GET:/client",
 			Threshold:              1.0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
@@ -45,7 +46,7 @@ func initServerSentinel(t *testing.T) {
 	}
 }
 
-func TestSentinelServerMiddleware(t *testing.T) {
+func TestSentinelClientMiddleware(t *testing.T) {
 	type args struct {
 		opts    []Option
 		method  string
@@ -68,12 +69,12 @@ func TestSentinelServerMiddleware(t *testing.T) {
 				args: args{
 					opts:    []Option{},
 					method:  http.MethodGet,
-					path:    "/ping",
-					reqPath: "/ping",
+					path:    "/client",
+					reqPath: "/client",
 					handler: khttp.HandlerFunc(func(ctx khttp.Context) error {
-						khttp.SetOperation(ctx, "/test/ping")
+						khttp.SetOperation(ctx, "/test/client")
 						h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-							return "ping", nil
+							return "client", nil
 						})
 						// may use `ctx.BindQuery()` and `ctx.BindVars()` to build `req` for `h`
 						out, err := h(ctx, nil)
@@ -93,7 +94,7 @@ func TestSentinelServerMiddleware(t *testing.T) {
 				args: args{
 					opts: []Option{
 						WithResourceExtractor(func(ctx context.Context, req interface{}) string {
-							tr, ok := transport.FromServerContext(ctx)
+							tr, ok := transport.FromClientContext(ctx)
 							if ok {
 								http_tr := tr.(khttp.Transporter)
 								return http_tr.Request().URL.Path
@@ -131,12 +132,12 @@ func TestSentinelServerMiddleware(t *testing.T) {
 						}),
 					},
 					method:  http.MethodGet,
-					path:    "/ping",
-					reqPath: "/ping",
+					path:    "/client",
+					reqPath: "/client",
 					handler: khttp.HandlerFunc(func(ctx khttp.Context) error {
-						khttp.SetOperation(ctx, "/test/ping")
+						khttp.SetOperation(ctx, "/test/client")
 						h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-							return "ping", nil
+							return "client", nil
 						})
 						out, err := h(ctx, nil)
 						if err != nil {
@@ -152,23 +153,49 @@ func TestSentinelServerMiddleware(t *testing.T) {
 			},
 		}
 	)
-	initServerSentinel(t)
+	initClientSentinel(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var opts = []khttp.ServerOption{
-				khttp.Middleware(
-					SentinelServerMiddleware(tt.args.opts...),
-				),
+			port, _ := getAvailablePort(8000)
+			// create server
+			var srvOpts = []khttp.ServerOption{
+				khttp.Address(fmt.Sprintf(":%d", port)),
 			}
-			httpSrv := khttp.NewServer(opts...)
+			httpSrv := khttp.NewServer(srvOpts...)
 			router := httpSrv.Route("/")
 			router.GET(tt.args.path, tt.args.handler)
-
-			r := httptest.NewRequest(tt.args.method, tt.args.reqPath, nil)
-			w := httptest.NewRecorder()
-			httpSrv.ServeHTTP(w, r)
-			assert.Equal(t, tt.want.code, w.Code)
+			go httpSrv.Start(context.Background())
+			defer httpSrv.Stop(context.Background())
+			// create client
+			var connOpts = []khttp.ClientOption{
+				khttp.WithMiddleware(
+					SentinelClientMiddleware(tt.args.opts...),
+				),
+				khttp.WithEndpoint(fmt.Sprintf("127.0.0.1:%d", port)),
+			}
+			conn, _ := khttp.NewClient(context.Background(), connOpts...)
+			defer conn.Close()
+			// invoke request
+			var out interface{}
+			callOpts := []khttp.CallOption{
+				khttp.Operation(tt.args.path),
+				khttp.PathTemplate(tt.args.path),
+			}
+			err := conn.Invoke(context.Background(), tt.args.method, tt.args.reqPath, nil, &out, callOpts...)
+			assert.Equal(t, tt.want.code, errors.Code(err))
 		})
 	}
+}
+
+func getAvailablePort(init int) (int, error) {
+	for p := init; p < 65536; p++ {
+		conn, _ := net.DialTimeout("tcp", net.JoinHostPort("", fmt.Sprint(p)), time.Second)
+		if conn != nil {
+			conn.Close()
+		} else {
+			return p, nil
+		}
+	}
+	return 0, fmt.Errorf("Cannot get an available port")
 }
