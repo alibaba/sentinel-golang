@@ -127,8 +127,8 @@ func TestSentinelClientMiddleware(t *testing.T) {
 				name: "customize block fallback",
 				args: args{
 					opts: []Option{
-						WithBlockFallback(func(ctx context.Context, req interface{}) error {
-							return errors.New(http.StatusBadRequest, "Customized Error", "Blocked by Sentinel")
+						WithBlockFallback(func(ctx context.Context, req interface{}) (interface{}, error) {
+							return nil, errors.New(http.StatusBadRequest, "Customized Error", "Blocked by Sentinel")
 						}),
 					},
 					method:  http.MethodGet,

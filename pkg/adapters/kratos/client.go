@@ -54,7 +54,8 @@ func SentinelClientMiddleware(opts ...Option) middleware.Middleware {
 			)
 			if blockErr != nil {
 				if options.blockFallback != nil {
-					err = options.blockFallback(ctx, req)
+					reply, err = options.blockFallback(ctx, req)
+					return
 				} else {
 					switch tr.Kind() {
 					case transport.KindGRPC:
@@ -62,8 +63,8 @@ func SentinelClientMiddleware(opts ...Option) middleware.Middleware {
 					case transport.KindHTTP:
 						err = errors.New(http.StatusTooManyRequests, "Too many requests", blockErr.Error())
 					}
+					return nil, err
 				}
-				return nil, err
 			}
 			defer entry.Exit()
 
