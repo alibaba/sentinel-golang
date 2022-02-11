@@ -3,6 +3,7 @@ package go_zero
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -87,7 +88,7 @@ func TestSentinelMiddlewareDefault(t *testing.T) {
 					opts:    []Option{},
 					method:  http.MethodGet,
 					path:    "/",
-					reqPath: "http://localhost:8888/",
+					reqPath: "/",
 					handler: func(w http.ResponseWriter, r *http.Request) {
 						resp := "index page"
 						httpx.OkJson(w, &resp)
@@ -101,12 +102,12 @@ func TestSentinelMiddlewareDefault(t *testing.T) {
 		}
 	)
 	initSentinel(t)
-	fmt.Printf("\n")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var c rest.RestConf
 			conf.MustLoad("./test.yml", &c)
+			c.Port, _ = getAvailablePort(c.Port)
 			server := rest.MustNewServer(c)
 			// global middleware
 			server.Use(SentinelMiddleware(tt.args.opts...))
@@ -122,7 +123,7 @@ func TestSentinelMiddlewareDefault(t *testing.T) {
 			go server.Start()
 			defer server.Stop()
 			time.Sleep(time.Duration(2) * time.Second)
-			r, _ := http.Get(tt.args.reqPath)
+			r, _ := http.Get(fmt.Sprintf("http://localhost:%d%s", c.Port, tt.args.reqPath))
 			assert.Equal(t, tt.want.code, r.StatusCode)
 		})
 	}
@@ -152,13 +153,12 @@ func TestSentinelMiddlewareExtractor(t *testing.T) {
 				args: args{
 					opts: []Option{
 						WithResourceExtractor(func(r *http.Request) string {
-							fmt.Printf("%s\n", r.URL.Path)
 							return r.URL.Path
 						}),
 					},
 					method:  http.MethodGet,
 					path:    "/from/:name",
-					reqPath: "http://localhost:8888/from/me",
+					reqPath: "/from/me",
 					handler: func(w http.ResponseWriter, r *http.Request) {
 						var req Request
 						if err := httpx.Parse(r, &req); err != nil {
@@ -182,6 +182,7 @@ func TestSentinelMiddlewareExtractor(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var c rest.RestConf
 			conf.MustLoad("./test.yml", &c)
+			c.Port, _ = getAvailablePort(c.Port)
 			server := rest.MustNewServer(c)
 			// global middleware
 			server.Use(SentinelMiddleware(tt.args.opts...))
@@ -197,7 +198,7 @@ func TestSentinelMiddlewareExtractor(t *testing.T) {
 			go server.Start()
 			server.Stop()
 			time.Sleep(time.Duration(2) * time.Second)
-			r, _ := http.Get(tt.args.reqPath)
+			r, _ := http.Get(fmt.Sprintf("http://localhost:%d%s", c.Port, tt.args.reqPath))
 			assert.Equal(t, tt.want.code, r.StatusCode)
 		})
 	}
@@ -232,7 +233,7 @@ func TestSentinelMiddlewareFallback(t *testing.T) {
 					},
 					method:  http.MethodGet,
 					path:    "/ping",
-					reqPath: "http://localhost:8888/ping",
+					reqPath: "/ping",
 					handler: func(w http.ResponseWriter, r *http.Request) {
 						resp := "ping"
 						httpx.OkJson(w, &resp)
@@ -251,6 +252,7 @@ func TestSentinelMiddlewareFallback(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var c rest.RestConf
 			conf.MustLoad("./test.yml", &c)
+			c.Port, _ = getAvailablePort(c.Port)
 			server := rest.MustNewServer(c)
 			// global middleware
 			server.Use(SentinelMiddleware(tt.args.opts...))
@@ -266,7 +268,7 @@ func TestSentinelMiddlewareFallback(t *testing.T) {
 			go server.Start()
 			defer server.Stop()
 			time.Sleep(time.Duration(2) * time.Second)
-			r, _ := http.Get(tt.args.reqPath)
+			r, _ := http.Get(fmt.Sprintf("http://localhost:%d%s", c.Port, tt.args.reqPath))
 			assert.Equal(t, tt.want.code, r.StatusCode)
 		})
 	}
@@ -302,7 +304,7 @@ func TestSentinelMiddlewareRouting(t *testing.T) {
 					},
 					method:  http.MethodGet,
 					path:    "/from/:name",
-					reqPath: "http://localhost:8888/from/you",
+					reqPath: "/from/you",
 					handler: func(w http.ResponseWriter, r *http.Request) {
 						var req Request
 						if err := httpx.Parse(r, &req); err != nil {
@@ -326,6 +328,7 @@ func TestSentinelMiddlewareRouting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var c rest.RestConf
 			conf.MustLoad("./test.yml", &c)
+			c.Port, _ = getAvailablePort(c.Port)
 			server := rest.MustNewServer(c)
 			// this `AddRoutes` is only for testing,
 			// in practice, routing will be automatically carried by go-zero,
@@ -346,9 +349,21 @@ func TestSentinelMiddlewareRouting(t *testing.T) {
 			go server.Start()
 			defer server.Stop()
 			time.Sleep(time.Duration(2) * time.Second)
-			r, _ := http.Get(tt.args.reqPath)
+			r, _ := http.Get(fmt.Sprintf("http://localhost:%d%s", c.Port, tt.args.reqPath))
 			assert.Equal(t, tt.want.code, r.StatusCode)
 		})
 	}
 
+}
+
+func getAvailablePort(init int) (int, error) {
+	for p := init; p < 65536; p++ {
+		conn, _ := net.DialTimeout("tcp", net.JoinHostPort("", fmt.Sprint(p)), time.Second)
+		if conn != nil {
+			conn.Close()
+		} else {
+			return p, nil
+		}
+	}
+	return 0, fmt.Errorf("Cannot get an available port")
 }

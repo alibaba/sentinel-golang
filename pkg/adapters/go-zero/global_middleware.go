@@ -1,7 +1,6 @@
 package go_zero
 
 import (
-	"fmt"
 	"net/http"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
@@ -15,16 +14,13 @@ import (
 //
 // You may customize your own resource extractor and block handler by setting options.
 func SentinelMiddleware(opts ...Option) rest.Middleware {
-	fmt.Printf("created\n")
 	options := evaluateOptions(opts)
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			resourceName := r.Method + ":" + r.URL.Path
-			fmt.Printf("%s\n", resourceName)
 			if options.resourceExtract != nil {
 				resourceName = options.resourceExtract(r)
 			}
-			fmt.Printf("%s\n", resourceName)
 			entry, blockErr := sentinel.Entry(
 				resourceName,
 				sentinel.WithResourceType(base.ResTypeWeb),
