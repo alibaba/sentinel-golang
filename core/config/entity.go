@@ -17,7 +17,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
@@ -46,6 +45,13 @@ type SentinelConfig struct {
 	Stat StatConfig
 	// UseCacheTime indicates whether to cache time(ms)
 	UseCacheTime bool `yaml:"useCacheTime"`
+	// TokenServiceType indicates the cluster token service type.
+	// Currently, redis is supported , default is redis.
+	// @Optional
+	TokenServiceType string `json:"tokenServiceType"`
+	// RedisConfig when the token Service Type is 0(redis)
+	// need to configure the redis service information.
+	RedisConfig RedisConfig `json:"redisConfig"`
 }
 
 // ExporterConfig represents configuration items related to exporter, like metric exporter.
@@ -104,6 +110,26 @@ type SystemStatConfig struct {
 	CollectCpuIntervalMs uint32 `yaml:"collectCpuIntervalMs"`
 	// CollectMemoryIntervalMs represents the collecting interval of the system memory usage collector.
 	CollectMemoryIntervalMs uint32 `yaml:"collectMemoryIntervalMs"`
+}
+
+// RedisConfig when cluster traffic limiting is used and the Token service is redis
+// the configuration information is used to connect to redis.
+type RedisConfig struct {
+	// Addr host:port address.
+	Addr string `json:"addr"`
+	// Password must match the password specified in the
+	// requirepass server configuration option (if connecting to a Redis 5.0 instance, or lower),
+	// or the User Password when connecting to a Redis 6.0 instance, or greater,
+	// that is using the Redis ACL system.
+	// @Optional
+	Password string `json:"password"`
+	// DB database to be selected after connecting to the server.
+	// @Optional
+	DB int `json:"db"`
+	// PoolSize maximum number of socket connections.
+	// Default is 10 connections per every CPU as reported by runtime.NumCPU.
+	// @Optional
+	PoolSize int `json:"poolSize"`
 }
 
 // NewDefaultConfig creates a new default config entity.
@@ -256,6 +282,27 @@ func (entity *Entity) GlobalStatisticSampleCountTotal() uint32 {
 func (entity *Entity) MetricStatisticIntervalMs() uint32 {
 	return entity.Sentinel.Stat.MetricStatisticIntervalMs
 }
+
 func (entity *Entity) MetricStatisticSampleCount() uint32 {
 	return entity.Sentinel.Stat.MetricStatisticSampleCount
+}
+
+func (entity *Entity) TokenServiceType() string {
+	return entity.Sentinel.TokenServiceType
+}
+
+func (entity *Entity) RedisTokenServiceAddr() string {
+	return entity.Sentinel.RedisConfig.Addr
+}
+
+func (entity *Entity) RedisTokenServicePassword() string {
+	return entity.Sentinel.RedisConfig.Password
+}
+
+func (entity *Entity) RedisTokenServiceDB() int {
+	return entity.Sentinel.RedisConfig.DB
+}
+
+func (entity *Entity) RedisTokenServicePoolSize() int {
+	return entity.Sentinel.RedisConfig.PoolSize
 }
