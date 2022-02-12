@@ -39,6 +39,7 @@ var (
 	currentCpuUsage    atomic.Value
 	currentMemoryUsage atomic.Value
 
+	once                    sync.Once
 	loadStatCollectorOnce   sync.Once
 	memoryStatCollectorOnce sync.Once
 	cpuStatCollectorOnce    sync.Once
@@ -70,19 +71,21 @@ func init() {
 }
 
 func Init() {
-	cpuRatioGauge = metric_exporter.NewGauge(
-		"cpu_ratio",
-		"Process cpu ratio",
-		[]string{},
-	)
-	metric_exporter.Register(cpuRatioGauge)
+	once.Do(func() {
+		cpuRatioGauge = metric_exporter.NewGauge(
+			"cpu_ratio",
+			"Process cpu ratio",
+			[]string{},
+		)
+		metric_exporter.Register(cpuRatioGauge)
 
-	processMemoryGauge = metric_exporter.NewGauge(
-		"process_memory_bytes",
-		"Process memory in bytes",
-		[]string{},
-	)
-	metric_exporter.Register(processMemoryGauge)
+		processMemoryGauge = metric_exporter.NewGauge(
+			"process_memory_bytes",
+			"Process memory in bytes",
+			[]string{},
+		)
+		metric_exporter.Register(processMemoryGauge)
+	})
 }
 
 // getMemoryStat returns the current machine's memory statistic

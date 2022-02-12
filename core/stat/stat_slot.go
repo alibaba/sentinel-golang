@@ -15,6 +15,8 @@
 package stat
 
 import (
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/util"
@@ -29,16 +31,19 @@ const (
 var (
 	DefaultSlot = &Slot{}
 
+	once           sync.Once
 	handledCounter metric_exporter.Counter
 )
 
 func Init() {
-	handledCounter = metric_exporter.NewCounter(
-		"handled_total",
-		"Total handled count",
-		[]string{"resource", "result", "block_type"},
-	)
-	metric_exporter.Register(handledCounter)
+	once.Do(func() {
+		handledCounter = metric_exporter.NewCounter(
+			"handled_total",
+			"Total handled count",
+			[]string{"resource", "result", "block_type"},
+		)
+		metric_exporter.Register(handledCounter)
+	})
 }
 
 type Slot struct {
