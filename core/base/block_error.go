@@ -25,6 +25,8 @@ type BlockError struct {
 	rule SentinelRule
 	// snapshotValue represents the triggered "snapshot" value
 	snapshotValue interface{}
+	// the blocked resource name.
+	blockResource string
 }
 
 type BlockErrorOption func(*BlockError)
@@ -50,6 +52,12 @@ func WithRule(rule SentinelRule) BlockErrorOption {
 func WithSnapshotValue(snapshotValue interface{}) BlockErrorOption {
 	return func(b *BlockError) {
 		b.snapshotValue = snapshotValue
+	}
+}
+
+func WithBlockResource(resource string) BlockErrorOption {
+	return func(b *BlockError) {
+		b.blockResource = resource
 	}
 }
 
@@ -87,12 +95,17 @@ func (e *BlockError) TriggeredValue() interface{} {
 	return e.snapshotValue
 }
 
+func (e *BlockError) BlockResource() string {
+	return e.blockResource
+}
+
 func NewBlockErrorFromDeepCopy(from *BlockError) *BlockError {
 	return &BlockError{
 		blockType:     from.blockType,
 		blockMsg:      from.blockMsg,
 		rule:          from.rule,
 		snapshotValue: from.snapshotValue,
+		blockResource: from.blockResource,
 	}
 }
 
