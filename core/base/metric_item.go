@@ -38,6 +38,7 @@ type MetricItem struct {
 	AvgRt                uint64
 	OccupiedPassQps      uint64
 	TimeoutCounter       uint64
+	DegradeCounter       uint64
 	Concurrency          uint32
 	SecondMaxConcurrency uint32
 }
