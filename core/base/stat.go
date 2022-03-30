@@ -39,6 +39,8 @@ const (
 	MetricEventMonitorBlock
 	// timeout counter
 	MetricEventTimeout
+	// degrade counter
+	MetricEventDegrade
 	// hack for the number of event
 	MetricEventTotal
 )
