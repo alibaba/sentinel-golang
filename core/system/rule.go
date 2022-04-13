@@ -90,3 +90,7 @@ func (r *Rule) String() string {
 func (r *Rule) ResourceName() string {
 	return r.MetricType.String()
 }
+
+func (r *Rule) RuleID() string {
+	return r.ID
+}

@@ -120,8 +120,13 @@ func (r *Rule) String() string {
 	}
 	return string(b)
 }
+
 func (r *Rule) ResourceName() string {
 	return r.Resource
+}
+
+func (r *Rule) RuleID() string {
+	return r.ID
 }
 
 // IsStatReusable checks whether current rule is "statistically" equal to the given rule.

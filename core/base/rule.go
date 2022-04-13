@@ -20,4 +20,6 @@ type SentinelRule interface {
 	fmt.Stringer
 
 	ResourceName() string
+
+	RuleID() string
 }
