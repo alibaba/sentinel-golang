@@ -26,8 +26,10 @@ const (
 	RuleCheckSlotName  = "sentinel-core-hotspot-rule-check-slot"
 	RuleCheckSlotOrder = 4000
 
-	keyIsMonitorBlocked = "isMonitorBlocked"
-	keyChildNodes       = "childNodes"
+	keyMonitorBlockNodes = "monitorBlockNodes"
+	keyControlBlockNode  = "controlBlockNode"
+	keyIsMonitorBlocked  = "isMonitorBlocked"
+	keyChildNodes        = "childNodes"
 )
 
 var (
@@ -67,9 +69,10 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 
 				if r.Status() == base.ResultStatusBlocked {
 					if tc.BoundRule().Mode == MONITOR {
-						PutOutputAttachment(ctx, keyIsMonitorBlocked, true)
+						appendMonitorBlockNode(ctx, node)
 						continue
 					}
+					setBlockNode(ctx, node)
 					r.ResetToBlockedWith(
 						base.WithBlockResource(res),
 						base.WithBlockType(base.BlockTypeHotSpotParamFlow),
@@ -124,4 +127,22 @@ func getAllNodes(ctx *base.EntryContext) []*stat.ResourceNode {
 		allNodes = append(allNodes, parentResNode)
 	}
 	return allNodes
+}
+
+func appendMonitorBlockNode(ctx *base.EntryContext, node *stat.ResourceNode) {
+	if ctx == nil || node == nil {
+		return
+	}
+	nodes, ok := getOutputAttachment(ctx, keyMonitorBlockNodes).([]*stat.ResourceNode)
+	if ok && nodes != nil {
+		nodes = append(nodes, node)
+	} else {
+		nodes = []*stat.ResourceNode{node}
+	}
+	PutOutputAttachment(ctx, keyIsMonitorBlocked, true)
+	PutOutputAttachment(ctx, keyMonitorBlockNodes, nodes)
+}
+
+func setBlockNode(ctx *base.EntryContext, node *stat.ResourceNode) {
+	PutOutputAttachment(ctx, keyControlBlockNode, node)
 }
