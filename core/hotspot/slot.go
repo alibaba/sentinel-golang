@@ -76,7 +76,8 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 					r.ResetToBlockedWith(
 						base.WithBlockResource(res),
 						base.WithBlockType(base.BlockTypeHotSpotParamFlow),
-						base.WithRule(tc.BoundRule()))
+						base.WithRule(tc.BoundRule()),
+						base.WithBlockResource(node.ResourceName()))
 					return r
 
 				}
