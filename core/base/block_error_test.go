@@ -48,3 +48,7 @@ func (m *MockRule) String() string {
 func (m *MockRule) ResourceName() string {
 	return "mock resource"
 }
+
+func (m *MockRule) RuleID() string {
+	return m.Id
+}

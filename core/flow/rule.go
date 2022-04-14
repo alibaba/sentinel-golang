@@ -145,3 +145,7 @@ func (r *Rule) String() string {
 func (r *Rule) ResourceName() string {
 	return r.Resource
 }
+
+func (r *Rule) RuleID() string {
+	return r.ID
+}

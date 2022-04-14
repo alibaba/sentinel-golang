@@ -15,11 +15,9 @@
 package hotspot
 
 import (
-	"context"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-	"gopkg.in/errgo.v2/fmt/errors"
+	"github.com/alibaba/sentinel-golang/core/stat"
 
 	"github.com/alibaba/sentinel-golang/core/base"
 )
@@ -27,6 +25,11 @@ import (
 const (
 	RuleCheckSlotName  = "sentinel-core-hotspot-rule-check-slot"
 	RuleCheckSlotOrder = 4000
+
+	keyMonitorBlockNodes = "monitorBlockNodes"
+	keyControlBlockNode  = "controlBlockNode"
+	keyIsMonitorBlocked  = "isMonitorBlocked"
+	keyChildNodes        = "childNodes"
 )
 
 var (
@@ -47,45 +50,46 @@ func (s *Slot) Order() uint32 {
 func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	res := ctx.Resource.Name()
 	batch := int64(ctx.Input.BatchCount)
-	g, _ := errgroup.WithContext(context.Background())
-
 	result := ctx.RuleCheckResult
-	tcs := getTrafficControllersFor(res)
-	for _, tc := range tcs {
-		args := tc.ExtractArgs(ctx)
-		if args == nil || len(args) == 0 {
-			continue
-		}
+	nodes := getAllNodes(ctx)
+	for _, node := range nodes {
+		tcs := getTrafficControllersFor(node.ResourceName())
+		for _, tc := range tcs {
+			args := tc.ExtractArgs(ctx)
+			if args == nil || len(args) == 0 {
+				continue
+			}
 
-		for _, arg := range args {
-			arg := arg // https://golang.org/doc/faq#closures_and_goroutines
-			g.Go(func() error {
+			for _, arg := range args {
+				arg := arg
 				r := canPassCheck(tc, arg, batch)
 				if r == nil {
-					return nil
+					continue
 				}
 
 				if r.Status() == base.ResultStatusBlocked {
 					if tc.BoundRule().Mode == MONITOR {
-						PutOutputAttachment(ctx, KeyIsMonitorBlocked, true)
-						return nil
+						appendMonitorBlockNode(ctx, node)
+						continue
 					}
-					return errors.Newf("concurrent canPassCheck err=%v", r.BlockError())
+					setBlockNode(ctx, node)
+					r.ResetToBlockedWith(
+						base.WithBlockResource(res),
+						base.WithBlockType(base.BlockTypeHotSpotParamFlow),
+						base.WithRule(tc.BoundRule()),
+						base.WithBlockResource(node.ResourceName()))
+					return r
+
 				}
 				if r.Status() == base.ResultStatusShouldWait {
 					if nanosToWait := r.NanosToWait(); nanosToWait > 0 {
 						// Handle waiting action.
 						time.Sleep(nanosToWait)
 					}
-					return nil
+					continue
 				}
-				return nil
-			})
+			}
 		}
-	}
-	if err := g.Wait(); err != nil {
-		result.ResetToBlockedWithMessage(base.BlockTypeHotSpotParamFlow, err.Error())
-		return result
 	}
 	return result
 }
@@ -98,11 +102,48 @@ func canPassLocalCheck(tc TrafficShapingController, arg interface{}, batch int64
 	return tc.PerformChecking(arg, batch)
 }
 
-const KeyIsMonitorBlocked = "isMonitorBlocked"
-
 func PutOutputAttachment(ctx *base.EntryContext, key interface{}, value interface{}) {
 	if ctx.Data == nil {
 		ctx.Data = make(map[interface{}]interface{})
 	}
 	ctx.Data[key] = value
+}
+
+func getOutputAttachment(ctx *base.EntryContext, key interface{}) interface{} {
+	if ctx.Data == nil {
+		return nil
+	}
+	return ctx.Data[key]
+}
+
+// getAllNodes gets all child node and parent node list.
+func getAllNodes(ctx *base.EntryContext) []*stat.ResourceNode {
+	childNodes, childOk := getOutputAttachment(ctx, keyChildNodes).([]*stat.ResourceNode)
+	var allNodes []*stat.ResourceNode
+	if childOk {
+		allNodes = append(allNodes, childNodes...)
+	}
+	parentResNode, ok := ctx.StatNode.(*stat.ResourceNode)
+	if ok {
+		allNodes = append(allNodes, parentResNode)
+	}
+	return allNodes
+}
+
+func appendMonitorBlockNode(ctx *base.EntryContext, node *stat.ResourceNode) {
+	if ctx == nil || node == nil {
+		return
+	}
+	nodes, ok := getOutputAttachment(ctx, keyMonitorBlockNodes).([]*stat.ResourceNode)
+	if ok && nodes != nil {
+		nodes = append(nodes, node)
+	} else {
+		nodes = []*stat.ResourceNode{node}
+	}
+	PutOutputAttachment(ctx, keyIsMonitorBlocked, true)
+	PutOutputAttachment(ctx, keyMonitorBlockNodes, nodes)
+}
+
+func setBlockNode(ctx *base.EntryContext, node *stat.ResourceNode) {
+	PutOutputAttachment(ctx, keyControlBlockNode, node)
 }

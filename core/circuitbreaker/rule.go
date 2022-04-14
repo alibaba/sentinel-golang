@@ -98,6 +98,10 @@ func (r *Rule) ResourceName() string {
 	return r.Resource
 }
 
+func (r *Rule) RuleID() string {
+	return r.Id
+}
+
 func (r *Rule) isEqualsToBase(newRule *Rule) bool {
 	if newRule == nil {
 		return false
