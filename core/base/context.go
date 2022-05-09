@@ -91,9 +91,7 @@ type SentinelInput struct {
 func (i *SentinelInput) reset() {
 	i.BatchCount = 1
 	i.Flag = 0
-	if len(i.Args) != 0 {
-		i.Args = make([]interface{}, 0)
-	}
+	i.Args = i.Args[:0]
 	if len(i.Attachments) != 0 {
 		i.Attachments = make(map[interface{}]interface{})
 	}

@@ -51,7 +51,7 @@ func (o *EntryOptions) Reset() {
 	o.batchCount = 1
 	o.flag = 0
 	o.slotChain = nil
-	o.args = nil
+	o.args = o.args[:0]
 	o.attachments = nil
 }
 
