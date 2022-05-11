@@ -15,7 +15,9 @@
 package system_metric
 
 import (
+	"math"
 	"os"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -178,7 +180,10 @@ func retrieveAndUpdateCpuStat() {
 
 	cpuRatioGauge.Set(cpuPercent)
 
-	currentCpuUsage.Store(cpuPercent)
+	numcpu := runtime.NumCPU()
+	cpuUsage := cpuPercent / float64(numcpu) / float64(100)
+	cpuUsage = math.Min(1.0, cpuUsage)
+	currentCpuUsage.Store(cpuUsage)
 }
 
 // getProcessCpuStat gets current process's memory usage in Bytes
