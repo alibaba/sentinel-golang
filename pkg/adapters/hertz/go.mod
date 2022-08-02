@@ -1,10 +1,9 @@
-module github.com/sentinel-go/pkg/adapters/hertz
+module github.com/alibaba/sentinel-golang/pkg/adapters/hertz
 
-go 1.13
+go 1.16
 
 require (
-	github.com/StackExchange/wmi v1.2.1 // indirect
-	github.com/alibaba/sentinel-golang v1.0.2
+	github.com/alibaba/sentinel-golang v1.0.4
 	github.com/cloudwego/hertz v0.2.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 )
