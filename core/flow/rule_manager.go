@@ -41,7 +41,7 @@ type trafficControllerGenKey struct {
 type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 4)
+	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 6)
 	tcMap        = make(TrafficControllerMap)
 	tcMux        = new(sync.RWMutex)
 	nopStat      = &standaloneStatistic{
