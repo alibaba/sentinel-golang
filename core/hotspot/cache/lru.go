@@ -129,7 +129,7 @@ func (c *LRU) Contains(key interface{}) (ok bool) {
 func (c *LRU) Peek(key interface{}) (value interface{}, isFound bool) {
 	var ent *list.Element
 	if ent, isFound = c.items[key]; isFound {
-		return ent.Value.(*entry).value, true
+		return ent.Value.(*entry).value, isFound
 	}
 	return nil, isFound
 }
@@ -137,11 +137,12 @@ func (c *LRU) Peek(key interface{}) (value interface{}, isFound bool) {
 // Remove removes the provided key from the cache, returning if the
 // key was contained.
 func (c *LRU) Remove(key interface{}) (isFound bool) {
-	if ent, ok := c.items[key]; ok {
+	var ent *list.Element
+	if ent, isFound = c.items[key]; isFound {
 		c.removeElement(ent)
-		return true
+		return
 	}
-	return false
+	return
 }
 
 // RemoveOldest removes the oldest item from the cache.
