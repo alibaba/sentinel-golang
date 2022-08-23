@@ -71,6 +71,12 @@ jobs:
         go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
         cd ../gin
         go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ../kitex
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ../hertz
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
+        cd ../go-zero
+        go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
         cd ../grpc
         go test -race -count=1 ./... -coverprofile=coverage.txt -covermode=atomic
         cd ../micro
