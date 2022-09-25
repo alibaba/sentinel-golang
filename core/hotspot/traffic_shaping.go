@@ -115,9 +115,8 @@ func (c *baseTrafficShapingController) BoundMetric() *ParamsMetric {
 
 func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg interface{}) *base.TokenResult {
 	specificItem := c.specificItems
-	initConcurrency := new(int64)
-	*initConcurrency = 0
-	concurrencyPtr := c.metric.ConcurrencyCounter.AddIfAbsent(arg, initConcurrency)
+	initConcurrency := int64(0)
+	concurrencyPtr := c.metric.ConcurrencyCounter.AddIfAbsent(arg, &initConcurrency)
 	if concurrencyPtr == nil {
 		// First to access this arg
 		return nil
