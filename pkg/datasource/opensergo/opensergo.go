@@ -35,7 +35,7 @@ type OpenSergoDataSource struct {
 	opensergoRuleAggregator *OpensergoRuleAggregator
 }
 
-func NewOpenSergoDataSource(host string, port int, namespace string, app string, handlers ...datasource.PropertyHandler) (*OpenSergoDataSource, error) {
+func NewOpenSergoDataSource(host string, port int, namespace string, app string) (*OpenSergoDataSource, error) {
 	if len(namespace) == 0 || len(app) == 0 {
 		return nil, errors.New(fmt.Sprintf("invalid parameters, namespace: %s, app: %s", namespace, app))
 	}
@@ -46,19 +46,12 @@ func NewOpenSergoDataSource(host string, port int, namespace string, app string,
 		opensergoRuleAggregator: NewOpensergoRuleAggregator(),
 	}
 
-	for _, h := range handlers {
-		ds.AddPropertyHandler(h)
-	}
+	ds.AddPropertyHandler(datasource.NewDefaultPropertyHandler(MixedPropertyJsonArrayParser, MixedPropertyUpdater))
 
 	return ds, nil
 }
 
-func (ds OpenSergoDataSource) Start() {
-	ds.client.Start()
-	ds.registerSubscribeInfo()
-}
-
-func (ds OpenSergoDataSource) Close() {
+func (ds *OpenSergoDataSource) Close() {
 	subscribersAll := ds.client.GetSubscriberRegistry().GetSubscribersAll()
 	subscribersAll.Range(func(key, value interface{}) bool {
 		ds.client.UnsubscribeConfig(key.(subscribe.SubscribeKey))
@@ -69,9 +62,19 @@ func (ds OpenSergoDataSource) Close() {
 
 // Initialize
 //
-// set the handler for sentinel, to update sentinel local cache when the data from opensego was changed.
-func (ds OpenSergoDataSource) Initialize() error {
+// 1. Set the handler for sentinel, to update sentinel local cache when the data from opensego was changed.
+//
+// 2. Start the NewOpenSergoClient.
+//
+// 3. Resister OpenSergo Subscribers by params
+func (ds *OpenSergoDataSource) Initialize() error {
 	ds.opensergoRuleAggregator.setSentinelUpdateHandler(ds.doUpdate)
+	ds.client.Start()
+
+	// TODO to add datasource-params in NewOpenSergoDataSource to decide register which subscribers for datasource
+	// TODO add the deciding logic in follow
+	ds.RegisterSubscribeInfoOfFaulttoleranceRule()
+	ds.RegisterSubscribeInfoOfFlowRuleStrategy()
 	return nil
 }
 
@@ -80,29 +83,27 @@ func (ds OpenSergoDataSource) doUpdate() {
 	if err != nil {
 		logging.Warn("[OpenSergo] Succeed to read source in Initialize()", "namespace", ds.namespace, "app", ds.app, "content", fmt.Sprintf(string(bytes)))
 	}
+
 	ds.Handle(bytes)
 }
 
-func (ds OpenSergoDataSource) ReadSource() ([]byte, error) {
-	dataMap := ds.opensergoRuleAggregator.dataMap
-	logging.Info("[OpenSergo] Succeed to read source", "namespace", ds.namespace, "app", ds.app, "content", dataMap)
-	bytes, err := json.Marshal(dataMap[RuleType_FlowRule])
+func (ds *OpenSergoDataSource) ReadSource() ([]byte, error) {
+	// assemble updated MixedRule
+	mixedRule := new(MixedRule)
+	if ds.opensergoRuleAggregator.mixedRuleCache.updateFlagMap[RuleType_FlowRule] {
+		mixedRule.FlowRule = ds.opensergoRuleAggregator.mixedRuleCache.FlowRule
+	}
+	// TODO assembler other rule-type
+
+	logging.Info("[OpenSergo] Succeed to read source", "namespace", ds.namespace, "app", ds.app, "content", mixedRule)
+	bytes, err := json.Marshal(mixedRule)
 	if err != nil {
 		return nil, err
 	}
 	return bytes, nil
 }
 
-// registerSubscribeInfo
-//
-// registry the subscribeInfo which would subscribe the data that sentinel focus on.
-func (ds OpenSergoDataSource) registerSubscribeInfo() {
-	ds.registerSubscribeInfoOfFaulttoleranceRule()
-	ds.registerSubscribeInfoOfFlowRuleStrategy()
-}
-
-func (ds OpenSergoDataSource) registerSubscribeInfoOfFaulttoleranceRule() {
-
+func (ds *OpenSergoDataSource) RegisterSubscribeInfoOfFaulttoleranceRule() {
 	// registry SubscribeInfo of FaultToleranceRule
 	faultToleranceRuleSubscribeKey := subscribe.NewSubscribeKey(ds.namespace, ds.app, configkind.ConfigKindRefFaultToleranceRule{})
 	faultToleranceRuleSubscribeInfo := client.NewSubscribeInfo(*faultToleranceRuleSubscribeKey)
@@ -114,7 +115,7 @@ func (ds OpenSergoDataSource) registerSubscribeInfoOfFaulttoleranceRule() {
 	logging.Info(fmt.Sprintf("Subscribing OpenSergo base fault-tolerance rules for target <%v, %v>", ds.namespace, ds.app))
 }
 
-func (ds OpenSergoDataSource) registerSubscribeInfoOfFlowRuleStrategy() {
+func (ds *OpenSergoDataSource) RegisterSubscribeInfoOfFlowRuleStrategy() {
 	// registry SubscribeInfo of RateLimitStrategy
 	rateLimitStrategySubscribeKey := subscribe.NewSubscribeKey(ds.namespace, ds.app, configkind.ConfigKindRefRateLimitStrategy{})
 	rateLimitStrategySubscribeInfo := client.NewSubscribeInfo(*rateLimitStrategySubscribeKey)
@@ -125,4 +126,10 @@ func (ds OpenSergoDataSource) registerSubscribeInfoOfFlowRuleStrategy() {
 	ds.client.RegisterSubscribeInfo(rateLimitStrategySubscribeInfo)
 	logging.Info(fmt.Sprintf("Subscribing OpenSergo base rate-limit strategies for target <%v, %v>", ds.namespace, ds.app))
 	// TODO register other FlowRule Strategy
+}
+
+// NOTE: unsubscribe operation does not affect existing rules in SentinelProperty.
+func (ds *OpenSergoDataSource) unSubscribeFlowRuleStrategy() {
+	rateLimitStrategySubscribeKey := subscribe.NewSubscribeKey(ds.namespace, ds.app, configkind.ConfigKindRefRateLimitStrategy{})
+	ds.client.UnsubscribeConfig(*rateLimitStrategySubscribeKey)
 }

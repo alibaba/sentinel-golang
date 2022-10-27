@@ -19,7 +19,6 @@ import (
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
-	"github.com/alibaba/sentinel-golang/ext/datasource"
 	_ "github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/opensergo"
@@ -46,23 +45,21 @@ type Counter struct {
 }
 
 func main() {
-
-	handler := datasource.NewFlowRulesHandler(datasource.FlowRuleJsonArrayParser)
-	openSergoDataSource, _ := opensergo.NewOpenSergoDataSource(host, port, namespace, app, handler)
+	openSergoDataSource, _ := opensergo.NewOpenSergoDataSource(host, port, namespace, app)
 	openSergoDataSource.Initialize()
-	openSergoDataSource.Start()
 
-	// for test High-Traffic-Scenario
-	test()
+	// simulate concurrency request
+	simulateConcurrency()
 
 	select {}
 }
 
-func test() {
+func simulateConcurrency() {
 	counter := Counter{pass: new(int64), block: new(int64), total: new(int64)}
-	startFlowModule(&counter)
 
-	//Starting counter
+	// simulate request
+	go startFlowModule(&counter)
+	// print counter
 	go timerTask(&counter)
 }
 

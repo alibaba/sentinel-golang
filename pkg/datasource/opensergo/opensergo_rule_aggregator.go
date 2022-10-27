@@ -22,26 +22,40 @@ import (
 	"sync"
 )
 
+type MixedRuleCache struct {
+	MixedRule
+	// map[ruleType] bool, update change status of ruleType
+	updateFlagMap map[string]bool
+	// map[resourceName] index, flow.Rule index of mixedRuleCache by resourceName, used to update flow.Rule in mixedRuleCache
+	flowRuleNameMap map[string]int
+}
+
+func newMixedRuleCache() *MixedRuleCache {
+	return &MixedRuleCache{
+		updateFlagMap: make(map[string]bool),
+	}
+}
+
 type OpensergoRuleAggregator struct {
-	// map[kindName] []flow.Rule
-	dataMap map[string][]flow.Rule
+	ruleAssembler         RuleAssemblerAggregator
+	sentinelUpdateHandler func()
+
+	mixedRuleCache *MixedRuleCache
 
 	// map[kindName] []v1.FaultToleranceRule
 	pbTtRuleMapByStrategyKind map[string][]faulttolerancePb.FaultToleranceRule
 	// map[kindName] []v1.RateLimitStrategy
 	pbRlStrategyMap map[string]faulttolerancePb.RateLimitStrategy
-
-	ruleAssembler         RuleAssemblerAggregator
-	sentinelUpdateHandler func()
 }
 
 func NewOpensergoRuleAggregator() *OpensergoRuleAggregator {
 	return &OpensergoRuleAggregator{
-		dataMap:                   make(map[string][]flow.Rule),
+		ruleAssembler:  RuleAssemblerAggregator{},
+		mixedRuleCache: newMixedRuleCache(),
+
 		pbTtRuleMapByStrategyKind: make(map[string][]faulttolerancePb.FaultToleranceRule),
 
 		pbRlStrategyMap: make(map[string]faulttolerancePb.RateLimitStrategy),
-		ruleAssembler:   RuleAssemblerAggregator{},
 	}
 }
 
@@ -49,10 +63,11 @@ func (aggregator *OpensergoRuleAggregator) setSentinelUpdateHandler(sentinelUpda
 	aggregator.sentinelUpdateHandler = sentinelUpdateHandler
 }
 
-var updateFaultToleranceRules_Mutex sync.Mutex
+var updateFaultToleranceRulesMutex sync.Mutex
 
 func (aggregator *OpensergoRuleAggregator) updateFaultToleranceRules(dataSlice []protoreflect.ProtoMessage) (bool, error) {
-	updateFaultToleranceRules_Mutex.Lock()
+	updateFaultToleranceRulesMutex.Lock()
+	defer updateFaultToleranceRulesMutex.Unlock()
 	for _, pbData := range dataSlice {
 		pbFaultToleranceRule := pbData.(*faulttolerancePb.FaultToleranceRule)
 		for _, strategyRef := range pbFaultToleranceRule.GetStrategies() {
@@ -68,14 +83,14 @@ func (aggregator *OpensergoRuleAggregator) updateFaultToleranceRules(dataSlice [
 
 	aggregator.updateFlowRule()
 	//aggregator.updateCircuitBreakerRule()
-	updateFaultToleranceRules_Mutex.Unlock()
 	return true, nil
 }
 
-var updateRateLimitStrategy_mutex sync.Mutex
+var updateRateLimitStrategyMutex sync.Mutex
 
 func (aggregator *OpensergoRuleAggregator) updateRateLimitStrategy(dataSlice []protoreflect.ProtoMessage) (bool, error) {
-	updateRateLimitStrategy_mutex.Lock()
+	updateRateLimitStrategyMutex.Lock()
+	defer updateRateLimitStrategyMutex.Unlock()
 	if len(dataSlice) > 0 {
 		for _, pbData := range dataSlice {
 			rateLimitStrategy := pbData.(*faulttolerancePb.RateLimitStrategy)
@@ -84,27 +99,42 @@ func (aggregator *OpensergoRuleAggregator) updateRateLimitStrategy(dataSlice []p
 	}
 
 	aggregator.updateFlowRule()
-	updateRateLimitStrategy_mutex.Unlock()
 	return true, nil
 }
 
-var updateFlowRule_mutex sync.Mutex
-
-// TODO update all flow.Rule now, but in this mode, the performance would be affected when the data becoming large.
 func (aggregator *OpensergoRuleAggregator) updateFlowRule() {
-	updateFlowRule_mutex.Lock()
 	flowRules := make([]flow.Rule, 0)
+	// assembler RateLimitStrategies for FlowRule
 	pbRuleOfRateLimitStrategies := aggregator.pbTtRuleMapByStrategyKind[configkind.ConfigKindRefRateLimitStrategy{}.GetSimpleName()]
 	flowRulesByRlStrategy := aggregator.ruleAssembler.assembleFlowRulesFromRateLimitStrategies(pbRuleOfRateLimitStrategies, aggregator.pbRlStrategyMap)
 	if flowRulesByRlStrategy != nil && len(flowRulesByRlStrategy) > 0 {
 		flowRules = append(flowRules, flowRulesByRlStrategy...)
 	}
-	// TODO update
-	aggregator.dataMap[RuleType_FlowRule] = flowRules
+	// TODO assembler other flowRule strategies
+
+	// merge flowRule between cache-data and new-data
+	for _, rule := range flowRules {
+		flowRuleIndex := aggregator.mixedRuleCache.flowRuleNameMap[rule.ResourceName()]
+		// if existed then update
+		// else append
+		if flowRuleIndex > 0 || (flowRuleIndex == 0 && len(aggregator.mixedRuleCache.FlowRule) == 1) {
+			aggregator.mixedRuleCache.FlowRule[flowRuleIndex] = rule
+		} else {
+			if aggregator.mixedRuleCache.FlowRule == nil {
+				aggregator.mixedRuleCache.FlowRule = make([]flow.Rule, 0)
+				aggregator.mixedRuleCache.flowRuleNameMap = make(map[string]int)
+			}
+
+			aggregator.mixedRuleCache.FlowRule = append(aggregator.mixedRuleCache.FlowRule, rule)
+		}
+		aggregator.mixedRuleCache.flowRuleNameMap[rule.ResourceName()] = len(aggregator.mixedRuleCache.FlowRule) - 1
+	}
+
+	aggregator.mixedRuleCache.updateFlagMap[RuleType_FlowRule] = true
 	aggregator.sentinelUpdateHandler()
-	updateFlowRule_mutex.Unlock()
+	aggregator.mixedRuleCache.updateFlagMap[RuleType_FlowRule] = false
 }
 
 func (aggregator *OpensergoRuleAggregator) updateCircuitBreakerRule() {
-
+	// TODO add logic of updateCircuitBreakerRule
 }
