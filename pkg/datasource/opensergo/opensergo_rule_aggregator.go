@@ -15,11 +15,12 @@
 package opensergo
 
 import (
+	"sync"
+
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/opensergo/opensergo-go/pkg/configkind"
 	faulttolerancePb "github.com/opensergo/opensergo-go/pkg/proto/fault_tolerance/v1"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"sync"
 )
 
 type MixedRuleCache struct {

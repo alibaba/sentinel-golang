@@ -16,6 +16,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"math/rand"
+	"sync/atomic"
+	"time"
+
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
@@ -24,15 +29,11 @@ import (
 	"github.com/alibaba/sentinel-golang/pkg/datasource/opensergo"
 	_ "github.com/alibaba/sentinel-golang/pkg/datasource/opensergo"
 	"github.com/alibaba/sentinel-golang/util"
-	"log"
-	"math/rand"
-	"sync/atomic"
-	"time"
 )
 
 const (
-	host string = "33.1.33.1"
-	port int    = 10246
+	host string = "127.0.0.1"
+	port uint32 = 10246
 
 	namespace string = "default"
 	app       string = "foo-app"
@@ -75,7 +76,7 @@ func startFlowModule(counter *Counter) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			for {
-				e, b := sentinel.Entry("GET:/foo/1/2", sentinel.WithTrafficType(base.Inbound))
+				e, b := sentinel.Entry("GET:/foo/1", sentinel.WithTrafficType(base.Inbound))
 				if b != nil {
 					// Blocked. We could get the block reason from the BlockError.
 					atomic.AddInt64(counter.block, 1)

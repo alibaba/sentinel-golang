@@ -17,6 +17,7 @@ package opensergo
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
@@ -35,64 +36,64 @@ type MixedRule struct {
 
 // MixedPropertyJsonArrayParser provide JSON  as the default serialization for MixedRule
 func MixedPropertyJsonArrayParser(src []byte) (interface{}, error) {
-	mixedRules := new(MixedRule)
-	if err := json.Unmarshal(src, mixedRules); err != nil {
-		desc := fmt.Sprintf("Fail to convert source bytes to []*opensergo.MixedRule, err: %s", err.Error())
+	mixedRule := new(MixedRule)
+	if err := json.Unmarshal(src, mixedRule); err != nil {
+		desc := fmt.Sprintf("[OpenSergoDatasource] Fail to convert source bytes to *opensergo.MixedRule, err: %s", err.Error())
 		return nil, datasource.NewError(datasource.ConvertSourceError, desc)
 	}
-	return mixedRules, nil
+	return mixedRule, nil
 }
 
 // MixedPropertyUpdater load the newest MixedRule to downstream flow component.
 func MixedPropertyUpdater(data interface{}) error {
 	mixedRule := data.(*MixedRule)
 
-	var errSlice []error
+	var errs []error
 	flowRules := mixedRule.FlowRule
 	if flowRules != nil {
 		if err := datasource.FlowRulesUpdater(flowRules); err != nil {
-			errSlice = append(errSlice, err)
+			errs = append(errs, err)
 		}
 	}
 
 	hotSpotParamFlowRule := mixedRule.HotSpotParamFlowRule
 	if hotSpotParamFlowRule != nil {
 		if err := datasource.HotSpotParamRulesUpdater(hotSpotParamFlowRule); err != nil {
-			errSlice = append(errSlice, err)
+			errs = append(errs, err)
 		}
 	}
 
 	circuitBreakerRule := mixedRule.CircuitBreakerRule
 	if circuitBreakerRule != nil {
 		if err := datasource.CircuitBreakerRulesUpdater(circuitBreakerRule); err != nil {
-			errSlice = append(errSlice, err)
+			errs = append(errs, err)
 		}
 	}
 
 	systemRules := mixedRule.SystemRule
 	if systemRules != nil {
 		if err := datasource.SystemRulesUpdater(systemRules); err != nil {
-			errSlice = append(errSlice, err)
+			errs = append(errs, err)
 		}
 	}
 
 	isolationRule := mixedRule.IsolationRule
 	if isolationRule != nil {
 		if err := datasource.IsolationRulesUpdater(isolationRule); err != nil {
-			errSlice = append(errSlice, err)
+			errs = append(errs, err)
 		}
 	}
 
-	if errSlice == nil || len(errSlice) == 0 {
+	if len(errs) == 0 {
 		return nil
 	}
 
 	var errStr string
-	for _, err := range errSlice {
+	for _, err := range errs {
 		errStr = fmt.Sprintf(" | ") + fmt.Sprintf("%+v", err)
 	}
 	return datasource.NewError(
 		datasource.UpdatePropertyError,
-		fmt.Sprintf(errStr),
+		errStr,
 	)
 }

@@ -15,7 +15,6 @@
 package opensergo
 
 import (
-	"fmt"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/opensergo/opensergo-go/pkg/configkind"
@@ -67,7 +66,7 @@ func fillFlowRuleWithRateLimitStrategy(flowRule *flow.Rule, strategy faulttolera
 	defer func() *flow.Rule {
 		if r := recover(); r != nil {
 			errRecover := errors.Errorf("%+v", r)
-			logging.Error(errRecover, fmt.Sprintf("Ignoring OpenSergo RateLimitStrategy due to covert failure, resourceName=%v, strategy=%v", flowRule.Resource, strategy))
+			logging.Error(errRecover, "[OpenSergoDatasource] Ignoring OpenSergo RateLimitStrategy due to covert failure.", "resourceName", flowRule.Resource, "strategy", strategy)
 		}
 		return nil
 	}()

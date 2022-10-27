@@ -15,10 +15,11 @@
 package opensergo
 
 import (
-	"github.com/opensergo/opensergo-go/pkg/configkind"
-	"github.com/opensergo/opensergo-go/pkg/transport/subscribe"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"reflect"
+
+	"github.com/opensergo/opensergo-go/pkg/configkind"
+	"github.com/opensergo/opensergo-go/pkg/model"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type FaulttoleranceRuleSubscriber struct {
@@ -31,9 +32,10 @@ func NewFaulttoleranceRuleSubscriber(opensergoRuleAggregator *OpensergoRuleAggre
 	}
 }
 
-func (faulttoleranceRuleSubscriber FaulttoleranceRuleSubscriber) OnSubscribeDataUpdate(subscribeKey subscribe.SubscribeKey, dataSlice []protoreflect.ProtoMessage) (bool, error) {
-	if reflect.ValueOf(subscribeKey.GetKind()).Interface() != reflect.ValueOf(configkind.ConfigKindRefFaultToleranceRule{}).Interface() {
+func (faulttoleranceRuleSubscriber FaulttoleranceRuleSubscriber) OnSubscribeDataUpdate(subscribeKey model.SubscribeKey, data interface{}) (bool, error) {
+	messages := data.([]protoreflect.ProtoMessage)
+	if reflect.ValueOf(subscribeKey.Kind()).Interface() != reflect.ValueOf(configkind.ConfigKindRefFaultToleranceRule{}).Interface() {
 		return false, nil
 	}
-	return faulttoleranceRuleSubscriber.opensergoRuleAggregator.updateFaultToleranceRules(dataSlice)
+	return faulttoleranceRuleSubscriber.opensergoRuleAggregator.updateFaultToleranceRules(messages)
 }

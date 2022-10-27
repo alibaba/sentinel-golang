@@ -15,10 +15,11 @@
 package opensergo
 
 import (
-	"github.com/opensergo/opensergo-go/pkg/configkind"
-	"github.com/opensergo/opensergo-go/pkg/transport/subscribe"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"reflect"
+
+	"github.com/opensergo/opensergo-go/pkg/configkind"
+	"github.com/opensergo/opensergo-go/pkg/model"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type FlowruleStrategySubscriber struct {
@@ -31,10 +32,11 @@ func NewFlowruleStrategySubscriber(opensergoRuleAggregator *OpensergoRuleAggrega
 	}
 }
 
-func (flowruleStrategySubscriber FlowruleStrategySubscriber) OnSubscribeDataUpdate(subscribeKey subscribe.SubscribeKey, dataSlice []protoreflect.ProtoMessage) (bool, error) {
-	switch reflect.ValueOf(subscribeKey.GetKind()).Interface() {
+func (flowruleStrategySubscriber FlowruleStrategySubscriber) OnSubscribeDataUpdate(subscribeKey model.SubscribeKey, data interface{}) (bool, error) {
+	messages := data.([]protoreflect.ProtoMessage)
+	switch reflect.ValueOf(subscribeKey.Kind()).Interface() {
 	case reflect.ValueOf(configkind.ConfigKindRefRateLimitStrategy{}).Interface():
-		return flowruleStrategySubscriber.opensergoRuleAggregator.updateRateLimitStrategy(dataSlice)
+		return flowruleStrategySubscriber.opensergoRuleAggregator.updateRateLimitStrategy(messages)
 	default:
 		return false, nil
 	}
