@@ -176,7 +176,7 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 		// must finish the lifecycle of r.
 		blockErr := base.NewBlockErrorFromDeepCopy(r.BlockError())
 		e.Exit()
-		return nil, blockErr
+		return e, blockErr
 	}
 
 	return e, nil
