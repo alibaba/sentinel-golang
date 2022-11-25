@@ -42,7 +42,7 @@ jobs:
       - name: Install goimports
         run: |
           go get golang.org/x/tools/cmd/goimports
-          go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
+          go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.27.0
           golangci-lint run --timeout=10m -v --disable-all --enable=govet --enable=staticcheck --enable=ineffassign --enable=misspell -D typecheck
 
       - name: Test
