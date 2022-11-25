@@ -10,5 +10,6 @@ require (
 	github.com/shirou/gopsutil/v3 v3.21.6
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/multierr v1.5.0
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
