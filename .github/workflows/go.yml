@@ -50,7 +50,6 @@ jobs:
 
       - name: Test
         run: |
-          diff -u <(echo -n) <(gofmt -d -s .)
           diff -u <(echo -n) <(goimports -d .)
           go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
           cd ./pkg/datasource/consul
