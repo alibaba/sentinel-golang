@@ -15,7 +15,6 @@
 package file
 
 import (
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -47,13 +46,7 @@ func NewFileDataSource(sourceFilePath string, handlers ...datasource.PropertyHan
 }
 
 func (s *RefreshableFileDataSource) ReadSource() ([]byte, error) {
-	f, err := os.Open(s.sourceFilePath)
-	if err != nil {
-		return nil, errors.Errorf("RefreshableFileDataSource fail to open the property file, err: %+v.", err)
-	}
-	defer f.Close()
-
-	src, err := ioutil.ReadAll(f)
+	src, err := os.ReadFile(s.sourceFilePath)
 	if err != nil {
 		return nil, errors.Errorf("RefreshableFileDataSource fail to read file, err: %+v.", err)
 	}

@@ -16,7 +16,7 @@ package datasource
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/system"
@@ -50,7 +50,7 @@ func TestSinglePropertyHandler_Handle(t *testing.T) {
 	assert.True(t, r1 == nil, "Fail to execute Handle func.")
 
 	h2 := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnError)
-	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
+	src, err := os.ReadFile("../../tests/testdata/extension/SystemRule.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}
@@ -60,7 +60,7 @@ func TestSinglePropertyHandler_Handle(t *testing.T) {
 
 func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
 	h := NewDefaultPropertyHandler(MockSystemRulesConverter, MockSystemRulesUpdaterReturnNil)
-	src, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule.json")
+	src, err := os.ReadFile("../../tests/testdata/extension/SystemRule.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}
@@ -69,7 +69,7 @@ func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
 	isConsistent := h.isPropertyConsistent(ret1)
 	assert.True(t, isConsistent == false, "Fail to execute isPropertyConsistent.")
 
-	src2, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule2.json")
+	src2, err := os.ReadFile("../../tests/testdata/extension/SystemRule2.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}
@@ -78,7 +78,7 @@ func TestSinglePropertyHandler_isPropertyConsistent(t *testing.T) {
 	isConsistent = h.isPropertyConsistent(ret2)
 	assert.True(t, isConsistent == true, "Fail to execute isPropertyConsistent.")
 
-	src3, err := ioutil.ReadFile("../../tests/testdata/extension/SystemRule3.json")
+	src3, err := os.ReadFile("../../tests/testdata/extension/SystemRule3.json")
 	if err != nil {
 		t.Errorf("Fail to get source file, err:%+v", err)
 	}

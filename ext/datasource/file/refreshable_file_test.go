@@ -15,7 +15,6 @@
 package file
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -56,7 +55,7 @@ var (
 
 func prepareSystemRulesTestFile() error {
 	content := []byte(TestSystemRules)
-	return ioutil.WriteFile(TestSystemRulesFile, content, os.ModePerm)
+	return os.WriteFile(TestSystemRulesFile, content, os.ModePerm)
 }
 
 func deleteSystemRulesTestFile() error {

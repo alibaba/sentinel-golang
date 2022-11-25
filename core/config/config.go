@@ -15,7 +15,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -100,7 +99,7 @@ func loadGlobalConfigFromYamlFile(filePath string) error {
 	if err != nil && !os.IsExist(err) {
 		return err
 	}
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}

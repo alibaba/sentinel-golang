@@ -15,7 +15,6 @@
 package metric
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -83,7 +82,7 @@ func filenameMatches(filename, baseFilename string) bool {
 }
 
 func listMetricFilesConditional(baseDir string, filePattern string, predicate func(string, string) bool) ([]string, error) {
-	dir, err := ioutil.ReadDir(baseDir)
+	dir, err := os.ReadDir(baseDir)
 	if err != nil {
 		return nil, err
 	}
