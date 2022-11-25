@@ -146,7 +146,8 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 		flag:         0,
 		slotChain:    sc,
 	})
-	assert.Nil(t, entry)
+	assert.NotNil(t, entry)
+	assert.Equal(t, "ResourceWrapper{name=abc, flowType=Inbound, classification=0}", entry.Resource().String())
 	assert.NotNil(t, b)
 	assert.Equal(t, blockType, b.BlockType())
 
