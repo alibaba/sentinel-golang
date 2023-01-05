@@ -22,20 +22,20 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-type FaulttoleranceRuleSubscriber struct {
+type CircuitBreakerRuleSubscriber struct {
 	opensergoRuleAggregator *OpensergoRuleAggregator
 }
 
-func NewFaulttoleranceRuleSubscriber(opensergoRuleAggregator *OpensergoRuleAggregator) *FaulttoleranceRuleSubscriber {
-	return &FaulttoleranceRuleSubscriber{
+func NewCircuitBreakerRuleSubscriber(opensergoRuleAggregator *OpensergoRuleAggregator) *CircuitBreakerRuleSubscriber {
+	return &CircuitBreakerRuleSubscriber{
 		opensergoRuleAggregator: opensergoRuleAggregator,
 	}
 }
 
-func (faulttoleranceRuleSubscriber FaulttoleranceRuleSubscriber) OnSubscribeDataUpdate(subscribeKey model.SubscribeKey, data interface{}) (bool, error) {
+func (s CircuitBreakerRuleSubscriber) OnSubscribeDataUpdate(subscribeKey model.SubscribeKey, data interface{}) (bool, error) {
 	messages := data.([]protoreflect.ProtoMessage)
-	if reflect.ValueOf(subscribeKey.Kind()).Interface() != reflect.ValueOf(configkind.ConfigKindRefFaultToleranceRule{}).Interface() {
+	if reflect.ValueOf(subscribeKey.Kind()).Interface() != reflect.ValueOf(configkind.ConfigKindRefCircuitBreakerStrategy{}).Interface() {
 		return false, nil
 	}
-	return faulttoleranceRuleSubscriber.opensergoRuleAggregator.updateFaultToleranceRules(messages)
+	return s.opensergoRuleAggregator.updateCircuitBreakerStrategy(messages)
 }

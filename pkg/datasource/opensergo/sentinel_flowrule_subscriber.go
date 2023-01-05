@@ -22,21 +22,23 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-type FlowruleStrategySubscriber struct {
+type SentinelFlowRuleSubscriber struct {
 	opensergoRuleAggregator *OpensergoRuleAggregator
 }
 
-func NewFlowruleStrategySubscriber(opensergoRuleAggregator *OpensergoRuleAggregator) *FlowruleStrategySubscriber {
-	return &FlowruleStrategySubscriber{
+func NewSentinelFlowRuleSubscriber(opensergoRuleAggregator *OpensergoRuleAggregator) *SentinelFlowRuleSubscriber {
+	return &SentinelFlowRuleSubscriber{
 		opensergoRuleAggregator: opensergoRuleAggregator,
 	}
 }
 
-func (flowruleStrategySubscriber FlowruleStrategySubscriber) OnSubscribeDataUpdate(subscribeKey model.SubscribeKey, data interface{}) (bool, error) {
+func (s SentinelFlowRuleSubscriber) OnSubscribeDataUpdate(subscribeKey model.SubscribeKey, data interface{}) (bool, error) {
 	messages := data.([]protoreflect.ProtoMessage)
 	switch reflect.ValueOf(subscribeKey.Kind()).Interface() {
 	case reflect.ValueOf(configkind.ConfigKindRefRateLimitStrategy{}).Interface():
-		return flowruleStrategySubscriber.opensergoRuleAggregator.updateRateLimitStrategy(messages)
+		return s.opensergoRuleAggregator.updateRateLimitStrategy(messages)
+	case reflect.ValueOf(configkind.ConfigKindRefThrottlingStrategy{}).Interface():
+		return s.opensergoRuleAggregator.updateThrottlingStrategy(messages)
 	default:
 		return false, nil
 	}
