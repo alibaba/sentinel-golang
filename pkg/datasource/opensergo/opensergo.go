@@ -31,10 +31,10 @@ import (
 type OpenSergoDataSource struct {
 	datasource.Base
 	isInitialized           util.AtomicBool
-	client                  client.OpenSergoClient
+	client                  *client.OpenSergoClient
 	namespace               string
 	app                     string
-	opensergoRuleAggregator *OpensergoRuleAggregator
+	openSergoRuleAggregator *OpensergoRuleAggregator
 }
 
 func NewOpenSergoDataSource(host string, port uint32, namespace string, app string) (*OpenSergoDataSource, error) {
@@ -48,10 +48,10 @@ func NewOpenSergoDataSource(host string, port uint32, namespace string, app stri
 	}
 
 	ds := &OpenSergoDataSource{
-		client:                  *openSergoClient,
+		client:                  openSergoClient,
 		namespace:               namespace,
 		app:                     app,
-		opensergoRuleAggregator: NewOpensergoRuleAggregator(),
+		openSergoRuleAggregator: NewOpensergoRuleAggregator(),
 	}
 	// add mixedRule PropertyHandler for OpenSergoDatasource
 	ds.AddPropertyHandler(datasource.NewDefaultPropertyHandler(MixedPropertyJsonArrayParser, MixedPropertyUpdater))
@@ -76,7 +76,7 @@ func (ds *OpenSergoDataSource) Close() error {
 //
 // 3. subscribe data from OpenSergo
 func (ds *OpenSergoDataSource) Initialize() error {
-	ds.opensergoRuleAggregator.setSentinelUpdateHandler(ds.doUpdate)
+	ds.openSergoRuleAggregator.setSentinelUpdateHandler(ds.doUpdate)
 	if err := ds.client.Start(); err != nil {
 		// TODO handle error
 		return err
@@ -107,20 +107,20 @@ func (ds *OpenSergoDataSource) doUpdate() error {
 func (ds *OpenSergoDataSource) ReadSource() ([]byte, error) {
 	// assemble updated MixedRule
 	mixedRule := new(MixedRule)
-	if ds.opensergoRuleAggregator.mixedRuleCache.updateFlagMap[RuleType_FlowRule] {
-		mixedRule.FlowRule = ds.opensergoRuleAggregator.mixedRuleCache.FlowRule
+	if ds.openSergoRuleAggregator.mixedRuleCache.updateFlagMap[SentinelFlowRule] {
+		mixedRule.FlowRule = ds.openSergoRuleAggregator.mixedRuleCache.FlowRule
 	}
-	if ds.opensergoRuleAggregator.mixedRuleCache.updateFlagMap[RuleType_CircuitBreakerRule] {
-		mixedRule.CircuitBreakerRule = ds.opensergoRuleAggregator.mixedRuleCache.CircuitBreakerRule
+	if ds.openSergoRuleAggregator.mixedRuleCache.updateFlagMap[SentinelCircuitBreakerRule] {
+		mixedRule.CircuitBreakerRule = ds.openSergoRuleAggregator.mixedRuleCache.CircuitBreakerRule
 	}
-	if ds.opensergoRuleAggregator.mixedRuleCache.updateFlagMap[RuleType_HotSpotParamFlowRule] {
-		mixedRule.HotSpotParamFlowRule = ds.opensergoRuleAggregator.mixedRuleCache.HotSpotParamFlowRule
+	if ds.openSergoRuleAggregator.mixedRuleCache.updateFlagMap[SentinelHotSpotParamFlowRule] {
+		mixedRule.HotSpotParamFlowRule = ds.openSergoRuleAggregator.mixedRuleCache.HotSpotParamFlowRule
 	}
-	if ds.opensergoRuleAggregator.mixedRuleCache.updateFlagMap[RuleType_SystemAdaptiveRule] {
-		mixedRule.SystemRule = ds.opensergoRuleAggregator.mixedRuleCache.SystemRule
+	if ds.openSergoRuleAggregator.mixedRuleCache.updateFlagMap[SentinelSystemAdaptiveRule] {
+		mixedRule.SystemRule = ds.openSergoRuleAggregator.mixedRuleCache.SystemRule
 	}
-	if ds.opensergoRuleAggregator.mixedRuleCache.updateFlagMap[RuleType_IsolationRule] {
-		mixedRule.IsolationRule = ds.opensergoRuleAggregator.mixedRuleCache.IsolationRule
+	if ds.openSergoRuleAggregator.mixedRuleCache.updateFlagMap[SentinelIsolationRule] {
+		mixedRule.IsolationRule = ds.openSergoRuleAggregator.mixedRuleCache.IsolationRule
 	}
 
 	logging.Info("[OpenSergoDatasource] Succeed to read source.", "namespace", ds.namespace, "app", ds.app, "result", mixedRule)
@@ -132,7 +132,7 @@ func (ds *OpenSergoDataSource) ReadSource() ([]byte, error) {
 }
 
 func (ds *OpenSergoDataSource) subscribeFaultToleranceRule() {
-	faulttoleranceRuleSubscriber := NewFaulttoleranceRuleSubscriber(ds.opensergoRuleAggregator)
+	faulttoleranceRuleSubscriber := NewFaulttoleranceRuleSubscriber(ds.openSergoRuleAggregator)
 	// Subscribe FaultToleranceRule
 	faultToleranceRuleSubscribeKey := model.NewSubscribeKey(ds.namespace, ds.app, configkind.ConfigKindRefFaultToleranceRule{})
 	api.WithSubscriber(faulttoleranceRuleSubscriber)
@@ -147,7 +147,7 @@ func (ds *OpenSergoDataSource) unsubscribeFaultToleranceRule() {
 }
 
 func (ds *OpenSergoDataSource) subscribeFlowRule() {
-	sentinelFlowRuleSubscriber := NewSentinelFlowRuleSubscriber(ds.opensergoRuleAggregator)
+	sentinelFlowRuleSubscriber := NewSentinelFlowRuleSubscriber(ds.openSergoRuleAggregator)
 	// Subscribe RateLimitStrategy
 	rlStrategyKey := model.NewSubscribeKey(ds.namespace, ds.app, configkind.ConfigKindRefRateLimitStrategy{})
 	ds.client.SubscribeConfig(*rlStrategyKey, api.WithSubscriber(sentinelFlowRuleSubscriber))
@@ -174,7 +174,7 @@ func (ds *OpenSergoDataSource) unSubscribeFlowRule() {
 }
 
 func (ds *OpenSergoDataSource) subscribeIsolationRule() {
-	isolationRuleSubscriber := NewIsolationRuleSubscriber(ds.opensergoRuleAggregator)
+	isolationRuleSubscriber := NewIsolationRuleSubscriber(ds.openSergoRuleAggregator)
 	// Subscribe ConcurrencyLimitStrategy
 	clStrategyKey := model.NewSubscribeKey(ds.namespace, ds.app, configkind.ConfigKindRefConcurrencyLimitStrategy{})
 	ds.client.SubscribeConfig(*clStrategyKey, api.WithSubscriber(isolationRuleSubscriber))
@@ -189,7 +189,7 @@ func (ds *OpenSergoDataSource) unSubscribeIsolationRule() {
 }
 
 func (ds *OpenSergoDataSource) subscribeCircuitBreakerRule() {
-	circuitBreakerRuleSubscriber := NewCircuitBreakerRuleSubscriber(ds.opensergoRuleAggregator)
+	circuitBreakerRuleSubscriber := NewCircuitBreakerRuleSubscriber(ds.openSergoRuleAggregator)
 	// Subscribe CircuitBreakerStrategy
 	rbStrategyKey := model.NewSubscribeKey(ds.namespace, ds.app, configkind.ConfigKindRefCircuitBreakerStrategy{})
 	ds.client.SubscribeConfig(*rbStrategyKey, api.WithSubscriber(circuitBreakerRuleSubscriber))

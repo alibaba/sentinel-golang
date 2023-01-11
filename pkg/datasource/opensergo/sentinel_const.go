@@ -15,9 +15,9 @@
 package opensergo
 
 const (
-	RuleType_FlowRule             string = "FlowRule"
-	RuleType_CircuitBreakerRule   string = "CircuitBreakerRule"
-	RuleType_SystemAdaptiveRule   string = "SystemRule"
-	RuleType_HotSpotParamFlowRule string = "HotSpotParamFlowRule"
-	RuleType_IsolationRule        string = "IsolationRule"
+	SentinelFlowRule             string = "FlowRule"
+	SentinelCircuitBreakerRule   string = "CircuitBreakerRule"
+	SentinelSystemAdaptiveRule   string = "SystemRule"
+	SentinelHotSpotParamFlowRule string = "HotSpotParamFlowRule"
+	SentinelIsolationRule        string = "IsolationRule"
 )
