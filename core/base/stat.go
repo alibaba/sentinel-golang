@@ -41,6 +41,8 @@ const (
 	MetricEventTimeout
 	// degrade counter
 	MetricEventDegrade
+	// business-defined error
+	MetricEventBizError
 	// hack for the number of event
 	MetricEventTotal
 )
@@ -147,7 +149,7 @@ func CheckValidityForReuseStatistic(sampleCount, intervalInMs uint32, parentSamp
 	}
 	parentBucketLengthInMs := parentIntervalInMs / parentSampleCount
 
-	//SlidingWindowMetric's intervalInMs is not divisible by BucketLeapArray's intervalInMs
+	// SlidingWindowMetric's intervalInMs is not divisible by BucketLeapArray's intervalInMs
 	if parentIntervalInMs%intervalInMs != 0 {
 		return GlobalStatisticNonReusableError
 	}

@@ -39,6 +39,7 @@ type MetricItem struct {
 	OccupiedPassQps      uint64
 	TimeoutCounter       uint64
 	DegradeCounter       uint64
+	BizErrorCounter      uint64
 	Concurrency          uint32
 	SecondMaxConcurrency uint32
 }
