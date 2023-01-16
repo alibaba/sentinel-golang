@@ -1,0 +1,29 @@
+# Options for analysis running.
+run:
+  # vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+  skip-dirs-use-default: true
+  skip-dirs:
+    - example
+  skip-files:
+    - ".*\\.pb\\.go$"
+# output configuration options
+output:
+  format: colored-line-number
+# Refer to https://golangci-lint.run/usage/linters
+linters-settings:
+  govet:
+    # Disable analyzers by name.
+    # Run `go tool vet help` to see all analyzers.
+    disable:
+      - stdmethods
+linters:
+  disable-all: true
+  enable:
+    - goimports
+    - gofmt
+    - misspell
+    - govet
+    - ineffassign
+    - staticcheck
+issues:
+  exclude-use-default: true
