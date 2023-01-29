@@ -218,6 +218,7 @@ func (m *SlidingWindowMetric) metricItemFromBuckets(ts uint64, ws []*BucketWrap)
 		item.MonitorBlockQps += uint64(mb.Get(base.MetricEventMonitorBlock))
 		item.TimeoutCounter += uint64(mb.Get(base.MetricEventTimeout))
 		item.DegradeCounter += uint64(mb.Get(base.MetricEventDegrade))
+		item.BizErrorCounter += uint64(mb.Get(base.MetricEventBizError))
 		allRt += mb.Get(base.MetricEventRt)
 	}
 	if item.CompleteQps > 0 {
@@ -247,6 +248,7 @@ func (m *SlidingWindowMetric) metricItemFromBucket(w *BucketWrap) *base.MetricIt
 		ErrorQps:        uint64(mb.Get(base.MetricEventError)),
 		TimeoutCounter:  uint64(mb.Get(base.MetricEventTimeout)),
 		DegradeCounter:  uint64(mb.Get(base.MetricEventDegrade)),
+		BizErrorCounter: uint64(mb.Get(base.MetricEventBizError)),
 		CompleteQps:     uint64(completeQps),
 		Timestamp:       w.BucketStart,
 	}
