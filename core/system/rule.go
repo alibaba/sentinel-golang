@@ -17,6 +17,8 @@ package system
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 type MetricType uint32
@@ -93,4 +95,8 @@ func (r *Rule) ResourceName() string {
 
 func (r *Rule) RuleID() string {
 	return r.ID
+}
+
+func (r *Rule) BlockType() base.BlockType {
+	return base.BlockTypeSystemFlow
 }

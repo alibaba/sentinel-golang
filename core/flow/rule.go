@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/alibaba/sentinel-golang/core/base"
+
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -148,4 +150,8 @@ func (r *Rule) ResourceName() string {
 
 func (r *Rule) RuleID() string {
 	return r.ID
+}
+
+func (r *Rule) BlockType() base.BlockType {
+	return base.BlockTypeFlow
 }
