@@ -24,13 +24,13 @@ func SetFirstMonitorNodeAndRule(ctx *base.EntryContext, node *ResourceNode, rule
 	PutOutputAttachment(ctx, KeyMonitorBlockRule, rule)
 }
 
-func GetMonitorBlockInfo(ctx *base.EntryContext) (isMonitorBlocked bool, node *ResourceNode, rule base.SentinelRule) {
+func GetMonitorBlockInfo(ctx *base.EntryContext) (node *ResourceNode, rule base.SentinelRule, isMonitorBlocked bool) {
 	if !IsMonitorBlocked(ctx) {
-		return false, nil, nil
+		return nil, nil, false
 	}
 	node, _ = GetOutputAttachment(ctx, KeyMonitorBlockNode).(*ResourceNode)
 	rule, _ = GetOutputAttachment(ctx, KeyMonitorBlockRule).(base.SentinelRule)
-	return true, node, rule
+	return node, rule, true
 }
 
 // IsMonitorBlocked reports whether current request was blocked in monitor mode.
