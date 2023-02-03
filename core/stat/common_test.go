@@ -44,17 +44,17 @@ func mockCtx() *base.EntryContext {
 func TestSetFirstMonitorNode(t *testing.T) {
 	//nil
 	SetFirstMonitorNodeAndRule(nil, nil, nil)
-	block, _, _ := GetMonitorBlockInfo(nil)
-	assert.False(t, block)
+	_, _, isBlocked := GetMonitorBlockInfo(nil)
+	assert.False(t, isBlocked)
 
 	// first set
 	ctx := mockCtx()
 	resourceNode := NewResourceNode("test", base.ResTypeRPC)
 	rule := &base.MockRule{Id: "1"}
 	SetFirstMonitorNodeAndRule(ctx, resourceNode, rule)
-	block2, gotNode, gotRule := GetMonitorBlockInfo(ctx)
+	gotNode, gotRule, isBlocked2 := GetMonitorBlockInfo(ctx)
 
-	assert.True(t, block2)
+	assert.True(t, isBlocked2)
 	assert.Equal(t, gotNode, resourceNode)
 	assert.Equal(t, gotRule, rule)
 
@@ -63,9 +63,9 @@ func TestSetFirstMonitorNode(t *testing.T) {
 	resourceNode2 := NewResourceNode("test2", base.ResTypeRPC)
 	rule2 := &base.MockRule{Id: "2"}
 	SetFirstMonitorNodeAndRule(ctx, resourceNode2, rule2)
-	block2, gotNode2, gotRule2 := GetMonitorBlockInfo(ctx)
+	gotNode2, gotRule2, isBlock2 := GetMonitorBlockInfo(ctx)
 
-	assert.True(t, block2)
+	assert.True(t, isBlock2)
 	assert.Equal(t, gotNode2, resourceNode)
 	assert.Equal(t, gotRule2, rule)
 }
