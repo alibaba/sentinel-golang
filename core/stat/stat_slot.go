@@ -32,7 +32,7 @@ var (
 	handledCounter = metric_exporter.NewCounter(
 		"handled_total",
 		"Total handled count",
-		[]string{"resource", "result", "block_type", "traffic_type"})
+		[]string{"resource", "result", "block_type", "rule_name"})
 )
 
 func init() {
@@ -52,7 +52,7 @@ func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {
 		s.recordPassFor(InboundNode(), ctx.Input.BatchCount)
 	}
 
-	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultPass, "", ctx.Resource.FlowType().String())
+	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultPass, "", ctx.RuleChecker)
 }
 
 func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
@@ -62,7 +62,7 @@ func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockErro
 	}
 
 	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultBlock,
-		blockError.BlockType().String(), ctx.Resource.FlowType().String())
+		blockError.BlockType().String(), ctx.RuleChecker)
 }
 
 func (s *Slot) OnCompleted(ctx *base.EntryContext) {

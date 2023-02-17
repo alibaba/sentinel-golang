@@ -22,6 +22,8 @@ import (
 
 const (
 	RuleCheckSlotOrder = 1000
+
+	name = "system"
 )
 
 var (
@@ -42,7 +44,7 @@ func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	rules := getRules()
 	result := ctx.RuleCheckResult
 	for _, rule := range rules {
-		passed, msg, snapshotValue := s.doCheckRule(rule)
+		passed, msg, snapshotValue := s.doCheckRule(ctx, rule)
 		if passed {
 			continue
 		}
@@ -56,8 +58,11 @@ func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, string, float64) {
+func (s *AdaptiveSlot) doCheckRule(ctx *base.EntryContext, rule *Rule) (bool, string, float64) {
 	var msg string
+
+	prevChecker := ctx.RuleChecker
+	ctx.RuleChecker = name
 
 	threshold := rule.TriggerCount
 	switch rule.MetricType {
@@ -101,6 +106,7 @@ func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, string, float64) {
 		}
 		return true, "", c
 	default:
+		ctx.RuleChecker = prevChecker
 		msg = "system undefined metric type, pass by default"
 		return true, msg, 0.0
 	}

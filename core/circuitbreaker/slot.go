@@ -20,6 +20,8 @@ import (
 
 const (
 	RuleCheckSlotOrder = 5000
+
+	name = "circuitbreaker"
 )
 
 var (
@@ -52,6 +54,11 @@ func (b *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 
 func checkPass(ctx *base.EntryContext) (bool, *Rule) {
 	breakers := getBreakersOfResource(ctx.Resource.Name())
+	if len(breakers) == 0 {
+		return true, nil
+	}
+
+	ctx.RuleChecker = name
 	for _, breaker := range breakers {
 		passed := breaker.TryPass(ctx)
 		if !passed {
