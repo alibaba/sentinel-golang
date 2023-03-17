@@ -64,86 +64,49 @@ func (t MetricType) String() string {
 // Rule represents the hotspot(frequent) parameter flow control rule
 type Rule struct {
 	// ID is the unique id
-	ID string `json:"Id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Resource is the resource name
-	Resource string `json:"Resource"`
+	Resource string `json:"resource"`
 	// MetricType indicates the metric type for checking logic.
 	// For Concurrency metric, hotspot module will check the each hot parameter's concurrency,
 	//		if concurrency exceeds the Threshold, reject the traffic directly.
 	// For QPS metric, hotspot module will check the each hot parameter's QPS,
 	//		the ControlBehavior decides the behavior of traffic shaping controller
-	MetricType MetricType `json:"MetricType"`
+	MetricType MetricType `json:"metricType"`
 	// ControlBehavior indicates the traffic shaping behaviour.
 	// ControlBehavior only takes effect when MetricType is QPS
-	ControlBehavior ControlBehavior `json:"ControlBehavior"`
+	ControlBehavior ControlBehavior `json:"controlBehavior"`
 	// ParamIndex is the index in context arguments slice.
 	// if ParamIndex is great than or equals to zero, ParamIndex means the <ParamIndex>-th parameter
 	// if ParamIndex is the negative, ParamIndex means the reversed <ParamIndex>-th parameter
-	ParamIndex int `json:"ParamIndex"`
+	ParamIndex int `json:"paramIndex"`
 	// ParamKey is the key in EntryContext.Input.Attachments map.
 	// ParamKey can be used as a supplement to ParamIndex to facilitate rules to quickly obtain parameter from a large number of parameters
 	// ParamKey is mutually exclusive with ParamIndex, ParamKey has the higher priority than ParamIndex
-	ParamKey string `json:"ParamKey"`
+	ParamKey string `json:"paramKey"`
 	// Threshold is the threshold to trigger rejection
-	Threshold int64 `json:"Threshold"`
+	Threshold int64 `json:"threshold"`
 	// MaxQueueingTimeMs only takes effect when ControlBehavior is Throttling and MetricType is QPS
-	MaxQueueingTimeMs int64 `json:"MaxQueueingTimeMs"`
+	MaxQueueingTimeMs int64 `json:"maxQueueingTimeMs"`
 	// BurstCount is the silent count
 	// BurstCount only takes effect when ControlBehavior is Reject and MetricType is QPS
-	BurstCount int64 `json:"BurstCount"`
+	BurstCount int64 `json:"burstCount"`
 	// DurationInSec is the time interval in statistic
 	// DurationInSec only takes effect when MetricType is QPS
-	DurationInSec int64 `json:"DurationInSec"`
+	DurationInSec int64 `json:"durationInSec"`
 	// ParamsMaxCapacity is the max capacity of cache statistic
-	ParamsMaxCapacity int64 `json:"ParamsMaxCapacity"`
+	ParamsMaxCapacity int64 `json:"paramsMaxCapacity"`
 	// SpecificItems indicates the special threshold for specific value
-	SpecificItems map[interface{}]int64
-}
-
-type SpecificItem struct {
-	Key   string `json:"key"`
-	Value int64  `json:"value"`
-}
-
-func (t MetricType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.String())
-}
-func (c ControlBehavior) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.String())
-}
-
-// Store the key-value pairs in specificItems in a temporary slice
-func convertSpecificItems(specificItems map[interface{}]int64) []*SpecificItem {
-	items := make([]*SpecificItem, 0, len(specificItems))
-	for k, v := range specificItems {
-		key, ok := k.(string)
-		if !ok {
-			key = fmt.Sprintf("%v", k)
-		}
-		item := &SpecificItem{
-			Key:   key,
-			Value: v,
-		}
-		items = append(items, item)
-	}
-	return items
+	SpecificItems map[interface{}]int64 `json:"specificItems"`
 }
 
 func (r *Rule) String() string {
-	type tempRule Rule
-	specificItems := convertSpecificItems(r.SpecificItems)
-
-	b, err := json.Marshal(&struct {
-		*tempRule
-		SpecificItems []*SpecificItem `json:"SpecificItems"`
-	}{
-		tempRule:      (*tempRule)(r),
-		SpecificItems: specificItems,
-	})
+	fmtStr := fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, ControlBehavior:%+v, ParamIndex:%d, ParamKey:%s, Threshold:%d, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v}",
+		r.ID, r.Resource, r.MetricType, r.ControlBehavior, r.ParamIndex, r.ParamKey, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
+	b, err := json.Marshal(&fmtStr)
 	if err != nil {
 		// Return the fallback string
-		return fmt.Sprintf("{Id:%s, Resource:%s, MetricType:%+v, ControlBehavior:%+v, ParamIndex:%d, ParamKey:%s, Threshold:%d, MaxQueueingTimeMs:%d, BurstCount:%d, DurationInSec:%d, ParamsMaxCapacity:%d, SpecificItems:%+v}",
-			r.ID, r.Resource, r.MetricType, r.ControlBehavior, r.ParamIndex, r.ParamKey, r.Threshold, r.MaxQueueingTimeMs, r.BurstCount, r.DurationInSec, r.ParamsMaxCapacity, r.SpecificItems)
+		return fmtStr
 	}
 	return string(b)
 }
