@@ -25,11 +25,6 @@ import (
 const (
 	RuleCheckSlotName  = "sentinel-core-hotspot-rule-check-slot"
 	RuleCheckSlotOrder = 4000
-
-	keyMonitorBlockNodes = "monitorBlockNodes"
-	keyControlBlockNode  = "controlBlockNode"
-	keyIsMonitorBlocked  = "isMonitorBlocked"
-	keyChildNodes        = "childNodes"
 )
 
 var (
@@ -51,7 +46,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	res := ctx.Resource.Name()
 	batch := int64(ctx.Input.BatchCount)
 	result := ctx.RuleCheckResult
-	nodes := getAllNodes(ctx)
+	nodes := stat.GetAllNodes(ctx)
 	for _, node := range nodes {
 		tcs := getTrafficControllersFor(node.ResourceName())
 		for _, tc := range tcs {
@@ -69,10 +64,10 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 
 				if r.Status() == base.ResultStatusBlocked {
 					if tc.BoundRule().Mode == MONITOR {
-						appendMonitorBlockNode(ctx, node)
+						stat.SetFirstMonitorNodeAndRule(ctx, node, tc.BoundRule())
 						continue
 					}
-					setBlockNode(ctx, node)
+					stat.SetBlockNode(ctx, node)
 					r.ResetToBlockedWith(
 						base.WithBlockResource(res),
 						base.WithBlockType(base.BlockTypeHotSpotParamFlow),
@@ -100,50 +95,4 @@ func canPassCheck(tc TrafficShapingController, arg interface{}, batch int64) *ba
 
 func canPassLocalCheck(tc TrafficShapingController, arg interface{}, batch int64) *base.TokenResult {
 	return tc.PerformChecking(arg, batch)
-}
-
-func PutOutputAttachment(ctx *base.EntryContext, key interface{}, value interface{}) {
-	if ctx.Data == nil {
-		ctx.Data = make(map[interface{}]interface{})
-	}
-	ctx.Data[key] = value
-}
-
-func getOutputAttachment(ctx *base.EntryContext, key interface{}) interface{} {
-	if ctx.Data == nil {
-		return nil
-	}
-	return ctx.Data[key]
-}
-
-// getAllNodes gets all child node and parent node list.
-func getAllNodes(ctx *base.EntryContext) []*stat.ResourceNode {
-	childNodes, childOk := getOutputAttachment(ctx, keyChildNodes).([]*stat.ResourceNode)
-	var allNodes []*stat.ResourceNode
-	if childOk {
-		allNodes = append(allNodes, childNodes...)
-	}
-	parentResNode, ok := ctx.StatNode.(*stat.ResourceNode)
-	if ok {
-		allNodes = append(allNodes, parentResNode)
-	}
-	return allNodes
-}
-
-func appendMonitorBlockNode(ctx *base.EntryContext, node *stat.ResourceNode) {
-	if ctx == nil || node == nil {
-		return
-	}
-	nodes, ok := getOutputAttachment(ctx, keyMonitorBlockNodes).([]*stat.ResourceNode)
-	if ok && nodes != nil {
-		nodes = append(nodes, node)
-	} else {
-		nodes = []*stat.ResourceNode{node}
-	}
-	PutOutputAttachment(ctx, keyIsMonitorBlocked, true)
-	PutOutputAttachment(ctx, keyMonitorBlockNodes, nodes)
-}
-
-func setBlockNode(ctx *base.EntryContext, node *stat.ResourceNode) {
-	PutOutputAttachment(ctx, keyControlBlockNode, node)
 }

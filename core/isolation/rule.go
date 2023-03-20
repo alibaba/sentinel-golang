@@ -17,6 +17,8 @@ package isolation
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 // MetricType represents the target metric type.
@@ -60,4 +62,8 @@ func (r *Rule) ResourceName() string {
 
 func (r *Rule) RuleID() string {
 	return r.ID
+}
+
+func (r *Rule) BlockType() base.BlockType {
+	return base.BlockTypeIsolation
 }

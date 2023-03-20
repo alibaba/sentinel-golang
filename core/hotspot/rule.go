@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 // ControlBehavior indicates the traffic shaping behaviour.
@@ -127,6 +129,10 @@ func (r *Rule) ResourceName() string {
 
 func (r *Rule) RuleID() string {
 	return r.ID
+}
+
+func (r *Rule) BlockType() base.BlockType {
+	return base.BlockTypeHotSpotParamFlow
 }
 
 // IsStatReusable checks whether current rule is "statistically" equal to the given rule.

@@ -22,4 +22,6 @@ type SentinelRule interface {
 	ResourceName() string
 
 	RuleID() string
+
+	BlockType() BlockType
 }

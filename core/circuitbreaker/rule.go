@@ -17,6 +17,8 @@ package circuitbreaker
 import (
 	"fmt"
 
+	"github.com/alibaba/sentinel-golang/core/base"
+
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -78,6 +80,10 @@ type Rule struct {
 	// for ErrorRatio, it represents the max error request ratio
 	// for ErrorCount, it represents the max error request count
 	Threshold float64 `json:"threshold"`
+}
+
+func (r *Rule) BlockType() base.BlockType {
+	return base.BlockTypeCircuitBreaking
 }
 
 func (r *Rule) String() string {
