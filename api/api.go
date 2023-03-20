@@ -179,7 +179,7 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 		ctx.Input.Attachments = options.attachments
 	}
 	if options.ctx != nil {
-		ctx.Input.Ctx = options.ctx
+		ctx.Input.Context = options.ctx
 	}
 	e := base.NewSentinelEntry(ctx, rw, sc)
 	ctx.SetEntry(e)

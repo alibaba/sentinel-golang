@@ -85,18 +85,19 @@ func NewEmptyEntryContext() *EntryContext {
 
 // The input data of sentinel
 type SentinelInput struct {
-	Ctx        context.Context
 	BatchCount uint32
 	Flag       int32
 	Args       []interface{}
 	// store some values in this context when calling context in slot.
 	Attachments map[interface{}]interface{}
+	// store the request context
+	Context context.Context
 }
 
 func (i *SentinelInput) reset() {
 	i.BatchCount = 1
 	i.Flag = 0
-	i.Ctx = nil
+	i.Context = nil
 	if len(i.Args) != 0 {
 		i.Args = make([]interface{}, 0)
 	}
