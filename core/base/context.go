@@ -14,7 +14,11 @@
 
 package base
 
-import "github.com/alibaba/sentinel-golang/util"
+import (
+	"context"
+
+	"github.com/alibaba/sentinel-golang/util"
+)
 
 type EntryContext struct {
 	entry *SentinelEntry
@@ -81,6 +85,7 @@ func NewEmptyEntryContext() *EntryContext {
 
 // The input data of sentinel
 type SentinelInput struct {
+	Ctx        context.Context
 	BatchCount uint32
 	Flag       int32
 	Args       []interface{}
