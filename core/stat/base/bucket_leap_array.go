@@ -38,7 +38,8 @@ func (bla *BucketLeapArray) NewEmptyBucket() interface{} {
 
 func (bla *BucketLeapArray) ResetBucketTo(bw *BucketWrap, startTime uint64) *BucketWrap {
 	atomic.StoreUint64(&bw.BucketStart, startTime)
-	bw.Value.Store(NewMetricBucket())
+	mb := bw.Value.Load().(*MetricBucket)
+	mb.reset()
 	return bw
 }
 
