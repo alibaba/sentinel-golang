@@ -12,7 +12,6 @@ type (
 	}
 )
 
-
 func evaluateOptions(opts []Option) *options {
 	optCopy := &options{}
 	for _, opt := range opts {
@@ -31,8 +30,8 @@ func WithResourceExtractor(fn func(iris.Context) string) Option {
 
 // WithBlockFallback sets the fallback handler when requests are blocked.
 func WithBlockFallback(fn func(ctx iris.Context)) Option {
+	
 	return func(opts *options) {
 		opts.blockFallback = fn
 	}
 }
-

@@ -18,6 +18,7 @@ func SentinelMiddleware(opts ...Option) iris.Handler {
 		}
 
 		entry, err := sentinel.Entry(
+			
 			resourceName,
 			sentinel.WithResourceType(base.ResTypeWeb),
 			sentinel.WithTrafficType(base.Inbound),
