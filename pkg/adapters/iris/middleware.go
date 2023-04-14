@@ -5,7 +5,7 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris"
 )
 
 func SentinelMiddleware(opts ...Option) iris.Handler {

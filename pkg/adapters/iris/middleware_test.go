@@ -8,7 +8,7 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/flow"
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris"
 	"github.com/stretchr/testify/assert"
 )
 
