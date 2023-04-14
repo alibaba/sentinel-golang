@@ -135,4 +135,3 @@ func TestSentinelMiddleware(t *testing.T) {
 		})
 	}
 }
-

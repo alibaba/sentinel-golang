@@ -30,7 +30,6 @@ func WithResourceExtractor(fn func(iris.Context) string) Option {
 
 // WithBlockFallback sets the fallback handler when requests are blocked.
 func WithBlockFallback(fn func(ctx iris.Context)) Option {
-	
 	return func(opts *options) {
 		opts.blockFallback = fn
 	}

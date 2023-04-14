@@ -15,7 +15,6 @@ func Example() {
 			}),
 			// customize block fallback if required
 			// abort with status 429 by default
-			
 			WithBlockFallback(func(ctx iris.Context) {
 				ctx.StatusCode(400)
 				ctx.JSON(map[string]interface{}{
