@@ -5,13 +5,13 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func SentinelMiddleware(opts ...Option) iris.Handler {
 	options := evaluateOptions(opts)
-	return func(c *iris.Context) {
-		resourceName := c.Request.Method + ":" + c.Request.URL.String()
+	return func(c iris.Context) {
+		resourceName := c.Request().Method + ":" + c.Request().URL.String()
 
 		if options.resourceExtract != nil {
 			resourceName = options.resourceExtract(c)
@@ -27,7 +27,8 @@ func SentinelMiddleware(opts ...Option) iris.Handler {
 			if options.blockFallback != nil {
 				options.blockFallback(c)
 			} else {
-				c.AbortWithStatus(http.StatusTooManyRequests)
+				c.StatusCode(http.StatusTooManyRequests)
+				c.StopExecution()
 			}
 			return
 		}

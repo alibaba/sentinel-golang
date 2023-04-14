@@ -8,7 +8,7 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/flow"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,7 +46,7 @@ func TestSentinelMiddleware(t *testing.T) {
 		method  string
 		path    string
 		reqPath string
-		handler func(ctx *iris.Context)
+		handler func(ctx iris.Context)
 		body    io.Reader
 	}
 	type want struct {
@@ -65,8 +65,9 @@ func TestSentinelMiddleware(t *testing.T) {
 					method:  http.MethodGet,
 					path:    "/ping",
 					reqPath: "/ping",
-					handler: func(ctx *iris.Context) {
-						ctx.String(http.StatusOK, "ping")
+					handler: func(ctx iris.Context) {
+						ctx.StatusCode(http.StatusOK)
+						ctx.WriteString("ping")
 					},
 					body: nil,
 				},
@@ -78,15 +79,16 @@ func TestSentinelMiddleware(t *testing.T) {
 				name: "customize resource extract",
 				args: args{
 					opts: []Option{
-						WithResourceExtractor(func(ctx *iris.Context) string {
-							return ctx.Request.URL.String()
+						WithResourceExtractor(func(ctx iris.Context) string {
+							return ctx.Request().URL.String()
 						}),
 					},
 					method:  http.MethodPost,
 					path:    "/api/users/:id",
 					reqPath: "/api/users/123",
-					handler: func(ctx *iris.Context) {
-						ctx.String(http.StatusOK, "ping")
+					handler: func(ctx iris.Context) {
+						ctx.StatusCode(http.StatusOK)
+						ctx.WriteString("ping")
 					},
 					body: nil,
 				},
@@ -98,15 +100,17 @@ func TestSentinelMiddleware(t *testing.T) {
 				name: "customize block fallback",
 				args: args{
 					opts: []Option{
-						WithBlockFallback(func(ctx *iris.Context) {
-							ctx.String(http.StatusBadRequest, "block")
+						WithBlockFallback(func(ctx iris.Context) {
+							ctx.StatusCode(http.StatusBadRequest)
+							ctx.WriteString("block")
 						}),
 					},
 					method:  http.MethodGet,
 					path:    "/ping",
 					reqPath: "/ping",
-					handler: func(ctx *iris.Context) {
-						ctx.String(http.StatusOK, "ping")
+					handler: func(ctx iris.Context) {
+						ctx.StatusCode(http.StatusOK)
+						ctx.WriteString("ping")
 					},
 					body: nil,
 				},

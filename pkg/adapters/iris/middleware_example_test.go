@@ -1,7 +1,7 @@
 package iris
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func Example() {
@@ -10,20 +10,22 @@ func Example() {
 		SentinelMiddleware(
 			// customize resource extractor if required
 			// method_path by default
-			WithResourceExtractor(func(ctx *iris.Context) string {
+			WithResourceExtractor(func(ctx iris.Context) string {
 				return ctx.GetHeader("X-Real-IP")
 			}),
 			// customize block fallback if required
 			// abort with status 429 by default
-			WithBlockFallback(func(ctx *iris.Context) {
-				ctx.AbortWithStatusJSON(400, map[string]interface{}{
+			WithBlockFallback(func(ctx iris.Context) {
+				ctx.StatusCode(400)
+				ctx.JSON(map[string]interface{}{
 					"err":  "too many request; the quota used up",
 					"code": 10222,
 				})
+				ctx.StopExecution()
 			}),
 		),
 	)
 
-	r.GET("/test", func(c *iris.Context) {})
-	_ = r.Run(":0")
+	r.Get("/test", func(c iris.Context) {})
+	r.Run(iris.Addr(":0"))
 }
