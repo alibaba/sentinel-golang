@@ -27,5 +27,5 @@ func Example() {
 	)
 
 	r.Get("/test", func(c iris.Context) {})
-	r.Run(iris.Addr(":0"))
+	r.Run(iris.Addr(":9999"))
 }
