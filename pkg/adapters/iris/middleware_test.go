@@ -3,13 +3,12 @@ package iris
 import (
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/kataras/iris/v12"
-	"github.com/stretchr/testify/assert"
+	"github.com/kataras/iris/v12/httptest"
 )
 
 func initSentinel(t *testing.T) {
@@ -127,11 +126,18 @@ func TestSentinelMiddleware(t *testing.T) {
 			router := iris.New()
 			router.Use(SentinelMiddleware(tt.args.opts...))
 			router.Handle(tt.args.method, tt.args.path, tt.args.handler)
-			r := httptest.NewRequest(tt.args.method, tt.args.reqPath, nil)
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, r)
 
-			assert.Equal(t, tt.want.code, w.Code)
+			e := httptest.New(t, router)
+
+			if tt.args.method == http.MethodGet {
+				e.GET(tt.args.path).
+					Expect().
+					Status(tt.want.code)
+			} else if tt.args.method == http.MethodPost {
+				e.POST(tt.args.path).
+					Expect().
+					Status(tt.want.code)
+			}
 		})
 	}
 }
