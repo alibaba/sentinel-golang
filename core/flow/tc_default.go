@@ -15,7 +15,9 @@
 package flow
 
 import (
+	"github.com/alibaba/sentinel-golang/core/adaptive"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 type DirectTrafficShapingCalculator struct {
@@ -31,6 +33,14 @@ func NewDirectTrafficShapingCalculator(owner *TrafficShapingController, threshol
 }
 
 func (d *DirectTrafficShapingCalculator) CalculateAllowedTokens(uint32, int32) float64 {
+	if d.owner.rule.AdaptiveConfigName != "" {
+		ac := adaptive.GetAdaptiveController(d.owner.rule.AdaptiveConfigName)
+		if ac == nil {
+			logging.Warn("[Flow CalculateAllowedTokens] Can't get AdaptiveController", "AdaptiveConfigName", d.owner.rule.AdaptiveConfigName)
+			return d.threshold
+		}
+		return ac.CalculateSystemAdaptiveCount(d.threshold)
+	}
 	return d.threshold
 }
 

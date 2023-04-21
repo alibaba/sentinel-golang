@@ -20,6 +20,7 @@ import (
 	"time"
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/adaptive"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/flow"
@@ -43,17 +44,31 @@ func main() {
 		log.Fatal(err)
 	}
 
+	_, err = adaptive.LoadAdaptiveConfigs([]*adaptive.Config{
+		{
+			ConfigName:        "test",
+			MetricType:        adaptive.Memory,
+			CalculateStrategy: adaptive.Linear,
+			LinearStrategyParameters: &adaptive.LinearStrategyParameters{
+				LowRatio:      1.0,
+				HighRatio:     0.1,
+				LowWaterMark:  1024,
+				HighWaterMark: 2048,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("Unexpected error: %+v", err)
+		return
+	}
 	_, err = flow.LoadRules([]*flow.Rule{
 		{
 			Resource:               resName,
-			TokenCalculateStrategy: flow.MemoryAdaptive,
+			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
 			StatIntervalInMs:       1000,
-			LowMemUsageThreshold:   1000,
-			HighMemUsageThreshold:  100,
-			// bytes
-			MemLowWaterMarkBytes:  1024,
-			MemHighWaterMarkBytes: 2048,
+			Threshold:              1000,
+			AdaptiveConfigName:     "test",
 		},
 	})
 	if err != nil {
