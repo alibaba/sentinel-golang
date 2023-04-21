@@ -16,7 +16,6 @@ package datasource
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -32,17 +31,7 @@ import (
 )
 
 func TestFlowRuleJsonArrayParser(t *testing.T) {
-	// Prepare test data
-	f, err := os.Open("../../tests/testdata/extension/helper/FlowRule.json")
-	defer func() {
-		if err := f.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	if err != nil {
-		t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
-	}
-	normalSrc, err := ioutil.ReadAll(f)
+	normalSrc, err := os.ReadFile("../../tests/testdata/extension/helper/FlowRule.json")
 	if err != nil {
 		t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
 	}
@@ -156,17 +145,7 @@ func TestFlowRulesUpdater(t *testing.T) {
 
 func TestSystemRuleJsonArrayParser(t *testing.T) {
 	t.Run("TestSystemRuleJsonArrayParser_Normal", func(t *testing.T) {
-		// Prepare test data
-		f, err := os.Open("../../tests/testdata/extension/helper/SystemRule.json")
-		defer func() {
-			if err := f.Close(); err != nil {
-				t.Fatal(err)
-			}
-		}()
-		if err != nil {
-			t.Errorf("The rules file is not existed, err:%+v.", errors.WithStack(err))
-		}
-		normalSrc, err := ioutil.ReadAll(f)
+		normalSrc, err := os.ReadFile("../../tests/testdata/extension/helper/SystemRule.json")
 		if err != nil {
 			t.Errorf("Fail to read file, err: %+v.", errors.WithStack(err))
 		}
@@ -260,17 +239,7 @@ func TestCircuitBreakerRuleJsonArrayParser(t *testing.T) {
 	})
 
 	t.Run("TestCircuitBreakerRuleJsonArrayParser_Succeed", func(t *testing.T) {
-		// Prepare test data
-		f, err := os.Open("../../tests/testdata/extension/helper/CircuitBreakerRule.json")
-		defer func() {
-			if err := f.Close(); err != nil {
-				t.Fatal(err)
-			}
-		}()
-		if err != nil {
-			t.Errorf("The rules file is not existed, err:%+v.", err)
-		}
-		src, err := ioutil.ReadAll(f)
+		src, err := os.ReadFile("../../tests/testdata/extension/helper/CircuitBreakerRule.json")
 		if err != nil {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}
@@ -382,17 +351,7 @@ func TestHotSpotParamRuleJsonArrayParser(t *testing.T) {
 	})
 
 	t.Run("TestHotSpotParamRuleJsonArrayParser_Normal", func(t *testing.T) {
-		// Prepare test data
-		f, err := os.Open("../../tests/testdata/extension/helper/HotSpotParamFlowRule.json")
-		defer func() {
-			if err := f.Close(); err != nil {
-				t.Fatal(err)
-			}
-		}()
-		if err != nil {
-			t.Errorf("The rules file is not existed, err:%+v.", err)
-		}
-		src, err := ioutil.ReadAll(f)
+		src, err := os.ReadFile("../../tests/testdata/extension/helper/HotSpotParamFlowRule.json")
 		if err != nil {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}
@@ -513,17 +472,7 @@ func TestIsolationRuleJsonArrayParser(t *testing.T) {
 	})
 
 	t.Run("TestIsolationRuleJsonArrayParser_Normal", func(t *testing.T) {
-		// Prepare test data
-		f, err := os.Open("../../tests/testdata/extension/helper/IsolationRule.json")
-		defer func() {
-			if err := f.Close(); err != nil {
-				t.Fatal(err)
-			}
-		}()
-		if err != nil {
-			t.Errorf("The rules file is not existed, err:%+v.", err)
-		}
-		src, err := ioutil.ReadAll(f)
+		src, err := os.ReadFile("../../tests/testdata/extension/helper/IsolationRule.json")
 		if err != nil {
 			t.Errorf("Fail to read file, err: %+v.", err)
 		}

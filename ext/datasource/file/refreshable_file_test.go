@@ -15,7 +15,6 @@
 package file
 
 import (
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -56,7 +55,7 @@ var (
 
 func prepareSystemRulesTestFile() error {
 	content := []byte(TestSystemRules)
-	return ioutil.WriteFile(TestSystemRulesFile, content, os.ModePerm)
+	return os.WriteFile(TestSystemRulesFile, content, os.ModePerm)
 }
 
 func deleteSystemRulesTestFile() error {
@@ -74,7 +73,7 @@ func TestRefreshableFileDataSource_ReadSource(t *testing.T) {
 			sourceFilePath: TestSystemRulesFile + "NotExisted",
 		}
 		got, err := s.ReadSource()
-		assert.True(t, got == nil && err != nil && strings.Contains(err.Error(), "RefreshableFileDataSource fail to open the property file"))
+		assert.True(t, got == nil && err != nil && strings.Contains(err.Error(), "RefreshableFileDataSource fail to read file"))
 
 		err = deleteSystemRulesTestFile()
 		if err != nil {
