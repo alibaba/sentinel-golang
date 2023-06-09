@@ -189,9 +189,7 @@ func getRulesOfResource(res string) []*Rule {
 		return nil
 	}
 	ret := make([]*Rule, 0, len(resRules))
-	for _, r := range resRules {
-		ret = append(ret, r)
-	}
+	ret = append(ret, resRules...)
 	return ret
 }
 
