@@ -23,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alibaba/sentinel-golang/api"
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/tests/benchmark"
@@ -77,7 +76,7 @@ func init() {
 	}
 }
 
-func doCheck(res string, opts ...api.EntryOption) {
+func doCheck(res string, opts ...sentinel.EntryOption) {
 	if se, err := sentinel.Entry(res, opts...); err == nil {
 		se.Exit()
 	} else {
