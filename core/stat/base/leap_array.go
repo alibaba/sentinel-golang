@@ -145,11 +145,11 @@ func (aa *AtomicBucketWrapArray) compareAndSet(idx int, except, update *BucketWr
 // Suppose current timestamp is 1188, bucketLength is 200ms, intervalInMs is 1000ms, then
 // time span of current bucket is [1000, 1200). The representation of the underlying structure:
 //
-//   B0       B1      B2     B3      B4
-//   |_______|_______|_______|_______|_______|
-//  1000    1200    400     600     800    (1000) ms
-//         ^
-//      time=1188
+//	 B0       B1      B2     B3      B4
+//	 |_______|_______|_______|_______|_______|
+//	1000    1200    400     600     800    (1000) ms
+//	       ^
+//	    time=1188
 type LeapArray struct {
 	bucketLengthInMs uint32
 	// sampleCount represents the number of BucketWrap.

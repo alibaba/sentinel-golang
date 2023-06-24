@@ -115,7 +115,7 @@ func startFlowModule() {
 	}
 }
 
-//statistic print
+// statistic print
 func timerTask(counter *Counter) {
 	fmt.Println("begin to statistic!!!")
 	var (
