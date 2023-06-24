@@ -161,7 +161,7 @@ func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 			},
 			args: args{
 				event: base.MetricEventPass,
-				now:   1678416556599,
+				now:   util.CurrentTimeMillis(),
 			},
 			want: 2000,
 		},
@@ -169,10 +169,10 @@ func TestSlidingWindowMetric_GetIntervalSumWithTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for i := 0; i < 500; i++ {
-				tt.fields.real.addCountWithTime(tt.args.now, tt.args.event, 1)
+				tt.fields.real.addCountWithTime(tt.args.now+uint64(i)+1000, tt.args.event, 1)
 			}
 			for i := 0; i < int(tt.fields.intervalInMs); i++ {
-				tt.fields.real.addCountWithTime(tt.args.now-100-uint64(i), tt.args.event, 1)
+				tt.fields.real.addCountWithTime(tt.args.now, tt.args.event, 1)
 			}
 			m, _ := NewSlidingWindowMetric(tt.fields.sampleCount, tt.fields.intervalInMs, tt.fields.real)
 			if got := m.getSumWithTime(tt.args.now, tt.args.event); got != tt.want {

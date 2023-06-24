@@ -26,5 +26,4 @@
 //
 //  1. The function both SetTrafficShapingGenerator and RemoveTrafficShapingGenerator is not thread safe.
 //  2. Users can not override the Sentinel supported TrafficShapingController.
-//
 package flow

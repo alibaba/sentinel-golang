@@ -36,7 +36,8 @@ var (
 // GetRules returns all the rules based on copy.
 // It doesn't take effect for system module if user changes the rule.
 // GetRules need to compete system module's global lock and the high performance losses of copy,
-// 		reduce or do not call GetRules if possible
+//
+//	reduce or do not call GetRules if possible
 func GetRules() []Rule {
 	rules := make([]*Rule, 0, len(ruleMap))
 	ruleMapMux.RLock()

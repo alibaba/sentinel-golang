@@ -83,8 +83,9 @@ func getTrafficControllersFor(res string) []TrafficShapingController {
 
 // LoadRules replaces all old hotspot param flow rules with the given rules.
 // Return value:
-//   bool: indicates whether the internal map has been changed;
-//   error: indicates whether occurs the error.
+//
+//	bool: indicates whether the internal map has been changed;
+//	error: indicates whether occurs the error.
 func LoadRules(rules []*Rule) (bool, error) {
 	resRulesMap := make(map[string][]*Rule, 16)
 	for _, rule := range rules {
@@ -110,7 +111,7 @@ func LoadRules(rules []*Rule) (bool, error) {
 // GetRules returns all the hotspot param flow rules based on copy.
 // It doesn't take effect for hotspot module if user changes the returned rules.
 // GetRules need to compete hotspot module's global lock and the high performance losses of copy,
-// 		reduce or do not call GetRules if possible.
+// reduce or do not call GetRules if possible.
 func GetRules() []Rule {
 	tcMux.RLock()
 	rules := rulesFrom(tcMap)
@@ -126,7 +127,8 @@ func GetRules() []Rule {
 // GetRulesOfResource returns specific resource's hotspot parameter flow control rules based on copy.
 // It doesn't take effect for hotspot module if user changes the returned rules.
 // GetRulesOfResource need to compete hotspot module's global lock and the high performance losses of copy,
-// 		reduce or do not call GetRulesOfResource frequently if possible.
+//
+//	reduce or do not call GetRulesOfResource frequently if possible.
 func GetRulesOfResource(res string) []Rule {
 	tcMux.RLock()
 	resTcs := tcMap[res]

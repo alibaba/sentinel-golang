@@ -11,6 +11,7 @@ import (
 // If the watermark is less than Rule.MemLowWaterMarkBytes, the threshold is Rule.LowMemUsageThreshold.
 // If the watermark is greater than Rule.MemHighWaterMarkBytes, the threshold is Rule.HighMemUsageThreshold.
 // Otherwise, the threshold is ((watermark - MemLowWaterMarkBytes)/(MemHighWaterMarkBytes - MemLowWaterMarkBytes)) *
+//
 //	(HighMemUsageThreshold - LowMemUsageThreshold) + LowMemUsageThreshold.
 type MemoryAdaptiveTrafficShapingCalculator struct {
 	owner                 *TrafficShapingController
