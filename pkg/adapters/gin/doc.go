@@ -3,13 +3,13 @@ This package provides Sentinel middleware for Gin.
 
 Users may register SentinelMiddleware to the Gin server, like.
 
-		import (
-			sentinelPlugin "github.com/sentinel-group/sentinel-go-adapters/gin"
-			"github.com/gin-gonic/gin"
-		)
+	import (
+		sentinelPlugin "github.com/sentinel-group/sentinel-go-adapters/gin"
+		"github.com/gin-gonic/gin"
+	)
 
-		r := gin.New()
-		r.Use(sentinelPlugin.SentinelMiddleware())
+	r := gin.New()
+	r.Use(sentinelPlugin.SentinelMiddleware())
 
 The plugin extracts "HttpMethod:FullPath" as the resource name by default (e.g. GET:/foo/:id).
 Users may provide customized resource name extractor when creating new

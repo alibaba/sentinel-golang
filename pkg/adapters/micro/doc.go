@@ -3,12 +3,12 @@ This package provides Sentinel integration for go-micro.
 
 For server side, users may append a Sentinel handler wrapper to go-micro service, like:
 
-		import (
-			sentinelPlugin "github.com/sentinel-go/pkg/adapters/micro"
-		)
+	import (
+		sentinelPlugin "github.com/sentinel-go/pkg/adapters/micro"
+	)
 
-		// Append a Sentinel handler wrapper.
-		micro.NewService(micro.WrapHandler(sentinelPlugin.NewHandlerWrapper()))
+	// Append a Sentinel handler wrapper.
+	micro.NewService(micro.WrapHandler(sentinelPlugin.NewHandlerWrapper()))
 
 The plugin extracts service method as the resource name by default.
 Users may provide customized resource name extractor when creating new

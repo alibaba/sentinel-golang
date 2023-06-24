@@ -26,20 +26,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+//	 Circuit Breaker State Machine:
 //
-//  Circuit Breaker State Machine:
-//
-//                                 switch to open based on rule
-//				+-----------------------------------------------------------------------+
-//				|                                                                       |
-//				|                                                                       v
-//		+----------------+                   +----------------+      Probe      +----------------+
-//		|                |                   |                |<----------------|                |
-//		|                |   Probe succeed   |                |                 |                |
-//		|     Closed     |<------------------|    HalfOpen    |                 |      Open      |
-//		|                |                   |                |   Probe failed  |                |
-//		|                |                   |                +---------------->|                |
-//		+----------------+                   +----------------+                 +----------------+
+//	                                switch to open based on rule
+//					+-----------------------------------------------------------------------+
+//					|                                                                       |
+//					|                                                                       v
+//			+----------------+                   +----------------+      Probe      +----------------+
+//			|                |                   |                |<----------------|                |
+//			|                |   Probe succeed   |                |                 |                |
+//			|     Closed     |<------------------|    HalfOpen    |                 |      Open      |
+//			|                |                   |                |   Probe failed  |                |
+//			|                |                   |                +---------------->|                |
+//			+----------------+                   +----------------+                 +----------------+
 type State int32
 
 const (
@@ -126,7 +125,7 @@ type CircuitBreaker interface {
 	OnRequestComplete(rtt uint64, err error)
 }
 
-//================================= circuitBreakerBase ====================================
+// ================================= circuitBreakerBase ====================================
 // circuitBreakerBase encompasses the common fields of circuit breaker.
 type circuitBreakerBase struct {
 	rule *Rule
@@ -245,7 +244,7 @@ func (b *circuitBreakerBase) fromHalfOpenToClosed() bool {
 	return false
 }
 
-//================================= slowRtCircuitBreaker ====================================
+// ================================= slowRtCircuitBreaker ====================================
 type slowRtCircuitBreaker struct {
 	circuitBreakerBase
 	stat                *slowRequestLeapArray
@@ -437,7 +436,7 @@ func (s *slowRequestLeapArray) allCounter() []*slowRequestCounter {
 	return ret
 }
 
-//================================= errorRatioCircuitBreaker ====================================
+// ================================= errorRatioCircuitBreaker ====================================
 type errorRatioCircuitBreaker struct {
 	circuitBreakerBase
 	minRequestAmount    uint64
@@ -622,7 +621,7 @@ func (s *errorCounterLeapArray) allCounter() []*errorCounter {
 	return ret
 }
 
-//================================= errorCountCircuitBreaker ====================================
+// ================================= errorCountCircuitBreaker ====================================
 type errorCountCircuitBreaker struct {
 	circuitBreakerBase
 	minRequestAmount    uint64

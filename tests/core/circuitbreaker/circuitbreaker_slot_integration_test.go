@@ -58,7 +58,9 @@ func (s *StateChangeListenerMock) OnTransformToHalfOpen(prev circuitbreaker.Stat
 // circuit breaker2: error ratio, retry timeout: 2000000+ms, error ratio threshold: 0.1
 // First request: make cb1 and cb2 trigger fusing
 // Second request: make cb1 retry and change state from open to halfOpen, but this request is blocked by cb2.
-//                 when request exit, rollback the state of cb1 to open
+//
+//	when request exit, rollback the state of cb1 to open
+//
 // Third request: same with second request.
 func TestCircuitBreakerSlotIntegration_Normal(t *testing.T) {
 	util.SetClock(util.NewMockClock())

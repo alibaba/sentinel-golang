@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//Time zone should be considered for time related operations
+// Time zone should be considered for time related operations
 func TestFormatTimeMillis(t *testing.T) {
 	type args struct {
 		ts uint64

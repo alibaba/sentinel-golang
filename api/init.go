@@ -28,9 +28,10 @@ import (
 )
 
 // Initialization func initialize the Sentinel's runtime environment, including:
-// 		1. override global config, from manually config or yaml file or env variable
-//		2. override global logger
-// 		3. initiate core component async task, including: metric log, system statistic...
+//  1. override global config, from manually config or yaml file or env variable
+//  2. override global logger
+//  3. initiate core component async task, including: metric log, system statistic...
+//
 // InitDefault initializes Sentinel using the configuration from system
 // environment and the default value.
 func InitDefault() error {
