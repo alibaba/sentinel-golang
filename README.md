@@ -5,8 +5,8 @@
 # Sentinel: The Sentinel of Your Microservices
 
 ![CI](https://github.com/alibaba/sentinel-golang/workflows/CI/badge.svg?branch=master)
-[![Build Status](https://travis-ci.org/alibaba/sentinel-golang.svg?branch=master)](https://travis-ci.org/alibaba/sentinel-golang)
 [![codecov](https://codecov.io/gh/alibaba/sentinel-golang/branch/master/graph/badge.svg)](https://codecov.io/gh/alibaba/sentinel-golang)
+[![GoDoc](https://pkg.go.dev/badge/github.com/alibaba/sentinel-golang)](https://pkg.go.dev/github.com/alibaba/sentinel-golang)
 [![Go Report Card](https://goreportcard.com/badge/github.com/alibaba/sentinel-golang)](https://goreportcard.com/report/github.com/alibaba/sentinel-golang)
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Gitter](https://badges.gitter.im/alibaba/Sentinel.svg)](https://gitter.im/alibaba/Sentinel)
@@ -17,8 +17,7 @@
 ## Introduction
 
 As distributed systems become increasingly popular, the reliability between services is becoming more important than ever before.
-Sentinel takes "flow" as breakthrough point, and works on multiple fields including **flow control**,
-**circuit breaking** and **system adaptive protection**, to guarantee reliability and resiliency of microservices.
+Sentinel takes "flow" as breakthrough point, and works on multiple fields including **flow control**, **traffic shaping**, **concurrency limiting**, **circuit breaking** and **system adaptive overload protection**, to guarantee reliability and resiliency of microservices.
 
 ![flow-overview](https://raw.githubusercontent.com/sentinel-group/sentinel-website/master/img/sentinel-flow-index-overview-en.jpg)
 
@@ -26,11 +25,13 @@ Sentinel provides the following features:
 
 - **Rich applicable scenarios**: Sentinel has been wildly used in Alibaba, and has covered almost all the core-scenarios in Double-11 (11.11) Shopping Festivals in the past 10 years, such as “Second Kill” which needs to limit burst flow traffic to meet the system capacity, throttling, circuit breaking for unreliable downstream services, distributed rate limiting, etc.
 - **Real-time monitoring**: Sentinel also provides real-time monitoring ability. You can see the runtime information of a single machine in real-time, and pump the metrics to outside metric components like Prometheus.
-- **Cloud-native ecosystem**: Sentinel Go provides out-of-box integrations with cloud-native components.
+- **Cloud-native ecosystem**: Sentinel Go provides [out-of-box integrations with cloud-native components](https://sentinelguard.io/en-us/docs/golang/open-source-framework-integrations.html).
 
 ## Documentation
 
-See the [中文文档](https://sentinelguard.io/zh-cn/docs/golang/basic-api-usage.html) for document in Chinese.
+[![GoDoc](https://pkg.go.dev/badge/github.com/alibaba/sentinel-golang)](https://pkg.go.dev/github.com/alibaba/sentinel-golang)
+
+See the [中文文档](https://sentinelguard.io/zh-cn/docs/golang/basic-api-usage.html) for the document in Chinese.
 
 See the [Wiki](https://github.com/alibaba/sentinel-golang/wiki) for full documentation, examples, blog posts, and other information.
 
@@ -39,11 +40,8 @@ It's also encouraged to add the link of your blog post, tutorial, demo or custom
 
 ## Sub-projects
 
-All integration modules and sub-projects are located in [sentinel-group](https://github.com/sentinel-group).
-
-- [Sentinel Go adapters for frameworks](https://github.com/sentinel-group/sentinel-go-adapters)
-- [Sentinel Go dynamic data-source modules](https://github.com/sentinel-group/sentinel-go-datasources)
-- [Kubernetes CRD data-source for Sentinel Go](https://github.com/sentinel-group/sentinel-go-datasource-k8s-crd)
+- [Sentinel Go adapters for frameworks](https://sentinelguard.io/en-us/docs/golang/open-source-framework-integrations.html)
+- [Sentinel Go dynamic data-source modules](https://sentinelguard.io/en-us/docs/golang/dynamic-data-source-usage.html)
 
 ## Bugs and Feedback
 
