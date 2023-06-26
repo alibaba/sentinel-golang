@@ -21,6 +21,8 @@ import (
 
 const (
 	RuleCheckSlotOrder = 4000
+
+	name = "hotspot"
 )
 
 var (
@@ -45,6 +47,8 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		if arg == nil {
 			continue
 		}
+
+		ctx.RuleChecker = name
 		r := canPassCheck(tc, arg, batch)
 		if r == nil {
 			continue
