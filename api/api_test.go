@@ -15,6 +15,7 @@
 package api
 
 import (
+	"context"
 	"testing"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -156,4 +157,12 @@ func Test_entryWithArgsAndChainBlock(t *testing.T) {
 	ssm.AssertNumberOfCalls(t, "OnEntryPassed", 0)
 	ssm.AssertNumberOfCalls(t, "OnEntryBlocked", 1)
 	ssm.AssertNumberOfCalls(t, "OnCompleted", 0)
+}
+
+func TestWithContext(t *testing.T) {
+	entry, _ := Entry("testing", WithContext(context.Background()))
+	assert.NotNil(t, entry.Context().Input.Context)
+
+	entry.Exit()
+	assert.Nil(t, entry.Context().Input.Context)
 }

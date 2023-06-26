@@ -14,7 +14,11 @@
 
 package base
 
-import "github.com/alibaba/sentinel-golang/util"
+import (
+	"context"
+
+	"github.com/alibaba/sentinel-golang/util"
+)
 
 type EntryContext struct {
 	entry *SentinelEntry
@@ -86,11 +90,14 @@ type SentinelInput struct {
 	Args       []interface{}
 	// store some values in this context when calling context in slot.
 	Attachments map[interface{}]interface{}
+	// store the request context
+	Context context.Context
 }
 
 func (i *SentinelInput) reset() {
 	i.BatchCount = 1
 	i.Flag = 0
+	i.Context = nil
 	i.Args = i.Args[:0]
 	if len(i.Attachments) != 0 {
 		i.Attachments = make(map[interface{}]interface{})
