@@ -3,6 +3,7 @@ package consul
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"time"
 
 	"github.com/alibaba/sentinel-golang/ext/datasource"
@@ -107,9 +108,9 @@ func (c *consulDataSource) watch() {
 				time.Sleep(time.Second)
 				continue
 			}
-			logging.FrequentErrorOnce.Do(func() {
+			if ok := atomic.CompareAndSwapUint32(&logging.FrequentErrorOnce, 0, 1); ok {
 				logging.Error(err, "Failed to update data in consulDataSource.watch()", "propertyKey", c.propertyKey)
-			})
+			}
 		}
 	}
 }
