@@ -110,7 +110,7 @@ func NewSlotChain() *SlotChain {
 	}
 }
 
-// Get a EntryContext from EntryContext ctxPool, if ctxPool doesn't have enough EntryContext then new one.
+// Get an EntryContext from EntryContext ctxPool, if ctxPool doesn't have enough EntryContext then new one.
 func (sc *SlotChain) GetPooledContext() *EntryContext {
 	ctx := sc.ctxPool.Get().(*EntryContext)
 	ctx.startTime = util.CurrentTimeMillis()

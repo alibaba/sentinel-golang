@@ -255,7 +255,7 @@ func CurrentClock() Clock {
 	return currentClock.Load().(*clockWrapper).clock
 }
 
-// SetClock sets the ticker creator used by util package.
+// SetTickerCreator sets the ticker creator used by util package.
 // In general, no need to set it. It is usually used for testing.
 func SetTickerCreator(tc TickerCreator) {
 	currentTickerCreator.Store(&tickerCreatorWrapper{tc})

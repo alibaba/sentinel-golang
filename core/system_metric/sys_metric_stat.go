@@ -78,7 +78,7 @@ func init() {
 	metric_exporter.Register(processMemoryGauge)
 }
 
-// getMemoryStat returns the current machine's memory statistic
+// getTotalMemorySize returns the current machine's memory statistic
 func getTotalMemorySize() (total uint64) {
 	stat, err := mem.VirtualMemory()
 	if err != nil {

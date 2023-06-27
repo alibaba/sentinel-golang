@@ -93,7 +93,7 @@ func (s *SpecificValue) String() string {
 	return fmt.Sprintf("SpecificValue: [ValKind: %+v, ValStr: %s]", s.ValKind, s.ValStr)
 }
 
-// arseSpecificItems parses the SpecificValue as real value.
+// parseSpecificItems parses the SpecificValue as real value.
 func parseSpecificItems(source []SpecificValue) map[interface{}]int64 {
 	ret := make(map[interface{}]int64, len(source))
 	if len(source) == 0 {

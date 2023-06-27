@@ -229,7 +229,7 @@ func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 	return false
 }
 
-// fromHalfOpenToOpen updates circuit breaker state machine from half-open to closed
+// fromHalfOpenToClosed updates circuit breaker state machine from half-open to closed
 // Return true only if current goroutine successfully accomplished the transformation.
 func (b *circuitBreakerBase) fromHalfOpenToClosed() bool {
 	if b.state.cas(HalfOpen, Closed) {

@@ -26,7 +26,7 @@ type (
 	}
 )
 
-// WithUnaryClientResourceExtractor sets the resource extractor of unary client request.
+// WithClientResourceExtractor sets the resource extractor of unary client request.
 // The second string parameter is the full method name of current invocation.
 func WithClientResourceExtractor(fn func(context.Context, client.Request) string) Option {
 	return func(opts *options) {
@@ -34,7 +34,7 @@ func WithClientResourceExtractor(fn func(context.Context, client.Request) string
 	}
 }
 
-// WithUnaryServerResourceExtractor sets the resource extractor of unary server request.
+// WithServerResourceExtractor sets the resource extractor of unary server request.
 func WithServerResourceExtractor(fn func(context.Context, server.Request) string) Option {
 	return func(opts *options) {
 		opts.serverResourceExtract = fn
@@ -55,7 +55,7 @@ func WithStreamServerResourceExtractor(fn func(server.Stream) string) Option {
 	}
 }
 
-// WithUnaryClientBlockFallback sets the block fallback handler of unary client request.
+// WithClientBlockFallback sets the block fallback handler of unary client request.
 // The second string parameter is the full method name of current invocation.
 func WithClientBlockFallback(fn func(context.Context, client.Request, *base.BlockError) error) Option {
 	return func(opts *options) {
@@ -63,7 +63,7 @@ func WithClientBlockFallback(fn func(context.Context, client.Request, *base.Bloc
 	}
 }
 
-// WithUnaryServerBlockFallback sets the block fallback handler of unary server request.
+// WithServerBlockFallback sets the block fallback handler of unary server request.
 func WithServerBlockFallback(fn func(context.Context, server.Request, *base.BlockError) error) Option {
 	return func(opts *options) {
 		opts.serverBlockFallback = fn

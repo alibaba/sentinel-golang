@@ -151,7 +151,7 @@ func (r *HotspotRulesReconciler) assembleHotspotRules(rs *datasourcev1.HotspotRu
 	return ret
 }
 
-// arseSpecificItems parses the SpecificValue as real value.
+// parseSpecificItems parses the SpecificValue as real value.
 func parseSpecificItems(source []datasourcev1.SpecificValue) map[interface{}]int64 {
 	ret := make(map[interface{}]int64)
 	if len(source) == 0 {
