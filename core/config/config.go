@@ -262,3 +262,23 @@ func MetricStatisticIntervalMs() uint32 {
 func MetricStatisticSampleCount() uint32 {
 	return globalCfg.MetricStatisticSampleCount()
 }
+
+func TokenServiceType() string {
+	return globalCfg.TokenServiceType()
+}
+
+func RedisTokenServiceAddr() string {
+	return globalCfg.RedisTokenServiceAddr()
+}
+
+func RedisTokenServicePassword() string {
+	return globalCfg.RedisTokenServicePassword()
+}
+
+func RedisTokenServiceDB() int {
+	return globalCfg.RedisTokenServiceDB()
+}
+
+func RedisTokenServicePoolSize() int {
+	return globalCfg.RedisTokenServicePoolSize()
+}

@@ -1,0 +1,17 @@
+This directory contains the all core module:
+
+1. base: basic pkg, contains some basic struct.
+2. circuitbreaker: circuit breaking implementation
+3. config: Sentinel Go run environment related configuration
+4. flow: local flow control implementation
+5. hotspot: hotspot parameters flow control implementation
+6. isolation: concurrency flow control implementation
+7. log: blocked log、metric log related implementation
+8. misc: resource level slot chain implementation
+9. stat: basic metrics(passed request、blocked request、error request、rt...) statistic implementation,
+    including abstract sliding windows implementation
+10. system: system metrics(memory、load、cpu) adaptive flow control
+11. system_metric: system metrics(memory、load、cpu) collector implementation, which module provides
+    the unify API to fetch current process's system metric.
+
+
