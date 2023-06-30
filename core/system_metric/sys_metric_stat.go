@@ -16,6 +16,7 @@ package system_metric
 
 import (
 	"os"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -175,6 +176,10 @@ func retrieveAndUpdateCpuStat() {
 		logging.Error(err, "Fail to retrieve and update cpu statistic")
 		return
 	}
+
+	// fix getProcessCpuStat return value (in percentage) breaks compatibility.
+	cpuNum := runtime.NumCPU()
+	cpuPercent = cpuPercent / float64(cpuNum) / 100.0
 
 	cpuRatioGauge.Set(cpuPercent)
 

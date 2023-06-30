@@ -8,7 +8,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.9.0
 	github.com/shirou/gopsutil/v3 v3.21.6
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.1
+	go.uber.org/automaxprocs v1.5.0 // indirect
 	go.uber.org/multierr v1.5.0
 	gopkg.in/yaml.v2 v2.3.0
 )
