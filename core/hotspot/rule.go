@@ -67,6 +67,8 @@ func (t MetricType) String() string {
 type Rule struct {
 	// ID is the unique id
 	ID string `json:"id,omitempty"`
+	// Name is the rule name
+	Name string `json:"name,omitempty"`
 	// Resource is the resource name
 	Resource string `json:"resource"`
 	// MetricType indicates the metric type for checking logic.
@@ -153,4 +155,8 @@ func (r *Rule) Equals(newRule *Rule) bool {
 	} else {
 		return false
 	}
+}
+
+func (r *Rule) RuleName() string {
+	return r.Name
 }

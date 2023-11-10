@@ -41,7 +41,9 @@ func (s MetricType) String() string {
 // Rule describes the concurrency num control, that is similar to semaphore
 type Rule struct {
 	// ID represents the unique ID of the rule (optional).
-	ID         string     `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
+	// Name is the rule name
+	Name       string     `json:"name,omitempty"`
 	Resource   string     `json:"resource"`
 	MetricType MetricType `json:"metricType"`
 	Threshold  uint32     `json:"threshold"`
@@ -66,4 +68,8 @@ func (r *Rule) RuleID() string {
 
 func (r *Rule) BlockType() base.BlockType {
 	return base.BlockTypeIsolation
+}
+
+func (r *Rule) RuleName() string {
+	return r.Name
 }

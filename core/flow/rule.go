@@ -84,6 +84,8 @@ func (s ControlBehavior) String() string {
 type Rule struct {
 	// ID represents the unique ID of the rule (optional).
 	ID string `json:"id,omitempty"`
+	// Name is the rule name
+	Name string `json:"name,omitempty"`
 	// Resource represents the resource name.
 	Resource               string                 `json:"resource"`
 	TokenCalculateStrategy TokenCalculateStrategy `json:"tokenCalculateStrategy"`
@@ -154,4 +156,8 @@ func (r *Rule) RuleID() string {
 
 func (r *Rule) BlockType() base.BlockType {
 	return base.BlockTypeFlow
+}
+
+func (r *Rule) RuleName() string {
+	return r.Name
 }
