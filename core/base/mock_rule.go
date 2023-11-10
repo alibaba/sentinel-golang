@@ -1,7 +1,8 @@
 package base
 
 type MockRule struct {
-	Id string `json:"id"`
+	Id   string `json:"id"`
+	Name string `json:"name,omitempty"`
 }
 
 func (m *MockRule) BlockType() BlockType {
@@ -18,4 +19,8 @@ func (m *MockRule) ResourceName() string {
 
 func (m *MockRule) RuleID() string {
 	return m.Id
+}
+
+func (m *MockRule) RuleName() string {
+	return m.Name
 }

@@ -52,6 +52,8 @@ func (s Strategy) String() string {
 type Rule struct {
 	// unique id
 	Id string `json:"id,omitempty"`
+	// Name is the rule name
+	Name string `json:"name,omitempty"`
 	// resource name
 	Resource string   `json:"resource"`
 	Strategy Strategy `json:"strategy"`
@@ -90,6 +92,10 @@ func (r *Rule) String() string {
 	// fallback string
 	return fmt.Sprintf("{id=%s, resource=%s, strategy=%s, RetryTimeoutMs=%d, MinRequestAmount=%d, StatIntervalMs=%d, StatSlidingWindowBucketCount=%d, MaxAllowedRtMs=%d, Threshold=%f}",
 		r.Id, r.Resource, r.Strategy, r.RetryTimeoutMs, r.MinRequestAmount, r.StatIntervalMs, r.StatSlidingWindowBucketCount, r.MaxAllowedRtMs, r.Threshold)
+}
+
+func (r *Rule) RuleName() string {
+	return r.Name
 }
 
 func (r *Rule) isStatReusable(newRule *Rule) bool {

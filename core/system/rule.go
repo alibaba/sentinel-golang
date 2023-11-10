@@ -74,6 +74,7 @@ func (t AdaptiveStrategy) String() string {
 
 type Rule struct {
 	ID           string           `json:"id,omitempty"`
+	Name         string           `json:"name,omitempty"`
 	MetricType   MetricType       `json:"metricType"`
 	TriggerCount float64          `json:"triggerCount"`
 	Strategy     AdaptiveStrategy `json:"strategy"`
@@ -99,4 +100,8 @@ func (r *Rule) RuleID() string {
 
 func (r *Rule) BlockType() base.BlockType {
 	return base.BlockTypeSystemFlow
+}
+
+func (r *Rule) RuleName() string {
+	return r.Name
 }
