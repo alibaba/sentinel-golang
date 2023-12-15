@@ -47,3 +47,11 @@ func CreateDirIfNotExists(dirname string) error {
 	}
 	return nil
 }
+
+func FileRename(oldName, newName string) bool {
+	err := os.Rename(oldName, newName)
+	if err != nil {
+		return false
+	}
+	return true
+}

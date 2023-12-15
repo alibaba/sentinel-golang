@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 const (
@@ -71,6 +72,27 @@ func FormMetricFileName(serviceName string, withPid bool) string {
 // Generate the metric index filename from the metric log filename.
 func formMetricIdxFileName(metricFilename string) string {
 	return metricFilename + MetricIdxSuffix
+}
+
+func getLastFileSuffixIndex(list []string) uint32 {
+	if len(list) == 0 {
+		return 0
+	}
+	last := list[len(list)-1]
+	var n uint32 = 0
+	items := strings.Split(last, ".")
+	if len(items) > 0 {
+		v, err := strconv.ParseUint(items[len(items)-1], 10, 32)
+		if err == nil {
+			n = uint32(v)
+		}
+	}
+	return n
+}
+func doRotateBaseAndIndexFile(fileName, pattern string, index int) {
+	newFileName := fileName + "." + pattern + "." + strconv.Itoa(index)
+	util.FileRename(fileName, newFileName)
+	util.FileRename(formMetricIdxFileName(fileName), formMetricIdxFileName(newFileName))
 }
 
 func filenameMatches(filename, baseFilename string) bool {

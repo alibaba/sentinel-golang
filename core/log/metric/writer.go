@@ -24,11 +24,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 )
 
 type DefaultMetricLogWriter struct {
@@ -148,7 +149,7 @@ func (d *DefaultMetricLogWriter) rollFileIfSizeExceeded(time uint64) error {
 }
 
 func (d *DefaultMetricLogWriter) rollToNextFile(time uint64) error {
-	newFilename, err := d.nextFileNameOfTime(time)
+	newFilename, err := d.rotateWithDateAndNewFileName(time)
 	if err != nil {
 		return err
 	}
@@ -197,6 +198,31 @@ func (d *DefaultMetricLogWriter) removeDeprecatedFiles() error {
 		}
 	}
 	return err
+}
+
+func (d *DefaultMetricLogWriter) rotateWithDateAndNewFileName(time uint64) (string, error) {
+	isNewDay := d.isNewDay(d.latestOpSec, int64(time/1000))
+	dateStr := util.FormatDate(time)
+	if isNewDay {
+		//format yesterday time as 2006-01-02
+		dateStr = util.FormatDate(time - 86400000)
+	}
+	filePattern := d.baseFilename + "." + dateStr
+	list, err := listMetricFilesConditional(d.baseDir, filePattern, func(fn string, p string) bool {
+		return strings.Contains(fn, p)
+	})
+	if err != nil {
+		return "", err
+	}
+	newFileName := filepath.Join(d.baseDir, d.baseFilename)
+	//file no exist then return baseFileName as new file name
+	exists, _ := util.FileExists(newFileName)
+	if len(list) == 0 && !exists {
+		return newFileName, nil
+	}
+	n := getLastFileSuffixIndex(list)
+	doRotateBaseAndIndexFile(newFileName, dateStr, int(n+1))
+	return newFileName, nil
 }
 
 func (d *DefaultMetricLogWriter) nextFileNameOfTime(time uint64) (string, error) {
@@ -273,10 +299,10 @@ func (d *DefaultMetricLogWriter) initialize() error {
 		return nil
 	}
 	ts := util.CurrentTimeMillis()
+	d.latestOpSec = int64(ts / 1000)
 	if err := d.rollToNextFile(ts); err != nil {
 		return errors.Wrap(err, "failed to initialize metric log writer")
 	}
-	d.latestOpSec = int64(ts / 1000)
 	return nil
 }
 
