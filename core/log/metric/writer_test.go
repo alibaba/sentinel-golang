@@ -160,7 +160,7 @@ func TestDefaultMetricLogWriter_rotateWithDateAndNewFileName(t *testing.T) {
 					_ = os.MkdirAll(baseDir, os.FileMode(perm))
 				},
 				file: func() {
-					yesterday := time.Now().Add(-24 * time.Hour).Unix() * 1000
+					yesterday := time.Now().Add(-24*time.Hour).Unix() * 1000
 					dateStr := util.FormatDate(uint64(yesterday))
 					_, _ = os.Create(baseDir + metricsLog)
 					_, _ = os.Create(baseDir + metricsLog + "." + dateStr + ".1")
@@ -194,7 +194,7 @@ func TestDefaultMetricLogWriter_rotateWithDateAndNewFileName(t *testing.T) {
 					_ = os.MkdirAll(baseDir, os.FileMode(perm))
 				},
 				file: func() {
-					yesterday := time.Now().Add(-24 * time.Hour).Unix() * 1000
+					yesterday := time.Now().Add(-24*time.Hour).Unix() * 1000
 					dateStr := util.FormatDate(uint64(yesterday))
 					todayDateStr := util.FormatDate(uint64(time.Now().Unix() * 1000))
 					_, _ = os.Create(baseDir + metricsLog)
