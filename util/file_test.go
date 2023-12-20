@@ -15,6 +15,7 @@
 package util
 
 import (
+	"os"
 	"testing"
 )
 
@@ -47,6 +48,69 @@ func TestFileExists(t *testing.T) {
 			}
 			if gotB != tt.wantB {
 				t.Errorf("FileExists() = %v, want %v", gotB, tt.wantB)
+			}
+		})
+	}
+}
+
+func TestFileRename(t *testing.T) {
+	type args struct {
+		newNameSuffix string
+		before        func() string
+		clean         func(tempName string)
+	}
+	oldName := "testfile"
+	newName := ".renamed"
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "rename success",
+			want: true,
+			args: args{
+				newNameSuffix: newName,
+				before: func() string {
+					oldFile, err := os.CreateTemp("", oldName)
+					if err != nil {
+						t.Fatalf("Failed to create temporary file: %s", err)
+					}
+					tempName := oldFile.Name()
+					return tempName
+				},
+				clean: func(tempName string) {
+					os.RemoveAll(tempName)
+				},
+			},
+		},
+		{
+			name: "rename fail",
+			want: false,
+			args: args{
+				newNameSuffix: newName,
+				before: func() string {
+					err := os.RemoveAll(oldName)
+					if err != nil {
+						t.Fatalf("Failed to remove temporary file: %s", err)
+					}
+					return ""
+				},
+				clean: func(tempName string) {
+
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var oldFileName string
+			if tt.args.before != nil {
+				oldFileName = tt.args.before()
+			}
+			defer tt.args.clean(oldFileName)
+			if got := FileRename(oldFileName, oldFileName+tt.args.newNameSuffix); got != tt.want {
+				t.Errorf("FileRename() = %v, want %v", got, tt.want)
 			}
 		})
 	}
