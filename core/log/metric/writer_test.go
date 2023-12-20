@@ -61,7 +61,7 @@ func TestDefaultMetricLogWriter_rotateWithDateAndNewFileName(t *testing.T) {
 				mux:               nil,
 			},
 			args: args{
-				time: uint64(time.Date(2023, 12, 15, 0, 0, 0, 0, time.Local).UnixMilli()),
+				time: uint64(time.Date(2023, 12, 15, 0, 0, 0, 0, time.Local).Unix() * 1000),
 				before: func() {
 					_ = os.RemoveAll(baseDir)
 					_ = os.MkdirAll(baseDir, os.FileMode(perm))
@@ -89,7 +89,7 @@ func TestDefaultMetricLogWriter_rotateWithDateAndNewFileName(t *testing.T) {
 				mux:               nil,
 			},
 			args: args{
-				time: uint64(time.Date(2023, 12, 15, 10, 0, 1, 0, time.Local).UnixMilli()),
+				time: uint64(time.Date(2023, 12, 15, 10, 0, 1, 0, time.Local).Unix() * 1000),
 				before: func() {
 					_ = os.RemoveAll(baseDir)
 					_ = os.MkdirAll(baseDir, os.FileMode(perm))
@@ -120,13 +120,13 @@ func TestDefaultMetricLogWriter_rotateWithDateAndNewFileName(t *testing.T) {
 				mux:               nil,
 			},
 			args: args{
-				time: uint64(time.Date(2023, 12, 15, 0, 0, 0, 0, time.Local).UnixMilli()),
+				time: uint64(time.Date(2023, 12, 15, 0, 0, 0, 0, time.Local).Unix() * 1000),
 				before: func() {
 					_ = os.RemoveAll(baseDir)
 					_ = os.MkdirAll(baseDir, os.FileMode(perm))
 				},
 				file: func() {
-					yesterday := time.Date(2023, 12, 14, 23, 59, 59, 0, time.Local).UnixMilli()
+					yesterday := time.Date(2023, 12, 14, 23, 59, 59, 0, time.Local).Unix() * 1000
 					dateStr := util.FormatDate(uint64(yesterday))
 					_, _ = os.Create(baseDir + metricsLog)
 					_, _ = os.Create(baseDir + metricsLog + "." + dateStr + ".1")
@@ -154,13 +154,13 @@ func TestDefaultMetricLogWriter_rotateWithDateAndNewFileName(t *testing.T) {
 				mux:               nil,
 			},
 			args: args{
-				time: uint64(time.Date(2023, 12, 15, 10, 0, 1, 0, time.Local).UnixMilli()),
+				time: uint64(time.Date(2023, 12, 15, 10, 0, 1, 0, time.Local).Unix() * 1000),
 				before: func() {
 					_ = os.RemoveAll(baseDir)
 					_ = os.MkdirAll(baseDir, os.FileMode(perm))
 				},
 				file: func() {
-					yesterday := time.Now().Add(-24 * time.Hour).UnixMilli()
+					yesterday := time.Now().Add(-24 * time.Hour).Unix() * 1000
 					dateStr := util.FormatDate(uint64(yesterday))
 					_, _ = os.Create(baseDir + metricsLog)
 					_, _ = os.Create(baseDir + metricsLog + "." + dateStr + ".1")
@@ -188,15 +188,15 @@ func TestDefaultMetricLogWriter_rotateWithDateAndNewFileName(t *testing.T) {
 				mux:               nil,
 			},
 			args: args{
-				time: uint64(time.Date(2023, 12, 15, 10, 1, 1, 0, time.Local).UnixMilli()),
+				time: uint64(time.Date(2023, 12, 15, 10, 1, 1, 0, time.Local).Unix() * 1000),
 				before: func() {
 					_ = os.RemoveAll(baseDir)
 					_ = os.MkdirAll(baseDir, os.FileMode(perm))
 				},
 				file: func() {
-					yesterday := time.Now().Add(-24 * time.Hour).UnixMilli()
+					yesterday := time.Now().Add(-24 * time.Hour).Unix() * 1000
 					dateStr := util.FormatDate(uint64(yesterday))
-					todayDateStr := util.FormatDate(uint64(time.Now().UnixMilli()))
+					todayDateStr := util.FormatDate(uint64(time.Now().Unix() * 1000))
 					_, _ = os.Create(baseDir + metricsLog)
 					_, _ = os.Create(baseDir + metricsLog + "." + todayDateStr + ".1")
 					_, _ = os.Create(baseDir + metricsLog + "." + dateStr + ".1")
