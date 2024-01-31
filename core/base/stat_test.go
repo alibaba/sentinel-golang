@@ -69,12 +69,12 @@ func (m *StatNodeMock) CurrentConcurrency() int32 {
 	return int32(args.Int(0))
 }
 
-func (m *StatNodeMock) IncreaseConcurrency() {
+func (m *StatNodeMock) IncreaseConcurrency(count int32) {
 	m.Called()
 	return
 }
 
-func (m *StatNodeMock) DecreaseConcurrency() {
+func (m *StatNodeMock) DecreaseConcurrency(count int32) {
 	m.Called()
 	return
 }

@@ -92,12 +92,12 @@ func (n *BaseStatNode) CurrentConcurrency() int32 {
 	return atomic.LoadInt32(&(n.concurrency))
 }
 
-func (n *BaseStatNode) IncreaseConcurrency() {
-	n.UpdateConcurrency(atomic.AddInt32(&(n.concurrency), 1))
+func (n *BaseStatNode) IncreaseConcurrency(count int32) {
+	n.UpdateConcurrency(atomic.AddInt32(&(n.concurrency), count))
 }
 
-func (n *BaseStatNode) DecreaseConcurrency() {
-	atomic.AddInt32(&(n.concurrency), -1)
+func (n *BaseStatNode) DecreaseConcurrency(count int32) {
+	atomic.AddInt32(&(n.concurrency), -count)
 }
 
 func (n *BaseStatNode) GenerateReadStat(sampleCount uint32, intervalInMs uint32) (base.ReadStat, error) {
