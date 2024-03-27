@@ -81,7 +81,7 @@ func (s *Etcdv3DataSource) processWatchResponse(resp *clientv3.WatchResponse) {
 	}
 
 	if err := resp.Err(); err != nil {
-		logging.Error(err, "Watch on etcd endpoints occur error", "endpointd", s.client.Endpoints())
+		logging.Error(err, "Watch on etcd endpoints occur error", "endpoints", s.client.Endpoints())
 		return
 	}
 
