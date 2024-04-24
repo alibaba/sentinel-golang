@@ -1,0 +1,309 @@
+package xds
+
+import (
+	"fmt"
+	"github.com/alibaba/sentinel-golang/xds/client"
+	"github.com/alibaba/sentinel-golang/xds/protocol"
+	"github.com/alibaba/sentinel-golang/xds/resources"
+	"github.com/alibaba/sentinel-golang/xds/utils"
+	"github.com/dubbogo/gost/log/logger"
+	v3configcore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	"github.com/pkg/errors"
+	"os"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+)
+
+// OnRdsChangeListener defines the signature for RDS change listeners.
+type OnRdsChangeListener func(serviceName string, xdsVirtualHost resources.XdsVirtualHost) error
+
+// OnCdsChangeListener defines the signature for CDS change listeners.
+type OnCdsChangeListener func(clusterName string, xdsCluster resources.XdsCluster, xdsClusterEndpoint resources.XdsClusterEndpoint) error
+
+type Agent struct {
+	xdsServerAddr string
+	virtualNode   *v3configcore.Node
+	xdsClient     *client.XdsClient
+	cdsProtocol   *protocol.CdsProtocol
+	edsProtocol   *protocol.EdsProtocol
+	ldsProtocol   *protocol.LdsProtocol
+	rdsProtocol   *protocol.RdsProtocol
+	stopChan      chan struct{}
+	updateChan    chan resources.XdsUpdateEvent
+
+	edsInitDone atomic.Bool
+	rdsInitDone atomic.Bool
+	initChan    chan struct{}
+
+	listenerMutex    sync.RWMutex
+	listenerCDSMutex sync.RWMutex
+	// serviceName -> listenerName, listener
+	OnRdsChangeListeners map[string]map[string]OnRdsChangeListener
+	OnCdsChangeListeners map[string]map[string]OnCdsChangeListener
+
+	// vhs,cluster,endpoint, listener from xds
+	envoyVirtualHostMap     sync.Map
+	envoyClusterMap         sync.Map //Reserved, but not used
+	envoyClusterEndpointMap sync.Map
+	envoyListenerMap        sync.Map //Reserved, but not used
+
+	// stop or not
+	runningStatus atomic.Bool
+}
+
+func NewXdsAgent(xdsServerAddr string, node *v3configcore.Node) (*Agent, error) {
+	stopChan := make(chan struct{})
+	updateChan := make(chan resources.XdsUpdateEvent, 8)
+	initChan := make(chan struct{}, 2)
+
+	xdsClient, err := client.NewXdsClient(stopChan, xdsServerAddr, node)
+	if err != nil {
+		return nil, err
+	}
+
+	// Init protocol handler
+	ldsProtocol, _ := protocol.NewLdsProtocol(stopChan, updateChan, xdsClient)
+	rdsProtocol, _ := protocol.NewRdsProtocol(stopChan, updateChan, xdsClient)
+	cdsProtocol, _ := protocol.NewCdsProtocol(stopChan, updateChan, xdsClient)
+	edsProtocol, _ := protocol.NewEdsProtocol(stopChan, updateChan, xdsClient)
+
+	// Add protocol listener
+	xdsClient.AddListener(ldsProtocol.ProcessProtocol, "lds", client.ListenerType)
+	xdsClient.AddListener(rdsProtocol.ProcessProtocol, "rds", client.RouteType)
+	xdsClient.AddListener(cdsProtocol.ProcessProtocol, "cds", client.ClusterType)
+	xdsClient.AddListener(edsProtocol.ProcessProtocol, "eds", client.EndpointType)
+
+	// Init pilot agent
+	agent := &Agent{
+		xdsServerAddr: xdsServerAddr,
+		virtualNode:   node,
+		xdsClient:     xdsClient,
+		stopChan:      stopChan,
+		updateChan:    updateChan,
+		ldsProtocol:   ldsProtocol,
+		rdsProtocol:   rdsProtocol,
+		edsProtocol:   edsProtocol,
+		cdsProtocol:   cdsProtocol,
+		initChan:      initChan,
+	}
+	agent.runningStatus.Store(false)
+	// Start xds/sds and wait
+	if err = agent.run(); err != nil {
+		return agent, err
+	}
+
+	// wait for lds/rds/cds/eds init done for the first time
+	if err = agent.waitInitDone(time.Now()); err != nil {
+		return agent, err
+	}
+
+	return agent, nil
+}
+
+func (a *Agent) waitInitDone(startTime time.Time) error {
+	var initDoneCount int
+	timer := time.NewTimer(30 * time.Second)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-a.initChan:
+			initDoneCount++
+			if initDoneCount == 2 {
+				fmt.Printf("[Agent.waitInitDone] xds data init done, cost: %v\n", time.Since(startTime).String())
+				return nil
+			}
+		case <-timer.C:
+			return errors.New("wait for xds data init error")
+		}
+	}
+}
+
+func (a *Agent) run() error {
+	if runningStatus := a.runningStatus.Load(); runningStatus {
+		return nil
+	}
+	if err := a.xdsClient.InitXds(); err != nil {
+		return err
+	}
+
+	go a.startUpdateEventLoop()
+	return nil
+}
+
+func (a *Agent) startUpdateEventLoop() {
+	for {
+		select {
+		case <-a.stopChan:
+			a.Stop()
+			return
+		case event, ok := <-a.updateChan:
+			if !ok {
+				continue
+			}
+
+			fmt.Printf("[Agent.startUpdateEventLoop] event type: %v, object: %v\n", event.Type, event.Object)
+
+			switch event.Type {
+			case resources.XdsEventUpdateLDS:
+				//TODO:解析lds filters
+				continue
+			case resources.XdsEventUpdateCDS:
+				continue
+
+			case resources.XdsEventUpdateEDS:
+				if xdsClusterEndpoints, ok := event.Object.([]resources.XdsClusterEndpoint); ok {
+					fmt.Printf("[Agent.startUpdateEventLoop] eds cluster endpoint info: %v\n", event)
+					for _, xdsClusterEndpoint := range xdsClusterEndpoints {
+						a.envoyClusterEndpointMap.Store(xdsClusterEndpoint.Name, xdsClusterEndpoint)
+					}
+				}
+
+				fmt.Printf("[Agent.startUpdateEventLoop] eds init done value: %v\n", a.edsInitDone.Load())
+				if a.edsInitDone.CompareAndSwap(false, true) {
+					fmt.Printf("[Agent.startUpdateEventLoop] eds init done value after update: %v\n", a.edsInitDone.Load())
+					a.initChan <- struct{}{}
+				}
+
+			case resources.XdsEventUpdateRDS:
+				if xdsRouteConfigurations, ok := event.Object.([]resources.XdsRouteConfig); ok {
+					logger.Debugf("[Pilot Agent] rds event update with rds = %s", utils.ConvertJsonString(xdsRouteConfigurations))
+					for _, xdsRouteConfiguration := range xdsRouteConfigurations {
+						for _, xdsVirtualHost := range xdsRouteConfiguration.VirtualHosts {
+							a.envoyVirtualHostMap.Store(xdsVirtualHost.Name, xdsVirtualHost)
+						}
+					}
+				}
+
+				fmt.Printf("[Agent.startUpdateEventLoop] rds init done value: %v\n", a.rdsInitDone.Load())
+				if a.rdsInitDone.CompareAndSwap(false, true) {
+					fmt.Printf("[Agent.startUpdateEventLoop] rds init done value after update: %v\n", a.edsInitDone.Load())
+					a.initChan <- struct{}{}
+				}
+			}
+		}
+	}
+}
+
+func (a *Agent) callCdsChange(clusterName string) {
+	logger.Infof("[Pilot Agent] callCdsChange clusterName:%s", clusterName)
+	a.listenerMutex.RLock()
+	defer a.listenerMutex.RUnlock()
+	if listeners, ok := a.OnCdsChangeListeners[clusterName]; ok {
+		xdsCluster, ok1 := a.envoyClusterMap.Load(clusterName)
+		xdsClusterEndpoint, ok2 := a.envoyClusterEndpointMap.Load(clusterName)
+		for listenerName, listener := range listeners {
+			if ok1 && ok2 {
+				logger.Debugf("[Pilot Agent] callCdsChange clusterName %s listener %s with cluster = %s and  eds = %s", clusterName, listenerName, utils.ConvertJsonString(xdsCluster.(resources.XdsCluster)), utils.ConvertJsonString(xdsClusterEndpoint.(resources.XdsClusterEndpoint)))
+				go listener(clusterName, xdsCluster.(resources.XdsCluster), xdsClusterEndpoint.(resources.XdsClusterEndpoint))
+			}
+		}
+	}
+}
+
+func (a *Agent) callRdsChange(serviceName string, xdsVirtualHost resources.XdsVirtualHost) {
+	logger.Infof("[Pilot Agent] callCdsChange serivceName:%s", serviceName)
+	a.listenerMutex.RLock()
+	defer a.listenerMutex.RUnlock()
+	if listeners, ok := a.OnRdsChangeListeners[serviceName]; ok {
+		for listenerName, listener := range listeners {
+			logger.Debugf("[Pilot Agent] callRdsChange serviceName %s istener %s with rds = %s", serviceName, listenerName, utils.ConvertJsonString(xdsVirtualHost))
+			go listener(serviceName, xdsVirtualHost)
+		}
+	}
+}
+
+func (a *Agent) Stop() {
+	if runningStatus := a.runningStatus.Load(); runningStatus {
+		// make sure stop once
+		a.runningStatus.Store(false)
+		logger.Infof("[Pilot Agent] Stop now...")
+		close(a.stopChan)
+		close(a.updateChan)
+		a.xdsClient.Stop()
+	}
+}
+
+func convertToFullSvcName(rawHost string) (string, error) {
+	hostParts := strings.Split(rawHost, ".")
+	switch len(hostParts) {
+	case 0:
+		return "", fmt.Errorf("hostname is invalid: %s", rawHost)
+	case 1: // service_name
+		defaultNamespace, defaultDomain := os.Getenv(utils.EnvNamespace), os.Getenv(utils.EnvClusterDomain)
+		if defaultNamespace == "" {
+			return "", fmt.Errorf("ENV_NAMESPACE is empty")
+		}
+		if defaultDomain == "" {
+			defaultDomain = utils.DefaultClusterDomain
+		}
+
+		return fmt.Sprintf("%s.%s.svc.%s", hostParts[0], defaultNamespace, defaultDomain), nil
+	case 2: // service_name.namespace
+		defaultDomain := os.Getenv(utils.EnvClusterDomain)
+		if defaultDomain == "" {
+			defaultDomain = utils.DefaultClusterDomain
+		}
+
+		return fmt.Sprintf("%s.%s.svc.%s", hostParts[0], hostParts[1], defaultDomain), nil
+	case 3: // service_name.namespace.svc
+		if hostParts[2] != "svc" {
+			return "", fmt.Errorf("hostname is invalid: %s", rawHost)
+		}
+
+		defaultDomain := os.Getenv(utils.EnvClusterDomain)
+		if defaultDomain == "" {
+			defaultDomain = utils.DefaultClusterDomain
+		}
+
+		return fmt.Sprintf("%s.%s.svc.%s", hostParts[0], hostParts[1], defaultDomain), nil
+	default: // service_name.namespace.svc.cluster_domain
+		if hostParts[2] != "svc" {
+			return "", fmt.Errorf("hostname is invalid: %s", rawHost)
+		}
+
+		return rawHost, nil
+	}
+}
+
+func genClusterName(host string, port string, version string) (string, error) {
+	if host == "" || port == "" {
+		return "", fmt.Errorf("host or port should not be empty, host: %s, port: %s", host, port)
+	}
+
+	host, err := convertToFullSvcName(host)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("outbound|%s|%s|%s", port, version, host), nil
+}
+
+func (a *Agent) getEndpointsWithClusterName(clusterName string) (*resources.XdsClusterEndpoint, bool) {
+	if v, hasEds := a.envoyClusterEndpointMap.Load(clusterName); hasEds {
+		if xdsEndpoints, typeRight := v.(resources.XdsClusterEndpoint); typeRight {
+			return &xdsEndpoints, true
+		}
+
+		return nil, false
+	}
+
+	return nil, false
+}
+
+func (a *Agent) GetEndpointList(host string, port string, version string) (*resources.XdsClusterEndpoint, bool, error) {
+	clusterName, err := genClusterName(host, port, version)
+	if err != nil {
+		return nil, false, err
+	}
+
+	xdsEndpoints, exist := a.getEndpointsWithClusterName(clusterName)
+	return xdsEndpoints, exist, nil
+}
+
+func (a *Agent) GetEndpointListWithClusterName(clusterName string) (*resources.XdsClusterEndpoint, bool, error) {
+	xdsEndpoints, exist := a.getEndpointsWithClusterName(clusterName)
+	return xdsEndpoints, exist, nil
+}
