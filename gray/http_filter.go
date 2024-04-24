@@ -10,6 +10,21 @@ import (
 	"os"
 )
 
+func updateTrafficTag(ctx context.Context, trafficTag string) context.Context {
+	member, err := baggage.NewMember(baggageGrayTag, trafficTag)
+	if err != nil {
+		return ctx
+	}
+
+	bag := baggage.FromContext(ctx)
+	bag, err = bag.SetMember(member)
+	if err != nil {
+		return ctx
+	}
+
+	return baggage.ContextWithBaggage(ctx, bag)
+}
+
 func updateTrafficTagWithPodTag(ctx context.Context) (string, context.Context) {
 	bag := baggage.FromContext(ctx)
 	trafficTag := bag.Member(baggageGrayTag).Value()
@@ -34,6 +49,18 @@ func updateTrafficTagWithPodTag(ctx context.Context) (string, context.Context) {
 	return trafficTag, ctx
 }
 
+func rewriteByRds(method, host, port, path, scheme string, header map[string]string) (string, string, string, bool, error) {
+	if port == "" {
+		if scheme == "https" {
+			port = httpsDefaultPort
+		} else {
+			port = httpDefaultPort
+		}
+	}
+
+	return getRewriteHostByRds(method, host, port, path, header)
+}
+
 func rewriteByCds(trafficTag, host, port, scheme string) (string, string, error) {
 	if trafficTag == "" {
 		trafficTag = baseVersion
@@ -47,7 +74,7 @@ func rewriteByCds(trafficTag, host, port, scheme string) (string, string, error)
 	}
 
 	fmt.Printf("[rewriteByCds] host: %v, port: %v, traffic tag: %v\n", host, port, trafficTag)
-	newHost, newPort, err := getRewriteHost(host, port, trafficTag)
+	newHost, newPort, err := getRewriteHostByCds(host, port, trafficTag)
 	if err != nil {
 		fmt.Printf("[rewriteByCds] rewrite address err: %v\n", err)
 		return "", "", err
@@ -63,10 +90,28 @@ func GrayOutboundFilterHttp(req *http.Request) {
 	req = req.WithContext(newCtx)
 	otel.GetTextMapPropagator().Inject(newCtx, propagation.HeaderCarrier(req.Header))
 
-	// TODO: rds匹配:1.是否有匹配规则,2.从规则中解析标签和cluster name,3.覆盖式更新流量标签,4.根据cluster name获取节点
+	// rds匹配
+	header := make(map[string]string)
+	for k, v := range req.Header {
+		if len(v) != 0 {
+			header[k] = v[0]
+		}
+	}
+	newHost, newPort, newTrafficTag, update, err := rewriteByRds(req.Method, req.URL.Hostname(), req.URL.Port(), req.URL.Path, req.URL.Scheme, header)
+	if err != nil {
+		fmt.Printf("[GrayOutboundFilterHttp] rewrite by rds err: %v, req: %+v\n", err, req)
+	}
+	if update {
+		req.URL.Host = fmt.Sprintf("%s:%s", newHost, newPort)
+		if newTrafficTag != "" {
+			req = req.WithContext(updateTrafficTag(req.Context(), newTrafficTag))
+			otel.GetTextMapPropagator().Inject(newCtx, propagation.HeaderCarrier(req.Header))
+		}
+		return
+	}
 
 	// cds匹配
-	newHost, newPort, err := rewriteByCds(trafficTag, req.URL.Hostname(), req.URL.Port(), req.URL.Scheme)
+	newHost, newPort, err = rewriteByCds(trafficTag, req.URL.Hostname(), req.URL.Port(), req.URL.Scheme)
 	if err != nil {
 		fmt.Printf("[GrayOutboundFilterHttp] rewrite by cds err: %v, req: %+v\n", err, req)
 		return

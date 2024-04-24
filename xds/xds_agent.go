@@ -16,12 +16,6 @@ import (
 	"time"
 )
 
-// OnRdsChangeListener defines the signature for RDS change listeners.
-type OnRdsChangeListener func(serviceName string, xdsVirtualHost resources.XdsVirtualHost) error
-
-// OnCdsChangeListener defines the signature for CDS change listeners.
-type OnCdsChangeListener func(clusterName string, xdsCluster resources.XdsCluster, xdsClusterEndpoint resources.XdsClusterEndpoint) error
-
 type Agent struct {
 	xdsServerAddr string
 	virtualNode   *v3configcore.Node
@@ -36,12 +30,6 @@ type Agent struct {
 	edsInitDone atomic.Bool
 	rdsInitDone atomic.Bool
 	initChan    chan struct{}
-
-	listenerMutex    sync.RWMutex
-	listenerCDSMutex sync.RWMutex
-	// serviceName -> listenerName, listener
-	OnRdsChangeListeners map[string]map[string]OnRdsChangeListener
-	OnCdsChangeListeners map[string]map[string]OnCdsChangeListener
 
 	// vhs,cluster,endpoint, listener from xds
 	envoyVirtualHostMap     sync.Map
@@ -187,34 +175,6 @@ func (a *Agent) startUpdateEventLoop() {
 	}
 }
 
-func (a *Agent) callCdsChange(clusterName string) {
-	logger.Infof("[Pilot Agent] callCdsChange clusterName:%s", clusterName)
-	a.listenerMutex.RLock()
-	defer a.listenerMutex.RUnlock()
-	if listeners, ok := a.OnCdsChangeListeners[clusterName]; ok {
-		xdsCluster, ok1 := a.envoyClusterMap.Load(clusterName)
-		xdsClusterEndpoint, ok2 := a.envoyClusterEndpointMap.Load(clusterName)
-		for listenerName, listener := range listeners {
-			if ok1 && ok2 {
-				logger.Debugf("[Pilot Agent] callCdsChange clusterName %s listener %s with cluster = %s and  eds = %s", clusterName, listenerName, utils.ConvertJsonString(xdsCluster.(resources.XdsCluster)), utils.ConvertJsonString(xdsClusterEndpoint.(resources.XdsClusterEndpoint)))
-				go listener(clusterName, xdsCluster.(resources.XdsCluster), xdsClusterEndpoint.(resources.XdsClusterEndpoint))
-			}
-		}
-	}
-}
-
-func (a *Agent) callRdsChange(serviceName string, xdsVirtualHost resources.XdsVirtualHost) {
-	logger.Infof("[Pilot Agent] callCdsChange serivceName:%s", serviceName)
-	a.listenerMutex.RLock()
-	defer a.listenerMutex.RUnlock()
-	if listeners, ok := a.OnRdsChangeListeners[serviceName]; ok {
-		for listenerName, listener := range listeners {
-			logger.Debugf("[Pilot Agent] callRdsChange serviceName %s istener %s with rds = %s", serviceName, listenerName, utils.ConvertJsonString(xdsVirtualHost))
-			go listener(serviceName, xdsVirtualHost)
-		}
-	}
-}
-
 func (a *Agent) Stop() {
 	if runningStatus := a.runningStatus.Load(); runningStatus {
 		// make sure stop once
@@ -306,4 +266,49 @@ func (a *Agent) GetEndpointList(host string, port string, version string) (*reso
 func (a *Agent) GetEndpointListWithClusterName(clusterName string) (*resources.XdsClusterEndpoint, bool, error) {
 	xdsEndpoints, exist := a.getEndpointsWithClusterName(clusterName)
 	return xdsEndpoints, exist, nil
+}
+
+func genVirtualHostName(host, port string) (string, error) {
+	if host == "" || port == "" {
+		return "", fmt.Errorf("host or port should not be empty, host: %s, port: %s", host, port)
+	}
+
+	host, err := convertToFullSvcName(host)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s:%s", host, port), nil
+}
+
+func (a *Agent) getRoutesWithVirtualHostName(virtualHostName string) ([]resources.XdsRoute, bool) {
+	if v, hasRds := a.envoyVirtualHostMap.Load(virtualHostName); hasRds {
+		if xdsVirtualHost, typeRight := v.(resources.XdsVirtualHost); typeRight {
+			return xdsVirtualHost.Routes, true
+		}
+		return nil, false
+	}
+	return nil, false
+}
+
+func (a *Agent) GetMatchHttpRouteCluster(method, host, port, path string, header map[string]string) (string, bool, error) {
+	virtualHostName, err := genVirtualHostName(host, port)
+	if err != nil {
+		return "", false, err
+	}
+
+	routes, exist := a.getRoutesWithVirtualHostName(virtualHostName)
+	if !exist {
+		return "", false, nil
+	}
+	if len(routes) == 0 {
+		return "", false, nil
+	}
+
+	for _, route := range routes {
+		if route.Match != nil && route.Match.MatchPath(path) && route.Match.MatchMeta(header) {
+			return route.Action.Cluster, exist, nil
+		}
+	}
+
+	return "", false, nil
 }

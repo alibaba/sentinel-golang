@@ -25,10 +25,12 @@ func TestGrayOutboundFilterHttp(t *testing.T) {
 	ctx := baggage.ContextWithBaggage(context.Background(), bag)
 
 	//ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://gin-server-a/greet", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://grpc-server-c/greet", nil)
 	if err != nil {
 		t.Error(err)
 	}
+
+	req.Header.Set("version", "v1")
 
 	GrayOutboundFilterHttp(req)
 

@@ -5,9 +5,37 @@ import (
 	"github.com/alibaba/sentinel-golang/xds/resources"
 	"math/rand"
 	"sort"
+	"strings"
 )
 
-func getRewriteHost(host, port, version string) (string, string, error) {
+func getRewriteHostByRds(method, host, port, path string, header map[string]string) (string, string, string, bool, error) {
+	cluster, exist, err := xds.XdsAgent.GetMatchHttpRouteCluster(method, host, port, path, header)
+	if err != nil {
+		return "", "", "", false, err
+	}
+	if !exist {
+		return host, port, "", false, nil
+	}
+
+	clusterEndPoint, exist, err := xds.XdsAgent.GetEndpointListWithClusterName(cluster)
+	if err != nil {
+		return "", "", "", false, err
+	}
+	if !exist || clusterEndPoint == nil || clusterEndPoint.EndpointNum == 0 {
+		return host, port, "", false, nil
+	}
+
+	newHost, newPort := selectOneEndpoint(clusterEndPoint)
+	var trafficTag string
+	strList := strings.Split(cluster, "|")
+	if len(strList) >= 2 {
+		trafficTag = strList[2]
+	}
+
+	return newHost, newPort, trafficTag, true, nil
+}
+
+func getRewriteHostByCds(host, port, version string) (string, string, error) {
 	clusterEndPoint, err := getClusterEndpoints(host, port, version)
 	if err != nil {
 		return host, port, err
