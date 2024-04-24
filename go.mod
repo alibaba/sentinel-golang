@@ -16,8 +16,8 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/shirou/gopsutil/v3 v3.22.2
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/otel v1.10.0
-	go.uber.org/multierr v1.8.0
+	go.opentelemetry.io/otel v1.24.0
+	go.uber.org/multierr v1.11.0
 	google.golang.org/grpc v1.58.3
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/yaml.v2 v2.4.0
