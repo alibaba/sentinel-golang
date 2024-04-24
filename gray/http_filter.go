@@ -10,6 +10,10 @@ import (
 	"os"
 )
 
+func init() {
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+}
+
 func updateTrafficTag(ctx context.Context, trafficTag string) context.Context {
 	member, err := baggage.NewMember(baggageGrayTag, trafficTag)
 	if err != nil {
@@ -83,12 +87,17 @@ func rewriteByCds(trafficTag, host, port, scheme string) (string, string, error)
 	return newHost, newPort, nil
 }
 
-func GrayOutboundFilterHttp(req *http.Request) {
+func GrayOutboundFilterHttp(req *http.Request) *http.Request {
 	// TODO: 具体使用哪个ot sdk需要确认,以及需要从真实baggage中解析标签
 	// 解析并获取流量标签,如果不存在且当前节点为灰度节点,将流量标签更新为节点标签
 	trafficTag, newCtx := updateTrafficTagWithPodTag(req.Context())
+
 	req = req.WithContext(newCtx)
-	otel.GetTextMapPropagator().Inject(newCtx, propagation.HeaderCarrier(req.Header))
+	otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
+	if trafficTag != "" {
+		req.Header.Set(baggageGrayTag, trafficTag)
+	}
+	fmt.Printf("[GratyOutboundFilterHttp] after tag update by pod tag: %+v\n", *req)
 
 	// rds匹配
 	header := make(map[string]string)
@@ -105,16 +114,18 @@ func GrayOutboundFilterHttp(req *http.Request) {
 		req.URL.Host = fmt.Sprintf("%s:%s", newHost, newPort)
 		if newTrafficTag != "" {
 			req = req.WithContext(updateTrafficTag(req.Context(), newTrafficTag))
-			otel.GetTextMapPropagator().Inject(newCtx, propagation.HeaderCarrier(req.Header))
+			otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
+			req.Header.Set(baggageGrayTag, newTrafficTag)
 		}
-		return
+		return req
 	}
 
 	// cds匹配
 	newHost, newPort, err = rewriteByCds(trafficTag, req.URL.Hostname(), req.URL.Port(), req.URL.Scheme)
 	if err != nil {
 		fmt.Printf("[GrayOutboundFilterHttp] rewrite by cds err: %v, req: %+v\n", err, req)
-		return
+		return req
 	}
 	req.URL.Host = fmt.Sprintf("%s:%s", newHost, newPort)
+	return req
 }

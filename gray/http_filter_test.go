@@ -9,7 +9,7 @@ import (
 )
 
 func TestGrayOutboundFilterHttp(t *testing.T) {
-	member, err := baggage.NewMember(baggageGrayTag, "gray")
+	member, err := baggage.NewMember(baggageGrayTag, "blue")
 	if err != nil {
 		fmt.Printf("[GrayOutboundFilterHttp] new member err: %v, member: %v\n", err, member)
 		t.Error(err)
@@ -24,13 +24,13 @@ func TestGrayOutboundFilterHttp(t *testing.T) {
 	}
 	ctx := baggage.ContextWithBaggage(context.Background(), bag)
 
-	//ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://grpc-server-c/greet", nil)
+	ctx = context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://gin-server-b/greet", nil)
 	if err != nil {
 		t.Error(err)
 	}
 
-	req.Header.Set("version", "v1")
+	//req.Header.Set("version", "v1")
 
 	GrayOutboundFilterHttp(req)
 
