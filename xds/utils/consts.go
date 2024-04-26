@@ -10,6 +10,7 @@ const (
 	EnvAppName      = "MSE_APP_NAME"
 	EnvIstioVersion = "MSE_ISTIO_VERSION"
 	EnvXdsMetas     = "MSE_XDS_METAS"
+	EnvIstioAddress = "MSE_ISTIO_ADDRESS"
 )
 
 const (

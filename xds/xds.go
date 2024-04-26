@@ -3,12 +3,13 @@ package xds
 import (
 	"fmt"
 	"github.com/alibaba/sentinel-golang/xds/bootstrap"
+	"github.com/alibaba/sentinel-golang/xds/utils"
+	"os"
 )
 
 var XdsAgent *Agent
 
 func init() {
-	// TODO: 通过open api获取xds地址
 	var err error
 	node, err := bootstrap.InitNode()
 	if err != nil {
@@ -17,7 +18,14 @@ func init() {
 		return
 	}
 
-	XdsAgent, err = NewXdsAgent("47.97.99.1:15010", node)
+	xdsServerAddr := os.Getenv(utils.EnvIstioAddress)
+	if xdsServerAddr == "" {
+		fmt.Printf("init xds agent xdsServerAddr is empty\n")
+		XdsAgent = &Agent{}
+		return
+	}
+
+	XdsAgent, err = NewXdsAgent(xdsServerAddr, node)
 	if err != nil {
 		fmt.Printf("init xds agent NewXdsAgent failed, err: %v\n", err)
 		XdsAgent = &Agent{}
