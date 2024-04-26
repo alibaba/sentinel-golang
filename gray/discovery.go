@@ -1,6 +1,7 @@
 package gray
 
 import (
+	"fmt"
 	"github.com/alibaba/sentinel-golang/xds"
 	"github.com/alibaba/sentinel-golang/xds/resources"
 	"math/rand"
@@ -41,9 +42,11 @@ func getRewriteHostByCds(host, port, version string) (string, string, error) {
 		return host, port, err
 	}
 	if clusterEndPoint == nil || clusterEndPoint.EndpointNum == 0 {
+		fmt.Printf("[getClusterEndpoints] endpoint not exist, host: %v, port: %v, version: %v\n", host, port, version)
 		return host, port, nil
 	}
 
+	fmt.Printf("[getClusterEndpoints] endpoint exist, host: %v, port: %v, version: %v, endpoint: %v\n", host, port, version, clusterEndPoint)
 	newHost, newPort := selectOneEndpoint(clusterEndPoint)
 	return newHost, newPort, nil
 }
@@ -55,6 +58,7 @@ func selectOneEndpoint(clusterEndpoint *resources.XdsClusterEndpoint) (string, s
 }
 
 func getClusterEndpoints(host, port, version string) (*resources.XdsClusterEndpoint, error) {
+	fmt.Printf("[getClusterEndpoints] host: %v, port: %v, version: %v\n", host, port, version)
 	clusterEndPoint, exist, err := xds.XdsAgent.GetEndpointList(host, port, version)
 	if err != nil {
 		return nil, err

@@ -11,6 +11,7 @@ import (
 )
 
 func init() {
+	fmt.Printf("init otel set map propagator")
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 }
 
@@ -18,6 +19,7 @@ func GrayOutboundFilterHttp(req *http.Request) *http.Request {
 	// TODO: 具体使用哪个ot sdk需要确认,以及需要从真实baggage中解析标签
 	// 解析并获取流量标签,如果不存在且当前节点为灰度节点,将流量标签更新为节点标签
 	trafficTag, newCtx := updateTrafficTagWithPodTag(req.Context())
+	fmt.Printf("[GrayOutboundFilterHttp] before tag update by pod tag: %+v, ctx: %v\n", trafficTag, *req)
 
 	req = req.WithContext(newCtx)
 	otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
@@ -38,6 +40,7 @@ func GrayOutboundFilterHttp(req *http.Request) *http.Request {
 		fmt.Printf("[GrayOutboundFilterHttp] rewrite by rds err: %v, req: %+v\n", err, req)
 	}
 	if update {
+		fmt.Printf("[GrayOutboundFilterHttp] rewrite by rds: %s:%s, tag: %+v\n", newHost, newPort, trafficTag)
 		req.URL.Host = fmt.Sprintf("%s:%s", newHost, newPort)
 		if newTrafficTag != "" {
 			req = req.WithContext(updateTrafficTag(req.Context(), newTrafficTag))
@@ -53,6 +56,7 @@ func GrayOutboundFilterHttp(req *http.Request) *http.Request {
 		fmt.Printf("[GrayOutboundFilterHttp] rewrite by cds err: %v, req: %+v\n", err, req)
 		return req
 	}
+	fmt.Printf("[GrayOutboundFilterHttp] rewrite by cds: %s:%s, tag: %+v\n", newHost, newPort, trafficTag)
 	req.URL.Host = fmt.Sprintf("%s:%s", newHost, newPort)
 	return req
 }
