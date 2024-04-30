@@ -17,13 +17,10 @@
 
 package resources
 
-import "dubbo.apache.org/dubbo-go/v3/protocol"
-
 type XdsCluster struct {
 	Type            string
 	Name            string
 	LbPolicy        string
-	Invokers        []protocol.Invoker
 	Service         XdsClusterService
 	TransportSocket XdsUpstreamTransportSocket
 	TlsMode         XdsTLSMode
