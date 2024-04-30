@@ -2,10 +2,10 @@ package xds
 
 import (
 	"fmt"
-	"github.com/alibaba/sentinel-golang/xds/client"
-	"github.com/alibaba/sentinel-golang/xds/protocol"
-	"github.com/alibaba/sentinel-golang/xds/resources"
-	"github.com/alibaba/sentinel-golang/xds/utils"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/protocol"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	"github.com/dubbogo/gost/log/logger"
 	v3configcore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"github.com/pkg/errors"

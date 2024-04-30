@@ -20,7 +20,7 @@ package protocol
 import (
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/xds/utils"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	"github.com/dubbogo/gost/log/logger"
 	envoy_admin_v3 "github.com/envoyproxy/go-control-plane/envoy/admin/v3"
 	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"

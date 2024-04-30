@@ -3,7 +3,7 @@ package resources
 import (
 	"bytes"
 
-	"github.com/alibaba/sentinel-golang/xds/resources/rbac"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources/rbac"
 	envoyrbacv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	jsonp "github.com/golang/protobuf/jsonpb"
 )

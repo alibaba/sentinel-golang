@@ -1,15 +1,15 @@
-package gray
+package traffic
 
 import (
 	"fmt"
-	"github.com/alibaba/sentinel-golang/xds"
-	"github.com/alibaba/sentinel-golang/xds/resources"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"math/rand"
 	"sort"
 	"strings"
 )
 
-func getRewriteHostByRds(method, host, port, path string, header map[string]string) (string, string, string, bool, error) {
+func getInstanceByRds(method, host, port, path string, header map[string]string) (string, string, string, bool, error) {
 	cluster, exist, err := xds.XdsAgent.GetMatchHttpRouteCluster(method, host, port, path, header)
 	if err != nil {
 		return "", "", "", false, err
@@ -36,19 +36,17 @@ func getRewriteHostByRds(method, host, port, path string, header map[string]stri
 	return newHost, newPort, trafficTag, true, nil
 }
 
-func getRewriteHostByCds(host, port, version string) (string, string, error) {
+func getInstanceByCds(host, port, version string) (string, string, bool, error) {
 	clusterEndPoint, err := getClusterEndpoints(host, port, version)
 	if err != nil {
-		return host, port, err
+		return host, port, false, err
 	}
 	if clusterEndPoint == nil || clusterEndPoint.EndpointNum == 0 {
-		fmt.Printf("[getClusterEndpoints] endpoint not exist, host: %v, port: %v, version: %v\n", host, port, version)
-		return host, port, nil
+		return host, port, false, nil
 	}
 
-	fmt.Printf("[getClusterEndpoints] endpoint exist, host: %v, port: %v, version: %v, endpoint: %v\n", host, port, version, clusterEndPoint)
 	newHost, newPort := selectOneEndpoint(clusterEndPoint)
-	return newHost, newPort, nil
+	return newHost, newPort, true, nil
 }
 
 func selectOneEndpoint(clusterEndpoint *resources.XdsClusterEndpoint) (string, string) {

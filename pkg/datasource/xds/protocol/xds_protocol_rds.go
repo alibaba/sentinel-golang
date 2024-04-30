@@ -22,8 +22,8 @@ import (
 	"github.com/alibaba/sentinel-golang/logging"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/xds/client"
-	"github.com/alibaba/sentinel-golang/xds/resources"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"github.com/dubbogo/gost/log/logger"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	v3discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"

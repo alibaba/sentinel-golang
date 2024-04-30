@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/xds/client"
-	"github.com/alibaba/sentinel-golang/xds/resources"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"github.com/dubbogo/gost/log/logger"
 	v3core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoyendpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"

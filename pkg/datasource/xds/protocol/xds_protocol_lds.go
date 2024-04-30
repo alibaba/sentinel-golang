@@ -19,12 +19,12 @@ package protocol
 
 import (
 	"fmt"
-	"github.com/alibaba/sentinel-golang/xds/client"
-	"github.com/alibaba/sentinel-golang/xds/resources/rbac"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources/rbac"
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/xds/resources"
-	"github.com/alibaba/sentinel-golang/xds/utils"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	"github.com/dubbogo/gost/log/logger"
 	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	jwtauthnv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"

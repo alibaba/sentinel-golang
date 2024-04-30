@@ -2,8 +2,8 @@ package xds
 
 import (
 	"fmt"
-	"github.com/alibaba/sentinel-golang/xds/bootstrap"
-	"github.com/alibaba/sentinel-golang/xds/resources"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/bootstrap"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"testing"
 )
 

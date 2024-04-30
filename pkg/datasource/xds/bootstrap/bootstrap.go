@@ -3,7 +3,7 @@ package bootstrap
 import (
 	"errors"
 	"fmt"
-	"github.com/alibaba/sentinel-golang/xds/utils"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	v3core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/protobuf/encoding/protojson"

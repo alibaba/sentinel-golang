@@ -20,7 +20,7 @@ package resources
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alibaba/sentinel-golang/xds/utils"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	"strings"
 	"time"
 
