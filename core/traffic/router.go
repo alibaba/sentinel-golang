@@ -6,7 +6,6 @@ import (
 )
 
 var defaultPortMap = map[string]string{
-	"":      "80",
 	"http":  "80",
 	"https": "443",
 }
@@ -78,7 +77,7 @@ func routeByRDS(trafficContext *Context) (*RouteDestination, error) {
 	}
 
 	if port == "" {
-		port = defaultPortMap[trafficContext.Scheme]
+		port = getDefaultPort(trafficContext.Scheme)
 	}
 	newHost, newPort, newTrafficTag, exist, err := getInstanceByRds(method, hostName, port, path, header)
 	if err != nil {
@@ -110,7 +109,7 @@ func routeByCDS(trafficContext *Context) (*RouteDestination, error) {
 	}
 
 	if port == "" {
-		port = defaultPortMap[trafficContext.Scheme]
+		port = getDefaultPort(trafficContext.Scheme)
 	}
 	if trafficTag == "" {
 		trafficTag = baseVersion
@@ -129,4 +128,11 @@ func routeByCDS(trafficContext *Context) (*RouteDestination, error) {
 	trafficDestination.Port = newPort
 	trafficDestination.Updated = true
 	return trafficDestination, nil
+}
+
+func getDefaultPort(scheme string) string {
+	if port, ok := defaultPortMap[scheme]; ok {
+		return port
+	}
+	return defaultPort
 }
