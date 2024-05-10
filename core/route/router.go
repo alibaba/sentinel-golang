@@ -174,40 +174,6 @@ func (t *TrafficContext) getNewestTrafficTag() (string, bool) {
 	return podTag, true
 }
 
-func routeByCDS(trafficTrafficContext *TrafficContext) (*RouteDestination, error) {
-	hostName := trafficTrafficContext.HostName
-	port := trafficTrafficContext.Port
-	trafficTag := trafficTrafficContext.TrafficTag
-
-	trafficDestination := &RouteDestination{
-		HostName:    hostName,
-		Port:        port,
-		HostUpdated: false,
-		TrafficTag:  trafficTag,
-	}
-
-	if port == "" {
-		port = getDefaultPort(trafficTrafficContext.Scheme)
-	}
-	if trafficTag == "" {
-		trafficTag = defaultTag
-	}
-	newHost, newPort, exist, err := getInstanceByCds(hostName, port, trafficTag)
-	if err != nil {
-		fmt.Printf("[routeByCDS] get instance by cds err: %v, host: %v, port: %v\n", err, hostName, port)
-		return trafficDestination, err
-	}
-	if !exist {
-		fmt.Printf("[routeByCDS] instance not exist, host: %v, port: %v\n", hostName, port)
-		return trafficDestination, nil
-	}
-
-	trafficDestination.HostName = newHost
-	trafficDestination.Port = newPort
-	trafficDestination.HostUpdated = true
-	return trafficDestination, nil
-}
-
 func getDefaultPort(scheme string) string {
 	if port, ok := defaultPortMap[scheme]; ok {
 		return port
