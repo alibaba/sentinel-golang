@@ -1,4 +1,4 @@
-package traffic
+package route
 
 import (
 	"fmt"
@@ -63,11 +63,11 @@ func getClusterEndpoints(host, port, version string) (*resources.XdsClusterEndpo
 	}
 
 	if !exist || clusterEndPoint.EndpointNum == 0 {
-		if version == "" || version == baseVersion {
+		if version == "" || version == defaultTag {
 			return clusterEndPoint, nil
 		}
 
-		return getClusterEndpoints(host, port, baseVersion)
+		return getClusterEndpoints(host, port, defaultTag)
 	}
 
 	return clusterEndPoint, nil
