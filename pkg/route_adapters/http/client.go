@@ -37,7 +37,9 @@ func ClientRoute(req *http.Request) (*http.Request, error) {
 		if routeDestination.HostUpdated {
 			req.URL.Host = fmt.Sprintf("%s:%s", routeDestination.HostName, routeDestination.Port)
 		}
-		req.Header.Set(sentinelroute.TrafficTagHeader, routeDestination.TrafficTag)
+		if routeDestination.TrafficTag != "" {
+			req.Header.Set(sentinelroute.TrafficTagHeader, routeDestination.TrafficTag)
+		}
 		if routeDestination.TagUpdated && routeDestination.Ctx != nil {
 			req = req.WithContext(routeDestination.Ctx)
 		}

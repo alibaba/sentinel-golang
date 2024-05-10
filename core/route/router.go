@@ -65,6 +65,7 @@ func (t *TrafficContext) Route() (routeDestination *RouteDestination, err error)
 		}
 	}()
 
+	routeDestination = &RouteDestination{}
 	// 获取流量标签, 如果流量标签更新, 需要更新context
 	trafficTag, tagUpdated := t.getNewestTrafficTag()
 	t.TrafficTag = trafficTag
@@ -165,7 +166,7 @@ func (t *TrafficContext) getNewestTrafficTag() (string, bool) {
 	}
 
 	// 如果不存在流量标签,使用节点标签对流量进行打标
-	podTag := getTrafficTag(t.Ctx)
+	podTag := getPodTag(t.Ctx)
 	if podTag == "" || podTag == defaultTag {
 		return "", false
 	}
