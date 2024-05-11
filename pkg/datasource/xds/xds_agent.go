@@ -1,6 +1,7 @@
 package xds
 
 import (
+	"errors"
 	"fmt"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/protocol"
@@ -8,7 +9,6 @@ import (
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	"github.com/dubbogo/gost/log/logger"
 	v3configcore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	"github.com/pkg/errors"
 	"os"
 	"strings"
 	"sync"

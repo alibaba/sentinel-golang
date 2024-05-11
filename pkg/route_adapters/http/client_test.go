@@ -1,9 +1,9 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"github.com/alibaba/sentinel-golang/core/route"
-	"golang.org/x/net/context"
 	"net/http"
 	"testing"
 )

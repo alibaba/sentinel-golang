@@ -2,8 +2,8 @@ package route
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 )
 
 var defaultPortMap = map[string]string{
