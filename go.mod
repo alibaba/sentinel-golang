@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/lestrrat-go/jwx/v2 v2.0.21
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/nacos-group/nacos-sdk-go/v2 v2.2.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
