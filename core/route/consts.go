@@ -2,7 +2,7 @@ package route
 
 const defaultPort = "80"
 
-const TrafficTagHeader = "x-mse-gray-tag"
+const TrafficTagHeader = "x-mse-tag"
 
 const defaultTag = "base"
 
