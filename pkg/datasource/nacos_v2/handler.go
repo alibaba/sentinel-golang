@@ -15,7 +15,7 @@ const (
 	RuleTypeIsolation      = "IsolationRule"
 	RuleTypeSystem         = "SystemRule"
 	RuleTypeCircuitBreaker = "CircuitBreakerRule"
-	RuleTypeHotPot         = "HotPotRule"
+	RuleTypeHotsPot        = "HotsPotRule"
 )
 
 type RuleData struct {
@@ -72,7 +72,7 @@ func defaultOnRuleChangeHandler(namespace, group, dataId, data string) {
 				continue
 			}
 			circuitBreakerRules = append(circuitBreakerRules, circuitBreakerRule)
-		case RuleTypeHotPot:
+		case RuleTypeHotsPot:
 			var paramFlowRule *hotspot.Rule
 			err = json.Unmarshal([]byte(rule.Content), &paramFlowRule)
 			if err != nil {
