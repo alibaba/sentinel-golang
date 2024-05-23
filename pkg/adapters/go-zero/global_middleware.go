@@ -30,6 +30,8 @@ func SentinelMiddleware(opts ...Option) rest.Middleware {
 				if options.blockFallback != nil {
 					status, msg := options.blockFallback(r)
 					http.Error(w, msg, status)
+				} else if options.sentinelFallback != nil {
+					options.sentinelFallback(&w, r, resourceName, blockErr.BlockType())
 				} else {
 					// default error response
 					http.Error(w, "Blocked by Sentinel", http.StatusTooManyRequests)

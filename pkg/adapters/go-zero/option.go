@@ -1,12 +1,16 @@
 package go_zero
 
-import "net/http"
+import (
+	"github.com/alibaba/sentinel-golang/core/base"
+	"net/http"
+)
 
 type (
 	Option  func(*options)
 	options struct {
-		resourceExtract func(r *http.Request) string
-		blockFallback   func(r *http.Request) (int, string)
+		resourceExtract  func(r *http.Request) string
+		blockFallback    func(r *http.Request) (int, string)
+		sentinelFallback func(*http.ResponseWriter, *http.Request, string, base.BlockType)
 	}
 )
 
@@ -30,5 +34,12 @@ func WithResourceExtractor(fn func(r *http.Request) string) Option {
 func WithBlockFallback(fn func(r *http.Request) (int, string)) Option {
 	return func(opts *options) {
 		opts.blockFallback = fn
+	}
+}
+
+// WithSentinelFallback use sentinel fallback handler when requests are blocked
+func WithSentinelFallback() Option {
+	return func(opts *options) {
+		opts.sentinelFallback = sentinelFallback
 	}
 }
