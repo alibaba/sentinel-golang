@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"github.com/alibaba/sentinel-golang/core/fallback"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,22 @@ func initSentinel(t *testing.T) {
 	err := sentinel.InitDefault()
 	if err != nil {
 		t.Fatalf("Unexpected error: %+v", err)
+	}
+
+	_, err = fallback.LoadRules([]*fallback.Rule{
+		{
+			TargetResourceType: fallback.WebResourceType,
+			TargetMap: map[string][]fallback.FunctionType{
+				"/api/users/:id": {
+					fallback.FlowType,
+				},
+			},
+			FallbackBehavior: []byte("{\"webFallbackMode\":0,\"webRespContentType\":1,\"webRespMessage\":\"{\\n  \\\"abc\\\": 123\\n}\",\"webRespStatusCode\":400}"),
+		},
+	})
+	if err != nil {
+		t.Fatalf("Unexpected error: %+v", err)
+		return
 	}
 
 	_, err = flow.LoadRules([]*flow.Rule{
@@ -105,6 +122,27 @@ func TestSentinelMiddleware(t *testing.T) {
 					method:  http.MethodGet,
 					path:    "/ping",
 					reqPath: "/ping",
+					handler: func(ctx *gin.Context) {
+						ctx.String(http.StatusOK, "ping")
+					},
+					body: nil,
+				},
+				want: want{
+					code: http.StatusBadRequest,
+				},
+			},
+			{
+				name: "sentinel fallback",
+				args: args{
+					opts: []Option{
+						WithResourceExtractor(func(ctx *gin.Context) string {
+							return ctx.FullPath()
+						}),
+						WithSentinelFallback(),
+					},
+					method:  http.MethodPost,
+					path:    "/api/users/:id",
+					reqPath: "/api/users/123",
 					handler: func(ctx *gin.Context) {
 						ctx.String(http.StatusOK, "ping")
 					},

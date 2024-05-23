@@ -12,7 +12,7 @@ type FunctionType int64
 const (
 	FlowType    FunctionType = 1
 	Isolation   FunctionType = 6
-	HotspotWeb  FunctionType = 4
+	HotspotRpc  FunctionType = 4
 	HotspotHttp FunctionType = 11
 )
 
@@ -23,10 +23,10 @@ type Rule struct {
 }
 
 type WebBlockFallbackBehavior struct {
-	WebFallbackMode    int64  `json:"webFallbackMode"`
+	WebFallbackMode    int64  `json:"webFallbackMode"` // 0: return, 1: redirect
 	WebRespStatusCode  int64  `json:"webRespStatusCode"`
 	WebRespMessage     string `json:"webRespMessage"`
-	WebRespContentType int64  `json:"webRespContentType"`
+	WebRespContentType int64  `json:"webRespContentType"` // 0: test, 1: json
 	WebRedirectUrl     string `json:"webRedirectUrl"`
 }
 
