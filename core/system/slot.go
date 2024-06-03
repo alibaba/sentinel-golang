@@ -42,6 +42,9 @@ func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	rules := getRules()
 	result := ctx.RuleCheckResult
 	for _, rule := range rules {
+		if rule.Action == Mock { //TODO: return mock info for event
+			continue
+		}
 		passed, msg, snapshotValue := s.doCheckRule(rule)
 		if passed {
 			continue
