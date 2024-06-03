@@ -3,6 +3,7 @@ package nacos_v2
 import (
 	"encoding/json"
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	"github.com/alibaba/sentinel-golang/core/fallback"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/isolation"
@@ -16,6 +17,7 @@ const (
 	RuleTypeSystem         = "SystemRule"
 	RuleTypeCircuitBreaker = "CircuitBreakerRule"
 	RuleTypeHotsPot        = "HotsPotRule"
+	RuleTypeFallback       = "FallbackRule"
 )
 
 type RuleData struct {
@@ -24,12 +26,12 @@ type RuleData struct {
 }
 
 func defaultOnRuleChangeHandler(namespace, group, dataId, data string) {
-	logging.Info("data received for flow rules", "data", data)
+	logging.Info("data received for sentinel rules", "data", data, "dataId", dataId)
 
 	rules := make([]*RuleData, 0)
 	err := json.Unmarshal([]byte(data), &rules)
 	if err != nil {
-		logging.Error(err, "Failed to parse flow rules")
+		logging.Error(err, "Failed to parse sentinel rules")
 		return
 	}
 
@@ -38,6 +40,7 @@ func defaultOnRuleChangeHandler(namespace, group, dataId, data string) {
 	systemRules := make([]*system.Rule, 0)
 	circuitBreakerRules := make([]*circuitbreaker.Rule, 0)
 	paramFlowRules := make([]*hotspot.Rule, 0)
+	fallbackRules := make([]*fallback.Rule, 0)
 	for _, rule := range rules {
 		switch rule.Type {
 		case RuleTypeFlow:
@@ -80,10 +83,17 @@ func defaultOnRuleChangeHandler(namespace, group, dataId, data string) {
 				continue
 			}
 			paramFlowRules = append(paramFlowRules, paramFlowRule)
+		case RuleTypeFallback:
+			var fallbackRule *fallback.Rule
+			err = json.Unmarshal([]byte(rule.Content), &fallbackRule)
+			if err != nil {
+				logging.Error(err, "Failed to parse fallback rule")
+				continue
+			}
+			fallbackRules = append(fallbackRules, fallbackRule)
 		default:
 			continue
 		}
-
 	}
 
 	if len(flowRules) > 0 {
@@ -114,6 +124,12 @@ func defaultOnRuleChangeHandler(namespace, group, dataId, data string) {
 		_, err = hotspot.LoadRules(paramFlowRules)
 		if err != nil {
 			logging.Error(err, "Failed to load param flow rules")
+		}
+	}
+	if len(fallbackRules) > 0 {
+		_, err = fallback.LoadRules(fallbackRules)
+		if err != nil {
+			logging.Error(err, "Failed to load fallback rules")
 		}
 	}
 }

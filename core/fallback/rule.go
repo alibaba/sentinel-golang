@@ -3,8 +3,8 @@ package fallback
 type TargetResourceType int64
 
 const (
-	RpcResourceType TargetResourceType = 1
-	WebResourceType TargetResourceType = 2
+	WebResourceType TargetResourceType = 1
+	RpcResourceType TargetResourceType = 2
 )
 
 type FunctionType int64
@@ -19,7 +19,7 @@ const (
 type Rule struct {
 	TargetResourceType TargetResourceType        `json:"targetResourceType"`
 	TargetMap          map[string][]FunctionType `json:"targetMap"`
-	FallbackBehavior   []byte                    `json:"fallbackBehavior"`
+	FallbackBehavior   interface{}               `json:"fallbackBehavior"`
 }
 
 type WebBlockFallbackBehavior struct {

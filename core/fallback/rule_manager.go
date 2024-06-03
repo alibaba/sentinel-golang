@@ -45,10 +45,15 @@ func LoadRules(rules []*Rule) (bool, error) {
 	resWebRuleMap := make(map[string]map[FunctionType]*WebBlockFallbackBehavior)
 	resRpcRuleMap := make(map[string]map[FunctionType]*RpcBlockFallbackBehavior)
 	for _, rule := range rules {
+		b, err := json.Marshal(rule.FallbackBehavior)
+		if err != nil {
+			logging.Warn("[Fallback] marshal web fall back behavior failed", "reason", err.Error())
+			continue
+		}
 		switch rule.TargetResourceType {
 		case WebResourceType:
 			var webBehavior *WebBlockFallbackBehavior
-			err := json.Unmarshal(rule.FallbackBehavior, &webBehavior)
+			err := json.Unmarshal(b, &webBehavior)
 			if err != nil {
 				logging.Warn("[Fallback] unmarshal web fall back behavior failed", "reason", err.Error())
 				continue
@@ -75,12 +80,12 @@ func LoadRules(rules []*Rule) (bool, error) {
 			}
 		case RpcResourceType:
 			var rpcBehavior *RpcBlockFallbackBehavior
-			err := json.Unmarshal(rule.FallbackBehavior, &rpcBehavior)
+			err := json.Unmarshal(b, &rpcBehavior)
 			if err != nil {
 				logging.Warn("[Fallback] unmarshal rpc fall back behavior failed", "reason", err.Error())
 				continue
 			}
-			if isValidRpcFallbackBehavior(rpcBehavior) {
+			if !isValidRpcFallbackBehavior(rpcBehavior) {
 				logging.Warn("[Fallback] invalid rpc fall back behavior", "behavior", rpcBehavior)
 				continue
 			}
