@@ -3,11 +3,11 @@ package xds
 import (
 	"errors"
 	"fmt"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/protocol"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
-	"github.com/dubbogo/gost/log/logger"
 	v3configcore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"os"
 	"strings"
@@ -100,7 +100,7 @@ func (a *Agent) waitInitDone(startTime time.Time) error {
 		case <-a.initChan:
 			initDoneCount++
 			if initDoneCount == 2 {
-				fmt.Printf("[Agent.waitInitDone] xds data init done, cost: %v\n", time.Since(startTime).String())
+				logging.Info("[Agent.waitInitDone] xds data init done", "cost", time.Since(startTime).String())
 				return nil
 			}
 		case <-timer.C:
@@ -132,8 +132,6 @@ func (a *Agent) startUpdateEventLoop() {
 				continue
 			}
 
-			fmt.Printf("[Agent.startUpdateEventLoop] event type: %v, object: %v\n", event.Type, event.Object)
-
 			switch event.Type {
 			case resources.XdsEventUpdateLDS:
 				//TODO:解析lds filters
@@ -143,21 +141,17 @@ func (a *Agent) startUpdateEventLoop() {
 
 			case resources.XdsEventUpdateEDS:
 				if xdsClusterEndpoints, ok := event.Object.([]resources.XdsClusterEndpoint); ok {
-					fmt.Printf("[Agent.startUpdateEventLoop] eds cluster endpoint info: %v\n", event)
 					for _, xdsClusterEndpoint := range xdsClusterEndpoints {
 						a.envoyClusterEndpointMap.Store(xdsClusterEndpoint.Name, xdsClusterEndpoint)
 					}
 				}
 
-				fmt.Printf("[Agent.startUpdateEventLoop] eds init done value: %v\n", a.edsInitDone.Load())
 				if a.edsInitDone.CompareAndSwap(false, true) {
-					fmt.Printf("[Agent.startUpdateEventLoop] eds init done value after update: %v\n", a.edsInitDone.Load())
 					a.initChan <- struct{}{}
 				}
 
 			case resources.XdsEventUpdateRDS:
 				if xdsRouteConfigurations, ok := event.Object.([]resources.XdsRouteConfig); ok {
-					logger.Debugf("[Pilot Agent] rds event update with rds = %s", utils.ConvertJsonString(xdsRouteConfigurations))
 					for _, xdsRouteConfiguration := range xdsRouteConfigurations {
 						for _, xdsVirtualHost := range xdsRouteConfiguration.VirtualHosts {
 							a.envoyVirtualHostMap.Store(xdsVirtualHost.Name, xdsVirtualHost)
@@ -165,9 +159,7 @@ func (a *Agent) startUpdateEventLoop() {
 					}
 				}
 
-				fmt.Printf("[Agent.startUpdateEventLoop] rds init done value: %v\n", a.rdsInitDone.Load())
 				if a.rdsInitDone.CompareAndSwap(false, true) {
-					fmt.Printf("[Agent.startUpdateEventLoop] rds init done value after update: %v\n", a.edsInitDone.Load())
 					a.initChan <- struct{}{}
 				}
 			}
@@ -179,7 +171,6 @@ func (a *Agent) Stop() {
 	if runningStatus := a.runningStatus.Load(); runningStatus {
 		// make sure stop once
 		a.runningStatus.Store(false)
-		logger.Infof("[Pilot Agent] Stop now...")
 		close(a.stopChan)
 		close(a.updateChan)
 		a.xdsClient.Stop()

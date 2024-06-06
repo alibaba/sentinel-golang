@@ -1,7 +1,6 @@
 package route
 
 import (
-	"fmt"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"math/rand"
@@ -56,7 +55,6 @@ func selectOneEndpoint(clusterEndpoint *resources.XdsClusterEndpoint) (string, s
 }
 
 func getClusterEndpoints(host, port, version string) (*resources.XdsClusterEndpoint, error) {
-	fmt.Printf("[getClusterEndpoints] host: %v, port: %v, version: %v\n", host, port, version)
 	clusterEndPoint, exist, err := xds.XdsAgent.GetEndpointList(host, port, version)
 	if err != nil {
 		return nil, err

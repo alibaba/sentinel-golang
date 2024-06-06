@@ -3,7 +3,6 @@ package route
 import (
 	"context"
 	"errors"
-	"fmt"
 )
 
 var defaultPortMap = map[string]string{
@@ -57,7 +56,7 @@ func (t *TrafficContext) Route() (routeDestination *RouteDestination, err error)
 		if err == nil && routeDestination != nil && routeDestination.TagUpdated {
 			newCtx, err := SetTrafficTag(t.Ctx, t.TrafficTag)
 			if err != nil {
-				fmt.Printf("[TrafficContext.Route] set traffic tag err: %v, tag: %s\n", err, t.TrafficTag)
+				//fmt.Printf("[TrafficContext.Route] set traffic tag err: %v, tag: %s\n", err, t.TrafficTag)
 				return
 			}
 			t.Ctx = newCtx
@@ -77,7 +76,7 @@ func (t *TrafficContext) Route() (routeDestination *RouteDestination, err error)
 	// rds匹配
 	rdsRouteResult, err := t.routeByRDS()
 	if err != nil {
-		fmt.Printf("[TrafficContext.Route] route by rds err: %v, traffic context: %+v\n", err, *t)
+		//fmt.Printf("[TrafficContext.Route] route by rds err: %v, traffic context: %+v\n", err, *t)
 	}
 	if err == nil && rdsRouteResult != nil && rdsRouteResult.HostUpdated {
 		routeDestination.HostName = rdsRouteResult.HostName
@@ -93,7 +92,7 @@ func (t *TrafficContext) Route() (routeDestination *RouteDestination, err error)
 	// cds匹配
 	cdsRouteResult, err := t.routeByCDS()
 	if err != nil {
-		fmt.Printf("[TrafficContext.Route] route by cds err: %v, traffic context: %+v\n", err, *t)
+		//fmt.Printf("[TrafficContext.Route] route by cds err: %v, traffic context: %+v\n", err, *t)
 	}
 	if err == nil && cdsRouteResult != nil && cdsRouteResult.HostUpdated {
 		routeDestination.HostName = cdsRouteResult.HostName
@@ -137,11 +136,11 @@ func (t *TrafficContext) routeByRDS() (*RDSRouteResult, error) {
 
 	newHost, newPort, newTrafficTag, exist, err := getInstanceByRds(t.Method, t.HostName, port, t.Path, t.Header)
 	if err != nil {
-		fmt.Printf("[routeByRDS] get instance by rds err: %v, host: %v, port: %v\n", err, t.HostName, port)
+		//fmt.Printf("[routeByRDS] get instance by rds err: %v, host: %v, port: %v\n", err, t.HostName, port)
 		return nil, err
 	}
 	if !exist {
-		fmt.Printf("[routeByRDS] instance not exist, host: %v, port: %v\n", t.HostName, port)
+		//fmt.Printf("[routeByRDS] instance not exist, host: %v, port: %v\n", t.HostName, port)
 		return &RDSRouteResult{}, nil
 	}
 
