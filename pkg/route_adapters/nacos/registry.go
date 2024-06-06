@@ -2,7 +2,7 @@ package nacos
 
 import (
 	"context"
-	sentinelroute "github.com/alibaba/sentinel-golang/core/route"
+	sentinelroute "github.com/alibaba/sentinel-golang/core/route/nacos"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 

@@ -1,14 +1,14 @@
 package route
 
-const defaultPort = "80"
+const DefaultPort = "80"
 
 const TrafficTagHeader = "x-mse-tag"
 
-const defaultTag = "base"
+const DefaultTag = "base"
 
 const (
-	metadataBaseKey    = "opensergo.io/canary"
-	metadataGrayKey    = "opensergo.io/canary-%s"
-	metadataGrayPrefix = "opensergo.io/canary-"
-	metadataGrayKeyOld = "__micro.service.env__"
+	MetadataBaseKey    = "opensergo.io/canary"
+	MetadataGrayKey    = "opensergo.io/canary-%s"
+	MetadataGrayPrefix = "opensergo.io/canary-"
+	MetadataGrayKeyOld = "__micro.service.env__"
 )

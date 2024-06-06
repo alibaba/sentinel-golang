@@ -55,7 +55,7 @@ func (t *TrafficContext) Route() (routeDestination *RouteDestination, err error)
 
 	defer func() {
 		if err == nil && routeDestination != nil && routeDestination.TagUpdated {
-			newCtx, err := setTrafficTag(t.Ctx, t.TrafficTag)
+			newCtx, err := SetTrafficTag(t.Ctx, t.TrafficTag)
 			if err != nil {
 				fmt.Printf("[TrafficContext.Route] set traffic tag err: %v, tag: %s\n", err, t.TrafficTag)
 				return
@@ -112,7 +112,7 @@ func (t *TrafficContext) routeByCDS() (*CDSRouteResult, error) {
 	}
 	trafficTag := t.TrafficTag
 	if trafficTag == "" {
-		trafficTag = defaultTag
+		trafficTag = DefaultTag
 	}
 	newHost, newPort, exist, err := getInstanceByCds(t.HostName, port, trafficTag)
 	if err != nil {
@@ -160,14 +160,14 @@ func (t *TrafficContext) routeByRDS() (*RDSRouteResult, error) {
 
 func (t *TrafficContext) getNewestTrafficTag() (string, bool) {
 	// 优先判断是否存在流量标签,如果存在直接返回
-	trafficTag := getTrafficTag(t.Ctx)
+	trafficTag := GetTrafficTag(t.Ctx)
 	if trafficTag != "" {
 		return trafficTag, false
 	}
 
 	// 如果不存在流量标签,使用节点标签对流量进行打标
-	podTag := getPodTag(t.Ctx)
-	if podTag == "" || podTag == defaultTag {
+	podTag := GetPodTag(t.Ctx)
+	if podTag == "" || podTag == DefaultTag {
 		return "", false
 	}
 
@@ -178,5 +178,5 @@ func getDefaultPort(scheme string) string {
 	if port, ok := defaultPortMap[scheme]; ok {
 		return port
 	}
-	return defaultPort
+	return DefaultPort
 }

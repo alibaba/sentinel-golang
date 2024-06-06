@@ -40,21 +40,21 @@ func NewCallbackFunc(initFunc InitFunc, getTrafficTag GetTrafficTagFunc, getPodT
 	return nil
 }
 
-func getTrafficTag(ctx context.Context) string {
+func GetTrafficTag(ctx context.Context) string {
 	if callBack == nil || callBack.GetTrafficTag == nil {
 		return ""
 	}
 	return callBack.GetTrafficTag(ctx)
 }
 
-func getPodTag(ctx context.Context) string {
+func GetPodTag(ctx context.Context) string {
 	if callBack == nil || callBack.GetTrafficTag == nil {
 		return ""
 	}
 	return callBack.GetPodTag(ctx)
 }
 
-func setTrafficTag(ctx context.Context, trafficTag string) (context.Context, error) {
+func SetTrafficTag(ctx context.Context, trafficTag string) (context.Context, error) {
 	if callBack == nil || callBack.SetTrafficTag == nil {
 		return ctx, errors.New("set traffic tag callback func is nil")
 	}

@@ -1,9 +1,10 @@
-package route
+package nacos
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/alibaba/sentinel-golang/core/route"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"strings"
 )
@@ -20,12 +21,12 @@ func FilterServiceInstancesWithTag(ctx context.Context, service *model.Service) 
 	}
 
 	// 按流量标签过滤
-	trafficTag := getTrafficTag(ctx)
+	trafficTag := route.GetTrafficTag(ctx)
 	fmt.Printf("[GetServiceInfoAfter] trafficTag: %s\n", trafficTag)
 	if trafficTag != "" {
 		tagInstances, baseInstances := instanceFilter(service.Hosts, trafficTag)
 		fmt.Printf("[GetServiceInfoAfter] filter by traffic tag, tag instance: %v, base instance: %v\n", tagInstances, baseInstances)
-		if trafficTag != defaultTag && len(tagInstances) != 0 {
+		if trafficTag != route.DefaultTag && len(tagInstances) != 0 {
 			service.Hosts = tagInstances
 			return
 		}
@@ -36,14 +37,14 @@ func FilterServiceInstancesWithTag(ctx context.Context, service *model.Service) 
 	}
 
 	// 无流量标签, 按灰度标签过滤
-	podTag := getPodTag(ctx)
+	podTag := route.GetPodTag(ctx)
 	fmt.Printf("[GetServiceInfoAfter] podTag: %s\n", podTag)
 	tagInstances, baseInstances := instanceFilter(service.Hosts, podTag)
 	fmt.Printf("[GetServiceInfoAfter] filter by pod tag, tag instance: %v, base instance: %v\n", tagInstances, baseInstances)
-	if podTag != "" && podTag != defaultTag { // 灰度节点
+	if podTag != "" && podTag != route.DefaultTag { // 灰度节点
 		if len(tagInstances) != 0 {
 			service.Hosts = tagInstances
-			setTrafficTag(ctx, podTag) // 流量标签在baggage中更新为灰度节点标签
+			route.SetTrafficTag(ctx, podTag) // 流量标签在baggage中更新为灰度节点标签
 			return
 		}
 	}
@@ -60,13 +61,13 @@ func instanceFilter(instances []model.Instance, tag string) ([]model.Instance, [
 			continue
 		}
 
-		if v, ok := instance.Metadata[fmt.Sprintf(metadataGrayKey, tag)]; ok && v == tag { //新灰度标签
+		if v, ok := instance.Metadata[fmt.Sprintf(route.MetadataGrayKey, tag)]; ok && v == tag { //新灰度标签
 			tagInstances = append(tagInstances, instance)
 			continue
 		}
 
 		var hasOldGrayKey bool
-		if v, ok := instance.Metadata[metadataGrayKeyOld]; ok { //老灰度标签
+		if v, ok := instance.Metadata[route.MetadataGrayKeyOld]; ok { //老灰度标签
 			hasOldGrayKey = true
 			var values []map[string]interface{}
 			err := json.Unmarshal([]byte(v), &values)
@@ -80,7 +81,7 @@ func instanceFilter(instances []model.Instance, tag string) ([]model.Instance, [
 			}
 		}
 
-		if _, ok := instance.Metadata[metadataBaseKey]; ok {
+		if _, ok := instance.Metadata[route.MetadataBaseKey]; ok {
 			baseInstances = append(baseInstances, instance)
 			continue
 		}
@@ -88,7 +89,7 @@ func instanceFilter(instances []model.Instance, tag string) ([]model.Instance, [
 		if !hasOldGrayKey { //但是他有新灰度标签,需要修复,是其他类型的灰度,没有匹配到当前灰度
 			var grayInstance bool
 			for k, _ := range instance.Metadata {
-				if strings.Contains(k, metadataGrayPrefix) {
+				if strings.Contains(k, route.MetadataGrayPrefix) {
 					grayInstance = true
 					break
 				}
@@ -101,7 +102,7 @@ func instanceFilter(instances []model.Instance, tag string) ([]model.Instance, [
 		}
 	}
 
-	if tag == "" || tag == defaultTag {
+	if tag == "" || tag == route.DefaultTag {
 		tagInstances = baseInstances
 	}
 	return tagInstances, baseInstances
@@ -114,11 +115,11 @@ func AddTagMetadata(ctx context.Context, instance *model.Instance) {
 
 	var metadataKey, metadataValue string
 
-	if podTag := getPodTag(ctx); podTag != "" && podTag != defaultTag {
-		metadataKey = fmt.Sprintf(metadataGrayKey, podTag)
+	if podTag := route.GetPodTag(ctx); podTag != "" && podTag != route.DefaultTag {
+		metadataKey = fmt.Sprintf(route.MetadataGrayKey, podTag)
 		metadataValue = podTag
 	} else {
-		metadataKey = metadataBaseKey
+		metadataKey = route.MetadataBaseKey
 		metadataValue = ""
 	}
 

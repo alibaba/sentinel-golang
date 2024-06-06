@@ -63,11 +63,11 @@ func getClusterEndpoints(host, port, version string) (*resources.XdsClusterEndpo
 	}
 
 	if !exist || clusterEndPoint.EndpointNum == 0 {
-		if version == "" || version == defaultTag {
+		if version == "" || version == DefaultTag {
 			return clusterEndPoint, nil
 		}
 
-		return getClusterEndpoints(host, port, defaultTag)
+		return getClusterEndpoints(host, port, DefaultTag)
 	}
 
 	return clusterEndPoint, nil
