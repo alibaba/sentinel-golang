@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoymatcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoyroutev3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/route/v3"
+	envoymatcherv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/type/matcher/v3"
 )
 
 type StringMatcher struct {

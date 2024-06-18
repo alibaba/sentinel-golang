@@ -1,7 +1,7 @@
 package rbac
 
 import (
-	envoyrbacconfigv3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
+	envoyrbacconfigv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/rbac/v3"
 )
 
 type Policy struct {

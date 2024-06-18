@@ -22,10 +22,10 @@ import (
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
 	"sync"
 
+	cluster "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/cluster/v3"
+	v3discovery "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/service/discovery/v3"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"github.com/dubbogo/gost/log/logger"
-	cluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	v3discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/golang/protobuf/ptypes"
 )
 

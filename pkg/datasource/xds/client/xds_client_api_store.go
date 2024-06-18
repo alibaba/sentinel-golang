@@ -20,7 +20,7 @@ package client
 import (
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/pkg/resource/v3"
 )
 
 type ResponseInfo struct {

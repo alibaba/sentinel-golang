@@ -23,15 +23,15 @@ import (
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources/rbac"
 	"sync"
 
+	listenerv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/listener/v3"
+	jwtauthnv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
+	envoyrbacv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/extensions/filters/http/rbac/v3"
+	hcmv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	sockets_tls_v3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	discoveryv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/service/discovery/v3"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	"github.com/dubbogo/gost/log/logger"
-	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	jwtauthnv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
-	envoyrbacv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
-	hcmv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	sockets_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	discoveryv3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/golang/protobuf/ptypes"
 )
 

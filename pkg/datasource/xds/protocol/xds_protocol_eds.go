@@ -23,11 +23,11 @@ import (
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/client"
+	v3core "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/core/v3"
+	envoyendpoint "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/endpoint/v3"
+	v3discovery "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/service/discovery/v3"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/resources"
 	"github.com/dubbogo/gost/log/logger"
-	v3core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoyendpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	v3discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/golang/protobuf/ptypes"
 )
 

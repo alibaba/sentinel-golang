@@ -1,6 +1,6 @@
 package rbac
 
-import envoyrbacv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
+import envoyrbacv3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 
 type RBAC struct {
 	Rules       *Rules

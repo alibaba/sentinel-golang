@@ -24,14 +24,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	v3configcore "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/core/v3"
+	v3discovery "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/service/discovery/v3"
+	v3resource "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/pkg/resource/v3"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/grpc"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/grpc/codes"
+	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/grpc/status"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/xds/utils"
 	"github.com/dubbogo/gost/log/logger"
-	v3configcore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	v3discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	v3resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type XdsUpdateListener func(*v3discovery.DiscoveryResponse, *XdsClient) error

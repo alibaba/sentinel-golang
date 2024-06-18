@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	v3matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	v3 "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/config/route/v3"
+	v3matcher "github.com/alibaba/sentinel-golang/pkg/datasource/xds/go-control-plane/envoy/type/matcher/v3"
 )
 
 type PrefixMatcher string
