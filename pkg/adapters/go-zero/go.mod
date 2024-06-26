@@ -3,7 +3,7 @@ module github.com/alibaba/sentinel-golang/pkg/adapters/go-zero
 go 1.17
 
 require (
-	github.com/alibaba/sentinel-golang v1.0.2
+	github.com/alibaba/sentinel-golang v1.0.4
 	github.com/stretchr/testify v1.9.0
 	github.com/zeromicro/go-zero v1.3.0
 )
@@ -19,7 +19,7 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/justinas/alice v1.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
