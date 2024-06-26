@@ -42,6 +42,9 @@ func (s *AdaptiveSlot) Check(ctx *base.EntryContext) *base.TokenResult {
 	rules := getRules()
 	result := ctx.RuleCheckResult
 	for _, rule := range rules {
+		if rule.Action == Mock { //TODO: return mock info for event
+			continue
+		}
 		passed, msg, snapshotValue := s.doCheckRule(rule)
 		if passed {
 			continue
@@ -93,7 +96,7 @@ func (s *AdaptiveSlot) doCheckRule(rule *Rule) (bool, string, float64) {
 		return true, "", l
 	case CpuUsage:
 		c := system_metric.CurrentCpuUsage()
-		if c > threshold {
+		if c > threshold*100 {
 			if rule.Strategy != BBR || !checkBbrSimple() {
 				msg = "system cpu usage check blocked"
 				return false, msg, c

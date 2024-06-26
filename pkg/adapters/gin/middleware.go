@@ -30,6 +30,8 @@ func SentinelMiddleware(opts ...Option) gin.HandlerFunc {
 		if err != nil {
 			if options.blockFallback != nil {
 				options.blockFallback(c)
+			} else if options.sentinelFallback != nil && !options.sentinelFallback(c, resourceName, err.BlockType()) {
+				c.AbortWithStatus(http.StatusTooManyRequests)
 			} else {
 				c.AbortWithStatus(http.StatusTooManyRequests)
 			}
