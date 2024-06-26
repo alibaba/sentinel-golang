@@ -29,7 +29,12 @@ func TestLoadRule(t *testing.T) {
 					Isolation,
 				},
 			},
-			FallbackBehavior: []byte("{\"webFallbackMode\":0,\"webRespContentType\":1,\"webRespMessage\":\"{\\n  \\\"abc\\\": 123\\n}\",\"webRespStatusCode\":433}"),
+			FallbackBehavior: &WebBlockFallbackBehavior{
+				WebFallbackMode:    0,
+				WebRespContentType: 0,
+				WebRespStatusCode:  433,
+				WebRespMessage:     "1234599",
+			},
 		},
 		{
 			TargetResourceType: WebResourceType,
@@ -38,7 +43,12 @@ func TestLoadRule(t *testing.T) {
 					HotspotHttp,
 				},
 			},
-			FallbackBehavior: []byte("{\"webFallbackMode\":0,\"webRespContentType\":1,\"webRespMessage\":\"{\\n  \\\"abc\\\": 123\\n}\",\"webRespStatusCode\":434}"),
+			FallbackBehavior: &WebBlockFallbackBehavior{
+				WebFallbackMode:    0,
+				WebRespContentType: 1,
+				WebRespStatusCode:  434,
+				WebRespMessage:     "{\n  \"abc\": 123\n}",
+			},
 		},
 		{
 			TargetResourceType: WebResourceType,
@@ -47,7 +57,12 @@ func TestLoadRule(t *testing.T) {
 					FlowType,
 				},
 			},
-			FallbackBehavior: []byte("{\"webFallbackMode\":0,\"webRespContentType\":1,\"webRespMessage\":\"{\\n  \\\"abc\\\": 123\\n}\",\"webRespStatusCode\":400}"),
+			FallbackBehavior: &WebBlockFallbackBehavior{
+				WebFallbackMode:    0,
+				WebRespContentType: 1,
+				WebRespStatusCode:  434,
+				WebRespMessage:     "{\n  \"abc\": 123\n}",
+			},
 		},
 	})
 	assert.NoError(t, err)
