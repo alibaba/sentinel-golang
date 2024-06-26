@@ -6,7 +6,7 @@ A sample of server side:
 
 	import (
 		sentinelPlugin "github.com/sentinel-group/sentinel-go-adapters/grpc"
-		"github.com/alibaba/sentinel-golang/pkg/datasource/xds/grpc"
+		"google.golang.org/grpc"
 	)
 
 	// Create with Sentinel interceptor
