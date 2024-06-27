@@ -27,7 +27,12 @@ func initSentinel(t *testing.T) {
 					fallback.FlowType,
 				},
 			},
-			FallbackBehavior: []byte("{\"webFallbackMode\":0,\"webRespContentType\":1,\"webRespMessage\":\"{\\n  \\\"abc\\\": 123\\n}\",\"webRespStatusCode\":400}"),
+			FallbackBehavior: &fallback.WebBlockFallbackBehavior{
+				WebFallbackMode:    0,
+				WebRespContentType: 1,
+				WebRespStatusCode:  429,
+				WebRespMessage:     "{\n  \"abc\": 123\n}",
+			},
 		},
 	})
 	if err != nil {
@@ -149,7 +154,7 @@ func TestSentinelMiddleware(t *testing.T) {
 					body: nil,
 				},
 				want: want{
-					code: http.StatusBadRequest,
+					code: http.StatusTooManyRequests,
 				},
 			},
 		}

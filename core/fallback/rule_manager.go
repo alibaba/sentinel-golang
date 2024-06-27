@@ -16,10 +16,11 @@ package fallback
 
 import (
 	"encoding/json"
-	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/alibaba/sentinel-golang/util"
 	"reflect"
 	"sync"
+
+	"github.com/alibaba/sentinel-golang/logging"
+	"github.com/alibaba/sentinel-golang/util"
 )
 
 var (
