@@ -1,14 +1,16 @@
 package gin
 
 import (
+	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/gin-gonic/gin"
 )
 
 type (
 	Option  func(*options)
 	options struct {
-		resourceExtract func(*gin.Context) string
-		blockFallback   func(*gin.Context)
+		resourceExtract  func(*gin.Context) string
+		blockFallback    func(*gin.Context)
+		sentinelFallback func(*gin.Context, string, base.BlockType) bool
 	}
 )
 
@@ -32,5 +34,12 @@ func WithResourceExtractor(fn func(*gin.Context) string) Option {
 func WithBlockFallback(fn func(ctx *gin.Context)) Option {
 	return func(opts *options) {
 		opts.blockFallback = fn
+	}
+}
+
+// WithSentinelFallback use sentinel fallback handler when requests are blocked
+func WithSentinelFallback() Option {
+	return func(opts *options) {
+		opts.sentinelFallback = sentinelFallback
 	}
 }

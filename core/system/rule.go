@@ -73,6 +73,24 @@ func (t AdaptiveStrategy) String() string {
 	}
 }
 
+type Action int32
+
+const (
+	Block Action = iota
+	Mock
+)
+
+func (a Action) String() string {
+	switch a {
+	case Block:
+		return "block"
+	case Mock:
+		return "mock"
+	default:
+		return fmt.Sprintf("unknown(%d)", a)
+	}
+}
+
 // Rule describes the policy for system resiliency.
 type Rule struct {
 	// ID represents the unique ID of the rule (optional).
@@ -84,6 +102,8 @@ type Rule struct {
 	TriggerCount float64 `json:"triggerCount"`
 	// Strategy represents the adaptive strategy.
 	Strategy AdaptiveStrategy `json:"strategy"`
+	// Action represents the action to take when the adaptive strategy is triggered.
+	Action Action `json:"action"`
 }
 
 func (r *Rule) String() string {
