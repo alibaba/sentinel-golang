@@ -3,7 +3,7 @@ module github.com/alibaba/sentinel-golang/pkg/adapters/iris/v12
 go 1.20
 
 require (
-	github.com/alibaba/sentinel-golang v1.0.4
+	github.com/alibaba/sentinel-golang v1.0.5-aliyun-alpha
 	github.com/kataras/iris/v12 v12.2.0
 )
 

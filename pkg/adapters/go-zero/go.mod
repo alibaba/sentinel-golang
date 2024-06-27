@@ -3,7 +3,7 @@ module github.com/alibaba/sentinel-golang/pkg/adapters/go-zero
 go 1.17
 
 require (
-	github.com/alibaba/sentinel-golang v1.0.2
+	github.com/alibaba/sentinel-golang v1.0.5-aliyun-alpha
 	github.com/stretchr/testify v1.7.0
 	github.com/zeromicro/go-zero v1.3.0
 )
