@@ -54,6 +54,17 @@ func GetResourceNode(resource string) *ResourceNode {
 	return resNodeMap[resource]
 }
 
+func RemoveResourceNodes(resources []string) {
+	if len(resources) == 0 {
+		return
+	}
+	rnsMux.Lock()
+	defer rnsMux.Unlock()
+	for _, resource := range resources {
+		delete(resNodeMap, resource)
+	}
+}
+
 func GetOrCreateResourceNode(resource string, resourceType base.ResourceType) *ResourceNode {
 	node := GetResourceNode(resource)
 	if node != nil {
