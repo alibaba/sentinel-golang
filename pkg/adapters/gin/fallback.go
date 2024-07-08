@@ -1,8 +1,10 @@
 package gin
 
 import (
+	"encoding/json"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/fallback"
+	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -26,7 +28,13 @@ func sentinelFallback(ctx *gin.Context, resource string, blockType base.BlockTyp
 			return true
 		}
 		if behavior.WebRespContentType == 1 { // json
-			ctx.AbortWithStatusJSON(int(behavior.WebRespStatusCode), behavior.WebRespMessage)
+			var message interface{}
+			err := json.Unmarshal([]byte(behavior.WebRespMessage), &message)
+			if err != nil {
+				logging.Error(err, "[sentinelFallback] unmarshal web fall back behavior failed")
+				return false
+			}
+			ctx.AbortWithStatusJSON(int(behavior.WebRespStatusCode), message)
 			return true
 		}
 	case 1: // redirect
