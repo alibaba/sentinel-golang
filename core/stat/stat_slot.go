@@ -16,7 +16,7 @@ package stat
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
-	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
+	//metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/util"
 )
 
@@ -29,14 +29,14 @@ const (
 var (
 	DefaultSlot = &Slot{}
 
-	handledCounter = metric_exporter.NewCounter(
-		"handled_total",
-		"Total handled count",
-		[]string{"resource", "result", "block_type"})
+	//handledCounter = metric_exporter.NewCounter(
+	//	"handled_total",
+	//	"Total handled count",
+	//	[]string{"resource", "result", "block_type"})
 )
 
 func init() {
-	metric_exporter.Register(handledCounter)
+	//metric_exporter.Register(handledCounter)
 }
 
 type Slot struct {
@@ -52,7 +52,7 @@ func (s *Slot) OnEntryPassed(ctx *base.EntryContext) {
 		s.recordPassFor(InboundNode(), ctx.Input.BatchCount)
 	}
 
-	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultPass, "")
+	//handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultPass, "")
 }
 
 func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
@@ -61,7 +61,7 @@ func (s *Slot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockErro
 		s.recordBlockFor(InboundNode(), ctx.Input.BatchCount)
 	}
 
-	handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultBlock, blockError.BlockType().String())
+	//handledCounter.Add(float64(ctx.Input.BatchCount), ctx.Resource.Name(), ResultBlock, blockError.BlockType().String())
 }
 
 func (s *Slot) OnCompleted(ctx *base.EntryContext) {
