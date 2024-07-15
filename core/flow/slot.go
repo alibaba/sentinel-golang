@@ -27,13 +27,13 @@ const (
 	RuleCheckSlotOrder = 2000
 )
 
-//var (
-//	DefaultSlot   = &Slot{}
-//	flowWaitCount = metric_exporter.NewCounter(
-//		"flow_wait_total",
-//		"Flow wait count",
-//		[]string{"resource"})
-//)
+var (
+	DefaultSlot = &Slot{}
+	//flowWaitCount = metric_exporter.NewCounter(
+	//	"flow_wait_total",
+	//	"Flow wait count",
+	//	[]string{"resource"})
+)
 
 func init() {
 	//metric_exporter.Register(flowWaitCount)
