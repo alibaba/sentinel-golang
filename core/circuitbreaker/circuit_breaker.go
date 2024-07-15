@@ -20,7 +20,7 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/base"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
+	//metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -47,15 +47,15 @@ const (
 	Open
 )
 
-var (
-	stateChangedCounter = metric_exporter.NewCounter(
-		"circuit_breaker_state_changed_total",
-		"Circuit breaker total state change count",
-		[]string{"resource", "from_state", "to_state"})
-)
+//var (
+//	stateChangedCounter = metric_exporter.NewCounter(
+//		"circuit_breaker_state_changed_total",
+//		"Circuit breaker total state change count",
+//		[]string{"resource", "from_state", "to_state"})
+//)
 
 func init() {
-	metric_exporter.Register(stateChangedCounter)
+	//metric_exporter.Register(stateChangedCounter)
 }
 
 func newState() *State {
@@ -176,7 +176,7 @@ func (b *circuitBreakerBase) fromClosedToOpen(snapshot interface{}) bool {
 			listener.OnTransformToOpen(Closed, *b.rule, snapshot)
 		}
 
-		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "Closed", "Open")
+		//stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "Closed", "Open")
 		return true
 	}
 	return false
@@ -207,7 +207,7 @@ func (b *circuitBreakerBase) fromOpenToHalfOpen(ctx *base.EntryContext) bool {
 			})
 		}
 
-		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "Open", "HalfOpen")
+		//stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "Open", "HalfOpen")
 		return true
 	}
 	return false
@@ -223,7 +223,7 @@ func (b *circuitBreakerBase) fromHalfOpenToOpen(snapshot interface{}) bool {
 			listener.OnTransformToOpen(HalfOpen, *b.rule, snapshot)
 		}
 
-		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Open")
+		//stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Open")
 		return true
 	}
 	return false
@@ -238,7 +238,7 @@ func (b *circuitBreakerBase) fromHalfOpenToClosed() bool {
 			listener.OnTransformToClosed(HalfOpen, *b.rule)
 		}
 
-		stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Closed")
+		//stateChangedCounter.Add(float64(1), b.BoundRule().Resource, "HalfOpen", "Closed")
 		return true
 	}
 	return false

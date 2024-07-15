@@ -16,13 +16,10 @@ package api
 
 import (
 	"fmt"
-	"net"
-	"net/http"
 
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
 	"github.com/alibaba/sentinel-golang/core/system_metric"
-	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
@@ -117,22 +114,22 @@ func initCoreComponents() error {
 		util.StartTimeTicker()
 	}
 
-	if config.MetricExportHTTPAddr() != "" {
-		httpAddr := config.MetricExportHTTPAddr()
-		httpPath := config.MetricExportHTTPPath()
-
-		l, err := net.Listen("tcp", httpAddr)
-		if err != nil {
-			return fmt.Errorf("init metric exporter http server err: %s", err.Error())
-		}
-
-		http.Handle(httpPath, metric_exporter.HTTPHandler())
-		go func() {
-			_ = http.Serve(l, nil)
-		}()
-
-		return nil
-	}
+	//if config.MetricExportHTTPAddr() != "" {
+	//	httpAddr := config.MetricExportHTTPAddr()
+	//	httpPath := config.MetricExportHTTPPath()
+	//
+	//	l, err := net.Listen("tcp", httpAddr)
+	//	if err != nil {
+	//		return fmt.Errorf("init metric exporter http server err: %s", err.Error())
+	//	}
+	//
+	//	http.Handle(httpPath, metric_exporter.HTTPHandler())
+	//	go func() {
+	//		_ = http.Serve(l, nil)
+	//	}()
+	//
+	//	return nil
+	//}
 
 	return nil
 }
