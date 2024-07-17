@@ -23,7 +23,6 @@ import (
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	sbase "github.com/alibaba/sentinel-golang/core/stat/base"
-	"github.com/alibaba/sentinel-golang/core/system_metric"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -638,9 +637,9 @@ func IsValidRule(rule *Rule) error {
 		if rule.MemHighWaterMarkBytes <= 0 {
 			return errors.New("rule.MemHighWaterMarkBytes <= 0")
 		}
-		if rule.MemHighWaterMarkBytes > int64(system_metric.TotalMemorySize) {
-			return errors.New("rule.MemHighWaterMarkBytes should not be greater than current system's total memory size")
-		}
+		//if rule.MemHighWaterMarkBytes > int64(system_metric.TotalMemorySize) {
+		//	return errors.New("rule.MemHighWaterMarkBytes should not be greater than current system's total memory size")
+		//}
 		if rule.MemLowWaterMarkBytes >= rule.MemHighWaterMarkBytes {
 			// can not be equal to defeat from zero overflow
 			return errors.New("rule.MemLowWaterMarkBytes >= rule.MemHighWaterMarkBytes")
