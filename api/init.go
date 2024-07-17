@@ -19,7 +19,6 @@ import (
 
 	"github.com/alibaba/sentinel-golang/core/config"
 	"github.com/alibaba/sentinel-golang/core/log/metric"
-	"github.com/alibaba/sentinel-golang/core/system_metric"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
 )
@@ -85,30 +84,30 @@ func initCoreComponents() error {
 		}
 	}
 
-	systemStatInterval := config.SystemStatCollectIntervalMs()
-	loadStatInterval := systemStatInterval
-	cpuStatInterval := systemStatInterval
-	memStatInterval := systemStatInterval
+	//systemStatInterval := config.SystemStatCollectIntervalMs()
+	//loadStatInterval := systemStatInterval
+	//cpuStatInterval := systemStatInterval
+	//memStatInterval := systemStatInterval
 
-	if config.LoadStatCollectIntervalMs() > 0 {
-		loadStatInterval = config.LoadStatCollectIntervalMs()
-	}
-	if config.CpuStatCollectIntervalMs() > 0 {
-		cpuStatInterval = config.CpuStatCollectIntervalMs()
-	}
-	if config.MemoryStatCollectIntervalMs() > 0 {
-		memStatInterval = config.MemoryStatCollectIntervalMs()
-	}
+	//if config.LoadStatCollectIntervalMs() > 0 {
+	//	loadStatInterval = config.LoadStatCollectIntervalMs()
+	//}
+	//if config.CpuStatCollectIntervalMs() > 0 {
+	//	cpuStatInterval = config.CpuStatCollectIntervalMs()
+	//}
+	//if config.MemoryStatCollectIntervalMs() > 0 {
+	//	memStatInterval = config.MemoryStatCollectIntervalMs()
+	//}
 
-	if loadStatInterval > 0 {
-		system_metric.InitLoadCollector(loadStatInterval)
-	}
-	if cpuStatInterval > 0 {
-		system_metric.InitCpuCollector(cpuStatInterval)
-	}
-	if memStatInterval > 0 {
-		system_metric.InitMemoryCollector(memStatInterval)
-	}
+	//if loadStatInterval > 0 {
+	//	system_metric.InitLoadCollector(loadStatInterval)
+	//}
+	//if cpuStatInterval > 0 {
+	//	system_metric.InitCpuCollector(cpuStatInterval)
+	//}
+	//if memStatInterval > 0 {
+	//	system_metric.InitMemoryCollector(memStatInterval)
+	//}
 
 	if config.UseCacheTime() {
 		util.StartTimeTicker()
