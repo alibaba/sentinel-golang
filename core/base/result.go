@@ -86,6 +86,7 @@ type TokenResult struct {
 
 	blockErr    *BlockError
 	nanosToWait time.Duration
+	filterNodes []string
 }
 
 func (r *TokenResult) DeepCopyFrom(newResult *TokenResult) {
@@ -152,6 +153,14 @@ func (r *TokenResult) BlockError() *BlockError {
 
 func (r *TokenResult) NanosToWait() time.Duration {
 	return r.nanosToWait
+}
+
+func (r *TokenResult) FilterNodes() []string {
+	return r.filterNodes
+}
+
+func (r *TokenResult) SetFilterNodes(nodes []string) {
+	r.filterNodes = nodes
 }
 
 func (r *TokenResult) String() string {
