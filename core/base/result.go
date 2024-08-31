@@ -84,9 +84,10 @@ func (s TokenResultStatus) String() string {
 type TokenResult struct {
 	status TokenResultStatus
 
-	blockErr    *BlockError
-	nanosToWait time.Duration
-	filterNodes []string
+	blockErr      *BlockError
+	nanosToWait   time.Duration
+	filterNodes   []string
+	halfOpenNodes []string
 }
 
 func (r *TokenResult) DeepCopyFrom(newResult *TokenResult) {
@@ -158,9 +159,15 @@ func (r *TokenResult) NanosToWait() time.Duration {
 func (r *TokenResult) FilterNodes() []string {
 	return r.filterNodes
 }
+func (r *TokenResult) HalfOpenNodes() []string {
+	return r.halfOpenNodes
+}
 
 func (r *TokenResult) SetFilterNodes(nodes []string) {
 	r.filterNodes = nodes
+}
+func (r *TokenResult) SetHalfOpenNodes(nodes []string) {
+	r.halfOpenNodes = nodes
 }
 
 func (r *TokenResult) String() string {

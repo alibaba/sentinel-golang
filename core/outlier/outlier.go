@@ -40,11 +40,13 @@ func getRetryerOfResource(resource string) *Retryer {
 	updateMutex.Lock()
 	defer updateMutex.Unlock()
 	if _, ok := retryers[resource]; !ok {
-		retryer := &Retryer{}
+		retryer := &Retryer{resource: resource}
 		rules := getOutlierRulesOfResource(resource)
 		if len(rules) != 0 {
 			retryer.maxAttempts = rules[0].MaxRecoveryAttempts // TODO per resource only has one rule
 			retryer.interval = time.Duration(rules[0].RecoveryInterval * 1e6)
+			retryer.counts = make(map[string]uint32)
+			retryer.addresses = make(map[string]string)
 		}
 		retryers[resource] = retryer
 	}
@@ -68,9 +70,11 @@ func (r *Retryer) ConnectNode(nodeID string) {
 }
 
 func (r *Retryer) scheduleRetry(nodes []string) {
+	addresses := getNodeAddressesOfResource(r.resource)
 	for _, node := range nodes {
 		if _, ok := r.counts[node]; !ok {
 			logging.Debug("[Outlier Reconnect]", "nodeID", node)
+			r.addresses[node] = addresses[node]
 			r.ConnectNode(node)
 		}
 	}

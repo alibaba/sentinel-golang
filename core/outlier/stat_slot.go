@@ -51,9 +51,12 @@ func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
 	err := ctx.Err()
 	rt := ctx.Rt()
 	nodes := getNodeBreakersOfResource(res)
-	nodeID := ctx.GetPair("nodeID").(string)
+	nodeID, ok := ctx.GetPair("nodeID").(string)
+	if nodeID == "" || !ok {
+		return
+	}
 	address := ctx.GetPair("address").(string)
-	if nodeID == "" || address == "" {
+	if address == "" || !ok {
 		return
 	}
 	if _, ok := nodes[nodeID]; !ok {
@@ -73,9 +76,11 @@ func newOneBreakers(res string, nodeID, address string) {
 		if nodeBreakers[res] == nil {
 			nodeBreakers[res] = make(map[string][]circuitbreaker.CircuitBreaker)
 			nodeAddresses[res] = make(map[string]string)
+			nodeCount[res] = 0
 		}
 		nodeBreakers[res][nodeID] = newCbsOfRes
 		nodeAddresses[res][nodeID] = address
+		nodeCount[res]++
 	}
 	updateMux.Unlock()
 }

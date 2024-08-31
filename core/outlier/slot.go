@@ -16,6 +16,7 @@ package outlier
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 )
 
 const (
@@ -39,9 +40,12 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if len(resource) == 0 {
 		return result
 	}
-	filterNodes, outlierNodes := checkAllNodes(ctx)
+	filterNodes, outlierNodes, halfOpenNodes := checkAllNodes(ctx)
 	if len(filterNodes) != 0 {
 		result.SetFilterNodes(filterNodes)
+	}
+	if len(halfOpenNodes) != 0 {
+		result.SetHalfOpenNodes(halfOpenNodes)
 	}
 	if len(outlierNodes) != 0 {
 		retryer := getRetryerOfResource(resource)
@@ -50,7 +54,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	return result
 }
 
-func checkAllNodes(ctx *base.EntryContext) (filters []string, outliers []string) {
+func checkAllNodes(ctx *base.EntryContext) (filters []string, outliers []string, halfs []string) {
 	resource := ctx.Resource.Name()
 	nodeBreaks := getNodeBreakersOfResource(resource)
 	outlierRules := getOutlierRulesOfResource(resource)
@@ -58,16 +62,19 @@ func checkAllNodes(ctx *base.EntryContext) (filters []string, outliers []string)
 	for nodeID, breakers := range nodeBreaks {
 		for index, breaker := range breakers {
 			if breaker.TryPass(ctx) {
+				if breaker.CurrentState() == circuitbreaker.HalfOpen {
+					halfs = append(halfs, nodeID)
+				}
 				continue
 			}
 			rule := outlierRules[index]
 			if rule.EnableActiveRecovery {
 				outliers = append(outliers, nodeID)
 			}
-			if len(filters) < int(float64(nodeCount)*rule.MaxEjectionPercent) {
+			if len(filters) <= int(float64(nodeCount)*rule.MaxEjectionPercent) {
 				filters = append(filters, nodeID)
 			}
 		}
 	}
-	return filters, outliers
+	return filters, outliers, halfs
 }

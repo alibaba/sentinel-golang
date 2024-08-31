@@ -68,6 +68,13 @@ func getNodeCountOfResource(resource string) int {
 	return ret
 }
 
+func getNodeAddressesOfResource(resource string) map[string]string {
+	updateMux.RLock()
+	ret := nodeAddresses[resource]
+	updateMux.RUnlock()
+	return ret
+}
+
 // LoadRules replaces old rules with the given outlier ejection rules.
 //
 // return value:
@@ -130,7 +137,7 @@ func onRuleUpdate(rawResRulesMap map[string][]*circuitbreaker.Rule, rawResRulesM
 				continue
 			}
 			validResRules = append(validResRules, rule)
-			validResRules2 = append(validResRules2, validResRulesMap2[res][idx])
+			validResRules2 = append(validResRules2, rawResRulesMap2[res][idx])
 		}
 		if len(validResRules) > 0 {
 			validResRulesMap[res] = validResRules

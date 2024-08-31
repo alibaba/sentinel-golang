@@ -79,6 +79,10 @@ func (ctx *EntryContext) FilterNodes() []string {
 	return ctx.RuleCheckResult.FilterNodes()
 }
 
+func (ctx *EntryContext) HalfOpenNodes() []string {
+	return ctx.RuleCheckResult.HalfOpenNodes()
+}
+
 func (ctx *EntryContext) SetPair(key, val interface{}) {
 	ctx.Data[key] = val
 }
