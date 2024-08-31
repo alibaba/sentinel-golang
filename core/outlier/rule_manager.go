@@ -31,10 +31,8 @@ var (
 	outlierRules = make(map[string][]*Rule)
 	// resource name ---> circuitbreaker rule
 	breakerRules = make(map[string][]*circuitbreaker.Rule)
-	// resource name ---> nodeID ---> circuitbreaker rule
+	// resource name ---> address ---> circuitbreaker rule
 	nodeBreakers = make(map[string]map[string][]circuitbreaker.CircuitBreaker)
-	// resource name ---> nodeID ---> address
-	nodeAddresses = make(map[string]map[string]string)
 
 	currentRules  = make(map[string][]*circuitbreaker.Rule)
 	updateMux     = new(sync.RWMutex)
@@ -64,13 +62,6 @@ func getOutlierRulesOfResource(resource string) []*Rule {
 func getNodeCountOfResource(resource string) int {
 	updateMux.RLock()
 	ret := nodeCount[resource]
-	updateMux.RUnlock()
-	return ret
-}
-
-func getNodeAddressesOfResource(resource string) map[string]string {
-	updateMux.RLock()
-	ret := nodeAddresses[resource]
 	updateMux.RUnlock()
 	return ret
 }

@@ -32,8 +32,7 @@ type Retryer struct {
 	resource    string
 	interval    time.Duration
 	maxAttempts uint32
-	counts      map[string]uint32 // nodeID ---> retry count
-	addresses   map[string]string // nodeID ---> address
+	counts      map[string]uint32 // ip address ---> retry count
 }
 
 func getRetryerOfResource(resource string) *Retryer {
@@ -46,7 +45,6 @@ func getRetryerOfResource(resource string) *Retryer {
 			retryer.maxAttempts = rules[0].MaxRecoveryAttempts // TODO per resource only has one rule
 			retryer.interval = time.Duration(rules[0].RecoveryInterval * 1e6)
 			retryer.counts = make(map[string]uint32)
-			retryer.addresses = make(map[string]string)
 		}
 		retryers[resource] = retryer
 	}
@@ -54,7 +52,7 @@ func getRetryerOfResource(resource string) *Retryer {
 }
 
 func (r *Retryer) ConnectNode(nodeID string) {
-	ok, rt := isPortOpen(r.addresses[nodeID])
+	ok, rt := isPortOpen(nodeID)
 	if ok {
 		r.OnCompleted(nodeID, rt)
 	} else {
@@ -70,11 +68,9 @@ func (r *Retryer) ConnectNode(nodeID string) {
 }
 
 func (r *Retryer) scheduleRetry(nodes []string) {
-	addresses := getNodeAddressesOfResource(r.resource)
 	for _, node := range nodes {
 		if _, ok := r.counts[node]; !ok {
 			logging.Debug("[Outlier Reconnect]", "nodeID", node)
-			r.addresses[node] = addresses[node]
 			r.ConnectNode(node)
 		}
 	}

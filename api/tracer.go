@@ -36,16 +36,15 @@ func TraceError(entry *base.SentinelEntry, err error) {
 	entry.SetError(err)
 }
 
-func TraceCallee(entry *base.SentinelEntry, nodeID string, address string) {
+func TraceCallee(entry *base.SentinelEntry, address string) {
 	defer func() {
 		if e := recover(); e != nil {
 			logging.Error(errors.Errorf("%+v", e), "Failed to api.TraceCallee()")
 			return
 		}
 	}()
-	if entry == nil || nodeID == "" || address == "" {
+	if entry == nil || address == "" {
 		return
 	}
-	entry.SetPair("nodeID", nodeID)
 	entry.SetPair("address", address)
 }
