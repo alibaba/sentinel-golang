@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
+	"github.com/cloudwego/kitex/pkg/rpcinfo/remoteinfo"
 )
 
 type Option struct {
@@ -24,6 +25,11 @@ func DefaultResourceExtract(ctx context.Context, req, resp interface{}) string {
 	return ri.To().ServiceName() + ":" + ri.To().Method()
 }
 
+func ServiceNameExtract(ctx context.Context, req, resp interface{}) string {
+	ri := rpcinfo.GetRPCInfo(ctx)
+	return ri.To().ServiceName()
+}
+
 func newOptions(opts []Option) *options {
 	o := &options{
 		ResourceExtract: DefaultResourceExtract,
@@ -37,6 +43,19 @@ func (o *options) Apply(opts []Option) {
 	for _, op := range opts {
 		op.F(o)
 	}
+}
+
+func DefaultAddressExtract(ctx context.Context) string {
+	rpcInfo := rpcinfo.GetRPCInfo(ctx)
+	dest := rpcInfo.To()
+	if dest == nil {
+		return ""
+	}
+	remote := remoteinfo.AsRemoteInfo(dest)
+	if remote == nil {
+		return ""
+	}
+	return remote.Address().String()
 }
 
 // WithResourceExtract sets the resource extractor

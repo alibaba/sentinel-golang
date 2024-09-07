@@ -9,14 +9,15 @@ import (
 
 	proto "github.com/alibaba/sentinel-golang/pkg/adapters/micro/test"
 
+	"github.com/micro/go-micro/v2"
+	"github.com/micro/go-micro/v2/server"
+	"github.com/stretchr/testify/assert"
+
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/micro/go-micro/v2"
-	"github.com/micro/go-micro/v2/server"
-	"github.com/stretchr/testify/assert"
 )
 
 const FakeErrorMsg = "fake error for testing"
@@ -29,7 +30,6 @@ func (h *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.R
 }
 
 func TestServerLimiter(t *testing.T) {
-
 	svr := micro.NewService(
 		micro.Address("localhost:56436"),
 		micro.Name("sentinel.test.server"),

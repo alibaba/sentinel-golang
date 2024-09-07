@@ -31,9 +31,11 @@ var (
 	outlierRules = make(map[string][]*Rule)
 	// resource name ---> circuitbreaker rule
 	breakerRules = make(map[string][]*circuitbreaker.Rule)
-	// resource name ---> address ---> circuitbreaker rule
+	// resource name ---> address ---> circuitbreaker
+	// TODO []circuitbreaker.CircuitBreaker 长度为
 	nodeBreakers = make(map[string]map[string][]circuitbreaker.CircuitBreaker)
 
+	// TODO remove currentRules
 	currentRules  = make(map[string][]*circuitbreaker.Rule)
 	updateMux     = new(sync.RWMutex)
 	updateRuleMux = new(sync.Mutex)
@@ -48,6 +50,12 @@ func getNodeBreakersOfResource(resource string) map[string][]circuitbreaker.Circ
 		ret[nodeID] = val
 	}
 	return ret
+}
+
+func deleteNodeBreakerFromResource(resource string, node string) {
+	updateMux.RLock()
+	delete(nodeBreakers[resource], node)
+	updateMux.RUnlock()
 }
 
 func getOutlierRulesOfResource(resource string) []*Rule {

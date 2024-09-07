@@ -76,6 +76,7 @@ func (r *Retryer) scheduleRetry(nodes []string) {
 	}
 }
 
+// TODO WithCheckFunc
 func isPortOpen(address string) (bool, uint64) {
 	start := time.Now()
 	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
