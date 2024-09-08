@@ -17,8 +17,8 @@ type TestHandler struct {
 }
 
 func (s *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.Response) error {
-	rsp.Result = fmt.Sprintf("Welcome, I am node%d!", s.id)
 	if nodeCrash {
+		rsp.Result = fmt.Sprintf("Welcome, I am node%d", s.id)
 		return nil
 	}
 	faultStartTime := s.startTime.Add(5 * time.Second).Add(time.Duration(s.id) * 5 * time.Second)
@@ -26,8 +26,10 @@ func (s *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.R
 	currentTime := time.Now()
 	// If currentTime is in the time range of the business error
 	if currentTime.After(faultStartTime) && currentTime.Before(faultEndTime) {
+		rsp.Result = ""
 		return errors.New("internal server error")
 	}
+	rsp.Result = fmt.Sprintf("Welcome, I am node%d", s.id)
 	return nil
 }
 

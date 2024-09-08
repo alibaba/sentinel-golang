@@ -40,7 +40,7 @@ func getIDWithAddress(address string) int {
 }
 
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (resp *pb.HelloReply, err error) {
-	message := fmt.Sprintf("Welcome %s,I am node%d!", in.Name, s.id)
+	message := fmt.Sprintf("Welcome %s,I am node%d", in.Name, s.id)
 	if *nodeCrashFlag {
 		return &pb.HelloReply{Message: message}, nil
 	}
@@ -49,7 +49,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (resp *pb.He
 	currentTime := time.Now()
 	// If currentTime is in the time range of the business error
 	if currentTime.After(faultStartTime) && currentTime.Before(faultEndTime) {
-		return &pb.HelloReply{Message: message}, errors.New("internal server error")
+		return nil, errors.New("internal server error")
 	}
 	return &pb.HelloReply{Message: message}, nil
 }

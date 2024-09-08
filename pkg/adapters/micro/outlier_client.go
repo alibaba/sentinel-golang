@@ -15,76 +15,66 @@ import (
 
 type outlierClientWrapper struct {
 	client.Client
-	Opts []Option
+}
+
+// NewOutlierClientWrapper returns a sentinel outlier client Wrapper.
+func NewOutlierClientWrapper(opts ...Option) client.Wrapper {
+	return func(c client.Client) client.Client {
+		return &outlierClientWrapper{c}
+	}
 }
 
 func (c *outlierClientWrapper) Call(ctx context.Context, req client.Request, rsp interface{}, opts ...client.CallOption) error {
-	resourceName := req.Service()
-	options := evaluateOptions(c.Opts)
-
-	if options.clientResourceExtract != nil {
-		resourceName = options.clientResourceExtract(ctx, req)
-	}
-
-	entry, blockErr := sentinelApi.Entry(
-		resourceName,
+	entry, _ := sentinelApi.Entry(
+		req.Service(),
 		sentinelApi.WithResourceType(base.ResTypeRPC),
 		sentinelApi.WithTrafficType(base.Outbound),
 	)
-
-	if blockErr != nil {
-		if options.clientBlockFallback != nil {
-			return options.clientBlockFallback(ctx, req, blockErr)
-		}
-		return blockErr
-	}
 	defer entry.Exit()
+	opts = append(opts, WithSelectOption(entry))
+	opts = append(opts, WithCallWrapper(entry))
+	return c.Client.Call(ctx, req, rsp, opts...)
+}
 
-	// 第一步：通过SentinelEntry获取Filter列表，作用到RPC调用的前序阶段
-	opt1 := client.WithSelectOption(selector.WithFilter(
-		func(old []*registry.Service) []*registry.Service {
-			nodes := entry.Context().FilterNodes()
+func (c *outlierClientWrapper) Stream(ctx context.Context, req client.Request, opts ...client.CallOption) (client.Stream, error) {
+	entry, _ := sentinelApi.Entry(
+		req.Service(),
+		sentinelApi.WithResourceType(base.ResTypeRPC),
+		sentinelApi.WithTrafficType(base.Outbound),
+	)
+	defer entry.Exit()
+	opts = append(opts, WithSelectOption(entry))
+	opts = append(opts, WithCallWrapper(entry))
+	stream, err := c.Client.Stream(ctx, req, opts...)
+	if err != nil {
+		sentinelApi.TraceError(entry, err)
+	}
+	return stream, err
+}
+
+func WithSelectOption(entry *base.SentinelEntry) client.CallOption {
+	return client.WithSelectOption(selector.WithFilter(
+		func(old []*registry.Service) (new []*registry.Service) {
+			filterNodes := entry.Context().FilterNodes()
 			halfNodes := entry.Context().HalfOpenNodes()
 			if len(halfNodes) != 0 {
-				nodesMap := make(map[string]struct{})
-				for _, node := range halfNodes {
-					nodesMap[node] = struct{}{}
-				}
-				for _, service := range old {
-					fmt.Println("Half Filter Pre: ", printNodes(service.Nodes))
-					nodesCopy := slices.Clone(service.Nodes)
-					service.Nodes = make([]*registry.Node, 0)
-					for _, ep := range nodesCopy {
-						if _, ok := nodesMap[ep.Id]; ok {
-							service.Nodes = append(service.Nodes, ep)
-						}
-					}
-					fmt.Println("Half Filter Post: ", printNodes(service.Nodes))
-				}
+				fmt.Println("Half Filter Pre: ", printNodes(old[0].Nodes))
+				new = getRemainingNodes(old, halfNodes)
+				fmt.Println("Half Filter Post: ", printNodes(new[0].Nodes))
 			} else {
-				nodesMap := make(map[string]struct{})
-				for _, node := range nodes {
-					nodesMap[node] = struct{}{}
-				}
-				for _, service := range old {
-					fmt.Println("Filter Pre: ", printNodes(service.Nodes))
-					nodesCopy := slices.Clone(service.Nodes)
-					service.Nodes = make([]*registry.Node, 0)
-					for _, ep := range nodesCopy {
-						if _, ok := nodesMap[ep.Id]; !ok {
-							service.Nodes = append(service.Nodes, ep)
-						}
-					}
-					fmt.Println("Filter Post: ", printNodes(service.Nodes))
-				}
+				fmt.Println("Filter Pre: ", printNodes(old[0].Nodes))
+				new = getRemainingNodes(old, filterNodes)
+				fmt.Println("Filter Post: ", printNodes(new[0].Nodes))
 			}
-			return old
+			return new
 		},
 	))
+}
 
-	// 第二步：根据RPC调用的结果更新被调用实例的健康状态
-	opt2 := client.WithCallWrapper(func(f1 client.CallFunc) client.CallFunc {
-		return func(ctx context.Context, node *registry.Node, req client.Request, rsp interface{}, opts client.CallOptions) error {
+func WithCallWrapper(entry *base.SentinelEntry) client.CallOption {
+	return client.WithCallWrapper(func(f1 client.CallFunc) client.CallFunc {
+		return func(ctx context.Context, node *registry.Node, req client.Request,
+			rsp interface{}, opts client.CallOptions) error {
 			err := f1(ctx, node, req, rsp, opts)
 			sentinelApi.TraceCallee(entry, node.Address)
 			if err != nil {
@@ -93,45 +83,23 @@ func (c *outlierClientWrapper) Call(ctx context.Context, req client.Request, rsp
 			return err
 		}
 	})
-	opts = append(opts, opt1, opt2)
-	return c.Client.Call(ctx, req, rsp, opts...)
 }
 
-func (c *outlierClientWrapper) Stream(ctx context.Context, req client.Request, opts ...client.CallOption) (client.Stream, error) {
-	options := evaluateOptions(c.Opts)
-	resourceName := req.Method()
-
-	if options.streamClientResourceExtract != nil {
-		resourceName = options.streamClientResourceExtract(ctx, req)
+func getRemainingNodes(old []*registry.Service, filters []string) []*registry.Service {
+	nodesMap := make(map[string]struct{})
+	for _, node := range filters {
+		nodesMap[node] = struct{}{}
 	}
-
-	entry, blockErr := sentinelApi.Entry(
-		resourceName,
-		sentinelApi.WithResourceType(base.ResTypeRPC),
-		sentinelApi.WithTrafficType(base.Outbound),
-	)
-
-	if blockErr != nil {
-		if options.streamClientBlockFallback != nil {
-			return options.streamClientBlockFallback(ctx, req, blockErr)
+	for _, service := range old {
+		nodesCopy := slices.Clone(service.Nodes)
+		service.Nodes = make([]*registry.Node, 0)
+		for _, ep := range nodesCopy {
+			if _, ok := nodesMap[ep.Address]; !ok {
+				service.Nodes = append(service.Nodes, ep)
+			}
 		}
-		return nil, blockErr
 	}
-	defer entry.Exit()
-
-	stream, err := c.Client.Stream(ctx, req, opts...)
-	if err != nil {
-		sentinelApi.TraceError(entry, err)
-	}
-
-	return stream, err
-}
-
-// NewOutlierClientWrapper returns a sentinel outlier client Wrapper.
-func NewOutlierClientWrapper(opts ...Option) client.Wrapper {
-	return func(c client.Client) client.Client {
-		return &outlierClientWrapper{c, opts}
-	}
+	return old
 }
 
 func printNodes(nodes []*registry.Node) (res []string) {
