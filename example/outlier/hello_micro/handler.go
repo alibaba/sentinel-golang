@@ -22,7 +22,7 @@ func (s *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.R
 		return nil
 	}
 	faultStartTime := s.startTime.Add(5 * time.Second).Add(time.Duration(s.id) * 5 * time.Second)
-	faultEndTime := faultStartTime.Add(10 * time.Second)
+	faultEndTime := faultStartTime.Add(20 * time.Second)
 	currentTime := time.Now()
 	// If currentTime is in the time range of the business error
 	if currentTime.After(faultStartTime) && currentTime.Before(faultEndTime) {
@@ -32,5 +32,5 @@ func (s *TestHandler) Ping(ctx context.Context, req *proto.Request, rsp *proto.R
 }
 
 func getIDWithAddress(address string) int {
-	return int(address[len(address)-1])
+	return int(address[len(address)-1] - '0')
 }

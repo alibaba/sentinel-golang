@@ -12,6 +12,8 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 )
 
+var filterNodes []string
+
 // SentinelClientMiddleware returns new client.Middleware
 // Default resource name is {service's name}:{method}
 // Default block fallback is returning blockError
@@ -39,26 +41,26 @@ func SentinelClientMiddleware(opts ...Option) func(endpoint.Endpoint) endpoint.E
 	}
 }
 
-// OutlierClientMiddleware returns new client.Middleware specifically for outlier removal.
+// OutlierClientMiddleware returns new client.Middleware specifically for outlier ejection.
 func OutlierClientMiddleware(opts ...Option) func(endpoint.Endpoint) endpoint.Endpoint {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, req, resp interface{}) error {
-			resourceName := ServiceNameExtract(ctx, req, resp)
+			resourceName := ServiceNameExtract(ctx)
 			entry, _ := sentinel.Entry(
 				resourceName,
 				sentinel.WithResourceType(base.ResTypeRPC),
 				sentinel.WithTrafficType(base.Outbound),
 			)
 			defer entry.Exit()
-			ctx = context.WithValue(ctx, "filterNodes", entry.Context().FilterNodes())
-			err0 := next(ctx, req, resp)
-			if callee := DefaultAddressExtract(ctx); callee != "" {
+			filterNodes = entry.Context().FilterNodes()
+			err := next(ctx, req, resp)
+			if callee := CalleeAddressExtract(ctx); callee != "" {
 				sentinel.TraceCallee(entry, callee)
-				if err0 != nil {
-					sentinel.TraceError(entry, err0)
+				if err != nil {
+					sentinel.TraceError(entry, err)
 				}
 			}
-			return err0
+			return err
 		}
 	}
 }
@@ -66,22 +68,24 @@ func OutlierClientMiddleware(opts ...Option) func(endpoint.Endpoint) endpoint.En
 func OutlierClientResolver(resolver discovery.Resolver) discovery.Resolver {
 	filterFunc := func(ctx context.Context, nodes []discovery.Instance) []discovery.Instance {
 		nodesMap := make(map[string]struct{})
-		filterNodes := ctx.Value("filterNodes").([]string) // TODO 传不过来
 		for _, node := range filterNodes {
 			nodesMap[node] = struct{}{}
 		}
 		fmt.Println("Filter Pre: ", printNodes(nodes))
-		nodesCopy := make([]discovery.Instance, 0)
+		nodesPost := make([]discovery.Instance, 0)
 		for _, ep := range nodes {
 			if _, ok := nodesMap[ep.Address().String()]; !ok {
-				nodesCopy = append(nodesCopy, ep)
+				nodesPost = append(nodesPost, ep)
 			}
 		}
-		fmt.Println("Filter Post: ", printNodes(nodesCopy))
-		return nodesCopy
+		fmt.Println("Filter Post: ", printNodes(nodesPost))
+		return nodesPost
 	}
 	// Construct the filterRule and build rule based resolver
-	filterRule := &ruleBasedResolver.FilterRule{Name: "rule-name", Funcs: []ruleBasedResolver.FilterFunc{filterFunc}}
+	filterRule := &ruleBasedResolver.FilterRule{
+		Name:  "outlier_filter_rule",
+		Funcs: []ruleBasedResolver.FilterFunc{filterFunc},
+	}
 	return ruleBasedResolver.NewRuleBasedResolver(resolver, filterRule)
 }
 

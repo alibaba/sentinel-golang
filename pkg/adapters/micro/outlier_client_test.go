@@ -42,10 +42,6 @@ func initClient(t *testing.T) client.Client {
 				}),
 		)),
 	)
-	err := sentinel.InitDefault()
-	if err != nil {
-		t.Fatal(err)
-	}
 	return srv.Client()
 }
 
@@ -53,6 +49,10 @@ func TestOutlierClient(t *testing.T) {
 	c := initClient(t)
 	req := c.NewRequest("helloworld", "Test.Ping", &proto.Request{}, client.WithContentType("application/json"))
 	rsp := &proto.Response{}
+	err := sentinel.InitDefault()
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Run("success", func(t *testing.T) {
 		var _, err = outlier.LoadRules([]*outlier.Rule{
 			{
@@ -72,7 +72,7 @@ func TestOutlierClient(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		passCount := 0
-		testCount := 100
+		testCount := 200
 		for i := 0; i < testCount; i++ {
 			err = c.Call(context.TODO(), req, rsp)
 			fmt.Println(rsp, err)

@@ -25,11 +25,6 @@ func DefaultResourceExtract(ctx context.Context, req, resp interface{}) string {
 	return ri.To().ServiceName() + ":" + ri.To().Method()
 }
 
-func ServiceNameExtract(ctx context.Context, req, resp interface{}) string {
-	ri := rpcinfo.GetRPCInfo(ctx)
-	return ri.To().ServiceName()
-}
-
 func newOptions(opts []Option) *options {
 	o := &options{
 		ResourceExtract: DefaultResourceExtract,
@@ -45,19 +40,6 @@ func (o *options) Apply(opts []Option) {
 	}
 }
 
-func DefaultAddressExtract(ctx context.Context) string {
-	rpcInfo := rpcinfo.GetRPCInfo(ctx)
-	dest := rpcInfo.To()
-	if dest == nil {
-		return ""
-	}
-	remote := remoteinfo.AsRemoteInfo(dest)
-	if remote == nil {
-		return ""
-	}
-	return remote.Address().String()
-}
-
 // WithResourceExtract sets the resource extractor
 func WithResourceExtract(f func(ctx context.Context, req, resp interface{}) string) Option {
 	return Option{F: func(o *options) {
@@ -70,4 +52,18 @@ func WithBlockFallback(f func(ctx context.Context, req, resp interface{}, blockE
 	return Option{func(o *options) {
 		o.BlockFallback = f
 	}}
+}
+
+func ServiceNameExtract(ctx context.Context) string {
+	rpcInfo := rpcinfo.GetRPCInfo(ctx)
+	return rpcInfo.To().ServiceName()
+}
+
+func CalleeAddressExtract(ctx context.Context) string {
+	rpcInfo := rpcinfo.GetRPCInfo(ctx)
+	remote := remoteinfo.AsRemoteInfo(rpcInfo.To())
+	if remote == nil || remote.Address() == nil {
+		return ""
+	}
+	return remote.Address().String()
 }
