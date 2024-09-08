@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,59 +14,42 @@ import (
 )
 
 type server struct {
-	address    string
-	networkErr bool
-	isCrash    bool
-	done       chan struct{}
 	pb.UnimplementedGreeterServer
+	id        int
+	startTime time.Time
 }
 
+// NewServer inits http server and grpc server
 func NewServer() (transport.Server, transport.Server) {
-	// 初始化 http server
 	httpSrv := http.NewServer(
 		http.Address(*httpAddressFlag),
-		http.Middleware(
-			recovery.Recovery(),
-		),
+		http.Middleware(recovery.Recovery()),
 	)
-
-	// 初始化 grpc server
 	grpcSrv := grpc.NewServer(
 		grpc.Address(*grpcAddressFlag),
-		grpc.Middleware(
-			recovery.Recovery(),
-		),
+		grpc.Middleware(recovery.Recovery()),
 	)
-
-	// 在服务器上注册服务
-	s := &server{address: *grpcAddressFlag}
+	s := &server{id: getIDWithAddress(*grpcAddressFlag), startTime: time.Now()}
 	pb.RegisterGreeterServer(grpcSrv, s)
 	pb.RegisterGreeterHTTPServer(httpSrv, s)
-	go func() {
-		start := 10 * time.Second
-		end := 15 * time.Second
-		timer1 := time.NewTimer(start)
-		timer2 := time.NewTimer(end)
-
-		<-timer1.C
-		s.isCrash = true
-
-		<-timer2.C
-		s.isCrash = false
-		s.done <- struct{}{}
-	}()
 	return grpcSrv, httpSrv
 }
 
+func getIDWithAddress(address string) int {
+	return int(address[len(address)-1])
+}
+
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (resp *pb.HelloReply, err error) {
-	if s.isCrash {
-		if s.networkErr { // 如果是网络故障
-			<-s.done
-			return resp, nil
-		}
-		// 如果是服务故障
-		return &pb.HelloReply{Message: fmt.Sprintf("Welcome %s,I am %s!", in.Name, s.address)}, fmt.Errorf("server error")
+	message := fmt.Sprintf("Welcome %s,I am node%d!", in.Name, s.id)
+	if *nodeCrashFlag {
+		return &pb.HelloReply{Message: message}, nil
 	}
-	resp = &pb.HelloReply{Message: fmt.Sprintf("Welcome %s,I am %s!", in.Name, s.address)}
-	return resp, nil
+	faultStartTime := s.startTime.Add(5 * time.Second).Add(time.Duration(s.id) * 5 * time.Second)
+	faultEndTime := faultStartTime.Add(10 * time.Second)
+	currentTime := time.Now()
+	// If currentTime is in the time range of the business error
+	if currentTime.After(faultStartTime) && currentTime.Before(faultEndTime) {
+		return &pb.HelloReply{Message: message}, errors.New("internal server error")
+	}
+	return &pb.HelloReply{Message: message}, nil
 }

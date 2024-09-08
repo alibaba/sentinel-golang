@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	proto "github.com/alibaba/sentinel-golang/pkg/adapters/micro/test"
-
 	"github.com/micro/go-micro/v2"
 	"github.com/micro/go-micro/v2/server"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +15,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/stat"
+	proto "github.com/alibaba/sentinel-golang/pkg/adapters/micro/test"
 	"github.com/alibaba/sentinel-golang/util"
 )
 

@@ -31,7 +31,7 @@ func initClient(t *testing.T) pb.GreeterClient {
 	// new discovery with etcd client
 	dis := etcd.New(client)
 
-	endpoint := "discovery:///helloworld"
+	endpoint := "discovery:///example.helloworld"
 	// 由于 gRPC 框架的限制，只能使用全局 balancer name 的方式来注入 selector
 	selector.SetGlobalSelector(wrr.NewBuilder())
 

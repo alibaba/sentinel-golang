@@ -19,7 +19,7 @@ type outlierClientWrapper struct {
 }
 
 func (c *outlierClientWrapper) Call(ctx context.Context, req client.Request, rsp interface{}, opts ...client.CallOption) error {
-	resourceName := req.Method()
+	resourceName := req.Service()
 	options := evaluateOptions(c.Opts)
 
 	if options.clientResourceExtract != nil {
@@ -130,7 +130,7 @@ func (c *outlierClientWrapper) Stream(ctx context.Context, req client.Request, o
 // NewOutlierClientWrapper returns a sentinel outlier client Wrapper.
 func NewOutlierClientWrapper(opts ...Option) client.Wrapper {
 	return func(c client.Client) client.Client {
-		return &clientWrapper{c, opts}
+		return &outlierClientWrapper{c, opts}
 	}
 }
 

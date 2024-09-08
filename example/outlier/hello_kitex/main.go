@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net"
+	"time"
 
 	api "github.com/cloudwego/kitex-examples/hello/kitex_gen/api/hello"
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
@@ -12,30 +12,30 @@ import (
 	etcd "github.com/kitex-contrib/registry-etcd"
 )
 
-var addressFlag = flag.String("server_address", ":8888", "Set the listen address for server")
-var errorFlag = flag.Bool("network_error", true, "Set the error type for server")
+var addressFlag = flag.String("server_address", ":8000", "Set the listen address for server")
+var nodeCrashFlag = flag.Bool("node_crash", false, "Set the flag for whether to simulate node crash")
+
+const serviceName = "example.helloworld"
+const etcdAddr = "127.0.0.1:2379"
 
 func main() {
 	flag.Parse()
-	r, err := etcd.NewEtcdRegistry([]string{"127.0.0.1:2379"})
+	etcdReg, err := etcd.NewEtcdRegistry([]string{etcdAddr})
+	addr, err := net.ResolveTCPAddr("tcp", *addressFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	addr, _ := net.ResolveTCPAddr("tcp", *addressFlag)
-	fmt.Println(*addressFlag, *errorFlag)
 	svr := api.NewServer(
-		NewHello(),
+		&HelloImpl{getIDWithAddress(*addressFlag), time.Now()},
 		server.WithServiceAddr(addr),
-		server.WithRegistry(r),
+		server.WithRegistry(etcdReg),
 		server.WithServerBasicInfo(
 			&rpcinfo.EndpointBasicInfo{
-				ServiceName: "example.hello",
+				ServiceName: serviceName,
 			}),
 	)
-
 	err = svr.Run()
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err)
 	}
 }

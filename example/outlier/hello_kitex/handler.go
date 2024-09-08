@@ -2,50 +2,34 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/cloudwego/kitex-examples/hello/kitex_gen/api"
 )
 
-// HelloImpl implements the last service interface defined in the IDL.
 type HelloImpl struct {
-	address    string
-	networkErr bool
-	isCrash    bool
-	done       chan struct{}
+	id        int
+	startTime time.Time
 }
 
-func NewHello() api.Hello {
-	res := &HelloImpl{address: *addressFlag, networkErr: *errorFlag}
-	res.done = make(chan struct{})
-	go func() {
-		start := 10 * time.Second
-		end := 15 * time.Second
-		timer1 := time.NewTimer(start)
-		timer2 := time.NewTimer(end)
-
-		<-timer1.C
-		res.isCrash = true
-
-		<-timer2.C
-		res.isCrash = false
-		res.done <- struct{}{}
-	}()
-	return res
-}
-
-// Echo implements the HelloImpl interface.
+// If the simulated node crashes, then Echo returns correct directly, otherwise Echo needs to simulate a business error
 func (s *HelloImpl) Echo(ctx context.Context, req *api.Request) (resp *api.Response, err error) {
-	if s.isCrash {
-		if s.networkErr { // 如果是网络故障
-			<-s.done
-			return resp, nil
-		}
-		// 如果是服务故障
-		return &api.Response{Message: fmt.Sprintf("Welcome %s,I am %s", req.Message, s.address)},
-			fmt.Errorf("server error")
+	message := fmt.Sprintf("Welcome %s,I am node%d", req.Message, s.id)
+	if *nodeCrashFlag {
+		return &api.Response{Message: message}, nil
 	}
-	resp = &api.Response{Message: fmt.Sprintf("Welcome %s,I am %s", req.Message, s.address)}
-	return resp, nil
+	faultStartTime := s.startTime.Add(5 * time.Second).Add(time.Duration(s.id) * 5 * time.Second)
+	faultEndTime := faultStartTime.Add(10 * time.Second)
+	currentTime := time.Now()
+	// If currentTime is in the time range of the business error
+	if currentTime.After(faultStartTime) && currentTime.Before(faultEndTime) {
+		return &api.Response{Message: message}, errors.New("internal server error")
+	}
+	return &api.Response{Message: message}, nil
+}
+
+func getIDWithAddress(address string) int {
+	return int(address[len(address)-1])
 }

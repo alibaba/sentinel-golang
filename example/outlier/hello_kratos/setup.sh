@@ -1,24 +1,48 @@
 #!/bin/bash
-network_error=$1
-for i in {1..9}
-do
-    port=900$i
 
-    echo "Starting instance on port $port"
+node_crash=${1:-false}
+node_count=${2:-9} # node_count can only be 1 to 9
 
-done
+start_process() {
+    for ((i=1; i<=node_count; i++))
+    do
+		http_port=800$i
+		grpc_port=900$i
+		echo "Starting: go run . --grpc_server_address=:$grpc_port --http_server_address=:$http_port --node_crash=$node_crash"
+		go run . --grpc_server_address=:$grpc_port --http_server_address=:$http_port --node_crash=$node_crash &
+        pids[$i]=$!
+    done
+}
 
-wait
+stop_process() {
+    for ((i=1; i<=node_count; i++))
+    do
+        sleep 5
+        kill ${pids[$i]}
+		port=900$i
+		pgrep -f "hello_kratos --grpc_server_address=:$port" | xargs kill
+        echo "Killed process ${pids[$i]}"
+    done
+}
 
+restart_process() {
+    for ((i=1; i<=node_count; i++))
+    do
+    	sleep 5
+		http_port=800$i
+		grpc_port=900$i
+		echo "Restarting: go run . --grpc_server_address=:$grpc_port --http_server_address=:$http_port --node_crash=$node_crash"
+		go run . --grpc_server_address=:$grpc_port --http_server_address=:$http_port --node_crash=$node_crash &
+    done
+}
 
-network_error=${1:-false}
-
-for i in {1..9}
-do
-    port=900$i
-    port2=1000$i
-    echo "go run . --grpc_server_address=:$port --http_server_address=:$port2 --network_error=$network_error"
-    go run . --grpc_server_address=:$port --http_server_address=:$port2 --network_error=$network_error &
-done
+if [ "$node_crash" = "true" ]; then
+    start_process
+    sleep 5
+    stop_process
+    restart_process
+else
+    start_process
+fi
 
 wait

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/micro/go-micro/v2"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/client/selector"
 	"github.com/micro/go-micro/v2/registry"
@@ -16,27 +17,24 @@ import (
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
-	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/outlier"
-	"github.com/alibaba/sentinel-golang/core/stat"
-	"github.com/alibaba/sentinel-golang/util"
-
 	proto "github.com/alibaba/sentinel-golang/pkg/adapters/micro/test"
 )
 
 func initClient(t *testing.T) client.Client {
-	r := etcd.NewRegistry(
+	etcdReg := etcd.NewRegistry(
 		registry.Addrs("localhost:2379"),
 	)
 	s := selector.NewSelector(
-		selector.Registry(r),
+		selector.Registry(etcdReg),
 		selector.SetStrategy(selector.RoundRobin),
 	)
-	c := client.NewClient(
-		// set the selector
-		client.Selector(s),
-		// add the client wrapper
-		client.Wrap(NewClientWrapper(
+	srv := micro.NewService(
+		micro.Name("helloworld"),
+		micro.Version("latest"),
+		micro.Registry(etcdReg),
+		micro.Selector(s),
+		micro.WrapClient(NewOutlierClientWrapper(
 			// add custom fallback function to return a fake error for assertion
 			WithClientBlockFallback(
 				func(ctx context.Context, request client.Request, blockError *base.BlockError) error {
@@ -48,45 +46,18 @@ func initClient(t *testing.T) client.Client {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return c
+	return srv.Client()
 }
 
-func TestClientLimiter1(t *testing.T) {
+func TestOutlierClient(t *testing.T) {
 	c := initClient(t)
-	req := c.NewRequest("helloworld", "Helloworld.Call", &proto.Request{}, client.WithContentType("application/json"))
-	rsp := &proto.Response{}
-	t.Run("success", func(t *testing.T) {
-		var _, err = flow.LoadRules([]*flow.Rule{
-			{
-				Resource:               req.Method(),
-				Threshold:              1.0,
-				TokenCalculateStrategy: flow.Direct,
-				ControlBehavior:        flow.Reject,
-			},
-		})
-		assert.Nil(t, err)
-
-		err = c.Call(context.TODO(), req, rsp)
-		assert.Nil(t, err)
-		assert.True(t, util.Float64Equals(1.0, stat.GetResourceNode(req.Method()).GetQPS(base.MetricEventPass)))
-
-		t.Run("second fail", func(t *testing.T) {
-			err := c.Call(context.TODO(), req, rsp)
-			assert.EqualError(t, err, FakeErrorMsg)
-			assert.True(t, util.Float64Equals(1.0, stat.GetResourceNode(req.Method()).GetQPS(base.MetricEventPass)))
-		})
-	})
-}
-
-func TestClientLimiter2(t *testing.T) {
-	c := initClient(t)
-	req := c.NewRequest("helloworld", "Helloworld.Call", &proto.Request{}, client.WithContentType("application/json"))
+	req := c.NewRequest("helloworld", "Test.Ping", &proto.Request{}, client.WithContentType("application/json"))
 	rsp := &proto.Response{}
 	t.Run("success", func(t *testing.T) {
 		var _, err = outlier.LoadRules([]*outlier.Rule{
 			{
 				Rule: &circuitbreaker.Rule{
-					Resource:         req.Method(),
+					Resource:         req.Service(),
 					Strategy:         circuitbreaker.ErrorCount,
 					RetryTimeoutMs:   3000,
 					MinRequestAmount: 1,

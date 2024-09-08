@@ -77,7 +77,7 @@ func initClient(t *testing.T) hello.Client {
 
 func TestSentinelClientMiddleware1(t *testing.T) {
 	c := initClient(t)
-	req := &api.Request{Message: "Kitex"}
+	req := &api.Request{Message: "Bob"}
 	// callopt.WithHostPort("localhost:8888")
 	resp, err := c.Echo(context.Background(), req)
 	if err != nil {
@@ -112,14 +112,14 @@ func TestSentinelClientMiddleware1(t *testing.T) {
 	})
 }
 
-func TestClientLimiter2(t *testing.T) {
+func TestOutlierClient(t *testing.T) {
 	c := initClient(t)
 	req := &api.Request{Message: "Bob"}
 	t.Run("success", func(t *testing.T) {
 		var _, err = outlier.LoadRules([]*outlier.Rule{
 			{
 				Rule: &circuitbreaker.Rule{
-					Resource:         "example.hello:echo",
+					Resource:         "example.helloworld",
 					Strategy:         circuitbreaker.ErrorCount,
 					RetryTimeoutMs:   3000,
 					MinRequestAmount: 1,
