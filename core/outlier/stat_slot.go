@@ -50,30 +50,31 @@ func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
 	err := ctx.Err()
 	rt := ctx.Rt()
-	nodes := getNodeBreakersOfResource(res)
+	nodes := getNodeBreakerOfResource(res)
 	address := ctx.GetPair("address").(string)
 	if address == "" {
 		return
 	}
 	if _, ok := nodes[address]; !ok {
 		newOneBreakers(res, address)
-		nodes = getNodeBreakersOfResource(res)
+		nodes = getNodeBreakerOfResource(res)
 	}
-	for _, breaker := range nodes[address] {
-		breaker.OnRequestComplete(rt, err)
-	}
+	recyclers[res].recover(address)
+	breaker := nodes[address]
+	breaker.OnRequestComplete(rt, err)
+
 }
 
 func newOneBreakers(res string, address string) {
 	old := make([]circuitbreaker.CircuitBreaker, 0)
-	newCbsOfRes := circuitbreaker.BuildResourceCircuitBreaker(res, breakerRules[res], old)
+	newCbsOfRes := circuitbreaker.BuildResourceCircuitBreaker(res, []*circuitbreaker.Rule{breakerRules[res]}, old)
 	updateMux.Lock()
 	if len(newCbsOfRes) > 0 {
 		if nodeBreakers[res] == nil {
-			nodeBreakers[res] = make(map[string][]circuitbreaker.CircuitBreaker)
+			nodeBreakers[res] = make(map[string]circuitbreaker.CircuitBreaker)
 			nodeCount[res] = 0
 		}
-		nodeBreakers[res][address] = newCbsOfRes
+		nodeBreakers[res][address] = newCbsOfRes[0]
 		nodeCount[res]++
 	}
 	updateMux.Unlock()

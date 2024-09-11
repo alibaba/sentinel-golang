@@ -32,7 +32,8 @@ type Retryer struct {
 	resource    string
 	interval    time.Duration
 	maxAttempts uint32
-	counts      map[string]uint32 // ip address ---> retry count
+	// TODO RWMutex counts
+	counts map[string]uint32 // ip address ---> retry count
 }
 
 func getRetryerOfResource(resource string) *Retryer {
@@ -40,10 +41,10 @@ func getRetryerOfResource(resource string) *Retryer {
 	defer updateMutex.Unlock()
 	if _, ok := retryers[resource]; !ok {
 		retryer := &Retryer{resource: resource}
-		rules := getOutlierRulesOfResource(resource)
-		if len(rules) != 0 {
-			retryer.maxAttempts = rules[0].MaxRecoveryAttempts // TODO per resource only has one rule
-			retryer.interval = time.Duration(rules[0].RecoveryInterval * 1e6)
+		rules := getOutlierRuleOfResource(resource)
+		if rules != nil {
+			retryer.maxAttempts = rules.MaxRecoveryAttempts // TODO per resource only has one rule
+			retryer.interval = time.Duration(rules.RecoveryInterval * 1e6)
 			retryer.counts = make(map[string]uint32)
 		}
 		retryers[resource] = retryer
@@ -54,6 +55,7 @@ func getRetryerOfResource(resource string) *Retryer {
 func (r *Retryer) ConnectNode(nodeID string) {
 	ok, rt := isPortOpen(nodeID)
 	if ok {
+		delete(r.counts, nodeID)
 		r.OnCompleted(nodeID, rt)
 	} else {
 		r.counts[nodeID]++
@@ -71,7 +73,10 @@ func (r *Retryer) scheduleRetry(nodes []string) {
 	for _, node := range nodes {
 		if _, ok := r.counts[node]; !ok {
 			logging.Debug("[Outlier Reconnect]", "nodeID", node)
-			r.ConnectNode(node)
+			r.counts[node] = 1
+			time.AfterFunc(r.interval, func() {
+				r.ConnectNode(node)
+			})
 		}
 	}
 }
@@ -89,8 +94,8 @@ func isPortOpen(address string) (bool, uint64) {
 }
 
 func (r *Retryer) OnCompleted(nodeID string, rt uint64) {
-	nodes := getNodeBreakersOfResource(r.resource)
-	for _, breaker := range nodes[nodeID] {
-		breaker.OnRequestComplete(rt, nil)
-	}
+	recyclers[r.resource].recover(nodeID)
+	nodes := getNodeBreakerOfResource(r.resource)
+	// TODO 判断nodes[nodeID]不存在
+	nodes[nodeID].OnRequestComplete(rt, nil)
 }

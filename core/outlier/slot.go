@@ -50,30 +50,29 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if len(outlierNodes) != 0 {
 		retryer := getRetryerOfResource(resource)
 		retryer.scheduleRetry(outlierNodes)
+		recycler := getRecyclerOfResource(resource)
+		recycler.scheduleRecycler(outlierNodes)
 	}
 	return result
 }
 
 func checkAllNodes(ctx *base.EntryContext) (filters []string, outliers []string, halfs []string) {
 	resource := ctx.Resource.Name()
-	nodeBreaks := getNodeBreakersOfResource(resource)
-	outlierRules := getOutlierRulesOfResource(resource)
+	nodeBreaks := getNodeBreakerOfResource(resource)
+	rule := getOutlierRuleOfResource(resource)
 	nodeCount := getNodeCountOfResource(resource)
-	for nodeID, breakers := range nodeBreaks {
-		for index, breaker := range breakers {
-			if breaker.TryPass(ctx) {
-				if breaker.CurrentState() == circuitbreaker.HalfOpen {
-					halfs = append(halfs, nodeID)
-				}
-				continue
+	for nodeID, breaker := range nodeBreaks {
+		if breaker.TryPass(ctx) {
+			if !rule.EnableActiveRecovery && breaker.CurrentState() == circuitbreaker.HalfOpen {
+				halfs = append(halfs, nodeID)
 			}
-			rule := outlierRules[index]
-			if rule.EnableActiveRecovery {
-				outliers = append(outliers, nodeID)
-			}
-			if len(filters) <= int(float64(nodeCount)*rule.MaxEjectionPercent) {
-				filters = append(filters, nodeID)
-			}
+			continue
+		}
+		if rule.EnableActiveRecovery {
+			outliers = append(outliers, nodeID)
+		}
+		if len(filters) <= int(float64(nodeCount)*rule.MaxEjectionPercent) {
+			filters = append(filters, nodeID)
 		}
 	}
 	return filters, outliers, halfs

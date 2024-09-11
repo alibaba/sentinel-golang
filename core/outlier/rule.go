@@ -21,8 +21,19 @@ import (
 // Rule encompasses the fields of outlier ejection rule.
 type Rule struct {
 	*circuitbreaker.Rule
+
+	// Whether to enable active detection mode for recovery
 	EnableActiveRecovery bool
-	MaxEjectionPercent   float64
-	RecoveryInterval     uint32
-	MaxRecoveryAttempts  uint32
+
+	// An upper limit on the percentage of service nodes to be removed, which
+	// defines the maximum percentage of nodes allowed to be excluded from
+	// the service's load balancing pool.
+	MaxEjectionPercent float64
+
+	// The initial value of the time interval (in ms) to resume detection.
+	// Enabling active detection mode will disable passive detection.
+	RecoveryInterval uint32
+
+	// Maximum number of recovery attempts allowed during recovery detection
+	MaxRecoveryAttempts uint32
 }

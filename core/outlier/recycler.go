@@ -14,7 +14,14 @@
 
 package outlier
 
-import "time"
+import (
+	"sync"
+	"time"
+)
+
+// resource name --->  node recycler
+var recyclers = make(map[string]*Recycler)
+var recyclerMutex = new(sync.Mutex)
 
 type Recycler struct {
 	resource string
@@ -22,8 +29,19 @@ type Recycler struct {
 	status   map[string]bool
 }
 
-func NewRecycler(resource string, interval time.Duration) *Recycler {
-	return &Recycler{resource, interval, make(map[string]bool)}
+func getRecyclerOfResource(resource string) *Recycler {
+	recyclerMutex.Lock()
+	defer recyclerMutex.Unlock()
+	if _, ok := recyclers[resource]; !ok {
+		recycler := &Recycler{resource: resource}
+		rules := getOutlierRuleOfResource(resource)
+		if rules != nil {
+			recycler.interval = time.Duration(rules.RecoveryInterval * 1e6)
+			recycler.status = make(map[string]bool)
+		}
+		recyclers[resource] = recycler
+	}
+	return recyclers[resource]
 }
 
 // The default policy is to recycle the breaker instance if the node does not recover in one hour

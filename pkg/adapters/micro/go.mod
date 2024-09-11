@@ -2,6 +2,8 @@ module github.com/alibaba/sentinel-golang/pkg/adapters/micro
 
 go 1.20
 
+replace github.com/alibaba/sentinel-golang => ../../../
+
 require (
 	github.com/alibaba/sentinel-golang v1.0.2
 	github.com/golang/protobuf v1.4.3
@@ -77,5 +79,3 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
-
-replace github.com/alibaba/sentinel-golang => ../../../
