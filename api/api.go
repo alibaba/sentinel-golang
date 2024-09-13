@@ -117,7 +117,7 @@ func WithAttachment(key interface{}, value interface{}) EntryOption {
 	}
 }
 
-// WithAttachment set the resource entry with the given k-v pairs
+// WithAttachments set the resource entry with the given k-v pairs
 func WithAttachments(data map[interface{}]interface{}) EntryOption {
 	return func(opts *EntryOptions) {
 		if opts.attachments == nil {
