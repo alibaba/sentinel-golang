@@ -16,7 +16,7 @@ package outlier
 
 import (
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 const (
@@ -49,33 +49,22 @@ func (c *MetricStatSlot) OnEntryBlocked(_ *base.EntryContext, _ *base.BlockError
 func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
 	err := ctx.Err()
-	rt := ctx.Rt()
-	nodes := getNodeBreakerOfResource(res)
-	address := ctx.GetPair("address").(string)
-	if address == "" {
+	nodeBreakers := getNodeBreakersOfResource(res)
+	var address string
+	if address, ok := ctx.GetPair("address").(string); !ok || address == "" {
+		logging.Warn("[Outlier] Failed to get valid address", "resourceName", res)
 		return
 	}
-	if _, ok := nodes[address]; !ok {
-		newOneBreakers(res, address)
-		nodes = getNodeBreakerOfResource(res)
-	}
-	recyclers[res].recover(address)
-	breaker := nodes[address]
-	breaker.OnRequestComplete(rt, err)
 
-}
-
-func newOneBreakers(res string, address string) {
-	old := make([]circuitbreaker.CircuitBreaker, 0)
-	newCbsOfRes := circuitbreaker.BuildResourceCircuitBreaker(res, []*circuitbreaker.Rule{breakerRules[res]}, old)
-	updateMux.Lock()
-	if len(newCbsOfRes) > 0 {
-		if nodeBreakers[res] == nil {
-			nodeBreakers[res] = make(map[string]circuitbreaker.CircuitBreaker)
-			nodeCount[res] = 0
-		}
-		nodeBreakers[res][address] = newCbsOfRes[0]
-		nodeCount[res]++
+	if _, ok := nodeBreakers[address]; !ok {
+		addNodeBreakerOfResource(res, address)
+		nodeBreakers = getNodeBreakersOfResource(res)
 	}
-	updateMux.Unlock()
+
+	breaker := nodeBreakers[address]
+	breaker.OnRequestComplete(ctx.Rt(), err)
+	if err == nil {
+		recycler := getRecyclerOfResource(res)
+		recycler.recover(address)
+	}
 }

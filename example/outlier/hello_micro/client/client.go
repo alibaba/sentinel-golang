@@ -55,7 +55,7 @@ func main() {
 			},
 			EnableActiveRecovery: true,
 			MaxEjectionPercent:   1.0,
-			RecoveryInterval:     2000,
+			RecoveryIntervalMs:   2000,
 			MaxRecoveryAttempts:  5,
 		},
 	})

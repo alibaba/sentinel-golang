@@ -18,22 +18,30 @@ import (
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 )
 
+type RecoveryCheckFunc func(address string) bool
+
 // Rule encompasses the fields of outlier ejection rule.
 type Rule struct {
 	*circuitbreaker.Rule
 
-	// Whether to enable active detection mode for recovery
+	// Whether to enable active detection mode for recovery.
+	// Enabling active detection mode will disable passive detection.
 	EnableActiveRecovery bool
 
-	// An upper limit on the percentage of service nodes to be removed, which
-	// defines the maximum percentage of nodes allowed to be excluded from
-	// the service's load balancing pool.
+	// An upper limit on the percentage of nodes to be excluded from the
+	// service's load balancing pool.
 	MaxEjectionPercent float64
 
 	// The initial value of the time interval (in ms) to resume detection.
-	// Enabling active detection mode will disable passive detection.
-	RecoveryInterval uint32
+	RecoveryIntervalMs uint32
 
-	// Maximum number of recovery attempts allowed during recovery detection
+	// The time interval (in seconds) for node recycling。
+	RecycleIntervalS uint32
+
+	// Maximum number of recovery attempts allowed during recovery detection.
 	MaxRecoveryAttempts uint32
+
+	// RecoveryCheckFunc is used to determine whether a node is healthy in
+	// the active recovery mode.
+	RecoveryCheckFunc RecoveryCheckFunc
 }

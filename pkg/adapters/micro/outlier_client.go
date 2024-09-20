@@ -59,11 +59,11 @@ func WithSelectOption(entry *base.SentinelEntry) client.CallOption {
 			halfNodes := entry.Context().HalfOpenNodes()
 			if len(halfNodes) != 0 {
 				fmt.Println("Half Filter Pre: ", printNodes(old[0].Nodes))
-				new = getRemainingNodes(old, halfNodes)
+				new = getRemainingNodes(old, halfNodes, true)
 				fmt.Println("Half Filter Post: ", printNodes(new[0].Nodes))
 			} else {
 				fmt.Println("Filter Pre: ", printNodes(old[0].Nodes))
-				new = getRemainingNodes(old, filterNodes)
+				new = getRemainingNodes(old, filterNodes, false)
 				fmt.Println("Filter Post: ", printNodes(new[0].Nodes))
 			}
 			return new
@@ -85,7 +85,7 @@ func WithCallWrapper(entry *base.SentinelEntry) client.CallOption {
 	})
 }
 
-func getRemainingNodes(old []*registry.Service, filters []string) []*registry.Service {
+func getRemainingNodes(old []*registry.Service, filters []string, flag bool) []*registry.Service {
 	nodesMap := make(map[string]struct{})
 	for _, node := range filters {
 		nodesMap[node] = struct{}{}
@@ -94,7 +94,7 @@ func getRemainingNodes(old []*registry.Service, filters []string) []*registry.Se
 		nodesCopy := slices.Clone(service.Nodes)
 		service.Nodes = make([]*registry.Node, 0)
 		for _, ep := range nodesCopy {
-			if _, ok := nodesMap[ep.Address]; !ok {
+			if _, ok := nodesMap[ep.Address]; ok == flag {
 				service.Nodes = append(service.Nodes, ep)
 			}
 		}

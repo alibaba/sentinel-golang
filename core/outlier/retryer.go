@@ -15,6 +15,7 @@
 package outlier
 
 import (
+	"errors"
 	"net"
 	"sync"
 	"time"
@@ -22,80 +23,110 @@ import (
 	"github.com/alibaba/sentinel-golang/logging"
 )
 
-// resource name --->  node retryer
-var retryers = make(map[string]*Retryer)
-var updateMutex = new(sync.Mutex)
+var (
+	// resource name --->  node retryer
+	retryers     = make(map[string]*Retryer)
+	retryerMutex = new(sync.Mutex)
+	retryerCh    = make(chan task, capacity)
+)
 
-// Each service should have its own Retryer to proactively
-// retry in case of node failure.
+func init() {
+	go func() {
+		for task := range retryerCh {
+			retryer := getRetryerOfResource(task.resource)
+			retryer.scheduleNodes(task.nodes)
+		}
+	}()
+}
+
+// Each service should have its own Retryer to proactively retry in case of node failure.
 type Retryer struct {
 	resource    string
-	interval    time.Duration
+	interval    time.Duration // initial value of the retry interval
 	maxAttempts uint32
-	// TODO RWMutex counts
-	counts map[string]uint32 // ip address ---> retry count
+	counts      map[string]uint32 // ip address ---> retried count
+	checkFunc   RecoveryCheckFunc
+	mtx         sync.Mutex
 }
 
 func getRetryerOfResource(resource string) *Retryer {
-	updateMutex.Lock()
-	defer updateMutex.Unlock()
+	retryerMutex.Lock()
+	defer retryerMutex.Unlock()
 	if _, ok := retryers[resource]; !ok {
-		retryer := &Retryer{resource: resource}
-		rules := getOutlierRuleOfResource(resource)
-		if rules != nil {
-			retryer.maxAttempts = rules.MaxRecoveryAttempts // TODO per resource only has one rule
-			retryer.interval = time.Duration(rules.RecoveryInterval * 1e6)
-			retryer.counts = make(map[string]uint32)
+		retryer := &Retryer{
+			resource: resource,
+			counts:   make(map[string]uint32),
+		}
+		rule := getOutlierRuleOfResource(resource)
+		if rule == nil {
+			logging.Error(errors.New("nil outlier rule"), "Nil outlier rule in getRetryerOfResource()")
+		} else {
+			retryer.maxAttempts = rule.MaxRecoveryAttempts
+			retryer.interval = time.Duration(rule.RecoveryIntervalMs * 1e6)
+			if rule.RecoveryCheckFunc != nil {
+				retryer.checkFunc = rule.RecoveryCheckFunc
+			} else {
+				retryer.checkFunc = isPortOpen
+			}
 		}
 		retryers[resource] = retryer
 	}
 	return retryers[resource]
 }
 
-func (r *Retryer) ConnectNode(nodeID string) {
-	ok, rt := isPortOpen(nodeID)
-	if ok {
-		delete(r.counts, nodeID)
-		r.OnCompleted(nodeID, rt)
-	} else {
-		r.counts[nodeID]++
-		count := r.counts[nodeID]
-		if count > r.maxAttempts {
-			count = r.maxAttempts
-		}
-		time.AfterFunc(r.interval*time.Duration(count), func() {
-			r.ConnectNode(nodeID)
-		})
-	}
+func isPortOpen(address string) bool {
+	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
+	defer conn.Close()
+	return err == nil
 }
 
-func (r *Retryer) scheduleRetry(nodes []string) {
+func (r *Retryer) scheduleNodes(nodes []string) {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
 	for _, node := range nodes {
 		if _, ok := r.counts[node]; !ok {
-			logging.Debug("[Outlier Reconnect]", "nodeID", node)
 			r.counts[node] = 1
+			logging.Debug("[Outlier Retryer] Reconnecting...", "node", node)
 			time.AfterFunc(r.interval, func() {
-				r.ConnectNode(node)
+				r.connectNode(node)
 			})
 		}
 	}
 }
 
-// TODO WithCheckFunc
-func isPortOpen(address string) (bool, uint64) {
+func (r *Retryer) connectNode(node string) {
 	start := time.Now()
-	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
-	if err != nil {
-		return false, 0
+	if r.checkFunc(node) {
+		end := time.Now()
+		r.onConnected(node, uint64(end.Sub(start).Milliseconds()))
+	} else {
+		r.onDisconnected(node)
 	}
-	defer conn.Close()
-	end := time.Now()
-	return true, uint64(end.Sub(start).Milliseconds())
 }
 
-func (r *Retryer) OnCompleted(nodeID string, rt uint64) {
-	recyclers[r.resource].recover(nodeID)
-	nodes := getNodeBreakerOfResource(r.resource)
-	// TODO 判断nodes[nodeID]不存在
-	nodes[nodeID].OnRequestComplete(rt, nil)
+func (r *Retryer) onConnected(node string, rt uint64) {
+	r.mtx.Lock()
+	delete(r.counts, node)
+	r.mtx.Unlock()
+	recycler := getRecyclerOfResource(r.resource)
+	recycler.recover(node)
+	breakers := getNodeBreakersOfResource(r.resource)
+	if breaker, ok := breakers[node]; ok {
+		breaker.OnRequestComplete(rt, nil)
+	} else {
+		logging.Info("[Outlier Retryer] Failed to update status after reconnection", "node", node)
+	}
+}
+
+func (r *Retryer) onDisconnected(node string) {
+	r.mtx.Lock()
+	r.counts[node]++
+	count := r.counts[node]
+	if count > r.maxAttempts {
+		count = r.maxAttempts
+	}
+	r.mtx.Unlock()
+	time.AfterFunc(r.interval*time.Duration(count), func() {
+		r.connectNode(node)
+	})
 }

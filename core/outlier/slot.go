@@ -48,31 +48,33 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		result.SetHalfOpenNodes(halfOpenNodes)
 	}
 	if len(outlierNodes) != 0 {
-		retryer := getRetryerOfResource(resource)
-		retryer.scheduleRetry(outlierNodes)
-		recycler := getRecyclerOfResource(resource)
-		recycler.scheduleRecycler(outlierNodes)
+		if len(retryerCh) < capacity {
+			retryerCh <- task{outlierNodes, resource}
+		}
+		if len(recyclerCh) < capacity {
+			recyclerCh <- task{outlierNodes, resource}
+		}
 	}
 	return result
 }
 
 func checkAllNodes(ctx *base.EntryContext) (filters []string, outliers []string, halfs []string) {
 	resource := ctx.Resource.Name()
-	nodeBreaks := getNodeBreakerOfResource(resource)
+	nodeBreaks := getNodeBreakersOfResource(resource)
 	rule := getOutlierRuleOfResource(resource)
-	nodeCount := getNodeCountOfResource(resource)
-	for nodeID, breaker := range nodeBreaks {
+	nodeCount := len(nodeBreaks)
+	for address, breaker := range nodeBreaks {
 		if breaker.TryPass(ctx) {
 			if !rule.EnableActiveRecovery && breaker.CurrentState() == circuitbreaker.HalfOpen {
-				halfs = append(halfs, nodeID)
+				halfs = append(halfs, address)
 			}
 			continue
 		}
 		if rule.EnableActiveRecovery {
-			outliers = append(outliers, nodeID)
+			outliers = append(outliers, address)
 		}
-		if len(filters) <= int(float64(nodeCount)*rule.MaxEjectionPercent) {
-			filters = append(filters, nodeID)
+		if len(filters) < int(float64(nodeCount)*rule.MaxEjectionPercent) {
+			filters = append(filters, address)
 		}
 	}
 	return filters, outliers, halfs

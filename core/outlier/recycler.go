@@ -15,39 +15,73 @@
 package outlier
 
 import (
+	"errors"
 	"sync"
 	"time"
+
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
-// resource name --->  node recycler
-var recyclers = make(map[string]*Recycler)
-var recyclerMutex = new(sync.Mutex)
+const capacity = 200
 
+var (
+	// resource name --->  node recycler
+	recyclers     = make(map[string]*Recycler)
+	recyclerMutex = new(sync.Mutex)
+	recyclerCh    = make(chan task, capacity)
+)
+
+type task struct {
+	nodes    []string
+	resource string
+}
+
+func init() {
+	go func() {
+		for task := range recyclerCh {
+			recycler := getRecyclerOfResource(task.resource)
+			recycler.scheduleNodes(task.nodes)
+		}
+	}()
+}
+
+// Recycler recycles node instance that have been invalidated for a long time
 type Recycler struct {
 	resource string
 	interval time.Duration
 	status   map[string]bool
+	mtx      sync.Mutex
 }
 
 func getRecyclerOfResource(resource string) *Recycler {
 	recyclerMutex.Lock()
 	defer recyclerMutex.Unlock()
 	if _, ok := recyclers[resource]; !ok {
-		recycler := &Recycler{resource: resource}
-		rules := getOutlierRuleOfResource(resource)
-		if rules != nil {
-			recycler.interval = time.Duration(rules.RecoveryInterval * 1e6)
-			recycler.status = make(map[string]bool)
+		recycler := &Recycler{
+			resource: resource,
+			status:   make(map[string]bool),
+		}
+		rule := getOutlierRuleOfResource(resource)
+		if rule == nil {
+			logging.Error(errors.New("nil outlier rule"), "Nil outlier rule in getRecyclerOfResource()")
+		} else {
+			if rule.RecycleIntervalS == 0 {
+				recycler.interval = 10 * time.Minute
+			} else {
+				recycler.interval = time.Duration(rule.RecycleIntervalS * 1e9)
+			}
 		}
 		recyclers[resource] = recycler
 	}
 	return recyclers[resource]
 }
 
-// The default policy is to recycle the breaker instance if the node does not recover in one hour
-func (r *Recycler) scheduleRecycler(nodes []string) {
+func (r *Recycler) scheduleNodes(nodes []string) {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
 	for _, node := range nodes {
 		if _, ok := r.status[node]; !ok {
+			r.status[node] = false
 			time.AfterFunc(r.interval, func() {
 				r.recycle(node)
 			})
@@ -56,12 +90,18 @@ func (r *Recycler) scheduleRecycler(nodes []string) {
 }
 
 func (r *Recycler) recover(node string) {
-	r.status[node] = true
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	if _, ok := r.status[node]; ok {
+		r.status[node] = true
+	}
 }
 
 func (r *Recycler) recycle(node string) {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
 	if v, ok := r.status[node]; ok && !v {
-		deleteNodeBreakerFromResource(r.resource, node)
-		delete(r.status, node)
+		deleteNodeBreakerOfResource(r.resource, node)
 	}
+	delete(r.status, node)
 }

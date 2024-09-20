@@ -24,11 +24,11 @@ func OutlierClientFilter(ctx context.Context, nodes []selector.Node) []selector.
 	var nodesPost []selector.Node
 	if len(halfNodes) != 0 {
 		fmt.Println("Half Filter Pre: ", printNodes(nodes))
-		nodesPost = getRemainingNodes(nodes, halfNodes)
+		nodesPost = getRemainingNodes(nodes, halfNodes, true)
 		fmt.Println("Half Filter Post: ", printNodes(nodesPost))
 	} else {
 		fmt.Println("Filter Pre: ", printNodes(nodes))
-		nodesPost = getRemainingNodes(nodes, filterNodes)
+		nodesPost = getRemainingNodes(nodes, filterNodes, false)
 		fmt.Println("Filter Post: ", printNodes(nodesPost))
 	}
 	return nodesPost
@@ -69,14 +69,14 @@ func OutlierClientMiddleware(src middleware.Handler) middleware.Handler {
 	}
 }
 
-func getRemainingNodes(nodes []selector.Node, filters []string) []selector.Node {
+func getRemainingNodes(nodes []selector.Node, filters []string, flag bool) []selector.Node {
 	nodesMap := make(map[string]struct{})
 	for _, node := range filters {
 		nodesMap[node] = struct{}{}
 	}
 	nodesPost := make([]selector.Node, 0)
 	for _, ep := range nodes {
-		if _, ok := nodesMap[ep.Address()]; !ok {
+		if _, ok := nodesMap[ep.Address()]; ok == flag {
 			nodesPost = append(nodesPost, ep)
 		}
 	}
