@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"context"
@@ -53,7 +53,7 @@ func main() {
 				StatIntervalMs:   1000,
 				Threshold:        1.0,
 			},
-			EnableActiveRecovery: true,
+			EnableActiveRecovery: false,
 			MaxEjectionPercent:   1.0,
 			RecoveryIntervalMs:   2000,
 			MaxRecoveryAttempts:  5,

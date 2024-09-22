@@ -76,8 +76,11 @@ func getRetryerOfResource(resource string) *Retryer {
 
 func isPortOpen(address string) bool {
 	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
-	defer conn.Close()
-	return err == nil
+	if err == nil {
+		conn.Close()
+		return true
+	}
+	return false
 }
 
 func (r *Retryer) scheduleNodes(nodes []string) {
@@ -86,7 +89,7 @@ func (r *Retryer) scheduleNodes(nodes []string) {
 	for _, node := range nodes {
 		if _, ok := r.counts[node]; !ok {
 			r.counts[node] = 1
-			logging.Debug("[Outlier Retryer] Reconnecting...", "node", node)
+			logging.Info("[Outlier Retryer] Reconnecting...", "node", node)
 			time.AfterFunc(r.interval, func() {
 				r.connectNode(node)
 			})
@@ -114,7 +117,7 @@ func (r *Retryer) onConnected(node string, rt uint64) {
 	if breaker, ok := breakers[node]; ok {
 		breaker.OnRequestComplete(rt, nil)
 	} else {
-		logging.Info("[Outlier Retryer] Failed to update status after reconnection", "node", node)
+		logging.Warn("[Outlier Retryer] Failed to update status after reconnection", "node", node)
 	}
 }
 

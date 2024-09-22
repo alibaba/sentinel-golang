@@ -13,6 +13,7 @@ import (
 )
 
 var filterNodes []string
+var halfNodes []string
 
 // SentinelClientMiddleware returns new client.Middleware
 // Default resource name is {service's name}:{method}
@@ -53,6 +54,7 @@ func OutlierClientMiddleware(opts ...Option) func(endpoint.Endpoint) endpoint.En
 			)
 			defer entry.Exit()
 			filterNodes = entry.Context().FilterNodes()
+			halfNodes = entry.Context().HalfOpenNodes()
 			err := next(ctx, req, resp)
 			if callee := CalleeAddressExtract(ctx); callee != "" {
 				sentinel.TraceCallee(entry, callee)
@@ -67,18 +69,16 @@ func OutlierClientMiddleware(opts ...Option) func(endpoint.Endpoint) endpoint.En
 
 func OutlierClientResolver(resolver discovery.Resolver) discovery.Resolver {
 	filterFunc := func(ctx context.Context, nodes []discovery.Instance) []discovery.Instance {
-		nodesMap := make(map[string]struct{})
-		for _, node := range filterNodes {
-			nodesMap[node] = struct{}{}
+		var nodesPost []discovery.Instance
+		if len(halfNodes) != 0 {
+			fmt.Println("Half Filter Pre: ", printNodes(nodes))
+			nodesPost = getRemainingNodes(nodes, halfNodes, true)
+			fmt.Println("Half Filter Post: ", printNodes(nodesPost))
+		} else {
+			fmt.Println("Filter Pre: ", printNodes(nodes))
+			nodesPost = getRemainingNodes(nodes, filterNodes, false)
+			fmt.Println("Filter Post: ", printNodes(nodesPost))
 		}
-		fmt.Println("Filter Pre: ", printNodes(nodes))
-		nodesPost := make([]discovery.Instance, 0)
-		for _, ep := range nodes {
-			if _, ok := nodesMap[ep.Address().String()]; !ok {
-				nodesPost = append(nodesPost, ep)
-			}
-		}
-		fmt.Println("Filter Post: ", printNodes(nodesPost))
 		return nodesPost
 	}
 	// Construct the filterRule and build rule based resolver
@@ -87,6 +87,20 @@ func OutlierClientResolver(resolver discovery.Resolver) discovery.Resolver {
 		Funcs: []ruleBasedResolver.FilterFunc{filterFunc},
 	}
 	return ruleBasedResolver.NewRuleBasedResolver(resolver, filterRule)
+}
+
+func getRemainingNodes(nodes []discovery.Instance, filters []string, flag bool) []discovery.Instance {
+	nodesMap := make(map[string]struct{})
+	for _, node := range filters {
+		nodesMap[node] = struct{}{}
+	}
+	nodesPost := make([]discovery.Instance, 0)
+	for _, ep := range nodes {
+		if _, ok := nodesMap[ep.Address().String()]; ok == flag {
+			nodesPost = append(nodesPost, ep)
+		}
+	}
+	return nodesPost
 }
 
 // TODO remove this func

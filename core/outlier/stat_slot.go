@@ -50,21 +50,18 @@ func (c *MetricStatSlot) OnCompleted(ctx *base.EntryContext) {
 	res := ctx.Resource.Name()
 	err := ctx.Err()
 	nodeBreakers := getNodeBreakersOfResource(res)
-	var address string
 	if address, ok := ctx.GetPair("address").(string); !ok || address == "" {
 		logging.Warn("[Outlier] Failed to get valid address", "resourceName", res)
-		return
-	}
-
-	if _, ok := nodeBreakers[address]; !ok {
-		addNodeBreakerOfResource(res, address)
-		nodeBreakers = getNodeBreakersOfResource(res)
-	}
-
-	breaker := nodeBreakers[address]
-	breaker.OnRequestComplete(ctx.Rt(), err)
-	if err == nil {
-		recycler := getRecyclerOfResource(res)
-		recycler.recover(address)
+	} else {
+		if _, ok2 := nodeBreakers[address]; !ok2 {
+			addNodeBreakerOfResource(res, address)
+			nodeBreakers = getNodeBreakersOfResource(res)
+		}
+		breaker := nodeBreakers[address]
+		breaker.OnRequestComplete(ctx.Rt(), err)
+		if err == nil {
+			recycler := getRecyclerOfResource(res)
+			recycler.recover(address)
+		}
 	}
 }

@@ -41,12 +41,8 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		return result
 	}
 	filterNodes, outlierNodes, halfOpenNodes := checkAllNodes(ctx)
-	if len(filterNodes) != 0 {
-		result.SetFilterNodes(filterNodes)
-	}
-	if len(halfOpenNodes) != 0 {
-		result.SetHalfOpenNodes(halfOpenNodes)
-	}
+	result.SetFilterNodes(filterNodes)
+	result.SetHalfOpenNodes(halfOpenNodes)
 	if len(outlierNodes) != 0 {
 		if len(retryerCh) < capacity {
 			retryerCh <- task{outlierNodes, resource}
