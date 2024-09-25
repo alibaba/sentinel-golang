@@ -25,6 +25,8 @@ import (
 	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
+
+	_ "go.uber.org/automaxprocs"
 )
 
 // Initialization func initialize the Sentinel's runtime environment, including:

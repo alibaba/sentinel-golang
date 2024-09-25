@@ -47,21 +47,8 @@ func TestCurrentCpuUsage(t *testing.T) {
 	assert.True(t, util.Float64Equals(v, cpuUsage))
 }
 
-func Test_getProcessCpuStat(t *testing.T) {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		i := 0
-		wg.Done()
-		for i < 10000000000 {
-			i++
-			if i == 1000000000 {
-				i = 0
-			}
-		}
-	}()
-	wg.Wait()
-
+func TestGetProcessCpuStat(t *testing.T) {
+	upraiseCpuRate()
 	got, err := getProcessCpuStat()
 	if err != nil {
 		t.Error(err)
@@ -82,4 +69,29 @@ func Test_getProcessCpuStat(t *testing.T) {
 	}
 	assert.True(t, int(got) > 0)
 	time.Sleep(time.Millisecond * 200)
+}
+
+func TestRetrieveAndUpdateCpuStatReturnValueRange(t *testing.T) {
+	// Initial cpu retrieval.
+	retrieveAndUpdateCpuStat()
+	upraiseCpuRate()
+	time.Sleep(time.Millisecond * 200)
+	retrieveAndUpdateCpuStat()
+	assert.True(t, true, CurrentCpuUsage() < 1.0)
+}
+
+func upraiseCpuRate() {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		i := 0
+		wg.Done()
+		for i < 10000000000 {
+			i++
+			if i == 1000000000 {
+				i = 0
+			}
+		}
+	}()
+	wg.Wait()
 }
