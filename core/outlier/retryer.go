@@ -90,8 +90,9 @@ func (r *Retryer) scheduleNodes(nodes []string) {
 		if _, ok := r.counts[node]; !ok {
 			r.counts[node] = 1
 			logging.Info("[Outlier Retryer] Reconnecting...", "node", node)
+			nodeCopy := node // Copy values to correctly capture the closure for node.
 			time.AfterFunc(r.interval, func() {
-				r.connectNode(node)
+				r.connectNode(nodeCopy)
 			})
 		}
 	}

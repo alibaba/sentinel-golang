@@ -32,7 +32,7 @@ var (
 	breakerRules = make(map[string]*circuitbreaker.Rule)
 	// resource name ---> address ---> circuitbreaker
 	nodeBreakers = make(map[string]map[string]circuitbreaker.CircuitBreaker)
-
+	// resource name ---> outlier ejection rule
 	currentRules = make(map[string]*Rule)
 	updateMux    = new(sync.RWMutex)
 )
@@ -83,6 +83,41 @@ func getBreakerRuleOfResource(resource string) *circuitbreaker.Rule {
 	rule := breakerRules[resource]
 	updateMux.RUnlock()
 	return rule
+}
+
+// GetRules returns all the rules based on copy.
+// It doesn't take effect for outlier ejection module if user changes the rule.
+// GetRules need to compete outlier ejection module's global lock and the high performance losses of copy,
+//
+//	reduce or do not call GetRules if possible
+func GetRules() []Rule {
+	updateMux.RLock()
+	rules := rulesFrom(outlierRules)
+	updateMux.RUnlock()
+	ret := make([]Rule, 0, len(rules))
+	for _, rule := range rules {
+		ret = append(ret, *rule)
+	}
+	return ret
+}
+
+func rulesFrom(rm map[string]*Rule) []*Rule {
+	rules := make([]*Rule, 0, 8)
+	if len(rm) == 0 {
+		return rules
+	}
+	for _, r := range rm {
+		if r != nil {
+			rules = append(rules, r)
+		}
+	}
+	return rules
+}
+
+// ClearRules clear all the previous rules.
+func ClearRules() error {
+	_, err := LoadRules(nil)
+	return err
 }
 
 // LoadRules replaces old outlier ejection rules with the given rules.

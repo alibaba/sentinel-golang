@@ -82,8 +82,9 @@ func (r *Recycler) scheduleNodes(nodes []string) {
 	for _, node := range nodes {
 		if _, ok := r.status[node]; !ok {
 			r.status[node] = false
+			nodeCopy := node // Copy values to correctly capture the closure for node.
 			time.AfterFunc(r.interval, func() {
-				r.recycle(node)
+				r.recycle(nodeCopy)
 			})
 		}
 	}
