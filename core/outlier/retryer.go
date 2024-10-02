@@ -130,6 +130,7 @@ func (r *Retryer) onDisconnected(node string) {
 		count = r.maxAttempts
 	}
 	r.mtx.Unlock()
+	// Fix bugs: When multiple active checks still do not recover, it is necessary to delete node from r.counts.
 	time.AfterFunc(r.interval*time.Duration(count), func() {
 		r.connectNode(node)
 	})

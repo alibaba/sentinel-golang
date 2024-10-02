@@ -33,8 +33,9 @@ var (
 	// resource name ---> address ---> circuitbreaker
 	nodeBreakers = make(map[string]map[string]circuitbreaker.CircuitBreaker)
 	// resource name ---> outlier ejection rule
-	currentRules = make(map[string]*Rule)
-	updateMux    = new(sync.RWMutex)
+	currentRules  = make(map[string]*Rule)
+	updateMux     = new(sync.RWMutex)
+	updateRuleMux = new(sync.Mutex)
 )
 
 func getNodeBreakersOfResource(resource string) map[string]circuitbreaker.CircuitBreaker {
@@ -131,6 +132,8 @@ func LoadRules(rules []*Rule) (bool, error) {
 	for _, rule := range rules {
 		rulesMap[rule.Resource] = rule
 	}
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
 	isEqual := reflect.DeepEqual(currentRules, rulesMap)
 	if isEqual {
 		logging.Info("[Outlier] Load rules is the same with current rules, so ignore load operation.")
@@ -138,6 +141,79 @@ func LoadRules(rules []*Rule) (bool, error) {
 	}
 	err := onRuleUpdate(rulesMap)
 	return true, err
+}
+
+// LoadRuleOfResource loads the given resource's outlier ejection rule to the rule manager, while previous resource's rule will be replaced.
+// the first returned value indicates whether do real load operation, if the rule is the same with previous resource's rule, return false
+func LoadRuleOfResource(res string, rule *Rule) (bool, error) {
+	if len(res) == 0 {
+		return false, errors.New("empty resource")
+	}
+	updateRuleMux.Lock()
+	defer updateRuleMux.Unlock()
+	// clear resource rule
+	if rule == nil {
+		delete(currentRules, res)
+		updateMux.Lock()
+		delete(nodeBreakers, res)
+		delete(breakerRules, res)
+		delete(outlierRules, res)
+		updateMux.Unlock()
+		logging.Info("[Outlier] clear resource level rule", "resource", res)
+		return true, nil
+	}
+	// load resource level rule
+	isEqual := reflect.DeepEqual(currentRules[res], rule)
+	if isEqual {
+		logging.Info("[Outlier] Load resource level rule is the same with current resource level rule, so ignore load operation.")
+		return false, nil
+	}
+	err := onResourceRuleUpdate(res, rule)
+	return true, err
+}
+
+func onResourceRuleUpdate(res string, rule *Rule) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+
+	circuitRule := rule.Rule
+	if err = IsValidRule(rule); err != nil {
+		logging.Warn("[Outlier onResourceRuleUpdate] Ignoring invalid outlier ejection rule", "rule", rule, "err", err.Error())
+		return
+	}
+	if err = circuitbreaker.IsValidRule(circuitRule); err != nil {
+		logging.Warn("[Outlier onRuleUpdate] Ignoring invalid rule when loading new rules", "rule", rule, "err", err.Error())
+		return
+	}
+
+	start := util.CurrentTimeNano()
+	breakers := getNodeBreakersOfResource(res)
+	newBreakers := make(map[string]circuitbreaker.CircuitBreaker)
+	for address, breaker := range breakers {
+		newCbsOfRes := circuitbreaker.BuildResourceCircuitBreaker(res,
+			[]*circuitbreaker.Rule{circuitRule}, []circuitbreaker.CircuitBreaker{breaker})
+		if len(newCbsOfRes) > 0 {
+			newBreakers[address] = newCbsOfRes[0]
+		}
+	}
+
+	updateMux.Lock()
+	outlierRules[res] = rule
+	breakerRules[res] = circuitRule
+	nodeBreakers[res] = newBreakers
+	updateMux.Unlock()
+	currentRules[res] = rule
+
+	logging.Debug("[Outlier onResourceRuleUpdate] Time statistics(ns) for updating outlier ejection rule", "timeCost", util.CurrentTimeNano()-start)
+	logging.Info("[Outlier] load resource level rule", "resource", res, "rule", rule)
+	return nil
 }
 
 // onRuleUpdate is concurrent safe to update outlier ejection rules
@@ -157,9 +233,11 @@ func onRuleUpdate(rulesMap map[string]*Rule) (err error) {
 	validRulesMap := make(map[string]*Rule, len(rulesMap))
 	for resource, rule := range rulesMap {
 		circuitRule := rule.Rule
-		err := IsValidRule(rule)
-		err = circuitbreaker.IsValidRule(circuitRule)
-		if err != nil {
+		if err = IsValidRule(rule); err != nil {
+			logging.Warn("[Outlier onRuleUpdate] Ignoring invalid rule when loading new rules", "rule", rule, "err", err.Error())
+			continue
+		}
+		if err = circuitbreaker.IsValidRule(circuitRule); err != nil {
 			logging.Warn("[Outlier onRuleUpdate] Ignoring invalid rule when loading new rules", "rule", rule, "err", err.Error())
 			continue
 		}
@@ -176,6 +254,12 @@ func onRuleUpdate(rulesMap map[string]*Rule) (err error) {
 	updateAllBreakers()
 	LogRuleUpdate(outlierRules)
 	return nil
+}
+
+// ClearRuleOfResource clears resource level rule in outlier ejection module.
+func ClearRuleOfResource(res string) error {
+	_, err := LoadRuleOfResource(res, nil)
+	return err
 }
 
 func IsValidRule(r *Rule) error {
