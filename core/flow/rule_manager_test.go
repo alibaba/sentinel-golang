@@ -15,6 +15,7 @@
 package flow
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -27,6 +28,12 @@ func clearData() {
 	tcMap = make(TrafficControllerMap)
 	currentRules = make(map[string][]*Rule, 0)
 }
+
+func TestMain(m *testing.M) {
+	Init()
+	os.Exit(m.Run())
+}
+
 func TestSetAndRemoveTrafficShapingGenerator(t *testing.T) {
 	tsc := &TrafficShapingController{}
 
