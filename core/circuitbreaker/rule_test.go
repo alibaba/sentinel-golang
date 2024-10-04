@@ -368,6 +368,30 @@ func TestRuleIsEqualsToBase(t *testing.T) {
 			},
 			expectedResult: false,
 		},
+		// different ProbeNum
+		{
+			rule1: &Rule{
+				Resource:                     "abc",
+				Strategy:                     ErrorCount,
+				RetryTimeoutMs:               3000,
+				MinRequestAmount:             10,
+				StatIntervalMs:               10000,
+				StatSlidingWindowBucketCount: 2,
+				Threshold:                    1.0,
+				ProbeNum:                     10,
+			},
+			rule2: &Rule{
+				Resource:                     "abc",
+				Strategy:                     ErrorCount,
+				RetryTimeoutMs:               3000,
+				MinRequestAmount:             10,
+				StatIntervalMs:               10000,
+				StatSlidingWindowBucketCount: 2,
+				Threshold:                    1.0,
+				ProbeNum:                     11,
+			},
+			expectedResult: false,
+		},
 	}
 
 	for i, c := range cases {

@@ -76,7 +76,7 @@ type Rule struct {
 	// ControlBehavior only takes effect when MetricType is QPS
 	ControlBehavior ControlBehavior `json:"controlBehavior"`
 	// ParamIndex is the index in context arguments slice.
-	// if ParamIndex is great than or equals to zero, ParamIndex means the <ParamIndex>-th parameter
+	// if ParamIndex is greater than or equals to zero, ParamIndex means the <ParamIndex>-th parameter
 	// if ParamIndex is the negative, ParamIndex means the reversed <ParamIndex>-th parameter
 	ParamIndex int `json:"paramIndex"`
 	// ParamKey is the key in EntryContext.Input.Attachments map.
