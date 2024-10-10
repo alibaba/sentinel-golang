@@ -123,18 +123,20 @@ func (r *Rule) isEqualsTo(newRule *Rule) bool {
 	if newRule == nil {
 		return false
 	}
-	if !(r.Resource == newRule.Resource && r.RelationStrategy == newRule.RelationStrategy &&
-		r.RefResource == newRule.RefResource && r.StatIntervalInMs == newRule.StatIntervalInMs &&
-		r.TokenCalculateStrategy == newRule.TokenCalculateStrategy && r.ControlBehavior == newRule.ControlBehavior &&
+	return r.Resource == newRule.Resource &&
+		r.RelationStrategy == newRule.RelationStrategy &&
+		r.RefResource == newRule.RefResource &&
+		r.StatIntervalInMs == newRule.StatIntervalInMs &&
+		r.TokenCalculateStrategy == newRule.TokenCalculateStrategy &&
+		r.ControlBehavior == newRule.ControlBehavior &&
 		util.Float64Equals(r.Threshold, newRule.Threshold) &&
-		r.MaxQueueingTimeMs == newRule.MaxQueueingTimeMs && r.WarmUpPeriodSec == newRule.WarmUpPeriodSec &&
+		r.MaxQueueingTimeMs == newRule.MaxQueueingTimeMs &&
+		r.WarmUpPeriodSec == newRule.WarmUpPeriodSec &&
 		r.WarmUpColdFactor == newRule.WarmUpColdFactor &&
-		r.LowMemUsageThreshold == newRule.LowMemUsageThreshold && r.HighMemUsageThreshold == newRule.HighMemUsageThreshold &&
-		r.MemLowWaterMarkBytes == newRule.MemLowWaterMarkBytes && r.MemHighWaterMarkBytes == newRule.MemHighWaterMarkBytes) {
-
-		return false
-	}
-	return true
+		r.LowMemUsageThreshold == newRule.LowMemUsageThreshold &&
+		r.HighMemUsageThreshold == newRule.HighMemUsageThreshold &&
+		r.MemLowWaterMarkBytes == newRule.MemLowWaterMarkBytes &&
+		r.MemHighWaterMarkBytes == newRule.MemHighWaterMarkBytes
 }
 
 func (r *Rule) isStatReusable(newRule *Rule) bool {
