@@ -61,7 +61,7 @@ type Rule struct {
 	// that can trigger circuit breaking.
 	MinRequestAmount uint64 `json:"minRequestAmount"`
 	// StatIntervalMs represents statistic time interval of the internal circuit breaker (in ms).
-	// Currently the statistic interval is collected by sliding window.
+	// Currently, the statistic interval is collected by sliding window.
 	StatIntervalMs uint32 `json:"statIntervalMs"`
 	// StatSlidingWindowBucketCount represents the bucket count of statistic sliding window.
 	// The statistic will be more precise as the bucket count increases, but the memory cost increases too.
@@ -78,10 +78,10 @@ type Rule struct {
 	// for ErrorRatio, it represents the max error request ratio
 	// for ErrorCount, it represents the max error request count
 	Threshold float64 `json:"threshold"`
-	//ProbeNum is number of probes required when the circuit breaker is half-open.
-	//when the probe num are set  and circuit breaker in the half-open state.
-	//if err occurs during the probe, the circuit breaker is opened immediately.
-	//otherwise,the circuit breaker is closed only after the number of probes is reached
+	// ProbeNum is number of probes required when the circuit breaker is half-open.
+	// when the probe num are set  and circuit breaker in the half-open state.
+	// if err occurs during the probe, the circuit breaker is opened immediately.
+	// otherwise,the circuit breaker is closed only after the number of probes is reached
 	ProbeNum uint64 `json:"probeNum"`
 }
 
@@ -103,12 +103,14 @@ func (r *Rule) ResourceName() string {
 	return r.Resource
 }
 
+// Check whether the fields shared by all rule strategy types are consistent
 func (r *Rule) isEqualsToBase(newRule *Rule) bool {
 	if newRule == nil {
 		return false
 	}
 	return r.Resource == newRule.Resource && r.Strategy == newRule.Strategy && r.RetryTimeoutMs == newRule.RetryTimeoutMs &&
-		r.MinRequestAmount == newRule.MinRequestAmount && r.StatIntervalMs == newRule.StatIntervalMs && r.StatSlidingWindowBucketCount == newRule.StatSlidingWindowBucketCount
+		r.MinRequestAmount == newRule.MinRequestAmount && r.StatIntervalMs == newRule.StatIntervalMs && r.StatSlidingWindowBucketCount == newRule.StatSlidingWindowBucketCount &&
+		r.ProbeNum == newRule.ProbeNum
 }
 
 func (r *Rule) isEqualsTo(newRule *Rule) bool {
