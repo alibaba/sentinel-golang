@@ -5,12 +5,13 @@ import (
 	"errors"
 	"testing"
 
-	sentinel "github.com/alibaba/sentinel-golang/api"
-	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/cloudwego/kitex-examples/hello/kitex_gen/api"
 	"github.com/cloudwego/kitex-examples/hello/kitex_gen/api/hello"
 	"github.com/cloudwego/kitex/client"
 	"github.com/stretchr/testify/assert"
+
+	sentinel "github.com/alibaba/sentinel-golang/api"
+	"github.com/alibaba/sentinel-golang/core/flow"
 )
 
 const FakeErrorMsg = "fake error for testing"
@@ -20,8 +21,7 @@ func TestSentinelClientMiddleware(t *testing.T) {
 		return errors.New(FakeErrorMsg)
 	}
 	c, err := hello.NewClient("hello",
-		client.WithMiddleware(SentinelClientMiddleware(
-			WithBlockFallback(bf))))
+		client.WithMiddleware(SentinelClientMiddleware(WithBlockFallback(bf))))
 	if err != nil {
 		t.Fatal(err)
 	}

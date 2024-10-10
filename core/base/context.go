@@ -75,6 +75,22 @@ func (ctx *EntryContext) Rt() uint64 {
 	return ctx.rt
 }
 
+func (ctx *EntryContext) FilterNodes() []string {
+	return ctx.RuleCheckResult.FilterNodes()
+}
+
+func (ctx *EntryContext) HalfOpenNodes() []string {
+	return ctx.RuleCheckResult.HalfOpenNodes()
+}
+
+func (ctx *EntryContext) SetPair(key, val interface{}) {
+	ctx.Data[key] = val
+}
+
+func (ctx *EntryContext) GetPair(key interface{}) interface{} {
+	return ctx.Data[key]
+}
+
 func NewEmptyEntryContext() *EntryContext {
 	return &EntryContext{}
 }

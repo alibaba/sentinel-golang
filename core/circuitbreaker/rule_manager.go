@@ -19,9 +19,10 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 )
 
 type CircuitBreakerGenFunc func(r *Rule, reuseStat interface{}) (CircuitBreaker, error)
@@ -262,7 +263,7 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 
 	newBreakers := make(map[string][]CircuitBreaker, len(validResRulesMap))
 	for res, resRules := range validResRulesMap {
-		newCbsOfRes := buildResourceCircuitBreaker(res, resRules, breakersClone[res])
+		newCbsOfRes := BuildResourceCircuitBreaker(res, resRules, breakersClone[res])
 		if len(newCbsOfRes) > 0 {
 			newBreakers[res] = newCbsOfRes
 		}
@@ -275,7 +276,7 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	currentRules = rawResRulesMap
 
 	logging.Debug("[CircuitBreaker onRuleUpdate] Time statistics(ns) for updating circuit breaker rule", "timeCost", util.CurrentTimeNano()-start)
-	logRuleUpdate(validResRulesMap)
+	LogRuleUpdate(validResRulesMap)
 	return nil
 }
 
@@ -305,7 +306,7 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	oldResCbs = append(oldResCbs, breakers[res]...)
 	updateMux.RUnlock()
 
-	newCbsOfRes := buildResourceCircuitBreaker(res, rawResRules, oldResCbs)
+	newCbsOfRes := BuildResourceCircuitBreaker(res, rawResRules, oldResCbs)
 
 	updateMux.Lock()
 	if len(newCbsOfRes) == 0 {
@@ -341,7 +342,7 @@ func rulesFrom(rm map[string][]*Rule) []*Rule {
 	return rules
 }
 
-func logRuleUpdate(m map[string][]*Rule) {
+func LogRuleUpdate(m map[string][]*Rule) {
 	rs := rulesFrom(m)
 	if len(rs) == 0 {
 		logging.Info("[CircuitBreakerRuleManager] Circuit breaking rules were cleared")
@@ -399,12 +400,12 @@ func ClearRulesOfResource(res string) error {
 	return err
 }
 
-// buildResourceCircuitBreaker builds CircuitBreaker slice from rules. the resource of rules must be equals to res
-func buildResourceCircuitBreaker(res string, rulesOfRes []*Rule, oldResCbs []CircuitBreaker) []CircuitBreaker {
+// BuildResourceCircuitBreaker builds CircuitBreaker slice from rules. the resource of rules must be equals to res
+func BuildResourceCircuitBreaker(res string, rulesOfRes []*Rule, oldResCbs []CircuitBreaker) []CircuitBreaker {
 	newCbsOfRes := make([]CircuitBreaker, 0, len(rulesOfRes))
 	for _, r := range rulesOfRes {
 		if res != r.Resource {
-			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, r.Resource), "Unmatched resource name in circuitBreaker.buildResourceCircuitBreaker()", "rule", r)
+			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, r.Resource), "Unmatched resource name in circuitBreaker.BuildResourceCircuitBreaker()", "rule", r)
 			continue
 		}
 		equalIdx, reuseStatIdx := calculateReuseIndexFor(r, oldResCbs)
@@ -421,7 +422,7 @@ func buildResourceCircuitBreaker(res string, rulesOfRes []*Rule, oldResCbs []Cir
 
 		generator := cbGenFuncMap[r.Strategy]
 		if generator == nil {
-			logging.Warn("[CircuitBreaker buildResourceCircuitBreaker] Ignoring the rule due to unsupported circuit breaking strategy", "rule", r)
+			logging.Warn("[CircuitBreaker BuildResourceCircuitBreaker] Ignoring the rule due to unsupported circuit breaking strategy", "rule", r)
 			continue
 		}
 
@@ -433,7 +434,7 @@ func buildResourceCircuitBreaker(res string, rulesOfRes []*Rule, oldResCbs []Cir
 			cb, e = generator(r, nil)
 		}
 		if cb == nil || e != nil {
-			logging.Warn("[CircuitBreaker buildResourceCircuitBreaker] Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e.Error())
+			logging.Warn("[CircuitBreaker BuildResourceCircuitBreaker] Ignoring the rule due to bad generated circuit breaker", "rule", r, "err", e.Error())
 			continue
 		}
 

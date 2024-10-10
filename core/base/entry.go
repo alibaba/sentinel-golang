@@ -17,8 +17,9 @@ package base
 import (
 	"sync"
 
-	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
+
+	"github.com/alibaba/sentinel-golang/logging"
 )
 
 type ExitHandler func(entry *SentinelEntry, ctx *EntryContext) error
@@ -52,6 +53,12 @@ func (e *SentinelEntry) WhenExit(exitHandler ExitHandler) {
 func (e *SentinelEntry) SetError(err error) {
 	if e.ctx != nil {
 		e.ctx.SetError(err)
+	}
+}
+
+func (e *SentinelEntry) SetPair(key, val interface{}) {
+	if e.ctx != nil {
+		e.ctx.SetPair(key, val)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
+	"github.com/cloudwego/kitex/pkg/rpcinfo/remoteinfo"
 )
 
 type Option struct {
@@ -51,4 +52,18 @@ func WithBlockFallback(f func(ctx context.Context, req, resp interface{}, blockE
 	return Option{func(o *options) {
 		o.BlockFallback = f
 	}}
+}
+
+func ServiceNameExtract(ctx context.Context) string {
+	rpcInfo := rpcinfo.GetRPCInfo(ctx)
+	return rpcInfo.To().ServiceName()
+}
+
+func CalleeAddressExtract(ctx context.Context) string {
+	rpcInfo := rpcinfo.GetRPCInfo(ctx)
+	remote := remoteinfo.AsRemoteInfo(rpcInfo.To())
+	if remote == nil || remote.Address() == nil {
+		return ""
+	}
+	return remote.Address().String()
 }
