@@ -16,6 +16,7 @@ package outlier
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -38,6 +39,11 @@ type task struct {
 
 func init() {
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				logging.Error(fmt.Errorf("%+v", err), "Unexpected panic when consuming recyclerCh")
+			}
+		}()
 		for task := range recyclerCh {
 			recycler := getRecyclerOfResource(task.resource)
 			recycler.scheduleNodes(task.nodes)

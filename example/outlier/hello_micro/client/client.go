@@ -32,7 +32,10 @@ func initOutlierClient() client.Client {
 		micro.Name(serviceName),
 		micro.Version(version),
 		micro.Selector(sel),
-		micro.WrapClient(microAdapter.NewOutlierClientWrapper()),
+		micro.WrapClient(microAdapter.NewClientWrapper(
+			microAdapter.WithEnableOutlier(func(ctx context.Context) bool {
+				return true
+			}))),
 	)
 	return srv.Client()
 }

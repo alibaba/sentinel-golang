@@ -16,6 +16,7 @@ package outlier
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -32,6 +33,11 @@ var (
 
 func init() {
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				logging.Error(fmt.Errorf("%+v", err), "Unexpected panic when consuming retryerCh")
+			}
+		}()
 		for task := range retryerCh {
 			retryer := getRetryerOfResource(task.resource)
 			retryer.scheduleNodes(task.nodes)

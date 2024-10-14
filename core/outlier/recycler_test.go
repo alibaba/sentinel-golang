@@ -59,7 +59,7 @@ func generateNodes(n int) []string {
 	return nodes
 }
 
-func TestRecycler(t *testing.T) {
+func testRecycler(t *testing.T) {
 	nodes := []string{"node0", "node1"}
 	resource := "testResource"
 	addNodeBreakers(resource, nodes)
@@ -79,7 +79,7 @@ func TestRecycler(t *testing.T) {
 	assert.Contains(t, m, nodes[0]) // node0 should have been recovered
 }
 
-func TestRecyclerConcurrent(t *testing.T) {
+func testRecyclerConcurrent(t *testing.T) {
 	nodes := generateNodes(100) // Generate 100 nodes
 	resource := "testResource"
 	addNodeBreakers(resource, nodes)
@@ -119,7 +119,7 @@ func TestRecyclerConcurrent(t *testing.T) {
 	assert.Contains(t, m, nodes[1])
 }
 
-func TestRecyclerCh(t *testing.T) {
+func testRecyclerCh(t *testing.T) {
 	nodes := []string{"node0", "node1"}
 	resource := "testResource"
 	addNodeBreakers(resource, nodes)
@@ -139,7 +139,7 @@ func TestRecyclerCh(t *testing.T) {
 	assert.Contains(t, m, nodes[0]) // node0 should have been recovered
 }
 
-func TestRecyclerChConcurrent(t *testing.T) {
+func testRecyclerChConcurrent(t *testing.T) {
 	nodes := generateNodes(100) // Generate 100 nodes
 	resource := "testResource"
 	addNodeBreakers(resource, nodes)
@@ -178,4 +178,11 @@ func TestRecyclerChConcurrent(t *testing.T) {
 	assert.Equal(t, 2, len(m))
 	assert.Contains(t, m, nodes[0])
 	assert.Contains(t, m, nodes[1])
+}
+
+func TestRecyclerAll(t *testing.T) {
+	t.Run("TestRecycler", testRecycler)
+	t.Run("TestRecyclerConcurrent", testRecyclerConcurrent)
+	t.Run("TestRecyclerCh", testRecyclerCh)
+	t.Run("TestRecyclerChConcurrent", testRecyclerChConcurrent)
 }

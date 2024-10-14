@@ -23,7 +23,10 @@ func initOutlierClient() hello.Client {
 	}
 	c, err := hello.NewClient("example.helloworld",
 		client.WithResolver(kitex.OutlierClientResolver(resolver)),
-		client.WithMiddleware(kitex.OutlierClientMiddleware()),
+		client.WithMiddleware(kitex.SentinelClientMiddleware(
+			kitex.WithEnableOutlier(func(ctx context.Context) bool {
+				return true
+			}))),
 	)
 	if err != nil {
 		log.Fatal(err)

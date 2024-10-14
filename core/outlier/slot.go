@@ -40,11 +40,14 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 	if len(resource) == 0 {
 		return result
 	}
+
 	filterNodes, outlierNodes, halfOpenNodes := checkAllNodes(ctx)
 	result.SetFilterNodes(filterNodes)
 	result.SetHalfOpenNodes(halfOpenNodes)
+
 	if len(outlierNodes) != 0 {
-		if len(retryerCh) < capacity {
+		rule := getOutlierRuleOfResource(resource)
+		if rule.EnableActiveRecovery && len(retryerCh) < capacity {
 			retryerCh <- task{outlierNodes, resource}
 		}
 		if len(recyclerCh) < capacity {
@@ -66,9 +69,7 @@ func checkAllNodes(ctx *base.EntryContext) (filters []string, outliers []string,
 			}
 			continue
 		}
-		if rule.EnableActiveRecovery {
-			outliers = append(outliers, address)
-		}
+		outliers = append(outliers, address)
 		if len(filters) < int(float64(nodeCount)*rule.MaxEjectionPercent) {
 			filters = append(filters, address)
 		}

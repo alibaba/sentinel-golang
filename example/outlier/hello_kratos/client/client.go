@@ -42,7 +42,10 @@ func initOutlierClient() pb.GreeterClient {
 		grpc.WithEndpoint(endpoint),
 		grpc.WithDiscovery(etcdReg),
 		grpc.WithNodeFilter(kratos.OutlierClientFilter),
-		grpc.WithMiddleware(kratos.OutlierClientMiddleware),
+		grpc.WithMiddleware(kratos.SentinelClientMiddleware(
+			kratos.WithEnableOutlier(func(ctx context.Context) bool {
+				return true
+			}))),
 	)
 	if err != nil {
 		log.Fatal(err)

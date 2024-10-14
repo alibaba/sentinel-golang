@@ -10,6 +10,7 @@ import (
 
 	sentinel "github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
+	"github.com/alibaba/sentinel-golang/core/outlier"
 )
 
 var filterNodes []string
@@ -23,46 +24,45 @@ func SentinelClientMiddleware(opts ...Option) func(endpoint.Endpoint) endpoint.E
 	options := newOptions(opts)
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, req, resp interface{}) error {
-			resourceName := options.ResourceExtract(ctx, req, resp)
-			entry, blockErr := sentinel.Entry(
-				resourceName,
-				sentinel.WithResourceType(base.ResTypeRPC),
-				sentinel.WithTrafficType(base.Outbound),
-			)
-			if blockErr != nil {
-				return options.BlockFallback(ctx, req, resp, blockErr)
-			}
-			defer entry.Exit()
-			err := next(ctx, req, resp)
-			if err != nil {
-				sentinel.TraceError(entry, err)
-			}
-			return err
-		}
-	}
-}
-
-// OutlierClientMiddleware returns new client.Middleware specifically for outlier ejection.
-func OutlierClientMiddleware(opts ...Option) func(endpoint.Endpoint) endpoint.Endpoint {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, req, resp interface{}) error {
-			resourceName := ServiceNameExtract(ctx)
-			entry, _ := sentinel.Entry(
-				resourceName,
-				sentinel.WithResourceType(base.ResTypeRPC),
-				sentinel.WithTrafficType(base.Outbound),
-			)
-			defer entry.Exit()
-			filterNodes = entry.Context().FilterNodes()
-			halfNodes = entry.Context().HalfOpenNodes()
-			err := next(ctx, req, resp)
-			if callee := CalleeAddressExtract(ctx); callee != "" {
-				sentinel.TraceCallee(entry, callee)
+			if !options.EnableOutlier(ctx) {
+				resourceName := options.ResourceExtract(ctx, req, resp)
+				entry, blockErr := sentinel.Entry(
+					resourceName,
+					sentinel.WithResourceType(base.ResTypeRPC),
+					sentinel.WithTrafficType(base.Outbound),
+				)
+				if blockErr != nil {
+					return options.BlockFallback(ctx, req, resp, blockErr)
+				}
+				defer entry.Exit()
+				err := next(ctx, req, resp)
 				if err != nil {
 					sentinel.TraceError(entry, err)
 				}
+				return err
+			} else { // returns new client middleware specifically for outlier ejection.
+				slotChain := sentinel.BuildDefaultSlotChain()
+				slotChain.AddRuleCheckSlot(outlier.DefaultSlot)
+				slotChain.AddStatSlot(outlier.DefaultMetricStatSlot)
+				resourceName := ServiceNameExtract(ctx)
+				entry, _ := sentinel.Entry(
+					resourceName,
+					sentinel.WithResourceType(base.ResTypeRPC),
+					sentinel.WithTrafficType(base.Outbound),
+					sentinel.WithSlotChain(slotChain),
+				)
+				defer entry.Exit()
+				filterNodes = entry.Context().FilterNodes()
+				halfNodes = entry.Context().HalfOpenNodes()
+				err := next(ctx, req, resp)
+				if callee := CalleeAddressExtract(ctx); callee != "" {
+					sentinel.TraceCallee(entry, callee)
+					if err != nil {
+						sentinel.TraceError(entry, err)
+					}
+				}
+				return err
 			}
-			return err
 		}
 	}
 }

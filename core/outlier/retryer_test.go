@@ -28,47 +28,57 @@ import (
 	"github.com/alibaba/sentinel-golang/core/circuitbreaker"
 )
 
-var callCounts = make(map[string]int)
-var recoverCount int
-var mu sync.Mutex
-
-func registerAddress(address string, n int) {
-	mu.Lock()
-	defer mu.Unlock()
-	callCounts[address] = n
+type dummyCall struct {
+	callCounts   map[string]int
+	recoverCount int
+	mtx          sync.Mutex
 }
 
-// dummyCall checks whether the node address has returned to normal.
+func newDummyCall() *dummyCall {
+	return &dummyCall{
+		callCounts: make(map[string]int),
+	}
+}
+
+func (d *dummyCall) registerAddress(address string, n int) {
+	d.mtx.Lock()
+	defer d.mtx.Unlock()
+	d.callCounts[address] = n
+}
+
+// dummyCall's Check checks whether the node address has returned to normal.
 // It returns to normal when the value recorded in callCounts decreases to 0.
-func dummyCall(address string) bool {
-	mu.Lock()
-	defer mu.Unlock()
-	if _, ok := callCounts[address]; ok {
-		callCounts[address]--
+func (d *dummyCall) Check(address string) bool {
+	d.mtx.Lock()
+	defer d.mtx.Unlock()
+	if _, ok := d.callCounts[address]; ok {
+		d.callCounts[address]--
 		time.Sleep(100 * time.Millisecond) // simulate network latency
-		if callCounts[address] == 0 {
+		if d.callCounts[address] == 0 {
 			fmt.Printf("%s successfully reconnected\n", address)
-			recoverCount++
+			d.recoverCount++
 			return true
 		}
 		return false
 	}
+	fmt.Println(d.callCounts)
 	panic("Attempting to call an unregistered node address.")
+	return false
 }
 
-func getRecoverCount() int {
-	mu.Lock()
-	defer mu.Unlock()
-	return recoverCount
+func (d *dummyCall) getRecoverCount() int {
+	d.mtx.Lock()
+	defer d.mtx.Unlock()
+	return d.recoverCount
 }
 
-func addOutlierRuleForRetryer(resource string, n, internal uint32) {
+func addOutlierRuleForRetryer(resource string, n, internal uint32, f RecoveryCheckFunc) {
 	updateMux.Lock()
 	defer updateMux.Unlock()
 	outlierRules[resource] = &Rule{
 		MaxRecoveryAttempts: n,
 		RecoveryIntervalMs:  internal,
-		RecoveryCheckFunc:   dummyCall,
+		RecoveryCheckFunc:   f,
 	}
 }
 
@@ -124,14 +134,15 @@ func setNodeBreaker(resource string, node string, breaker *MockCircuitBreaker) {
 // Construct two dummy node addresses: the first one recovers after the third check,
 // and the second one recovers after math.MaxInt32 checks. Observe the changes in the
 // circuit breaker and callCounts status for the first node before and after recovery.
-func TestRetryer(t *testing.T) {
-	resource := "testResource"
+func testRetryer(t *testing.T) {
+	resource := "testResource0"
 	nodes := []string{"node0", "node1"}
 	var internal, n uint32 = 1000, 3
-	registerAddress(nodes[0], int(n))
-	registerAddress(nodes[1], math.MaxInt32)
+	d := newDummyCall()
+	d.registerAddress(nodes[0], int(n))
+	d.registerAddress(nodes[1], math.MaxInt32)
 
-	addOutlierRuleForRetryer(resource, n, internal)
+	addOutlierRuleForRetryer(resource, n, internal, d.Check)
 	retryer := getRetryerOfResource(resource)
 	retryer.scheduleNodes(nodes)
 
@@ -140,17 +151,18 @@ func TestRetryer(t *testing.T) {
 	setNodeBreaker(resource, nodes[0], mockCB)
 
 	minDuration := time.Duration(n * (n + 1) / 2 * internal * 1e6)
-	for getRecoverCount() < 1 {
+	for d.getRecoverCount() < 1 {
 		time.Sleep(minDuration)
 	}
 	assert.Equal(t, len(nodes)-1, len(retryer.counts))
 	mockCB.AssertExpectations(t)
 }
 
-func TestRetryerConcurrent(t *testing.T) {
-	resource := "testResource"
+func testRetryerConcurrent(t *testing.T) {
+	resource := "testResource1"
 	nodes := generateNodes(100) // Generate 100 nodes
 	var internal, n uint32 = 1000, 3
+	d := newDummyCall()
 	mockCBs := make([]*MockCircuitBreaker, 0, len(nodes)/2)
 	for i, node := range nodes {
 		if i%2 == 0 {
@@ -158,13 +170,13 @@ func TestRetryerConcurrent(t *testing.T) {
 			mockCB.On("OnRequestComplete", mock.AnythingOfType("uint64"), nil).Return()
 			setNodeBreaker(resource, node, mockCB)
 			mockCBs = append(mockCBs, mockCB)
-			registerAddress(node, int(n))
+			d.registerAddress(node, int(n))
 		} else {
-			registerAddress(node, math.MaxInt32)
+			d.registerAddress(node, math.MaxInt32)
 		}
 	}
-
-	addOutlierRuleForRetryer(resource, n, internal)
+	fmt.Println(d.callCounts)
+	addOutlierRuleForRetryer(resource, n, internal, d.Check)
 	retryer := getRetryerOfResource(resource)
 	numGoroutines := 10
 	var wg sync.WaitGroup
@@ -187,7 +199,7 @@ func TestRetryerConcurrent(t *testing.T) {
 	assert.Equal(t, len(nodes), len(retryer.counts))
 
 	minDuration := time.Duration(n * (n + 1) / 2 * internal * 1e6)
-	for getRecoverCount() < len(nodes)/2 {
+	for d.getRecoverCount() < len(nodes)/2 {
 		time.Sleep(minDuration)
 	}
 	assert.Equal(t, len(nodes)/2, len(retryer.counts))
@@ -196,14 +208,15 @@ func TestRetryerConcurrent(t *testing.T) {
 	}
 }
 
-func TestRetryerCh(t *testing.T) {
+func testRetryerCh(t *testing.T) {
 	nodes := []string{"node0", "node1"}
-	resource := "testResource"
+	resource := "testResource2"
 	var internal, n uint32 = 1000, 3
-	registerAddress(nodes[0], int(n))
-	registerAddress(nodes[1], math.MaxInt32)
+	d := newDummyCall()
+	d.registerAddress(nodes[0], int(n))
+	d.registerAddress(nodes[1], math.MaxInt32)
 
-	addOutlierRuleForRetryer(resource, n, internal)
+	addOutlierRuleForRetryer(resource, n, internal, d.Check)
 	retryer := getRetryerOfResource(resource)
 
 	mockCB := new(MockCircuitBreaker)
@@ -213,9 +226,15 @@ func TestRetryerCh(t *testing.T) {
 	retryerCh <- task{nodes, resource}
 
 	minDuration := time.Duration(n * (n + 1) / 2 * internal * 1e6)
-	for getRecoverCount() < 1 {
+	for d.getRecoverCount() < 1 {
 		time.Sleep(minDuration)
 	}
 	assert.Equal(t, len(nodes)-1, len(retryer.counts))
 	mockCB.AssertExpectations(t)
+}
+
+func TestRetryerAll(t *testing.T) {
+	t.Run("TestRetryer", testRetryer)
+	t.Run("TestRetryerConcurrent", testRetryerConcurrent)
+	t.Run("TestRetryerCh", testRetryerCh)
 }
