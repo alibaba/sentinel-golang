@@ -32,6 +32,12 @@ func newRecycler(resource string, interval time.Duration) *Recycler {
 	}
 }
 
+func (r *Recycler) length() int {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	return len(r.status)
+}
+
 func addOutlierRuleForRecycler(resource string, seconds uint32) {
 	updateMux.Lock()
 	defer updateMux.Unlock()
@@ -66,7 +72,7 @@ func testRecycler(t *testing.T) {
 
 	recycler := newRecycler(resource, 4*time.Second)
 	recycler.scheduleNodes(nodes)
-	assert.Equal(t, len(nodes), len(recycler.status))
+	assert.Equal(t, len(nodes), recycler.length())
 
 	// Restore node0 after 2 seconds of simulation
 	time.AfterFunc(2*time.Second, func() {
@@ -101,9 +107,9 @@ func testRecyclerConcurrent(t *testing.T) {
 	wg.Wait()
 
 	// Check the status of nodes
-	assert.GreaterOrEqual(t, len(nodes), len(recycler.status))
+	assert.GreaterOrEqual(t, len(nodes), recycler.length())
 	recycler.scheduleNodes(nodes)
-	assert.Equal(t, len(nodes), len(recycler.status))
+	assert.Equal(t, len(nodes), recycler.length())
 
 	// Recover node0 and node1 after 2 seconds
 	time.AfterFunc(2*time.Second, func() {
@@ -162,9 +168,9 @@ func testRecyclerChConcurrent(t *testing.T) {
 	wg.Wait()
 
 	// Check the status of nodes
-	assert.GreaterOrEqual(t, len(nodes), len(recycler.status))
+	assert.GreaterOrEqual(t, len(nodes), recycler.length())
 	recycler.scheduleNodes(nodes)
-	assert.Equal(t, len(nodes), len(recycler.status))
+	assert.Equal(t, len(nodes), recycler.length())
 
 	// Recover node0 and node1 after 2 seconds
 	time.AfterFunc(2*time.Second, func() {

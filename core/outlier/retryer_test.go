@@ -61,9 +61,7 @@ func (d *dummyCall) Check(address string) bool {
 		}
 		return false
 	}
-	fmt.Println(d.callCounts)
 	panic("Attempting to call an unregistered node address.")
-	return false
 }
 
 func (d *dummyCall) getRecoverCount() int {
@@ -131,6 +129,12 @@ func setNodeBreaker(resource string, node string, breaker *MockCircuitBreaker) {
 	nodeBreakers[resource][node] = breaker
 }
 
+func (r *Retryer) length() int {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	return len(r.counts)
+}
+
 // Construct two dummy node addresses: the first one recovers after the third check,
 // and the second one recovers after math.MaxInt32 checks. Observe the changes in the
 // circuit breaker and callCounts status for the first node before and after recovery.
@@ -154,7 +158,7 @@ func testRetryer(t *testing.T) {
 	for d.getRecoverCount() < 1 {
 		time.Sleep(minDuration)
 	}
-	assert.Equal(t, len(nodes)-1, len(retryer.counts))
+	assert.Equal(t, len(nodes)-1, retryer.length())
 	mockCB.AssertExpectations(t)
 }
 
@@ -175,7 +179,7 @@ func testRetryerConcurrent(t *testing.T) {
 			d.registerAddress(node, math.MaxInt32)
 		}
 	}
-	fmt.Println(d.callCounts)
+
 	addOutlierRuleForRetryer(resource, n, internal, d.Check)
 	retryer := getRetryerOfResource(resource)
 	numGoroutines := 10
@@ -194,15 +198,15 @@ func testRetryerConcurrent(t *testing.T) {
 	wg.Wait()
 
 	// Check the status of nodes
-	assert.GreaterOrEqual(t, len(nodes), len(retryer.counts))
+	assert.GreaterOrEqual(t, len(nodes), retryer.length())
 	retryer.scheduleNodes(nodes)
-	assert.Equal(t, len(nodes), len(retryer.counts))
+	assert.Equal(t, len(nodes), retryer.length())
 
 	minDuration := time.Duration(n * (n + 1) / 2 * internal * 1e6)
 	for d.getRecoverCount() < len(nodes)/2 {
 		time.Sleep(minDuration)
 	}
-	assert.Equal(t, len(nodes)/2, len(retryer.counts))
+	assert.Equal(t, len(nodes)/2, retryer.length())
 	for _, breaker := range mockCBs {
 		breaker.AssertExpectations(t)
 	}
@@ -229,7 +233,7 @@ func testRetryerCh(t *testing.T) {
 	for d.getRecoverCount() < 1 {
 		time.Sleep(minDuration)
 	}
-	assert.Equal(t, len(nodes)-1, len(retryer.counts))
+	assert.Equal(t, len(nodes)-1, retryer.length())
 	mockCB.AssertExpectations(t)
 }
 
