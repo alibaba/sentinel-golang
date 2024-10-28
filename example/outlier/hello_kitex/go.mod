@@ -1,11 +1,13 @@
 module hello_kitex
 
-go 1.18
+go 1.19
 
 replace (
 	github.com/alibaba/sentinel-golang => ../../../
 	github.com/alibaba/sentinel-golang/pkg/adapters/kitex => ../../../pkg/adapters/kitex
 	github.com/apache/thrift => github.com/apache/thrift v0.13.0
+	go.uber.org/multierr => go.uber.org/multierr v1.5.0
+	google.golang.org/grpc => google.golang.org/grpc v1.34.0
 )
 
 require (
@@ -70,12 +72,13 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.12 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.12 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.12 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/arch v0.2.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20231012201019-e917dd12ba7a // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231016165738-49dd2c1f3d0b // indirect

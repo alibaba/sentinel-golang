@@ -3,7 +3,6 @@ package micro
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/client/selector"
@@ -52,7 +51,10 @@ func getRemainingNodes(old []*registry.Service, filters []string, flag bool) []*
 		nodesMap[node] = struct{}{}
 	}
 	for _, service := range old {
-		nodesCopy := slices.Clone(service.Nodes)
+		nodesCopy := make([]*registry.Node, 0)
+		for _, ep := range service.Nodes {
+			nodesCopy = append(nodesCopy, ep)
+		}
 		service.Nodes = make([]*registry.Node, 0)
 		for _, ep := range nodesCopy {
 			if _, ok := nodesMap[ep.Address]; ok == flag {
