@@ -1,6 +1,6 @@
 module hello_kratos
 
-go 1.22.5
+go 1.18
 
 replace (
 	github.com/alibaba/sentinel-golang => ../../../
@@ -43,7 +43,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.15 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.15 // indirect
-	go.uber.org/atomic v1.8.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.0 // indirect
 	golang.org/x/net v0.23.0 // indirect

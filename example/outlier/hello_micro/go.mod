@@ -1,6 +1,6 @@
 module hello_micro
 
-go 1.20
+go 1.18
 
 replace (
 	github.com/alibaba/sentinel-golang => ../../../
@@ -8,7 +8,7 @@ replace (
 )
 
 require (
-	github.com/alibaba/sentinel-golang v1.0.2
+	github.com/alibaba/sentinel-golang v1.0.4
 	github.com/alibaba/sentinel-golang/pkg/adapters/micro v0.0.0-20230626085943-08071855bc67
 	github.com/micro/go-micro/v2 v2.9.1
 )
@@ -30,7 +30,7 @@ require (
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.0.0 // indirect
 	github.com/go-git/go-git/v5 v5.1.0 // indirect
-	github.com/go-ole/go-ole v1.2.5 // indirect
+	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/uuid v1.1.1 // indirect

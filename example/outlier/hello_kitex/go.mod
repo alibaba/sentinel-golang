@@ -1,6 +1,6 @@
 module hello_kitex
 
-go 1.22.5
+go 1.18
 
 replace (
 	github.com/alibaba/sentinel-golang => ../../../
