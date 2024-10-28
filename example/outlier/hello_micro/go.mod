@@ -1,14 +1,16 @@
-module github.com/alibaba/sentinel-golang/pkg/adapters/micro
+module hello_micro
 
-go 1.18
+go 1.19
 
-replace github.com/alibaba/sentinel-golang => ../../../
+replace (
+	github.com/alibaba/sentinel-golang => ../../../
+	github.com/alibaba/sentinel-golang/pkg/adapters/micro => ../../../pkg/adapters/micro
+)
 
 require (
 	github.com/alibaba/sentinel-golang v1.0.4
-	github.com/golang/protobuf v1.5.3
+	github.com/alibaba/sentinel-golang/pkg/adapters/micro v0.0.0-20230626085943-08071855bc67
 	github.com/micro/go-micro/v2 v2.9.1
-	github.com/stretchr/testify v1.8.0
 )
 
 require (
@@ -21,7 +23,6 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
@@ -31,6 +32,7 @@ require (
 	github.com/go-git/go-git/v5 v5.1.0 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
@@ -49,11 +51,11 @@ require (
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.21.6 // indirect
@@ -77,5 +79,4 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

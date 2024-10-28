@@ -3,9 +3,10 @@ package micro
 import (
 	"context"
 
-	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/server"
+
+	"github.com/alibaba/sentinel-golang/core/base"
 )
 
 type (
@@ -23,6 +24,8 @@ type (
 
 		streamClientBlockFallback func(context.Context, client.Request, *base.BlockError) (client.Stream, error)
 		streamServerBlockFallback func(server.Stream, *base.BlockError) server.Stream
+
+		enableOutlier func(ctx context.Context) bool
 	}
 )
 
@@ -81,6 +84,13 @@ func WithStreamClientBlockFallback(fn func(context.Context, client.Request, *bas
 func WithStreamServerBlockFallback(fn func(server.Stream, *base.BlockError) server.Stream) Option {
 	return func(opts *options) {
 		opts.streamServerBlockFallback = fn
+	}
+}
+
+// WithEnableOutlier sets whether to enable outlier ejection
+func WithEnableOutlier(fn func(ctx context.Context) bool) Option {
+	return func(opts *options) {
+		opts.enableOutlier = fn
 	}
 }
 
