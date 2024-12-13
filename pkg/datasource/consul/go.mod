@@ -1,6 +1,6 @@
 module github.com/alibaba/sentinel-golang/pkg/datasource/consul
 
-go 1.18
+go 1.20
 
 require (
 	github.com/alibaba/sentinel-golang v1.0.4
