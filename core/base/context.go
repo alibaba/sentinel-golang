@@ -30,6 +30,9 @@ type EntryContext struct {
 	StatNode StatNode
 
 	Input *SentinelInput
+
+	// checker name of the hit rule
+	RuleChecker string
 	// the result of rule slots check
 	RuleCheckResult *TokenResult
 	// reserve for storing some intermediate data from the Entry execution process
