@@ -1,7 +1,9 @@
 package api
 
 import (
+	"github.com/alibaba/sentinel-golang/core/isolation"
 	"log"
+	"os"
 	"runtime/debug"
 	"testing"
 	"time"
@@ -126,4 +128,52 @@ func TestAdaptiveFlowControl2(t *testing.T) {
 	system_metric.SetSystemMemoryUsage(136794800128)
 	_, blockError := api.Entry(rs, api.WithTrafficType(base.Inbound))
 	assert.Nil(t, blockError)
+}
+
+func assertIsPass(t *testing.T, b *base.BlockError) {
+	assert.True(t, b == nil)
+}
+func assertIsBlock(t *testing.T, b *base.BlockError) {
+	assert.True(t, b != nil)
+}
+
+func Test_Isolation(t *testing.T) {
+	initSentinel()
+
+	r1 := &isolation.Rule{
+		Resource:   "abc",
+		MetricType: isolation.Concurrency,
+		Threshold:  12,
+	}
+	_, err := isolation.LoadRules([]*isolation.Rule{r1})
+	if err != nil {
+		logging.Error(err, "fail")
+		os.Exit(1)
+	}
+
+	entries := make([]*base.SentinelEntry, 0)
+
+	// Threshold = 12, BatchCount = 1, Should Pass 12 Entry
+	for i := 0; i < 12; i++ {
+		e, b := api.Entry("abc", api.WithBatchCount(1))
+		assertIsPass(t, b)
+		entries = append(entries, e)
+	}
+	_, b := api.Entry("abc", api.WithBatchCount(1))
+	assertIsBlock(t, b)
+	for _, e := range entries {
+		e.Exit()
+	}
+
+	// Threshold = 12, BatchCount = 2, Should Pass 6 Entry
+	for i := 0; i < 6; i++ {
+		e, b := api.Entry("abc", api.WithBatchCount(2))
+		assertIsPass(t, b)
+		entries = append(entries, e)
+	}
+	_, b = api.Entry("abc", api.WithBatchCount(2))
+	assertIsBlock(t, b)
+	for _, e := range entries {
+		e.Exit()
+	}
 }
