@@ -7,6 +7,7 @@ import (
 
 func Example() {
 	s := g.Server()
+	
 	s.Use(
 		SentinelMiddleware(
 			// 自定义资源提取器
