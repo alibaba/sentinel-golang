@@ -10,7 +10,6 @@ type (
 	}
 )
 
-// evaluateOptions 评估选项
 func evaluateOptions(opts []Option) *options {
 	optCopy := &options{}
 	for _, opt := range opts {
@@ -20,14 +19,14 @@ func evaluateOptions(opts []Option) *options {
 	return optCopy
 }
 
-// WithResourceExtractor 设置资源提取器
+// WithResourceExtractor sets the resource extractor of the web requests.
 func WithResourceExtractor(fn func(*ghttp.Request) string) Option {
 	return func(opts *options) {
 		opts.resourceExtract = fn
 	}
 }
 
-// WithBlockFallback 设置被流控的回退处理函数
+// WithBlockFallback sets the fallback handler when requests are blocked.
 func WithBlockFallback(fn func(r *ghttp.Request)) Option {
 	return func(opts *options) {
 		opts.blockFallback = fn
