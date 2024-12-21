@@ -9,14 +9,14 @@ func Example() {
 	s := g.Server()
 	s.Use(
 		SentinelMiddleware(
-			// 自定义资源提取器
+			// customize resource extractor if required
 			WithResourceExtractor(func(r *ghttp.Request) string {
 				if res, ok := r.Header["X-Real-IP"]; ok && len(res) > 0 {
 					return res[0]
 				}
 				return ""
 			}),
-			// 自定义阻塞回退
+			// customize block fallback if required
 			WithBlockFallback(func(r *ghttp.Request) {
 				r.Response.WriteHeader(400)
 				r.Response.WriteJson(map[string]interface{}{
