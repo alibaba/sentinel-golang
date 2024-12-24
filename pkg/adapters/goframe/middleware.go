@@ -17,11 +17,7 @@ func SentinelMiddleware(opts ...Option) ghttp.HandlerFunc {
 		resourceName := r.Method + ":" + r.URL.Path
 
 		if options.resourceExtract != nil {
-			extractedName := options.resourceExtract(r)
-			if extractedName == "" {
-				extractedName = resourceName
-			}
-			resourceName = extractedName
+			resourceName = options.resourceExtract(r)
 		}
 
 		entry, err := api.Entry(
