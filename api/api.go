@@ -15,6 +15,7 @@
 package api
 
 import (
+	"context"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -36,6 +37,7 @@ var entryOptsPool = sync.Pool{
 
 // EntryOptions represents the options of a Sentinel resource entry.
 type EntryOptions struct {
+	ctx          context.Context
 	resourceType base.ResourceType
 	entryType    base.TrafficType
 	batchCount   uint32
@@ -53,6 +55,7 @@ func (o *EntryOptions) Reset() {
 	o.slotChain = nil
 	o.args = o.args[:0]
 	o.attachments = nil
+	o.ctx = nil
 }
 
 type EntryOption func(*EntryOptions)
@@ -129,6 +132,13 @@ func WithAttachments(data map[interface{}]interface{}) EntryOption {
 	}
 }
 
+// WithContext sets the resource entry with the given context.
+func WithContext(ctx context.Context) EntryOption {
+	return func(opts *EntryOptions) {
+		opts.ctx = ctx
+	}
+}
+
 // Entry is the basic API of Sentinel.
 func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.BlockError) {
 	options := entryOptsPool.Get().(*EntryOptions)
@@ -163,6 +173,9 @@ func entry(resource string, options *EntryOptions) (*base.SentinelEntry, *base.B
 	}
 	if len(options.attachments) != 0 {
 		ctx.Input.Attachments = options.attachments
+	}
+	if options.ctx != nil {
+		ctx.Input.Context = options.ctx
 	}
 	e := base.NewSentinelEntry(ctx, rw, sc)
 	ctx.SetEntry(e)
