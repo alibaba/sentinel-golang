@@ -16,6 +16,7 @@ package circuitbreaker
 
 import (
 	"reflect"
+	"sync"
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -48,19 +49,24 @@ const (
 )
 
 var (
-	stateChangedCounter = metric_exporter.NewCounter(
-		"circuit_breaker_state_changed_total",
-		"Circuit breaker total state change count",
-		[]string{"resource", "from_state", "to_state"})
+	once sync.Once
+
+	stateChangedCounter metric_exporter.Counter
 )
 
-func init() {
-	metric_exporter.Register(stateChangedCounter)
+func Init() {
+	once.Do(func() {
+		stateChangedCounter = metric_exporter.NewCounter(
+			"circuit_breaker_state_changed_total",
+			"Circuit breaker total state change count",
+			[]string{"resource", "from_state", "to_state"},
+		)
+		metric_exporter.Register(stateChangedCounter)
+	})
 }
 
 func newState() *State {
-	var state State
-	state = Closed
+	state := Closed
 
 	return &state
 }

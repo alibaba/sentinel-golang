@@ -16,6 +16,7 @@ package circuitbreaker
 
 import (
 	"errors"
+	"os"
 	"sync/atomic"
 	"testing"
 
@@ -26,6 +27,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestMain(m *testing.M) {
+	Init()
+	os.Exit(m.Run())
+}
 
 type CircuitBreakerMock struct {
 	mock.Mock
