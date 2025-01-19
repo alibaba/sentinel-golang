@@ -98,8 +98,8 @@ func (ws *nopWriteStat) AddCount(_ MetricEvent, _ int64) {
 // ConcurrencyStat provides read/update operation for concurrency statistics.
 type ConcurrencyStat interface {
 	CurrentConcurrency() int32
-	IncreaseConcurrency()
-	DecreaseConcurrency()
+	IncreaseConcurrency(int32)
+	DecreaseConcurrency(int32)
 }
 
 // StatNode holds real-time statistics for resources.
