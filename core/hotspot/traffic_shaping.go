@@ -349,16 +349,31 @@ func (c *throttlingTrafficShapingController) PerformChecking(arg interface{}, ba
 	}
 	intervalCostTime := int64(math.Round(float64(batchCount * c.durationInSec * 1000 / tokenCount)))
 	for {
-		currentTimeInMs := int64(util.CurrentTimeMillis())
-		lastPassTimePtr := timeCounter.AddIfAbsent(arg, &currentTimeInMs)
+		var (
+			expectedTime    int64
+			currentTimeInMs int64
+			lastPassTime    int64
+			lastPassTimePtr *int64
+		)
+
+		currentTimeInMs = int64(util.CurrentTimeMillis())
+		lastPassTimePtr = timeCounter.AddIfAbsent(arg, &currentTimeInMs)
 		if lastPassTimePtr == nil {
-			// first access arg
-			return nil
+			// initialize pointer for first access
+			lastPassTimePtr = &currentTimeInMs
 		}
 		// load the last pass time
-		lastPassTime := atomic.LoadInt64(lastPassTimePtr)
-		// calculate the expected pass time
-		expectedTime := lastPassTime + intervalCostTime
+		lastPassTime = atomic.LoadInt64(lastPassTimePtr)
+		// calculate expected pass time based on two scenarios:
+		// 1. first access or expired statistics window
+		// 2. normal within-window access
+		if lastPassTimePtr == &currentTimeInMs || lastPassTime < currentTimeInMs-(c.durationInSec*1000) {
+			// adjust the time of the previous window to one second ago, and at most TokenCount tokens can pass through
+			expectedTime = currentTimeInMs - (c.durationInSec * 1000) + intervalCostTime
+		} else {
+			// normal cumulative calculation
+			expectedTime = lastPassTime + intervalCostTime
+		}
 
 		if expectedTime <= currentTimeInMs || expectedTime-currentTimeInMs < c.maxQueueingTimeMs {
 			if atomic.CompareAndSwapInt64(lastPassTimePtr, lastPassTime, currentTimeInMs) {
