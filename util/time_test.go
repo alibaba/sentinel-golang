@@ -184,7 +184,7 @@ func BenchmarkCurrentTimeInMs(b *testing.B) {
 		if tickerNow > uint64(0) {
 			return tickerNow
 		}
-		return uint64(time.Now().UnixNano()) / UnixTimeUnitOffset
+		return uint64(time.Now().UnixMilli())
 	}
 
 	b.ReportAllocs()

@@ -24,10 +24,10 @@ var nowInMs = uint64(0)
 // StartTimeTicker starts a background task that caches current timestamp per millisecond,
 // which may provide better performance in high-concurrency scenarios.
 func StartTimeTicker() {
-	atomic.StoreUint64(&nowInMs, uint64(time.Now().UnixNano())/UnixTimeUnitOffset)
+	atomic.StoreUint64(&nowInMs, uint64(time.Now().UnixMilli()))
 	go func() {
 		for {
-			now := uint64(time.Now().UnixNano()) / UnixTimeUnitOffset
+			now := uint64(time.Now().UnixMilli())
 			atomic.StoreUint64(&nowInMs, now)
 			time.Sleep(time.Millisecond)
 		}
