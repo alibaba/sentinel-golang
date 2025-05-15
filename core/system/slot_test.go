@@ -17,11 +17,12 @@ package system
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system_metric"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckNilInput(t *testing.T) {
@@ -60,14 +61,14 @@ func TestDoCheckRuleConcurrency(t *testing.T) {
 		TriggerCount: 0.5}
 
 	t.Run("TrueConcurrency", func(t *testing.T) {
-		isOK, _, v := sas.doCheckRule(rule)
+		isOK, _, v := sas.doCheckRule(&base.EntryContext{}, rule)
 		assert.True(t, util.Float64Equals(float64(0.0), v))
 		assert.Equal(t, true, isOK)
 	})
 
 	t.Run("FalseConcurrency", func(t *testing.T) {
 		stat.InboundNode().IncreaseConcurrency()
-		isOK, _, v := sas.doCheckRule(rule)
+		isOK, _, v := sas.doCheckRule(&base.EntryContext{}, rule)
 		assert.True(t, util.Float64Equals(float64(1.0), v))
 		assert.Equal(t, false, isOK)
 		stat.InboundNode().DecreaseConcurrency()
@@ -80,7 +81,7 @@ func TestDoCheckRuleLoad(t *testing.T) {
 		TriggerCount: 0.5}
 
 	t.Run("TrueLoad", func(t *testing.T) {
-		isOK, _, v := sas.doCheckRule(rule)
+		isOK, _, v := sas.doCheckRule(&base.EntryContext{}, rule)
 		assert.True(t, util.Float64Equals(system_metric.NotRetrievedLoadValue, v))
 		assert.Equal(t, true, isOK)
 	})
@@ -88,7 +89,7 @@ func TestDoCheckRuleLoad(t *testing.T) {
 	t.Run("BBRTrueLoad", func(t *testing.T) {
 		rule.Strategy = BBR
 		system_metric.SetSystemLoad(1.0)
-		isOK, _, v := sas.doCheckRule(rule)
+		isOK, _, v := sas.doCheckRule(&base.EntryContext{}, rule)
 		assert.Equal(t, true, isOK)
 		assert.True(t, util.Float64Equals(float64(1.0), v))
 		system_metric.SetSystemLoad(system_metric.NotRetrievedLoadValue)
@@ -103,7 +104,7 @@ func TestDoCheckRuleCpuUsage(t *testing.T) {
 	}
 
 	t.Run("TrueCpuUsage", func(t *testing.T) {
-		isOK, _, v := sas.doCheckRule(rule)
+		isOK, _, v := sas.doCheckRule(&base.EntryContext{}, rule)
 		assert.True(t, util.Float64Equals(system_metric.NotRetrievedCpuUsageValue, v))
 		assert.Equal(t, true, isOK)
 	})
@@ -111,7 +112,7 @@ func TestDoCheckRuleCpuUsage(t *testing.T) {
 	t.Run("BBRTrueCpuUsage", func(t *testing.T) {
 		rule.Strategy = BBR
 		system_metric.SetSystemCpuUsage(0.8)
-		isOK, _, v := sas.doCheckRule(rule)
+		isOK, _, v := sas.doCheckRule(&base.EntryContext{}, rule)
 		assert.Equal(t, true, isOK)
 		assert.True(t, util.Float64Equals(0.8, v))
 		system_metric.SetSystemCpuUsage(system_metric.NotRetrievedCpuUsageValue)
@@ -123,7 +124,7 @@ func TestDoCheckRuleDefault(t *testing.T) {
 	rule := &Rule{MetricType: MetricTypeSize,
 		TriggerCount: 0.5}
 
-	isOK, _, v := sas.doCheckRule(rule)
+	isOK, _, v := sas.doCheckRule(&base.EntryContext{}, rule)
 	assert.Equal(t, true, isOK)
 	assert.True(t, util.Float64Equals(float64(0.0), v))
 }
