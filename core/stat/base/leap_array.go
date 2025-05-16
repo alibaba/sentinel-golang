@@ -90,9 +90,7 @@ func NewAtomicBucketWrapArrayWithTime(len int, bucketLengthInMs uint32, now uint
 		startTime += uint64(bucketLengthInMs)
 	}
 
-	// calculate base address for real data array
-	sliHeader := (*util.SliceHeader)(unsafe.Pointer(&ret.data))
-	ret.base = unsafe.Pointer((**BucketWrap)(unsafe.Pointer(sliHeader.Data)))
+	ret.base = unsafe.Pointer(&ret.data[0])
 	return ret
 }
 
