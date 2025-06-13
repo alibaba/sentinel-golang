@@ -17,6 +17,7 @@ package flow
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/core/base"
@@ -41,10 +42,12 @@ type trafficControllerGenKey struct {
 type TrafficControllerMap map[string][]*TrafficShapingController
 
 var (
-	tcGenFuncMap = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 6)
-	tcMap        = make(TrafficControllerMap)
-	tcMux        = new(sync.RWMutex)
-	nopStat      = &standaloneStatistic{
+	tcGenFuncMap    = make(map[trafficControllerGenKey]TrafficControllerGenFunc, 6)
+	tcMap           = make(TrafficControllerMap)
+	tcRegexMap      = make(TrafficControllerMap)
+	tcRegexCacheMap = make(TrafficControllerMap)
+	tcMux           = new(sync.RWMutex)
+	nopStat         = &standaloneStatistic{
 		reuseResourceStat: false,
 		readOnlyMetric:    base.NopReadStat(),
 		writeOnlyMetric:   base.NopWriteStat(),
@@ -204,24 +207,35 @@ func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
 	start := util.CurrentTimeNano()
 
 	tcMux.RLock()
-	tcMapClone := make(TrafficControllerMap, len(validResRulesMap))
+	tcMapClone := make(TrafficControllerMap, len(tcMap)+len(tcRegexMap))
 	for res, tcs := range tcMap {
+		resTcClone := make([]*TrafficShapingController, 0, len(tcs))
+		resTcClone = append(resTcClone, tcs...)
+		tcMapClone[res] = resTcClone
+	}
+	for res, tcs := range tcRegexMap {
 		resTcClone := make([]*TrafficShapingController, 0, len(tcs))
 		resTcClone = append(resTcClone, tcs...)
 		tcMapClone[res] = resTcClone
 	}
 	tcMux.RUnlock()
 
-	m := make(TrafficControllerMap, len(validResRulesMap))
+	m := make(TrafficControllerMap)
+	regexM := make(TrafficControllerMap)
 	for res, rulesOfRes := range validResRulesMap {
-		newTcsOfRes := buildResourceTrafficShapingController(res, rulesOfRes, tcMapClone[res])
+		newTcsOfRes, newRegexTcsOfRes := buildResourceTrafficShapingController(res, rulesOfRes, tcMapClone[res])
 		if len(newTcsOfRes) > 0 {
 			m[res] = newTcsOfRes
+		}
+		if len(newRegexTcsOfRes) > 0 {
+			regexM[res] = newRegexTcsOfRes
 		}
 	}
 
 	tcMux.Lock()
 	tcMap = m
+	tcRegexMap = regexM
+	tcRegexCacheMap = make(TrafficControllerMap)
 	tcMux.Unlock()
 	currentRules = rawResRulesMap
 
@@ -277,8 +291,9 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	oldResTcs := make([]*TrafficShapingController, 0)
 	tcMux.RLock()
 	oldResTcs = append(oldResTcs, tcMap[res]...)
+	oldResTcs = append(oldResTcs, tcRegexMap[res]...)
 	tcMux.RUnlock()
-	newResTcs := buildResourceTrafficShapingController(res, validResRules, oldResTcs)
+	newResTcs, newRegexResTcs := buildResourceTrafficShapingController(res, validResRules, oldResTcs)
 
 	tcMux.Lock()
 	if len(newResTcs) == 0 {
@@ -286,6 +301,12 @@ func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
 	} else {
 		tcMap[res] = newResTcs
 	}
+	if len(newRegexResTcs) == 0 {
+		delete(tcRegexMap, res)
+	} else {
+		tcRegexMap[res] = newRegexResTcs
+	}
+	tcRegexCacheMap = make(TrafficControllerMap)
 	tcMux.Unlock()
 	currentRules[res] = rawResRules
 	logging.Debug("[Flow onResourceRuleUpdate] Time statistic(ns) for updating flow rule", "timeCost", util.CurrentTimeNano()-start)
@@ -308,6 +329,8 @@ func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
 		// clear tcMap
 		tcMux.Lock()
 		delete(tcMap, res)
+		delete(tcRegexMap, res)
+		tcRegexCacheMap = make(TrafficControllerMap)
 		tcMux.Unlock()
 		logging.Info("[Flow] clear resource level rules", "resource", res)
 		return true, nil
@@ -329,19 +352,31 @@ func getRules() []*Rule {
 	tcMux.RLock()
 	defer tcMux.RUnlock()
 
-	return rulesFrom(tcMap)
+	return append(rulesFrom(tcMap), rulesFrom(tcRegexMap)...)
 }
 
 // getRulesOfResource returns specific resource's rules。Any changes of rules take effect for flow module
 // getRulesOfResource is an internal interface.
 func getRulesOfResource(res string) []*Rule {
 	tcMux.RLock()
-	defer tcMux.RUnlock()
 
-	resTcs, exist := tcMap[res]
-	if !exist {
-		return nil
+	resTcs := make([]*TrafficShapingController, 0)
+	if tcs, ok := tcMap[res]; ok {
+		resTcs = append(resTcs, tcs...)
 	}
+	cacheRegexTcs, ok := tcRegexCacheMap[res]
+	tcMux.RUnlock()
+
+	if ok {
+		resTcs = append(resTcs, cacheRegexTcs...)
+	} else {
+		tcMux.Lock()
+		regexTcs := regexTcMatches(res)
+		resTcs = append(resTcs, regexTcs...)
+		tcRegexCacheMap[res] = regexTcs
+		tcMux.Unlock()
+	}
+
 	ret := make([]*Rule, 0, len(resTcs))
 	for _, tc := range resTcs {
 		ret = append(ret, tc.BoundRule())
@@ -507,9 +542,28 @@ func RemoveTrafficShapingGenerator(tokenCalculateStrategy TokenCalculateStrategy
 
 func getTrafficControllerListFor(name string) []*TrafficShapingController {
 	tcMux.RLock()
-	defer tcMux.RUnlock()
+	rules := make([]*TrafficShapingController, 0)
+	rules = append(rules, tcMap[name]...)
+	regexCacheRules, ok := tcRegexCacheMap[name]
+	tcMux.RUnlock()
 
-	return tcMap[name]
+	if ok {
+		rules = append(rules, regexCacheRules...)
+		return rules
+	}
+
+	tcMux.Lock()
+	defer tcMux.Unlock()
+	// double check
+	if regexCacheRules, ok = tcRegexCacheMap[name]; ok {
+		rules = append(rules, regexCacheRules...)
+		return rules
+	}
+	regexRules := regexTcMatches(name)
+	tcRegexCacheMap[name] = regexRules
+	rules = append(rules, regexRules...)
+
+	return rules
 }
 
 func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equalIdx, reuseStatIdx int) {
@@ -539,8 +593,10 @@ func calculateReuseIndexFor(r *Rule, oldResTcs []*TrafficShapingController) (equ
 }
 
 // buildResourceTrafficShapingController builds TrafficShapingController slice from rules. the resource of rules must be equals to res
-func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule, oldResTcs []*TrafficShapingController) []*TrafficShapingController {
+func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule,
+	oldResTcs []*TrafficShapingController) (simpleControllers []*TrafficShapingController, regexControllers []*TrafficShapingController) {
 	newTcsOfRes := make([]*TrafficShapingController, 0, len(rulesOfRes))
+	newRegexTcsOfRes := make([]*TrafficShapingController, 0, len(rulesOfRes))
 	for _, rule := range rulesOfRes {
 		if res != rule.Resource {
 			logging.Error(errors.Errorf("unmatched resource name expect: %s, actual: %s", res, rule.Resource), "Unmatched resource name in flow.buildResourceTrafficShapingController()", "rule", rule)
@@ -582,9 +638,15 @@ func buildResourceTrafficShapingController(res string, rulesOfRes []*Rule, oldRe
 			// remove old tc from oldResTcs
 			oldResTcs = append(oldResTcs[:reuseStatIdx], oldResTcs[reuseStatIdx+1:]...)
 		}
-		newTcsOfRes = append(newTcsOfRes, tc)
+
+		if tc.rule != nil && tc.rule.Regex {
+			newRegexTcsOfRes = append(newRegexTcsOfRes, tc)
+		} else {
+			newTcsOfRes = append(newTcsOfRes, tc)
+		}
+
 	}
-	return newTcsOfRes
+	return newTcsOfRes, newRegexTcsOfRes
 }
 
 // IsValidRule checks whether the given Rule is valid.
@@ -648,4 +710,36 @@ func IsValidRule(rule *Rule) error {
 	}
 
 	return nil
+}
+
+func regexTcMatches(resource string) []*TrafficShapingController {
+	result := make([]*TrafficShapingController, 0)
+	for pattern, controllers := range tcRegexMap {
+		re := regexp.MustCompile(pattern)
+		if !re.MatchString(resource) {
+			continue
+		}
+		controllersCopy := make([]*TrafficShapingController, len(controllers))
+		for resourceName, controller := range controllers {
+			generator, supported := tcGenFuncMap[trafficControllerGenKey{
+				tokenCalculateStrategy: controller.rule.TokenCalculateStrategy,
+				controlBehavior:        controller.rule.ControlBehavior,
+			}]
+			if !supported || generator == nil {
+				logging.Error(errors.New("get trafficShapingController copy failed, unsupported flow control strategy"),
+					"Ignoring the rule due to unsupported control behavior in flow."+
+						"buildResourceTrafficShapingController()", "rule", controller.rule)
+				continue
+			}
+			if tc, e := generator(controller.rule, nil); e == nil && tc != nil {
+				controllersCopy[resourceName] = tc
+			} else {
+				logging.Error(errors.New("get trafficShapingController copy failed, bad generated traffic controller"),
+					"Ignoring the rule due to bad generated traffic controller in flow."+
+						"buildResourceTrafficShapingController()", "rule", controller.rule)
+			}
+		}
+		result = append(result, controllersCopy...)
+	}
+	return result
 }

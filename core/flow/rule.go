@@ -117,6 +117,8 @@ type Rule struct {
 	HighMemUsageThreshold int64 `json:"highMemUsageThreshold"`
 	MemLowWaterMarkBytes  int64 `json:"memLowWaterMarkBytes"`
 	MemHighWaterMarkBytes int64 `json:"memHighWaterMarkBytes"`
+	// Regex indicates whether the rule is a regex rule
+	Regex bool `json:"regex"`
 }
 
 func (r *Rule) isEqualsTo(newRule *Rule) bool {
