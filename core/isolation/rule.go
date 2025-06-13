@@ -46,13 +46,16 @@ type Rule struct {
 	// Currently Concurrency is supported for concurrency limiting.
 	MetricType MetricType `json:"metricType"`
 	Threshold  uint32     `json:"threshold"`
+	// Regex indicates whether the rule is a regex rule
+	Regex bool `json:"regex"`
 }
 
 func (r *Rule) String() string {
 	b, err := json.Marshal(r)
 	if err != nil {
 		// Return the fallback string
-		return fmt.Sprintf("{Id=%s, Resource=%s, MetricType=%s, Threshold=%d}", r.ID, r.Resource, r.MetricType.String(), r.Threshold)
+		return fmt.Sprintf("{Id=%s, Resource=%s, MetricType=%s, Threshold=%d, Regex=%v}", r.ID, r.Resource,
+			r.MetricType.String(), r.Threshold, r.Regex)
 	}
 	return string(b)
 }
