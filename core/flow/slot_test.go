@@ -66,3 +66,68 @@ func Test_FlowSlot_StandaloneStat(t *testing.T) {
 	}
 	assert.True(t, getTrafficControllerListFor("abc")[0].boundStat.readOnlyMetric.GetSum(base.MetricEventPass) == 50)
 }
+
+func Test_RegexFlowSlot_StandaloneStat(t *testing.T) {
+	slot := &Slot{}
+	statSLot := &StandaloneStatSlot{}
+	res1 := base.NewResourceWrapper("abc/123", base.ResTypeCommon, base.Inbound)
+	res2 := base.NewResourceWrapper("abc/456", base.ResTypeCommon, base.Inbound)
+	resNode1 := stat.GetOrCreateResourceNode("abc/123", base.ResTypeCommon)
+	resNode2 := stat.GetOrCreateResourceNode("abc/456", base.ResTypeCommon)
+	ctx1 := &base.EntryContext{
+		Resource: res1,
+		StatNode: resNode1,
+		Input: &base.SentinelInput{
+			BatchCount: 1,
+		},
+		RuleCheckResult: nil,
+		Data:            nil,
+	}
+	ctx2 := &base.EntryContext{
+		Resource: res2,
+		StatNode: resNode2,
+		Input: &base.SentinelInput{
+			BatchCount: 1,
+		},
+		RuleCheckResult: nil,
+		Data:            nil,
+	}
+
+	r1 := &Rule{
+		Resource:               "abc/*",
+		TokenCalculateStrategy: Direct,
+		ControlBehavior:        Reject,
+		// Use standalone statistic, using single-bucket-sliding-windows
+		StatIntervalInMs: 20000,
+		Threshold:        100,
+		RelationStrategy: CurrentResource,
+		Regex:            true,
+	}
+	_, e := LoadRules([]*Rule{r1})
+	if e != nil {
+		logging.Error(e, "")
+		t.Fail()
+		return
+	}
+
+	for i := 0; i < 80; i++ {
+		ret := slot.Check(ctx1)
+		if ret != nil {
+			t.Fail()
+			return
+		}
+		statSLot.OnEntryPassed(ctx1)
+	}
+	for i := 0; i < 80; i++ {
+		ret := slot.Check(ctx2)
+		if ret != nil {
+			t.Fail()
+			return
+		}
+		statSLot.OnEntryPassed(ctx2)
+	}
+	assert.True(t, getTrafficControllerListFor("abc/123")[0].boundStat.readOnlyMetric.GetSum(base.
+		MetricEventPass) == 80)
+	assert.True(t, getTrafficControllerListFor("abc/456")[0].boundStat.readOnlyMetric.GetSum(base.
+		MetricEventPass) == 80)
+}

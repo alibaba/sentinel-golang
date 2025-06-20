@@ -16,6 +16,7 @@ package isolation
 
 import (
 	"reflect"
+	"regexp"
 	"sync"
 
 	"github.com/alibaba/sentinel-golang/logging"
@@ -24,10 +25,12 @@ import (
 )
 
 var (
-	ruleMap       = make(map[string][]*Rule)
-	rwMux         = &sync.RWMutex{}
-	currentRules  = make(map[string][]*Rule, 0)
-	updateRuleMux = new(sync.Mutex)
+	ruleMap           = make(map[string][]*Rule)
+	regexRuleMap      = make(map[string][]*Rule)
+	regexCacheRuleMap = make(map[string][]*Rule)
+	rwMux             = &sync.RWMutex{}
+	currentRules      = make(map[string][]*Rule, 0)
+	updateRuleMux     = new(sync.Mutex)
 )
 
 // LoadRules loads the given isolation rules to the rule manager, while all previous rules will be replaced.
@@ -55,29 +58,40 @@ func LoadRules(rules []*Rule) (bool, error) {
 }
 
 func onRuleUpdate(rawResRulesMap map[string][]*Rule) (err error) {
-	validResRulesMap := make(map[string][]*Rule, len(rawResRulesMap))
+	validResRulesMap := make(map[string][]*Rule)
+	validRegexResRulesMap := make(map[string][]*Rule)
 	for res, rules := range rawResRulesMap {
-		validResRules := make([]*Rule, 0, len(rules))
+		validResRules := make([]*Rule, 0)
+		validRegexResRules := make([]*Rule, 0)
 		for _, rule := range rules {
 			if err := IsValidRule(rule); err != nil {
 				logging.Warn("[Isolation onRuleUpdate] Ignoring invalid isolation rule", "rule", rule, "reason", err.Error())
 				continue
 			}
-			validResRules = append(validResRules, rule)
+			if rule.Regex {
+				validRegexResRules = append(validRegexResRules, rule)
+			} else {
+				validResRules = append(validResRules, rule)
+			}
 		}
 		if len(validResRules) > 0 {
 			validResRulesMap[res] = validResRules
+		}
+		if len(validRegexResRules) > 0 {
+			validRegexResRulesMap[res] = validRegexResRules
 		}
 	}
 
 	start := util.CurrentTimeNano()
 	rwMux.Lock()
 	ruleMap = validResRulesMap
+	regexRuleMap = validRegexResRulesMap
+	regexCacheRuleMap = make(map[string][]*Rule)
 	rwMux.Unlock()
 	currentRules = rawResRulesMap
 
 	logging.Debug("[Isolation onRuleUpdate] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
-	logRuleUpdate(validResRulesMap)
+	logRuleUpdate(validResRulesMap, validRegexResRulesMap)
 	return
 }
 
@@ -96,6 +110,8 @@ func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
 		// clear ruleMap
 		rwMux.Lock()
 		delete(ruleMap, res)
+		delete(regexRuleMap, res)
+		regexCacheRuleMap = make(map[string][]*Rule)
 		rwMux.Unlock()
 		logging.Info("[Isolation] clear resource level rules", "resource", res)
 		return true, nil
@@ -112,22 +128,30 @@ func LoadRulesOfResource(res string, rules []*Rule) (bool, error) {
 }
 
 func onResourceRuleUpdate(res string, rawResRules []*Rule) (err error) {
-	validResRules := make([]*Rule, 0, len(rawResRules))
+	validResRules := make([]*Rule, 0)
+	validRegexResRules := make([]*Rule, 0)
 	for _, rule := range rawResRules {
 		if err := IsValidRule(rule); err != nil {
 			logging.Warn("[Isolation onResourceRuleUpdate] Ignoring invalid isolation rule", "rule", rule, "reason", err.Error())
 			continue
 		}
-		validResRules = append(validResRules, rule)
+		if rule.Regex {
+			validRegexResRules = append(validRegexResRules, rule)
+		} else {
+			validResRules = append(validResRules, rule)
+		}
 	}
 
 	start := util.CurrentTimeNano()
 	rwMux.Lock()
 	if len(validResRules) == 0 {
 		delete(ruleMap, res)
+		delete(regexRuleMap, res)
 	} else {
 		ruleMap[res] = validResRules
+		regexRuleMap[res] = validRegexResRules
 	}
+	regexCacheRuleMap = make(map[string][]*Rule)
 	rwMux.Unlock()
 	currentRules[res] = rawResRules
 	logging.Debug("[Isolation onResourceRuleUpdate] Time statistic(ns) for updating isolation rule", "timeCost", util.CurrentTimeNano()-start)
@@ -182,12 +206,28 @@ func getRules() []*Rule {
 // getRulesOfResource is an internal interface.
 func getRulesOfResource(res string) []*Rule {
 	rwMux.RLock()
-	defer rwMux.RUnlock()
-
-	resRules, exist := ruleMap[res]
-	if !exist {
-		return nil
+	resRules := make([]*Rule, 0)
+	if rules, ok := ruleMap[res]; ok {
+		resRules = append(resRules, rules...)
 	}
+	regexCacheRules, ok := regexCacheRuleMap[res]
+	rwMux.RUnlock()
+
+	if ok {
+		resRules = append(resRules, regexCacheRules...)
+	} else {
+		rwMux.Lock()
+		// double check
+		if regexCacheRules, ok = regexCacheRuleMap[res]; ok {
+			resRules = append(resRules, regexCacheRules...)
+		} else {
+			regexRules := regexRuleMatches(res)
+			regexCacheRuleMap[res] = regexRules
+			resRules = append(resRules, regexRules...)
+		}
+		rwMux.Unlock()
+	}
+
 	ret := make([]*Rule, 0, len(resRules))
 	for _, r := range resRules {
 		ret = append(ret, r)
@@ -210,12 +250,18 @@ func rulesFrom(m map[string][]*Rule) []*Rule {
 	return rules
 }
 
-func logRuleUpdate(m map[string][]*Rule) {
+func logRuleUpdate(m map[string][]*Rule, regexM map[string][]*Rule) {
 	rs := rulesFrom(m)
 	if len(rs) == 0 {
 		logging.Info("[IsolationRuleManager] Isolation rules were cleared")
 	} else {
 		logging.Info("[IsolationRuleManager] Isolation rules were loaded", "rules", rs)
+	}
+	reRs := rulesFrom(regexM)
+	if len(reRs) == 0 {
+		logging.Info("[IsolationRuleManager] Isolation regex rules were cleared")
+	} else {
+		logging.Info("[IsolationRuleManager] Isolation regex rules were loaded", "rules", reRs)
 	}
 }
 
@@ -234,4 +280,18 @@ func IsValidRule(r *Rule) error {
 		return errors.New("zero threshold")
 	}
 	return nil
+}
+
+func regexRuleMatches(resource string) []*Rule {
+	result := make([]*Rule, 0)
+	for pattern, regexRules := range regexRuleMap {
+		re := regexp.MustCompile(pattern)
+		if !re.MatchString(resource) {
+			continue
+		}
+		for _, rule := range regexRules {
+			result = append(result, rule)
+		}
+	}
+	return result
 }
