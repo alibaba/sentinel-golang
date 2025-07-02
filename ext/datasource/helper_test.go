@@ -532,10 +532,10 @@ func TestIsolationRuleJsonArrayParser(t *testing.T) {
 		rules := properties.([]*isolation.Rule)
 		assert.True(t, err == nil)
 		assert.True(t, len(rules) == 4)
-		assert.True(t, strings.Contains(rules[0].String(), `{"resource":"abc","metricType":0,"threshold":100}`))
-		assert.True(t, strings.Contains(rules[1].String(), `{"resource":"abc","metricType":0,"threshold":90}`))
-		assert.True(t, strings.Contains(rules[2].String(), `{"resource":"abc","metricType":0,"threshold":80}`))
-		assert.True(t, strings.Contains(rules[3].String(), `{"resource":"abc","metricType":0,"threshold":70}`))
+		assert.True(t, strings.Contains(rules[0].String(), `{"resource":"abc","metricType":0,"threshold":100,"regex":false}`))
+		assert.True(t, strings.Contains(rules[1].String(), `{"resource":"abc","metricType":0,"threshold":90,"regex":false}`))
+		assert.True(t, strings.Contains(rules[2].String(), `{"resource":"abc","metricType":0,"threshold":80,"regex":false}`))
+		assert.True(t, strings.Contains(rules[3].String(), `{"resource":"abc","metricType":0,"threshold":70,"regex":false}`))
 	})
 
 	t.Run("TestIsolationRuleJsonArrayParser_Nil", func(t *testing.T) {
