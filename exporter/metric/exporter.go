@@ -33,11 +33,7 @@ var (
 )
 
 func init() {
-	if config.MetricExportHTTPAddr() != "" {
-		exporter = newPrometheusExporter()
-	} else {
-		exporter = newEmptyExporter()
-	}
+	exporter = newPrometheusExporter()
 
 	host, _ = os.Hostname()
 	if host == "" {
