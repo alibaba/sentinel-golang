@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -53,7 +52,7 @@ var (
 	globalLogLevel = InfoLevel
 	globalLogger   = NewConsoleLogger()
 
-	FrequentErrorOnce = &sync.Once{}
+	FrequentErrorOnce uint32
 )
 
 // GetGlobalLoggerLevel gets the Sentinel log level
