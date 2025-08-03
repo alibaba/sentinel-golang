@@ -15,16 +15,19 @@
 package flow
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	metric_exporter "github.com/alibaba/sentinel-golang/exporter/metric"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/pkg/errors"
 )
 
 const (
 	RuleCheckSlotOrder = 2000
+
+	name = "flow"
 )
 
 var (
@@ -57,6 +60,8 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 			logging.Warn("[FlowSlot Check]Nil traffic controller found", "resourceName", res)
 			continue
 		}
+
+		ctx.RuleChecker = name
 		r := canPassCheck(tc, ctx.StatNode, ctx.Input.BatchCount)
 		if r == nil {
 			// nil means pass

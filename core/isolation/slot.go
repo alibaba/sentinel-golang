@@ -15,13 +15,16 @@
 package isolation
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/logging"
-	"github.com/pkg/errors"
 )
 
 const (
 	RuleCheckSlotOrder = 3000
+
+	name = "isolation"
 )
 
 var (
@@ -59,6 +62,8 @@ func checkPass(ctx *base.EntryContext) (bool, *Rule, uint32) {
 	for _, rule := range getRulesOfResource(ctx.Resource.Name()) {
 		threshold := rule.Threshold
 		if rule.MetricType == Concurrency {
+			ctx.RuleChecker = name
+
 			if cur := statNode.CurrentConcurrency(); cur >= 0 {
 				curCount = uint32(cur)
 			} else {
