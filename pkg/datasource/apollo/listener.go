@@ -10,7 +10,7 @@ type customChangeListener struct {
 
 func (c *customChangeListener) OnChange(event *storage.ChangeEvent) {
 	for key, value := range event.Changes {
-		if c.ds.propertyKey == key {
+		if c.ds.namespace == event.Namespace && c.ds.propertyKey == key {
 			c.ds.handle([]byte(value.NewValue.(string)))
 		}
 	}
@@ -18,7 +18,7 @@ func (c *customChangeListener) OnChange(event *storage.ChangeEvent) {
 
 func (c *customChangeListener) OnNewestChange(event *storage.FullChangeEvent) {
 	for key, value := range event.Changes {
-		if c.ds.propertyKey == key {
+		if c.ds.namespace == event.Namespace && c.ds.propertyKey == key {
 			c.ds.handle([]byte(value.(string)))
 		}
 	}
