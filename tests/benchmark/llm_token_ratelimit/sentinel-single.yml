@@ -1,0 +1,44 @@
+version: "v1"
+sentinel:
+  app:
+    name: sentinel-go-demo
+  log:
+    metric:
+      maxFileCount: 7
+  llmTokenRatelimit:
+    enabled: true
+    rules:
+      - resource: "POST:/v1/chat/completion/fixed_window"
+        strategy: "fixed-window"
+        specificItems:
+          - identifier:
+              type: "header"
+              value: ".*"
+            keyItems:
+              - key: ".*"
+                token: 
+                  number: 0
+                  countStrategy: "total-tokens"
+                time:
+                  unit: "second"
+                  value: 60
+      - resource: "POST:/v1/chat/completion/peta"
+        strategy: "peta"
+        specificItems:
+          - identifier:
+              type: "header"
+              value: ".*"
+            keyItems:
+              - key: ".*"
+                token: 
+                  number: 0
+                  countStrategy: "input-tokens"
+                time:
+                  unit: "second"
+                  value: 60
+    errorCode: 429
+    errorMessage: "Too Many Requests"
+    redis:
+      addrs:
+        - name: "redis-node-1"
+          port: 6379

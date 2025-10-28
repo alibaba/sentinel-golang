@@ -138,7 +138,9 @@ func Entry(resource string, opts ...EntryOption) (*base.SentinelEntry, *base.Blo
 	}()
 
 	for _, opt := range opts {
-		opt(options)
+		if opt != nil {
+			opt(options)
+		}
 	}
 	if options.slotChain == nil {
 		options.slotChain = GlobalSlotChain()

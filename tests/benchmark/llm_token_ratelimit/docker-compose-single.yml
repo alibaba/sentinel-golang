@@ -1,0 +1,43 @@
+services:
+  # Redis 6.0 单节点
+  redis-node-1:
+    image: redis:6.2.7
+    container_name: redis-node-1
+    ports:
+      - "7001:6379"
+    volumes:
+      - ./redis-single.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - test-network
+
+  # Sentinel Go LLM Token RateLimit 服务容器
+  sentinel-go-llm-token-ratelimit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentinel-go-llm-token-ratelimit
+    command: ["tail", "-f", "/dev/null"]
+    ports:
+      - "9527:9527"
+    volumes:
+      - ./out:/workspace
+    networks:
+      - test-network
+    depends_on:
+      - redis-node-1
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - LLM_MODEL=${LLM_MODEL}
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    restart: on-failure
+
+# 定义网络和卷
+networks:
+  test-network:
+    driver: bridge

@@ -1,0 +1,76 @@
+services:
+  # Redis 6.0 集群
+  redis-node-1:
+    image: redis:6.2.7
+    container_name: redis-node-1
+    ports:
+      - "7001:6379"
+      - "17001:16379"
+    volumes:
+      - ./redis-cluster.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.11
+
+  redis-node-2:
+    image: redis:6.2.7
+    container_name: redis-node-2
+    ports:
+      - "7002:6379"
+      - "17002:16379"
+    volumes:
+      - ./redis-cluster.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.12
+
+  redis-node-3:
+    image: redis:6.2.7
+    container_name: redis-node-3
+    ports:
+      - "7003:6379"
+      - "17003:16379"
+    volumes:
+      - ./redis-cluster.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      test-network:
+        ipv4_address: 172.20.0.13
+
+  # Sentinel Go LLM Token RateLimit 服务容器
+  sentinel-go-llm-token-ratelimit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentinel-go-llm-token-ratelimit
+    command: ["tail", "-f", "/dev/null"]
+    ports:
+      - "9527:9527"
+    volumes:
+      - ./out:/workspace
+    networks:
+      - test-network
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - LLM_MODEL=${LLM_MODEL}
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    restart: on-failure
+
+# 定义网络和卷
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

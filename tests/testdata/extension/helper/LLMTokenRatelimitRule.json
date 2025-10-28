@@ -1,0 +1,60 @@
+[
+    {
+        "resource": "llm-api-1",
+        "strategy": "peta",
+        "encoding": {
+            "provider": "openai",
+            "model": "gpt-3.5-turbo"
+        },
+        "specificItems": [
+            {
+                "identifier": {
+                    "type": "all",
+                    "value": ".*"
+                },
+                "keyItems": [
+                    {
+                        "key": "default",
+                        "token": {
+                            "number": 1000,
+                            "countStrategy": "total-tokens"
+                        },
+                        "time": {
+                            "unit": "minute",
+                            "value": 1
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "resource": "llm-api-2",
+        "strategy": "peta",
+        "encoding": {
+            "provider": "openai",
+            "model": "gpt-4"
+        },
+        "specificItems": [
+            {
+                "identifier": {
+                    "type": "header",
+                    "value": "user-id"
+                },
+                "keyItems": [
+                    {
+                        "key": "user-123",
+                        "token": {
+                            "number": 2000,
+                            "countStrategy": "input-tokens"
+                        },
+                        "time": {
+                            "unit": "hour",
+                            "value": 1
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+]

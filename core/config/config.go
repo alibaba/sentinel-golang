@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"sync"
 
+	llmtokenratelimit "github.com/alibaba/sentinel-golang/core/llm_token_ratelimit"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
 	"github.com/pkg/errors"
@@ -261,4 +262,8 @@ func MetricStatisticIntervalMs() uint32 {
 }
 func MetricStatisticSampleCount() uint32 {
 	return globalCfg.MetricStatisticSampleCount()
+}
+
+func LLMTokenRateLimit() *llmtokenratelimit.Config {
+	return globalCfg.LLMTokenRateLimit()
 }

@@ -28,16 +28,18 @@ const (
 	BlockTypeCircuitBreaking
 	BlockTypeSystemFlow
 	BlockTypeHotSpotParamFlow
+	BlockTypeLLMTokenRateLimit
 )
 
 var (
 	blockTypeMap = map[BlockType]string{
-		BlockTypeUnknown:          "BlockTypeUnknown",
-		BlockTypeFlow:             "BlockTypeFlowControl",
-		BlockTypeIsolation:        "BlockTypeIsolation",
-		BlockTypeCircuitBreaking:  "BlockTypeCircuitBreaking",
-		BlockTypeSystemFlow:       "BlockTypeSystem",
-		BlockTypeHotSpotParamFlow: "BlockTypeHotSpotParamFlow",
+		BlockTypeUnknown:           "BlockTypeUnknown",
+		BlockTypeFlow:              "BlockTypeFlowControl",
+		BlockTypeIsolation:         "BlockTypeIsolation",
+		BlockTypeCircuitBreaking:   "BlockTypeCircuitBreaking",
+		BlockTypeSystemFlow:        "BlockTypeSystem",
+		BlockTypeHotSpotParamFlow:  "BlockTypeHotSpotParamFlow",
+		BlockTypeLLMTokenRateLimit: "BlockTypeLLMTokenRateLimit",
 	}
 	blockTypeExisted = fmt.Errorf("block type existed")
 )

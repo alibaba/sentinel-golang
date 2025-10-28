@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/alibaba/sentinel-golang/core/base"
+	llmtokenratelimit "github.com/alibaba/sentinel-golang/core/llm_token_ratelimit"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/pkg/errors"
 )
@@ -46,6 +47,8 @@ type SentinelConfig struct {
 	Stat StatConfig
 	// UseCacheTime indicates whether to cache time(ms)
 	UseCacheTime bool `yaml:"useCacheTime"`
+	// LLMTokenRateLimit represents configuration items related to llm token rate limit.
+	LLMTokenRateLimit *llmtokenratelimit.Config `yaml:"llmTokenRatelimit"`
 }
 
 // ExporterConfig represents configuration items related to exporter, like metric exporter.
@@ -258,4 +261,8 @@ func (entity *Entity) MetricStatisticIntervalMs() uint32 {
 }
 func (entity *Entity) MetricStatisticSampleCount() uint32 {
 	return entity.Sentinel.Stat.MetricStatisticSampleCount
+}
+
+func (entity *Entity) LLMTokenRateLimit() *llmtokenratelimit.Config {
+	return entity.Sentinel.LLMTokenRateLimit
 }

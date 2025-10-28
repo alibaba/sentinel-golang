@@ -70,6 +70,8 @@ func (t BlockType) stringSwitch() string {
 		return "System"
 	case BlockTypeHotSpotParamFlow:
 		return "HotSpotParamFlow"
+	case BlockTypeLLMTokenRateLimit:
+		return "LLMTokenRateLimit"
 	default:
 		return fmt.Sprintf("%d", t)
 	}
@@ -77,12 +79,13 @@ func (t BlockType) stringSwitch() string {
 
 var (
 	blockTypeNames = []string{
-		BlockTypeUnknown:          "Unknown",
-		BlockTypeFlow:             "FlowControl",
-		BlockTypeIsolation:        "BlockTypeIsolation",
-		BlockTypeCircuitBreaking:  "CircuitBreaking",
-		BlockTypeSystemFlow:       "System",
-		BlockTypeHotSpotParamFlow: "HotSpotParamFlow",
+		BlockTypeUnknown:           "Unknown",
+		BlockTypeFlow:              "FlowControl",
+		BlockTypeIsolation:         "BlockTypeIsolation",
+		BlockTypeCircuitBreaking:   "CircuitBreaking",
+		BlockTypeSystemFlow:        "System",
+		BlockTypeHotSpotParamFlow:  "HotSpotParamFlow",
+		BlockTypeLLMTokenRateLimit: "LLMTokenRateLimit",
 	}
 	blockTypeErr = fmt.Errorf("block type err")
 )

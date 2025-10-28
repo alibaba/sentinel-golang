@@ -20,6 +20,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/isolation"
+	llmtokenratelimit "github.com/alibaba/sentinel-golang/core/llm_token_ratelimit"
 	"github.com/alibaba/sentinel-golang/core/log"
 	"github.com/alibaba/sentinel-golang/core/stat"
 	"github.com/alibaba/sentinel-golang/core/system"
@@ -37,6 +38,7 @@ func BuildDefaultSlotChain() *base.SlotChain {
 
 	sc.AddRuleCheckSlot(system.DefaultAdaptiveSlot)
 	sc.AddRuleCheckSlot(flow.DefaultSlot)
+	sc.AddRuleCheckSlot(llmtokenratelimit.DefaultSlot)
 	sc.AddRuleCheckSlot(isolation.DefaultSlot)
 	sc.AddRuleCheckSlot(hotspot.DefaultSlot)
 	sc.AddRuleCheckSlot(circuitbreaker.DefaultSlot)
@@ -44,6 +46,7 @@ func BuildDefaultSlotChain() *base.SlotChain {
 	sc.AddStatSlot(stat.DefaultSlot)
 	sc.AddStatSlot(log.DefaultSlot)
 	sc.AddStatSlot(flow.DefaultStandaloneStatSlot)
+	sc.AddStatSlot(llmtokenratelimit.DefaultLLMTokenRatelimitStatSlot)
 	sc.AddStatSlot(hotspot.DefaultConcurrencyStatSlot)
 	sc.AddStatSlot(circuitbreaker.DefaultMetricStatSlot)
 	return sc

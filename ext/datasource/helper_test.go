@@ -26,6 +26,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/isolation"
+	"github.com/alibaba/sentinel-golang/core/llm_token_ratelimit"
 	"github.com/alibaba/sentinel-golang/core/system"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -404,10 +405,83 @@ func TestHotSpotParamRuleJsonArrayParser(t *testing.T) {
 		for _, r := range rules {
 			fmt.Println(r)
 		}
-		assert.True(t, strings.Contains(rules[0].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Reject, ParamIndex:0, ParamKey:, Threshold:1000, MaxQueueingTimeMs:1, BurstCount:10, DurationInSec:1, ParamsMaxCapacity:10000, SpecificItems:map[true:10003 1000:10001 ximu:10002]"))
-		assert.True(t, strings.Contains(rules[1].String(), "Resource:abc, MetricType:Concurrency, ControlBehavior:Throttling, ParamIndex:1, ParamKey:, Threshold:2000, MaxQueueingTimeMs:2, BurstCount:20, DurationInSec:2, ParamsMaxCapacity:20000, SpecificItems:map[true:20003 1000:20001 ximu:20002"))
-		assert.True(t, strings.Contains(rules[2].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Reject, ParamIndex:2, ParamKey:, Threshold:3000, MaxQueueingTimeMs:3, BurstCount:30, DurationInSec:3, ParamsMaxCapacity:30000, SpecificItems:map[true:30003 1000:30001 ximu:30002"))
-		assert.True(t, strings.Contains(rules[3].String(), "Resource:abc, MetricType:QPS, ControlBehavior:Throttling, ParamIndex:3, ParamKey:, Threshold:4000, MaxQueueingTimeMs:4, BurstCount:40, DurationInSec:4, ParamsMaxCapacity:40000, SpecificItems:map[true:40003 1000:40001 ximu:40002"))
+
+		expectedRule0 := &hotspot.Rule{
+			Resource:          "abc",
+			MetricType:        hotspot.Concurrency,
+			ControlBehavior:   hotspot.Reject,
+			ParamIndex:        0,
+			ParamKey:          "",
+			Threshold:         1000,
+			MaxQueueingTimeMs: 1,
+			BurstCount:        10,
+			DurationInSec:     1,
+			ParamsMaxCapacity: 10000,
+			SpecificItems: map[interface{}]int64{
+				true:   10003,
+				1000:   10001,
+				"ximu": 10002,
+			},
+		}
+
+		expectedRule1 := &hotspot.Rule{
+			Resource:          "abc",
+			MetricType:        hotspot.Concurrency,
+			ControlBehavior:   hotspot.Throttling,
+			ParamIndex:        1,
+			ParamKey:          "",
+			Threshold:         2000,
+			MaxQueueingTimeMs: 2,
+			BurstCount:        20,
+			DurationInSec:     2,
+			ParamsMaxCapacity: 20000,
+			SpecificItems: map[interface{}]int64{
+				true:   20003,
+				1000:   20001,
+				"ximu": 20002,
+			},
+		}
+
+		expectedRule2 := &hotspot.Rule{
+			Resource:          "abc",
+			MetricType:        hotspot.QPS,
+			ControlBehavior:   hotspot.Reject,
+			ParamIndex:        2,
+			ParamKey:          "",
+			Threshold:         3000,
+			MaxQueueingTimeMs: 3,
+			BurstCount:        30,
+			DurationInSec:     3,
+			ParamsMaxCapacity: 30000,
+			SpecificItems: map[interface{}]int64{
+				true:   30003,
+				1000:   30001,
+				"ximu": 30002,
+			},
+		}
+
+		expectedRule3 := &hotspot.Rule{
+			Resource:          "abc",
+			MetricType:        hotspot.QPS,
+			ControlBehavior:   hotspot.Throttling,
+			ParamIndex:        3,
+			ParamKey:          "",
+			Threshold:         4000,
+			MaxQueueingTimeMs: 4,
+			BurstCount:        40,
+			DurationInSec:     4,
+			ParamsMaxCapacity: 40000,
+			SpecificItems: map[interface{}]int64{
+				true:   40003,
+				1000:   40001,
+				"ximu": 40002,
+			},
+		}
+
+		assert.True(t, reflect.DeepEqual(rules[0], expectedRule0))
+		assert.True(t, reflect.DeepEqual(rules[1], expectedRule1))
+		assert.True(t, reflect.DeepEqual(rules[2], expectedRule2))
+		assert.True(t, reflect.DeepEqual(rules[3], expectedRule3))
 	})
 
 	t.Run("TestHotSpotParamRuleJsonArrayParser_Nil", func(t *testing.T) {
@@ -600,5 +674,325 @@ func TestIsolationRuleListJsonUpdater(t *testing.T) {
 
 		assert.True(t, err.(Error).Code() == UpdatePropertyError)
 		assert.True(t, strings.Contains(err.(Error).desc, "Fail to type assert"))
+	})
+}
+func TestLLMTokenRateLimitRuleJsonArrayParser(t *testing.T) {
+	t.Run("TestLLMTokenRateLimitRuleJsonArrayParser_Invalid", func(t *testing.T) {
+		_, err := LLMTokenRateLimitRuleJsonArrayParser([]byte{'s', 'r', 'c'})
+		assert.True(t, err != nil)
+	})
+
+	t.Run("TestLLMTokenRateLimitRuleJsonArrayParser_Normal", func(t *testing.T) {
+		// Prepare test data
+		f, err := os.Open("../../tests/testdata/extension/helper/LLMTokenRatelimitRule.json")
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		if err != nil {
+			t.Errorf("The rules file is not existed, err:%+v.", err)
+		}
+		src, err := ioutil.ReadAll(f)
+		if err != nil {
+			t.Errorf("Fail to read file, err: %+v.", err)
+		}
+
+		properties, err := LLMTokenRateLimitRuleJsonArrayParser(src)
+		rules := properties.([]*llm_token_ratelimit.Rule)
+		assert.True(t, err == nil)
+		assert.True(t, len(rules) == 2)
+
+		expectedRule0 := &llm_token_ratelimit.Rule{
+			Resource: "llm-api-1",
+			Strategy: llm_token_ratelimit.PETA,
+			Encoding: llm_token_ratelimit.TokenEncoding{
+				Provider: llm_token_ratelimit.OpenAIEncoderProvider,
+				Model:    "gpt-3.5-turbo",
+			},
+			SpecificItems: []*llm_token_ratelimit.SpecificItem{
+				{
+					Identifier: llm_token_ratelimit.Identifier{
+						Type:  llm_token_ratelimit.AllIdentifier,
+						Value: ".*",
+					},
+					KeyItems: []*llm_token_ratelimit.KeyItem{
+						{
+							Key: "default",
+							Token: llm_token_ratelimit.Token{
+								Number:        1000,
+								CountStrategy: llm_token_ratelimit.TotalTokens,
+							},
+							Time: llm_token_ratelimit.Time{
+								Unit:  llm_token_ratelimit.Minute,
+								Value: 1,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		expectedRule1 := &llm_token_ratelimit.Rule{
+			Resource: "llm-api-2",
+			Strategy: llm_token_ratelimit.PETA,
+			Encoding: llm_token_ratelimit.TokenEncoding{
+				Provider: llm_token_ratelimit.OpenAIEncoderProvider,
+				Model:    "gpt-4",
+			},
+			SpecificItems: []*llm_token_ratelimit.SpecificItem{
+				{
+					Identifier: llm_token_ratelimit.Identifier{
+						Type:  llm_token_ratelimit.Header,
+						Value: "user-id",
+					},
+					KeyItems: []*llm_token_ratelimit.KeyItem{
+						{
+							Key: "user-123",
+							Token: llm_token_ratelimit.Token{
+								Number:        2000,
+								CountStrategy: llm_token_ratelimit.InputTokens,
+							},
+							Time: llm_token_ratelimit.Time{
+								Unit:  llm_token_ratelimit.Hour,
+								Value: 1,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		assert.True(t, reflect.DeepEqual(rules[0], expectedRule0))
+		assert.True(t, reflect.DeepEqual(rules[1], expectedRule1))
+	})
+
+	t.Run("TestLLMTokenRateLimitRuleJsonArrayParser_Nil", func(t *testing.T) {
+		got, err := LLMTokenRateLimitRuleJsonArrayParser(nil)
+		assert.True(t, got == nil && err == nil)
+
+		got, err = LLMTokenRateLimitRuleJsonArrayParser([]byte{})
+		assert.True(t, got == nil && err == nil)
+	})
+}
+
+func TestLLMTokenRateLimitRulesUpdater(t *testing.T) {
+	t.Run("TestLLMTokenRateLimitRulesUpdater_Normal", func(t *testing.T) {
+		// Prepare test data
+		r1 := &llm_token_ratelimit.Rule{
+			Resource: "llm-resource-1",
+			Strategy: llm_token_ratelimit.PETA,
+			Encoding: llm_token_ratelimit.TokenEncoding{
+				Provider: llm_token_ratelimit.OpenAIEncoderProvider,
+				Model:    "gpt-3.5-turbo",
+			},
+			SpecificItems: []*llm_token_ratelimit.SpecificItem{
+				{
+					Identifier: llm_token_ratelimit.Identifier{
+						Type:  llm_token_ratelimit.AllIdentifier,
+						Value: ".*",
+					},
+					KeyItems: []*llm_token_ratelimit.KeyItem{
+						{
+							Key: "default",
+							Token: llm_token_ratelimit.Token{
+								Number:        500,
+								CountStrategy: llm_token_ratelimit.TotalTokens,
+							},
+							Time: llm_token_ratelimit.Time{
+								Unit:  llm_token_ratelimit.Minute,
+								Value: 1,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		r2 := &llm_token_ratelimit.Rule{
+			Resource: "llm-resource-2",
+			Strategy: llm_token_ratelimit.PETA,
+			Encoding: llm_token_ratelimit.TokenEncoding{
+				Provider: llm_token_ratelimit.OpenAIEncoderProvider,
+				Model:    "gpt-4",
+			},
+			SpecificItems: []*llm_token_ratelimit.SpecificItem{
+				{
+					Identifier: llm_token_ratelimit.Identifier{
+						Type:  llm_token_ratelimit.Header,
+						Value: "api-key",
+					},
+					KeyItems: []*llm_token_ratelimit.KeyItem{
+						{
+							Key: "key-001",
+							Token: llm_token_ratelimit.Token{
+								Number:        1000,
+								CountStrategy: llm_token_ratelimit.InputTokens,
+							},
+							Time: llm_token_ratelimit.Time{
+								Unit:  llm_token_ratelimit.Hour,
+								Value: 1,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		r3 := &llm_token_ratelimit.Rule{
+			Resource: "llm-resource-3",
+			Strategy: llm_token_ratelimit.PETA,
+			Encoding: llm_token_ratelimit.TokenEncoding{
+				Provider: llm_token_ratelimit.OpenAIEncoderProvider,
+				Model:    "gpt-3.5-turbo",
+			},
+			SpecificItems: []*llm_token_ratelimit.SpecificItem{
+				{
+					Identifier: llm_token_ratelimit.Identifier{
+						Type:  llm_token_ratelimit.AllIdentifier,
+						Value: ".*",
+					},
+					KeyItems: []*llm_token_ratelimit.KeyItem{
+						{
+							Key: "default",
+							Token: llm_token_ratelimit.Token{
+								Number:        2000,
+								CountStrategy: llm_token_ratelimit.OutputTokens,
+							},
+							Time: llm_token_ratelimit.Time{
+								Unit:  llm_token_ratelimit.Day,
+								Value: 1,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		err := LLMTokenRateLimitRulesUpdater([]*llm_token_ratelimit.Rule{r1, r2, r3})
+		assert.True(t, err == nil)
+
+		rules := llm_token_ratelimit.GetRulesOfResource("llm-resource-1")
+		assert.True(t, len(rules) > 0)
+		assert.True(t, reflect.DeepEqual(rules[0], *r1))
+
+		rules = llm_token_ratelimit.GetRulesOfResource("llm-resource-2")
+		assert.True(t, len(rules) > 0)
+		assert.True(t, reflect.DeepEqual(rules[0], *r2))
+
+		rules = llm_token_ratelimit.GetRulesOfResource("llm-resource-3")
+		assert.True(t, len(rules) > 0)
+		assert.True(t, reflect.DeepEqual(rules[0], *r3))
+	})
+
+	t.Run("TestLLMTokenRateLimitRulesUpdater_Nil", func(t *testing.T) {
+		llm_token_ratelimit.ClearRules()
+		llm_token_ratelimit.LoadRules([]*llm_token_ratelimit.Rule{
+			{
+				Resource: "temp-resource",
+				Strategy: llm_token_ratelimit.PETA,
+				Encoding: llm_token_ratelimit.TokenEncoding{
+					Provider: llm_token_ratelimit.OpenAIEncoderProvider,
+					Model:    "gpt-3.5-turbo",
+				},
+				SpecificItems: []*llm_token_ratelimit.SpecificItem{
+					{
+						Identifier: llm_token_ratelimit.Identifier{
+							Type:  llm_token_ratelimit.AllIdentifier,
+							Value: ".*",
+						},
+						KeyItems: []*llm_token_ratelimit.KeyItem{
+							{
+								Key: "default",
+								Token: llm_token_ratelimit.Token{
+									Number:        100,
+									CountStrategy: llm_token_ratelimit.TotalTokens,
+								},
+								Time: llm_token_ratelimit.Time{
+									Unit:  llm_token_ratelimit.Minute,
+									Value: 1,
+								},
+							},
+						},
+					},
+				},
+			}})
+		rules := llm_token_ratelimit.GetRulesOfResource("temp-resource")
+		assert.True(t, len(rules) > 0, "Fail to prepare test data.")
+
+		err := LLMTokenRateLimitRulesUpdater(nil)
+		allRules := llm_token_ratelimit.GetRules()
+		assert.True(t, err == nil && len(allRules) == 0, "Fail to test TestLLMTokenRateLimitRulesUpdater_Nil")
+	})
+
+	t.Run("TestLLMTokenRateLimitRulesUpdater_Assert_Failed", func(t *testing.T) {
+		llm_token_ratelimit.ClearRules()
+		err := LLMTokenRateLimitRulesUpdater("xxxxxxxx")
+		assert.True(t, err != nil && strings.Contains(err.Error(), "Fail to type assert data to []llm_token_ratelimit.Rule"))
+	})
+
+	t.Run("TestLLMTokenRateLimitRulesUpdater_Empty_Rules", func(t *testing.T) {
+		llm_token_ratelimit.ClearRules()
+		p := make([]llm_token_ratelimit.Rule, 0)
+		err := LLMTokenRateLimitRulesUpdater(p)
+		assert.True(t, err == nil && len(llm_token_ratelimit.GetRules()) == 0)
+	})
+
+	t.Run("TestLLMTokenRateLimitRulesUpdater_Type_Err", func(t *testing.T) {
+		rules := []*flow.Rule{
+			{
+				Resource:               "abc",
+				Threshold:              0,
+				RelationStrategy:       0,
+				TokenCalculateStrategy: flow.Direct,
+				ControlBehavior:        flow.Reject,
+				RefResource:            "",
+				WarmUpPeriodSec:        0,
+				MaxQueueingTimeMs:      0,
+			}}
+		err := LLMTokenRateLimitRulesUpdater(rules)
+
+		assert.True(t, err.(Error).Code() == UpdatePropertyError)
+		assert.True(t, strings.Contains(err.(Error).desc, "Fail to type assert"))
+	})
+
+	t.Run("TestLLMTokenRateLimitRulesUpdater_With_Slice_Value", func(t *testing.T) {
+		llm_token_ratelimit.ClearRules()
+		p := []llm_token_ratelimit.Rule{
+			{
+				Resource: "slice-resource-1",
+				Strategy: llm_token_ratelimit.PETA,
+				Encoding: llm_token_ratelimit.TokenEncoding{
+					Provider: llm_token_ratelimit.OpenAIEncoderProvider,
+					Model:    "gpt-3.5-turbo",
+				},
+				SpecificItems: []*llm_token_ratelimit.SpecificItem{
+					{
+						Identifier: llm_token_ratelimit.Identifier{
+							Type:  llm_token_ratelimit.AllIdentifier,
+							Value: ".*",
+						},
+						KeyItems: []*llm_token_ratelimit.KeyItem{
+							{
+								Key: "default",
+								Token: llm_token_ratelimit.Token{
+									Number:        300,
+									CountStrategy: llm_token_ratelimit.TotalTokens,
+								},
+								Time: llm_token_ratelimit.Time{
+									Unit:  llm_token_ratelimit.Minute,
+									Value: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		err := LLMTokenRateLimitRulesUpdater(p)
+		assert.True(t, err == nil && len(llm_token_ratelimit.GetRules()) == 1)
+
+		rules := llm_token_ratelimit.GetRulesOfResource("slice-resource-1")
+		assert.True(t, len(rules) == 1)
 	})
 }

@@ -64,3 +64,9 @@ Temporary Items
 
 # coverage file
 coverage.html
+coverage.txt
+
+pkg/adapters/eino/*_test.go
+pkg/adapters/langchaingo/*_test.go
+
+.env

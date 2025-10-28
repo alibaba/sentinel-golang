@@ -22,6 +22,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/alibaba/sentinel-golang/core/isolation"
+	"github.com/alibaba/sentinel-golang/core/llm_token_ratelimit"
 	"github.com/alibaba/sentinel-golang/core/system"
 )
 
@@ -276,4 +277,51 @@ func IsolationRulesUpdater(data interface{}) error {
 
 func NewIsolationRulesHandler(converter PropertyConverter) *DefaultPropertyHandler {
 	return NewDefaultPropertyHandler(converter, IsolationRulesUpdater)
+}
+
+// LLMTokenRateLimitRuleJsonArrayParser provide JSON  as the default serialization for list of llm_token_ratelimit.Rule
+func LLMTokenRateLimitRuleJsonArrayParser(src []byte) (interface{}, error) {
+	if valid, err := checkSrcComplianceJson(src); !valid {
+		return nil, err
+	}
+
+	rules := make([]*llm_token_ratelimit.Rule, 0, 8)
+	if err := json.Unmarshal(src, &rules); err != nil {
+		desc := fmt.Sprintf("Fail to convert source bytes to []*llm_token_ratelimit.Rule, err: %s", err.Error())
+		return nil, NewError(ConvertSourceError, desc)
+	}
+	return rules, nil
+}
+
+// LLMTokenRateLimitRulesUpdater load the newest []llm_token_ratelimit.Rule to downstream system component.
+func LLMTokenRateLimitRulesUpdater(data interface{}) error {
+	if data == nil {
+		return llm_token_ratelimit.ClearRules()
+	}
+
+	rules := make([]*llm_token_ratelimit.Rule, 0, 8)
+	if val, ok := data.([]llm_token_ratelimit.Rule); ok {
+		for _, v := range val {
+			rules = append(rules, &v)
+		}
+	} else if val, ok := data.([]*llm_token_ratelimit.Rule); ok {
+		rules = val
+	} else {
+		return NewError(
+			UpdatePropertyError,
+			fmt.Sprintf("Fail to type assert data to []llm_token_ratelimit.Rule or []*llm_token_ratelimit.Rule, in fact, data: %+v", data),
+		)
+	}
+	_, err := llm_token_ratelimit.LoadRules(rules)
+	if err == nil {
+		return nil
+	}
+	return NewError(
+		UpdatePropertyError,
+		fmt.Sprintf("%+v", err),
+	)
+}
+
+func NewLLMTokenRateLimitRulesHandler(converter PropertyConverter) *DefaultPropertyHandler {
+	return NewDefaultPropertyHandler(converter, LLMTokenRateLimitRulesUpdater)
 }
