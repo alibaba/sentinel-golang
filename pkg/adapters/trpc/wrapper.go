@@ -64,7 +64,7 @@ func (w *LLMWrapper) GenerateContent(ctx context.Context, messages []model.Messa
 		return nil, err
 	}
 
-	// Pass - 创建 Request 对象并调用底层 LLM
+	// Get Request
 	request := &model.Request{
 		Messages: messages,
 	}
@@ -74,7 +74,7 @@ func (w *LLMWrapper) GenerateContent(ctx context.Context, messages []model.Messa
 		return nil, llmErr
 	}
 
-	// 从通道中读取响应
+	// receive response
 	var finalResponse *model.Response
 	for response := range responseChan {
 		if response.Error != nil {
@@ -120,15 +120,22 @@ func (w *LLMWrapper) validateResponse(response *model.Response) error {
 		return fmt.Errorf("llm response is nil or empty")
 	}
 
-	// 检查 Usage 信息是否存在
+	// check Usage
 	if response.Usage == nil {
 		return fmt.Errorf("llm response missing Usage info")
 	}
 
-	// 验证 token 信息
-	if response.Usage.PromptTokens == 0 && response.Usage.CompletionTokens == 0 && response.Usage.TotalTokens == 0 {
-		return fmt.Errorf("llm response has invalid token usage info")
+	// check token
+	if response.Usage.PromptTokens == 0 {
+		return fmt.Errorf("llm response has invalid Prompttoken usage info")
 	}
 
+	if response.Usage.CompletionTokens == 0 {
+		return fmt.Errorf("llm response has invalid CompletionTokens usage info")
+	}
+
+	if response.Usage.TotalTokens == 0 {
+		return fmt.Errorf("llm response has invalid TotalTokens usage info")
+	}
 	return nil
 }

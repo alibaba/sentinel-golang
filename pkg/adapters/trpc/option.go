@@ -74,19 +74,19 @@ func evaluateOptions(opts ...Option) *options {
 		promptsExtract: func(messages []model.Message) []string {
 			prompts := make([]string, 0, len(messages))
 			for _, msg := range messages {
-				// 优先使用 Content 字段
+				// default Conten1t
 				if msg.Content != "" {
 					prompts = append(prompts, msg.Content)
 				}
 
-				// 处理 ContentParts 中的文本内容
+				//  ContentParts
 				for _, part := range msg.ContentParts {
 					if part.Type == model.ContentTypeText && part.Text != nil {
 						prompts = append(prompts, *part.Text)
 					}
 				}
 
-				// 如果有推理内容，也包含在内
+				// ReasoningContent
 				if msg.ReasoningContent != "" {
 					prompts = append(prompts, msg.ReasoningContent)
 				}
