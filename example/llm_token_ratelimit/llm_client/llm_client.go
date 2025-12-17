@@ -25,6 +25,9 @@ import (
 	eino_openai "github.com/cloudwego/eino-ext/components/model/openai"
 	eino_model "github.com/cloudwego/eino/components/model"
 	eino_schema "github.com/cloudwego/eino/schema"
+
+	trpc_model "trpc.group/trpc-go/trpc-agent-go/model"
+	trpc_openai "trpc.group/trpc-go/trpc-agent-go/model/openai"
 )
 
 type LLMMessage struct {
@@ -48,6 +51,7 @@ type LLMProvider int32
 const (
 	LangChain LLMProvider = iota
 	Eino
+	TRPC
 )
 
 func (p LLMProvider) String() string {
@@ -56,6 +60,8 @@ func (p LLMProvider) String() string {
 		return "langchain"
 	case Eino:
 		return "eino"
+	case TRPC:
+		return "trpc"
 	default:
 		return "unknown"
 	}
@@ -67,6 +73,8 @@ func ParseLLMProvider(s string) (LLMProvider, error) {
 		return LangChain, nil
 	case "eino":
 		return Eino, nil
+	case "trpc":
+		return TRPC, nil
 	default:
 		return 0, fmt.Errorf("unknown LLM provider: %s", s)
 	}
@@ -104,6 +112,8 @@ func NewLLMClient(infos *LLMRequestInfos) (LLMClient, error) {
 		return NewLangChainClient(infos.Model)
 	case Eino:
 		return NewEinoClient(infos.Model)
+	case TRPC:
+		return NewTRPCClient(infos.Model)
 	default:
 		return nil, fmt.Errorf("unsupported provider: %v", infos.Provider)
 	}
@@ -224,4 +234,90 @@ func (c *EinoClient) GenerateContent(infos *LLMRequestInfos) (*LLMResponseInfos,
 
 func (c *EinoClient) GetProvider() LLMProvider {
 	return Eino
+}
+
+// ================================= TRPCClient ====================================
+
+type TRPCClient struct {
+	llm trpc_model.Model
+}
+
+func NewTRPCClient(model string) (LLMClient, error) {
+	apiKey := os.Getenv("LLM_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("LLM_API_KEY environment variable is not set")
+	}
+
+	baseURL := os.Getenv("LLM_BASE_URL")
+	if baseURL == "" {
+		return nil, fmt.Errorf("LLM_BASE_URL environment variable is not set")
+	}
+
+	llm := trpc_openai.New("gpt-4o-mini", trpc_openai.WithAPIKey(apiKey))
+
+	return &TRPCClient{
+		llm: llm,
+	}, nil
+}
+
+func (c *TRPCClient) GenerateContent(infos *LLMRequestInfos) (*LLMResponseInfos, error) {
+	if infos == nil || infos.Messages == nil {
+		return nil, fmt.Errorf("invalid request infos")
+	}
+
+	// Convert messages to TRPC format
+	content := make([]trpc_model.Message, len(infos.Messages))
+	for i, msg := range infos.Messages {
+		content[i] = trpc_model.Message{
+			Role:    trpc_model.Role(msg.Role),
+			Content: msg.Content,
+		}
+	}
+
+	// Create TRPC request
+	request := &trpc_model.Request{
+		Messages: content,
+	}
+
+	// Call the underlying TRPC model
+	responseChan, err := c.llm.GenerateContent(context.Background(), request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate content: %w", err)
+	}
+
+	// Process response channel
+	var finalResponse *trpc_model.Response
+	for response := range responseChan {
+		if response.Error != nil {
+			return nil, fmt.Errorf("API error: %s", response.Error.Message)
+		}
+		finalResponse = response
+	}
+
+	if finalResponse == nil {
+		return nil, fmt.Errorf("no response received from LLM")
+	}
+
+	// Validate response has required fields
+	if len(finalResponse.Choices) == 0 {
+		return nil, fmt.Errorf("llm response is empty")
+	}
+
+	if finalResponse.Usage == nil {
+		return nil, fmt.Errorf("llm response missing Usage info")
+	}
+
+	// Convert to our response format
+	return &LLMResponseInfos{
+		Content: finalResponse.Choices[0].Message.Content,
+		Usage: map[string]any{
+			"prompt_tokens":     finalResponse.Usage.PromptTokens,
+			"completion_tokens": finalResponse.Usage.CompletionTokens,
+			"total_tokens":      finalResponse.Usage.TotalTokens,
+		},
+	}, nil
+}
+
+func (c *TRPCClient) GetProvider() LLMProvider {
+	return TRPC
 }
