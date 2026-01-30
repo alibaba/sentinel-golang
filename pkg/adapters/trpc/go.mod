@@ -1,6 +1,6 @@
 module github.com/alibaba/sentinel-golang/pkg/adapters/trpc
 
-go 1.22
+go 1.18
 
 replace github.com/alibaba/sentinel-golang => ../../../
 

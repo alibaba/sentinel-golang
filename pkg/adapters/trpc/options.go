@@ -8,9 +8,7 @@ import (
 )
 
 // Option is a function that configures the options.
-type Option struct {
-	F func(o *options)
-}
+type Option func(*options)
 
 type options struct {
 	resourceExtract func(ctx context.Context, req interface{}) string
@@ -28,13 +26,17 @@ func DefaultResourceExtract(ctx context.Context, req interface{}) string {
 	if rpcName == "" {
 		rpcName = msg.ClientRPCName()
 	}
-	if serviceName == "" {
-		return rpcName
-	}
-	if rpcName == "" {
+
+	switch {
+	case serviceName != "" && rpcName != "":
+		return serviceName + ":" + rpcName
+	case serviceName != "":
 		return serviceName
+	case rpcName != "":
+		return rpcName
+	default:
+		return "unknown"
 	}
-	return serviceName + ":" + rpcName
 }
 
 // DefaultBlockFallback is the default block fallback function.
@@ -55,22 +57,22 @@ func newOptions(opts []Option) *options {
 // Apply applies the given options.
 func (o *options) Apply(opts []Option) {
 	for _, op := range opts {
-		op.F(o)
+		op(o)
 	}
 }
 
 // WithResourceExtract sets the resource extractor function.
 // The function extracts resource name from context and request.
 func WithResourceExtract(f func(ctx context.Context, req interface{}) string) Option {
-	return Option{F: func(o *options) {
+	return func(o *options) {
 		o.resourceExtract = f
-	}}
+	}
 }
 
 // WithBlockFallback sets the block fallback handler function.
 // The function is called when the request is blocked by Sentinel.
 func WithBlockFallback(f func(ctx context.Context, req interface{}, blockErr *base.BlockError) (interface{}, error)) Option {
-	return Option{F: func(o *options) {
+	return func(o *options) {
 		o.blockFallback = f
-	}}
+	}
 }
