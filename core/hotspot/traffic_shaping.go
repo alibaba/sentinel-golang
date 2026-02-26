@@ -118,15 +118,18 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 	initConcurrency := int64(0)
 	concurrencyPtr := c.metric.ConcurrencyCounter.AddIfAbsent(arg, &initConcurrency)
 	if concurrencyPtr == nil {
-		// First to access this arg
-		return nil
+		// First to access this arg, use the pointer we just stored.
+		concurrencyPtr = &initConcurrency
 	}
-	concurrency := atomic.LoadInt64(concurrencyPtr)
-	concurrency++
+	// Atomically increment the counter first, then check the threshold.
+	// This eliminates the TOCTOU race between check and increment.
+	concurrency := atomic.AddInt64(concurrencyPtr, 1)
 	if specificConcurrency, existed := specificItem[arg]; existed {
 		if concurrency <= specificConcurrency {
 			return nil
 		}
+		// Exceeded threshold, rollback the increment.
+		atomic.AddInt64(concurrencyPtr, -1)
 		msg := fmt.Sprintf("hotspot specific concurrency check blocked, arg: %v", arg)
 		return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), concurrency)
 	}
@@ -134,6 +137,8 @@ func (c *baseTrafficShapingController) performCheckingForConcurrencyMetric(arg i
 	if concurrency <= threshold {
 		return nil
 	}
+	// Exceeded threshold, rollback the increment.
+	atomic.AddInt64(concurrencyPtr, -1)
 	msg := fmt.Sprintf("hotspot concurrency check blocked, arg: %v", arg)
 	return base.NewTokenResultBlockedWithCause(base.BlockTypeHotSpotParamFlow, msg, c.BoundRule(), concurrency)
 }
