@@ -7,8 +7,8 @@ import (
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/util"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/etcd-io/etcd/clientv3"
+	"github.com/etcd-io/etcd/mvcc/mvccpb"
 	"github.com/pkg/errors"
 )
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/alibaba/sentinel-golang/ext/datasource"
-	"github.com/coreos/etcd/clientv3"
+	"github.com/etcd-io/etcd/clientv3"
 	"github.com/stretchr/testify/mock"
 )
 

@@ -12,7 +12,7 @@ import (
 	"github.com/alibaba/sentinel-golang/ext/datasource"
 	"github.com/alibaba/sentinel-golang/logging"
 	"github.com/alibaba/sentinel-golang/pkg/datasource/etcdv3"
-	"github.com/coreos/etcd/clientv3"
+	"github.com/etcd-io/etcd/clientv3"
 )
 
 func main() {
