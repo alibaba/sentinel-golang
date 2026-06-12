@@ -114,6 +114,10 @@ func (r *Rule) RuleID() string {
 	return r.Id
 }
 
+func (r *Rule) GetGroupID() string {
+	return r.RuleID()
+}
+
 func (r *Rule) isEqualsToBase(newRule *Rule) bool {
 	if newRule == nil {
 		return false

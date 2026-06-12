@@ -66,6 +66,10 @@ func (r *Rule) RuleID() string {
 	return r.ID
 }
 
+func (r *Rule) GetGroupID() string {
+	return r.RuleID()
+}
+
 func (r *Rule) BlockType() base.BlockType {
 	return base.BlockTypeIsolation
 }

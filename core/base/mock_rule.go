@@ -21,6 +21,10 @@ func (m *MockRule) RuleID() string {
 	return m.Id
 }
 
+func (m *MockRule) GetGroupID() string {
+	return m.RuleID()
+}
+
 func (m *MockRule) RuleName() string {
 	return m.Name
 }

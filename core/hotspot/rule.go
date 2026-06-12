@@ -67,6 +67,8 @@ func (t MetricType) String() string {
 type Rule struct {
 	// ID is the unique id
 	ID string `json:"id,omitempty"`
+	// GroupID is a stable identifier for rule matching
+	GroupID string `json:"groupId,omitempty"`
 	// Name is the rule name
 	Name string `json:"name,omitempty"`
 	// Resource is the resource name
@@ -131,6 +133,13 @@ func (r *Rule) ResourceName() string {
 
 func (r *Rule) RuleID() string {
 	return r.ID
+}
+
+func (r *Rule) GetGroupID() string {
+	if r.GroupID != "" {
+		return r.GroupID
+	}
+	return r.RuleID()
 }
 
 func (r *Rule) BlockType() base.BlockType {
