@@ -21,6 +21,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRuleGetGroupID(t *testing.T) {
+	t.Run("configured independently from rule ID", func(t *testing.T) {
+		rule := &Rule{ID: "rule-id", GroupID: "group-id"}
+		assert.Equal(t, "group-id", rule.GetGroupID())
+	})
+
+	t.Run("does not fall back to rule ID", func(t *testing.T) {
+		rule := &Rule{ID: "rule-id"}
+		assert.Empty(t, rule.GetGroupID())
+	})
+}
+
 func TestMetricType_String(t *testing.T) {
 	t.Run("TestMetricType_String", func(t *testing.T) {
 		assert.True(t, fmt.Sprintf("%+v", Concurrency) == "Concurrency")

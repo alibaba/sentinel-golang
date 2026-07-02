@@ -84,6 +84,8 @@ func (s ControlBehavior) String() string {
 type Rule struct {
 	// ID represents the unique ID of the rule (optional).
 	ID string `json:"id,omitempty"`
+	// GroupID is the identifier of the rule group.
+	GroupID string `json:"groupId,omitempty"`
 	// Name is the rule name
 	Name string `json:"name,omitempty"`
 	// Resource represents the resource name.
@@ -152,6 +154,10 @@ func (r *Rule) ResourceName() string {
 
 func (r *Rule) RuleID() string {
 	return r.ID
+}
+
+func (r *Rule) GetGroupID() string {
+	return r.GroupID
 }
 
 func (r *Rule) BlockType() base.BlockType {

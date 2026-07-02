@@ -17,8 +17,18 @@ package datasource
 import (
 	"testing"
 
+	"github.com/alibaba/sentinel-golang/core/hotspot"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestHotSpotParamRuleJsonArrayParserPreservesGroupID(t *testing.T) {
+	data, err := HotSpotParamRuleJsonArrayParser([]byte(`[{"id":"rule-id","groupId":"group-id","resource":"resource"}]`))
+	assert.NoError(t, err)
+
+	rules := data.([]*hotspot.Rule)
+	assert.Len(t, rules, 1)
+	assert.Equal(t, "group-id", rules[0].GroupID)
+}
 
 func Test_parseSpecificItems(t *testing.T) {
 	t.Run("Test_parseSpecificItems", func(t *testing.T) {

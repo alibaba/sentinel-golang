@@ -74,6 +74,7 @@ func (t AdaptiveStrategy) String() string {
 
 type Rule struct {
 	ID           string           `json:"id,omitempty"`
+	GroupID      string           `json:"groupId,omitempty"`
 	Name         string           `json:"name,omitempty"`
 	MetricType   MetricType       `json:"metricType"`
 	TriggerCount float64          `json:"triggerCount"`
@@ -96,6 +97,10 @@ func (r *Rule) ResourceName() string {
 
 func (r *Rule) RuleID() string {
 	return r.ID
+}
+
+func (r *Rule) GetGroupID() string {
+	return r.GroupID
 }
 
 func (r *Rule) BlockType() base.BlockType {

@@ -23,6 +23,8 @@ type SentinelRule interface {
 
 	RuleID() string
 
+	GetGroupID() string
+
 	BlockType() BlockType
 
 	RuleName() string
