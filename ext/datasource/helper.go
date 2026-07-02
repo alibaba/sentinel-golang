@@ -183,6 +183,7 @@ func HotSpotParamRuleJsonArrayParser(src []byte) (interface{}, error) {
 	for i, hotspotRule := range hotspotRules {
 		rules[i] = &hotspot.Rule{
 			ID:                hotspotRule.ID,
+			GroupID:           hotspotRule.GroupID,
 			Resource:          hotspotRule.Resource,
 			MetricType:        hotspotRule.MetricType,
 			ControlBehavior:   hotspotRule.ControlBehavior,

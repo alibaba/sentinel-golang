@@ -136,10 +136,7 @@ func (r *Rule) RuleID() string {
 }
 
 func (r *Rule) GetGroupID() string {
-	if r.GroupID != "" {
-		return r.GroupID
-	}
-	return r.RuleID()
+	return r.GroupID
 }
 
 func (r *Rule) BlockType() base.BlockType {

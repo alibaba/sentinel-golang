@@ -26,6 +26,8 @@ import (
 type HotspotRule struct {
 	// ID is the unique id
 	ID string `json:"id,omitempty"`
+	// GroupID is the identifier of the rule group.
+	GroupID string `json:"groupId,omitempty"`
 	// Resource is the resource name
 	Resource string `json:"resource"`
 	// MetricType indicates the metric type for checking logic.

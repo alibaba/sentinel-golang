@@ -52,6 +52,8 @@ func (s Strategy) String() string {
 type Rule struct {
 	// unique id
 	Id string `json:"id,omitempty"`
+	// GroupID is the identifier of the rule group.
+	GroupID string `json:"groupId,omitempty"`
 	// Name is the rule name
 	Name string `json:"name,omitempty"`
 	// resource name
@@ -115,7 +117,7 @@ func (r *Rule) RuleID() string {
 }
 
 func (r *Rule) GetGroupID() string {
-	return r.RuleID()
+	return r.GroupID
 }
 
 func (r *Rule) isEqualsToBase(newRule *Rule) bool {

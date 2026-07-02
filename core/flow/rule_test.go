@@ -20,6 +20,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRuleGetGroupID(t *testing.T) {
+	t.Run("configured independently from rule ID", func(t *testing.T) {
+		rule := &Rule{ID: "rule-id", GroupID: "group-id"}
+		assert.Equal(t, "group-id", rule.GetGroupID())
+	})
+
+	t.Run("does not fall back to rule ID", func(t *testing.T) {
+		rule := &Rule{ID: "rule-id"}
+		assert.Empty(t, rule.GetGroupID())
+	})
+}
+
 func TestRuleNeedStatistic(t *testing.T) {
 	// need
 	r1 := &Rule{
