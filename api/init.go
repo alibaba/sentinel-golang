@@ -82,6 +82,10 @@ func InitWithConfigFile(configPath string) error {
 
 // initCoreComponents init core components with global config
 func initCoreComponents() error {
+	if err := metric_exporter.Initialize(); err != nil {
+		return fmt.Errorf("init metric exporter err: %s", err.Error())
+	}
+
 	if config.MetricLogFlushIntervalSec() > 0 {
 		if err := metric.InitTask(); err != nil {
 			return err

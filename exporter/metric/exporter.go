@@ -24,7 +24,8 @@ import (
 )
 
 var (
-	exporter Exporter
+	deferred          = newDeferredExporter()
+	exporter Exporter = deferred
 
 	host      string
 	app       string
@@ -33,19 +34,22 @@ var (
 )
 
 func init() {
-	if config.MetricExportHTTPAddr() != "" {
-		exporter = newPrometheusExporter()
-	} else {
-		exporter = newEmptyExporter()
-	}
-
 	host, _ = os.Hostname()
 	if host == "" {
 		host = "unknown"
 	}
-	app = config.AppName()
 	pid = strconv.Itoa(os.Getpid())
 	namespace = "sentinel_go"
+}
+
+// Initialize selects the configured exporter after Sentinel configuration has
+// been loaded and binds metrics that were declared during package init.
+func Initialize() error {
+	app = config.AppName()
+	if config.MetricExportHTTPAddr() != "" {
+		return deferred.Bind(newPrometheusExporter())
+	}
+	return deferred.Bind(newEmptyExporter())
 }
 
 // Metric models basic operations of metric being exported.
