@@ -15,8 +15,6 @@
 package hotspot
 
 import (
-	"sync/atomic"
-
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/alibaba/sentinel-golang/util"
 )
@@ -25,9 +23,15 @@ const (
 	RuleCheckSlotOrder = 4000
 )
 
-// hotspotConcurrencyPassedKey is the key used in EntryContext.Data to indicate
-// that hotspot concurrency counters have been incremented in the Check phase.
+// hotspotConcurrencyPassedKey stores the exact reservations made in the Check phase.
 const hotspotConcurrencyPassedKey = "sentinel_hotspot_concurrency_passed"
+
+// passedConcurrencyEntry identifies the counter to release, even if the context or
+// resource rules change after checking.
+type passedConcurrencyEntry struct {
+	tc  TrafficShapingController
+	arg interface{}
+}
 
 var (
 	DefaultSlot = &Slot{}
@@ -49,11 +53,7 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 
 	// Track concurrency controllers that passed (and incremented their counters)
 	// so we can rollback if a later controller in the same slot blocks.
-	type passedEntry struct {
-		tc  TrafficShapingController
-		arg interface{}
-	}
-	var passedConcurrency []passedEntry
+	var passedConcurrency []passedConcurrencyEntry
 
 	for _, tc := range tcs {
 		arg := tc.ExtractArgs(ctx)
@@ -63,19 +63,16 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		r := canPassCheck(tc, arg, batch)
 		if r == nil {
 			if tc.BoundRule().MetricType == Concurrency {
-				passedConcurrency = append(passedConcurrency, passedEntry{tc, arg})
+				if passedConcurrency == nil {
+					passedConcurrency = make([]passedConcurrencyEntry, 0, len(tcs))
+				}
+				passedConcurrency = append(passedConcurrency, passedConcurrencyEntry{tc, arg})
 			}
 			continue
 		}
 		if r.Status() == base.ResultStatusBlocked {
 			// Rollback concurrency counters incremented by earlier controllers in this slot.
-			for _, p := range passedConcurrency {
-				metric := p.tc.BoundMetric()
-				concurrencyPtr, existed := metric.ConcurrencyCounter.Get(p.arg)
-				if existed && concurrencyPtr != nil {
-					atomic.AddInt64(concurrencyPtr, -1)
-				}
-			}
+			releaseConcurrency(passedConcurrency)
 			return r
 		}
 		if r.Status() == base.ResultStatusShouldWait {
@@ -87,13 +84,12 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		}
 	}
 
-	// Mark in context that hotspot concurrency counters have been incremented,
-	// so OnEntryBlocked can rollback if a later check slot blocks.
+	// Retain reservations for completion or rollback if a later slot blocks.
 	if len(passedConcurrency) > 0 {
 		if ctx.Data == nil {
 			ctx.Data = make(map[interface{}]interface{})
 		}
-		ctx.Data[hotspotConcurrencyPassedKey] = true
+		ctx.Data[hotspotConcurrencyPassedKey] = passedConcurrency
 	}
 
 	return result
