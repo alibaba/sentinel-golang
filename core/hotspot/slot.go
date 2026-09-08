@@ -23,6 +23,16 @@ const (
 	RuleCheckSlotOrder = 4000
 )
 
+// hotspotConcurrencyPassedKey stores the exact reservations made in the Check phase.
+const hotspotConcurrencyPassedKey = "sentinel_hotspot_concurrency_passed"
+
+// passedConcurrencyEntry identifies the counter to release, even if the context or
+// resource rules change after checking.
+type passedConcurrencyEntry struct {
+	tc  TrafficShapingController
+	arg interface{}
+}
+
 var (
 	DefaultSlot = &Slot{}
 )
@@ -40,6 +50,11 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 
 	result := ctx.RuleCheckResult
 	tcs := getTrafficControllersFor(res)
+
+	// Track concurrency controllers that passed (and incremented their counters)
+	// so we can rollback if a later controller in the same slot blocks.
+	var passedConcurrency []passedConcurrencyEntry
+
 	for _, tc := range tcs {
 		arg := tc.ExtractArgs(ctx)
 		if arg == nil {
@@ -47,9 +62,17 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 		}
 		r := canPassCheck(tc, arg, batch)
 		if r == nil {
+			if tc.BoundRule().MetricType == Concurrency {
+				if passedConcurrency == nil {
+					passedConcurrency = make([]passedConcurrencyEntry, 0, len(tcs))
+				}
+				passedConcurrency = append(passedConcurrency, passedConcurrencyEntry{tc, arg})
+			}
 			continue
 		}
 		if r.Status() == base.ResultStatusBlocked {
+			// Rollback concurrency counters incremented by earlier controllers in this slot.
+			releaseConcurrency(passedConcurrency)
 			return r
 		}
 		if r.Status() == base.ResultStatusShouldWait {
@@ -60,6 +83,15 @@ func (s *Slot) Check(ctx *base.EntryContext) *base.TokenResult {
 			continue
 		}
 	}
+
+	// Retain reservations for completion or rollback if a later slot blocks.
+	if len(passedConcurrency) > 0 {
+		if ctx.Data == nil {
+			ctx.Data = make(map[interface{}]interface{})
+		}
+		ctx.Data[hotspotConcurrencyPassedKey] = passedConcurrency
+	}
+
 	return result
 }
 

@@ -18,7 +18,6 @@ import (
 	"sync/atomic"
 
 	"github.com/alibaba/sentinel-golang/core/base"
-	"github.com/alibaba/sentinel-golang/logging"
 )
 
 const (
@@ -38,51 +37,33 @@ func (s *ConcurrencyStatSlot) Order() uint32 {
 }
 
 func (c *ConcurrencyStatSlot) OnEntryPassed(ctx *base.EntryContext) {
-	res := ctx.Resource.Name()
-	tcs := getTrafficControllersFor(res)
-	for _, tc := range tcs {
-		if tc.BoundRule().MetricType != Concurrency {
-			continue
-		}
-		arg := tc.ExtractArgs(ctx)
-		if arg == nil {
-			continue
-		}
-		metric := tc.BoundMetric()
-		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
-		if !existed || concurrencyPtr == nil {
-			if logging.DebugEnabled() {
-				logging.Debug("[ConcurrencyStatSlot OnEntryPassed] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
-			}
-			continue
-		}
-		atomic.AddInt64(concurrencyPtr, 1)
-	}
+	// The concurrency counter is already incremented atomically in the Check phase
+	// (performCheckingForConcurrencyMetric), so no increment is needed here.
 }
 
 func (c *ConcurrencyStatSlot) OnEntryBlocked(ctx *base.EntryContext, blockError *base.BlockError) {
-	// Do nothing
+	releaseContextConcurrency(ctx)
 }
 
 func (c *ConcurrencyStatSlot) OnCompleted(ctx *base.EntryContext) {
-	res := ctx.Resource.Name()
-	tcs := getTrafficControllersFor(res)
-	for _, tc := range tcs {
-		if tc.BoundRule().MetricType != Concurrency {
-			continue
+	releaseContextConcurrency(ctx)
+}
+
+func releaseContextConcurrency(ctx *base.EntryContext) {
+	if ctx == nil {
+		return
+	}
+	passed, _ := ctx.Data[hotspotConcurrencyPassedKey].([]passedConcurrencyEntry)
+	// Consume reservations before releasing them so repeated callbacks are harmless.
+	delete(ctx.Data, hotspotConcurrencyPassedKey)
+	releaseConcurrency(passed)
+}
+
+func releaseConcurrency(passed []passedConcurrencyEntry) {
+	for _, p := range passed {
+		counter, existed := p.tc.BoundMetric().ConcurrencyCounter.Get(p.arg)
+		if existed && counter != nil {
+			atomic.AddInt64(counter, -1)
 		}
-		arg := tc.ExtractArgs(ctx)
-		if arg == nil {
-			continue
-		}
-		metric := tc.BoundMetric()
-		concurrencyPtr, existed := metric.ConcurrencyCounter.Get(arg)
-		if !existed || concurrencyPtr == nil {
-			if logging.DebugEnabled() {
-				logging.Debug("[ConcurrencyStatSlot OnCompleted] Parameter does not exist in ConcurrencyCounter.", "argument", arg)
-			}
-			continue
-		}
-		atomic.AddInt64(concurrencyPtr, -1)
 	}
 }
