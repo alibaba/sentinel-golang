@@ -4,6 +4,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 	"github.com/beego/beego/v2/server/web"
 	beegoCtx "github.com/beego/beego/v2/server/web/context"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -92,7 +93,7 @@ func TestSentinelFilterChain(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cr := web.NewControllerRegister()
-			cr.Get(tt.args.reqPath, tt.args.handlerFunc)
+			cr.AddMethod(tt.args.method, tt.args.path, tt.args.handlerFunc)
 
 			cr.InsertFilterChain("/*", SentinelFilterChain(tt.args.opts...))
 			cr.Init()
@@ -101,6 +102,8 @@ func TestSentinelFilterChain(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			cr.ServeHTTP(w, r)
+
+			assert.Equal(t, tt.want.code, w.Code)
 		})
 	}
 }

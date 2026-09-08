@@ -146,7 +146,7 @@ func TestSentinelMiddleware(t *testing.T) {
 				_ = server.Server.Shutdown(context.Background())
 			}()
 
-			server.Get(tt.args.reqPath, tt.args.handlerFunc)
+			server.Handlers.AddMethod(tt.args.method, tt.args.path, tt.args.handlerFunc)
 			server.Handlers.Init()
 			server.Server.Handler = middleware(server.Handlers)
 

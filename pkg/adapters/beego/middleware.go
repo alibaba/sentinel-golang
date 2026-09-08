@@ -8,7 +8,7 @@ import (
 )
 
 // SentinelMiddleware returns new web.MiddleWare.
-// Default resource name pattern is {httpMethod}:{apiPath}, such as "GET:/api/:id".
+// Default resource name uses the HTTP method and raw request URL path, such as "GET:/api/users/123".
 // Default block fallback is to return 429 (Too Many Requests) response.
 //
 // You may customize your own resource extractor and block handler by setting options.
