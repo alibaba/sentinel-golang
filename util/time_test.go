@@ -16,11 +16,29 @@ package util
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMockTickerStop(t *testing.T) {
+	ticker := NewMockTicker(time.Hour)
+	ticker.Stop()
+	ticker.Stop()
+
+	ticker = NewMockTicker(time.Hour)
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ticker.Stop()
+		}()
+	}
+	wg.Wait()
+}
 
 // Time zone should be considered for time related operations
 func TestFormatTimeMillis(t *testing.T) {

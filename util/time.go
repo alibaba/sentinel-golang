@@ -155,11 +155,12 @@ func (t *RealTicker) Stop() {
 // MockTicker is usually used for testing.
 // MockTicker and MockClock are usually used together.
 type MockTicker struct {
-	lock   sync.Mutex
-	period time.Duration
-	c      chan time.Time
-	last   time.Time
-	stop   chan struct{}
+	lock     sync.Mutex
+	period   time.Duration
+	c        chan time.Time
+	last     time.Time
+	stop     chan struct{}
+	stopOnce sync.Once
 }
 
 func NewMockTicker(d time.Duration) *MockTicker {
@@ -180,7 +181,7 @@ func (t *MockTicker) C() <-chan time.Time {
 }
 
 func (t *MockTicker) Stop() {
-	close(t.stop)
+	t.stopOnce.Do(func() { close(t.stop) })
 }
 
 func (t *MockTicker) check() {
